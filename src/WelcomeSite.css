@@ -1,0 +1,11 @@
+/*miejsce na czcionki*/
+@import url('https://fonts.googleapis.com/css2?family=Special+Gothic+Expanded+One&display=swap');
+
+/*miejsce na czcionki*/
+
+@import "tailwindcss/preflight" ;
+
+@tailwind utilities;
+@import "tailwindcss";
+
+

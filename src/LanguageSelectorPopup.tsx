@@ -1,7 +1,7 @@
 // components/LanguageSelectorPopup.tsx
 
 import React, { useState } from "react";
-import WorldMap from "/src/assets/world.svg?react"; // Zaimportuj SVG
+import WorldMap from "/src/Maps/WorldMap"
 
 const LanguageSelectorPopup = ({ onClose }: { onClose: () => void }) => {
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);

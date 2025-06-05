@@ -58,6 +58,7 @@ const RegisterSite: React.FC = () => {
 
   // Stan formularza rejestracji
   const [email, setEmail] = useState("");
+  const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [gender, setGender] = useState("");
@@ -66,24 +67,35 @@ const RegisterSite: React.FC = () => {
   const [registerError, setRegisterError] = useState("");
 
   // Obsługa rejestracji
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
+const handleRegister = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  try {
+    const response = await fetch('http://localhost:5000/api/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        login,
+        password,
+        gender,
+        date_of_birth: new Date(dateOfBirth).toISOString().split('T')[0]
+      }),
+    });
 
-    if (!email || !password || !confirmPassword || !dateOfBirth || !gender) {
-      setRegisterError(t.registerMissingFields);
-      return;
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Registration failed');
     }
+    navigate("/dashboardSite");
+  } catch (error) {
+    console.error('Registration error:', error);
+    setRegisterError(error.message || 'Failed to connect to server');
+  }
 
-    if (password !== confirmPassword) {
-      setRegisterError(t.passwordsDontMatch);
-      return;
-    }
-
-    // Tutaj możesz dodać logikę rejestracji (np. zapytanie do API)
-
-    // Po pomyślnej rejestracji przekieruj do logowania
-    navigate("/loginsite");
-  };
+};
 
   // Efekt montujący język
   useEffect(() => {
@@ -246,6 +258,17 @@ const RegisterSite: React.FC = () => {
             placeholder={t.email || "Email"}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className={`px-4 py-2 rounded ${
+              isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
+            }`}
+            required
+          />
+
+          <input
+            type="login"
+            placeholder={t.login || "Log In"}
+            value={login}
+            onChange={(e) => setLogin(e.target.value)}
             className={`px-4 py-2 rounded ${
               isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
             }`}

@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import LanguageSelectorPopup from "./LanguageSelectorPopup";
 import { translations } from "./Translations/TranslationsLogIn";
 
-
 // Icons
 import MoonIcon from "/src/assets/moon.svg?react";
 import SunIcon from "/src/assets/sun.svg?react";
@@ -34,8 +33,31 @@ const DashboardSite: React.FC = () => {
   const [language, setLanguage] = useState("EN");
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [shouldShowPopup, setShouldShowPopup] = useState(false);
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+
   const navigate = useNavigate();
   const t = translations[language] || translations["EN"];
+
+  // Load user data from localStorage or API
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      setUser(JSON.parse(userData));
+    } else {
+      navigate("/LoginSite"); // Redirect to login if not authenticated
+    }
+
+    const savedLang = localStorage.getItem("preferredLanguage");
+    if (savedLang && languages[savedLang as keyof typeof languages]) {
+      setLanguage(savedLang);
+    }
+
+    const hasSeenPopup = localStorage.getItem("hasSeenLanguagePopup");
+    if (!hasSeenPopup) {
+      setShouldShowPopup(true);
+      localStorage.setItem("hasSeenLanguagePopup", "true");
+    }
+  }, []);
 
   // Funkcja do zmiany języka
   const selectLanguage = (lang: string) => {
@@ -48,8 +70,7 @@ const DashboardSite: React.FC = () => {
   const toggleTheme = () => setIsDarkMode((prev) => !prev);
 
   // Funkcja do otwierania/zamykania menu języków
-  const toggleLanguageDropdown = () =>
-    setShowLanguageDropdown((prev) => !prev);
+  const toggleLanguageDropdown = () => setShowLanguageDropdown((prev) => !prev);
 
   // Obsługa wyszukiwania
   const handleSearch = (e: React.FormEvent) => {
@@ -61,37 +82,11 @@ const DashboardSite: React.FC = () => {
     }
   };
 
-  // Stan formularza logowania
-  const [login, setLogin] = useState("");
-  const [password, setPassword] = useState("");
-  const [loginError, setLoginError] = useState("");
-
-  // Obsługa logowania
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Symulacja logowania
-    if (!login || !password) {
-      setLoginError(t.goToLoginSite); // Ustaw komunikat błędu
-      return;
-    }
-
-    // Po pomyślnym logowaniu przekieruj na stronę główną
-    navigate("/dashboardSite");
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setUser(null);
+    navigate("/LoginSite");
   };
-
-  useEffect(() => {
-    const savedLang = localStorage.getItem("preferredLanguage");
-    if (savedLang && languages[savedLang as keyof typeof languages]) {
-      setLanguage(savedLang);
-    }
-
-    const hasSeenPopup = localStorage.getItem("hasSeenLanguagePopup");
-    if (!hasSeenPopup) {
-      setShouldShowPopup(true);
-      localStorage.setItem("hasSeenLanguagePopup", "true");
-    }
-  }, []);
 
   return (
     <div
@@ -170,7 +165,6 @@ const DashboardSite: React.FC = () => {
                 }`}
               />
             </button>
-
             {showLanguageDropdown && (
               <div
                 className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
@@ -215,74 +209,43 @@ const DashboardSite: React.FC = () => {
         </div>
       </header>
 
-      {/* Main content - Log in form */}
-      <main className="flex-grow p-8 flex flex-col items-center justify-center">
+      {/* Main content - Dashboard */}
+      <main className="flex-grow p-8 flex flex-col items-center">
         <h2
-          className={`text-2xl font-bold mb-4 ${
+          className={`text-3xl font-bold mb-6 ${
             isDarkMode ? "text-yellow-400" : "text-green-600"
           }`}
         >
-          {t.goToLoginSite}
+          {t.dashboardWelcome} {user?.name || ""}
         </h2>
 
-        <form
-          onSubmit={handleLogin}
-          className={`max-w-md w-full flex flex-col gap-4 bg-gray-200 p-6 rounded-lg shadow-md ${
-            isDarkMode ? "bg-gray-700 text-white" : ""
+        <div
+          className={`max-w-2xl w-full bg-opacity-50 p-6 rounded-lg shadow-lg ${
+            isDarkMode ? "bg-gray-700" : "bg-white"
           }`}
         >
-          {loginError && (
-            <p className="text-red-500 mb-2">{loginError}</p>
-          )}
+          <h3 className="text-xl font-semibold mb-4">Your Profile</h3>
+          <ul className="space-y-2">
+            <li>
+              <strong>Name:</strong> {user?.name || "N/A"}
+            </li>
+            <li>
+              <strong>Email:</strong> {user?.email || "N/A"}
+            </li>
+          </ul>
 
-          <input
-            type="text"
-            placeholder={t.login}
-            value={login}
-            onChange={(e) => setLogin(e.target.value)}
-            className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-700 text-white" : "bg-white"
-            }`}
-            required
-          />
-
-          <input
-            type="password"
-            placeholder={t.password}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-700 text-white" : "bg-white"
-            }`}
-            required
-          />
-
-          <button
-            type="submit"
-            className={`px-4 py-2 rounded ${
-              isDarkMode
-                ? "bg-yellow-500 hover:bg-yellow-600 text-black"
-                : "bg-green-600 hover:bg-green-700 text-white"
-            }`}
-          >
-            {t.loginButton}
-          </button>
-
-        </form>
-
-        {/* Link do rejestracji */}
-        <div className="mt-4 text-center">
-          <span className={`${isDarkMode ? "text-gray-300" : "text-gray-700"} mr-2`}>
-            {t.registerLink}
-          </span>
-          <Link
-            to="/RegisterSite"
-            className={`font-medium ${
-              isDarkMode ? "text-yellow-400 hover:text-yellow-300" : "text-green-600 hover:text-green-800"
-            } underline transition-colors`}
-          >
-            {t.registerNow || "Register"}
-          </Link>
+          <div className="mt-6">
+            <button
+              onClick={handleLogout}
+              className={`px-4 py-2 rounded ${
+                isDarkMode
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-red-500 hover:bg-red-600"
+              } text-white`}
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </main>
 

@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import LanguageSelectorPopup from "./LanguageSelectorPopup";
 import { translations } from "./Translations/TranslationsLogIn";
 
-
 // Icons
 import MoonIcon from "/src/assets/moon.svg?react";
 import SunIcon from "/src/assets/sun.svg?react";
@@ -37,21 +36,22 @@ const LoginSite: React.FC = () => {
   const navigate = useNavigate();
   const t = translations[language] || translations["EN"];
 
-  // Funkcja do zmiany języka
+  // Form state
+  const [login, setLogin] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+
+  // Toggle functions
   const selectLanguage = (lang: string) => {
     setLanguage(lang);
     localStorage.setItem("preferredLanguage", lang);
     setShowLanguageDropdown(false);
   };
 
-  // Funkcja do przełączania trybu ciemnego/jasnego
   const toggleTheme = () => setIsDarkMode((prev) => !prev);
-
-  // Funkcja do otwierania/zamykania menu języków
   const toggleLanguageDropdown = () =>
     setShowLanguageDropdown((prev) => !prev);
 
-  // Obsługa wyszukiwania
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -61,25 +61,44 @@ const LoginSite: React.FC = () => {
     }
   };
 
-  // Stan formularza logowania
-  const [login, setLogin] = useState("");
-  const [password, setPassword] = useState("");
-  const [loginError, setLoginError] = useState("");
-
-  // Obsługa logowania
-  const handleLogin = (e: React.FormEvent) => {
+  // Handle login submission
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Symulacja logowania
     if (!login || !password) {
-      setLoginError(t.goToLoginSite); // Ustaw komunikat błędu
+      setLoginError(t.goToLoginSite);
       return;
     }
 
-    // Po pomyślnym logowaniu przekieruj na stronę główną
-    navigate("/dashboardSite");
+    try {
+      const response = await fetch('http://localhost:5000/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ login, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setLoginError(data.error || 'Login failed');
+        return;
+      }
+
+      // Save user in localStorage
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // Redirect to dashboard
+      navigate("/dashboardSite");
+
+    } catch (err) {
+      console.error("Login error:", err);
+      setLoginError("Connection error. Please try again.");
+    }
   };
 
+  // Load saved settings
   useEffect(() => {
     const savedLang = localStorage.getItem("preferredLanguage");
     if (savedLang && languages[savedLang as keyof typeof languages]) {
@@ -215,7 +234,7 @@ const LoginSite: React.FC = () => {
         </div>
       </header>
 
-      {/* Main content - Log in form */}
+      {/* Main content - Login form */}
       <main className="flex-grow p-8 flex flex-col items-center justify-center">
         <h2
           className={`text-2xl font-bold mb-4 ${
@@ -227,8 +246,8 @@ const LoginSite: React.FC = () => {
 
         <form
           onSubmit={handleLogin}
-          className={`max-w-md w-full flex flex-col gap-4 bg-gray-200 p-6 rounded-lg shadow-md ${
-            isDarkMode ? "bg-gray-700 text-white" : ""
+          className={`max-w-md w-full flex flex-col gap-4 p-6 rounded-lg shadow-md ${
+            isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
           }`}
         >
           {loginError && (
@@ -241,7 +260,7 @@ const LoginSite: React.FC = () => {
             value={login}
             onChange={(e) => setLogin(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-700 text-white" : "bg-white"
+              isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
             }`}
             required
           />
@@ -252,7 +271,7 @@ const LoginSite: React.FC = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-700 text-white" : "bg-white"
+              isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
             }`}
             required
           />
@@ -263,23 +282,24 @@ const LoginSite: React.FC = () => {
               isDarkMode
                 ? "bg-yellow-500 hover:bg-yellow-600 text-black"
                 : "bg-green-600 hover:bg-green-700 text-white"
-            }`}
+            } transition-colors`}
           >
             {t.loginButton}
           </button>
-
         </form>
 
-        {/* Link do rejestracji */}
+        {/* Register link */}
         <div className="mt-4 text-center">
           <span className={`${isDarkMode ? "text-gray-300" : "text-gray-700"} mr-2`}>
             {t.registerLink}
           </span>
           <Link
             to="/RegisterSite"
-            className={`font-medium ${
-              isDarkMode ? "text-yellow-400 hover:text-yellow-300" : "text-green-600 hover:text-green-800"
-            } underline transition-colors`}
+            className={`font-medium underline ${
+              isDarkMode
+                ? "text-yellow-400 hover:text-yellow-300"
+                : "text-green-600 hover:text-green-800"
+            }`}
           >
             {t.registerNow || "Register"}
           </Link>

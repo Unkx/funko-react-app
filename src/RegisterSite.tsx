@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react"; // Added useRef here
 import { Link, useNavigate } from "react-router-dom";
 import LanguageSelectorPopup from "./LanguageSelectorPopup";
-import { translations } from "./Translations/TranslationsLogIn";
+import { translations } from "./Translations/TranslationsLogIn"; // Assuming translations are also for Register
 
 // Icons
 import MoonIcon from "/src/assets/moon.svg?react";
@@ -28,7 +28,12 @@ const languages = {
 };
 
 const RegisterSite: React.FC = () => {
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  // Load theme from localStorage using "preferredTheme"
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem("preferredTheme");
+    return savedTheme !== null ? savedTheme === "dark" : true;
+  });
+
   const [searchQuery, setSearchQuery] = useState("");
   const [language, setLanguage] = useState("EN");
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -36,17 +41,43 @@ const RegisterSite: React.FC = () => {
   const navigate = useNavigate();
   const t = translations[language] || translations["EN"];
 
-  // Funkcja do zmiany języka
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Registration form state
+  const [email, setEmail] = useState("");
+  const [login, setLogin] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [gender, setGender] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [registerError, setRegisterError] = useState("");
+
+  // Save theme preference and apply globally
+  useEffect(() => {
+    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
+
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDarkMode]);
+
+  // Function to change language
   const selectLanguage = (lang: string) => {
     setLanguage(lang);
     localStorage.setItem("preferredLanguage", lang);
     setShowLanguageDropdown(false);
   };
 
-  // Funkcja do przełączania trybu ciemnego/jasnego
+  // Function to toggle dark/light mode
   const toggleTheme = () => setIsDarkMode((prev) => !prev);
 
-  // Obsługa wyszukiwania
+  // Function to open/close language menu
+  const toggleLanguageDropdown = () => setShowLanguageDropdown((prev) => !prev);
+
+  // Handle search submission
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -56,48 +87,46 @@ const RegisterSite: React.FC = () => {
     }
   };
 
-  // Stan formularza rejestracji
-  const [email, setEmail] = useState("");
-  const [login, setLogin] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [gender, setGender] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
-
-  const [registerError, setRegisterError] = useState("");
-
-  // Obsługa rejestracji
-const handleRegister = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  try {
-    const response = await fetch('http://localhost:5000/api/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email,
-        login,
-        password,
-        gender,
-        date_of_birth: new Date(dateOfBirth).toISOString().split('T')[0]
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Registration failed');
+  // Handle registration submission
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRegisterError(""); // Clear previous errors
+    // Basic client-side validation
+    if (!email || !login || !password || !confirmPassword || !gender || !dateOfBirth) {
+      setRegisterError(t.allFieldsRequired || "All fields are required.");
+      return;
     }
-    navigate("/dashboardSite");
-  } catch (error) {
-    console.error('Registration error:', error);
-    setRegisterError(error.message || 'Failed to connect to server');
-  }
+    if (password !== confirmPassword) {
+      setRegisterError(t.passwordsDoNotMatch || "Passwords do not match.");
+      return;
+    }
 
-};
+    try {
+      const response = await fetch('http://localhost:5000/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          login,
+          password,
+          gender,
+          date_of_birth: new Date(dateOfBirth).toISOString().split('T')[0]
+        }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Registration failed');
+      }
+      navigate("/LoginSite");
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      setRegisterError(error.message || 'Failed to connect to server. Please try again.');
+    }
+  };
 
-  // Efekt montujący język
+  // Combined useEffect for initial setup and click outside logic
   useEffect(() => {
     const savedLang = localStorage.getItem("preferredLanguage");
     if (savedLang && languages[savedLang as keyof typeof languages]) {
@@ -109,7 +138,23 @@ const handleRegister = async (e: React.FormEvent) => {
       setShouldShowPopup(true);
       localStorage.setItem("hasSeenLanguagePopup", "true");
     }
-  }, []);
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        showLanguageDropdown &&
+        dropdownRef.current &&
+        buttonRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setShowLanguageDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showLanguageDropdown]);
 
   return (
     <div
@@ -143,7 +188,7 @@ const handleRegister = async (e: React.FormEvent) => {
         >
           <input
             type="text"
-            placeholder={t.searchPlaceholder}
+            placeholder={t.searchPlaceholder || "Search..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className={`flex-grow px-4 py-2 outline-none ${
@@ -171,8 +216,9 @@ const handleRegister = async (e: React.FormEvent) => {
           {/* Language Dropdown */}
           <div className="relative">
             <button
-              onClick={showLanguageDropdown}
-              className={`p-2 rounded-full flex items-center gap-1 ${
+              ref={buttonRef} // Assign ref to the button
+              onClick={toggleLanguageDropdown}
+              className={`language-toggle-button p-2 rounded-full flex items-center gap-1 ${
                 isDarkMode
                   ? "bg-gray-700 hover:bg-gray-600"
                   : "bg-gray-200 hover:bg-gray-300"
@@ -191,10 +237,10 @@ const handleRegister = async (e: React.FormEvent) => {
 
             {showLanguageDropdown && (
               <div
+                ref={dropdownRef} // Assign ref to the dropdown div
                 className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
                   isDarkMode ? "bg-gray-700" : "bg-white"
                 }`}
-                onClick={(e) => e.stopPropagation()}
               >
                 {Object.entries(languages).map(([code, { name, flag }]) => (
                   <button
@@ -250,7 +296,7 @@ const handleRegister = async (e: React.FormEvent) => {
           }`}
         >
           {registerError && (
-            <p className="text-red-500 mb-2">{registerError}</p>
+            <p className="text-red-500 mb-2 text-center">{registerError}</p>
           )}
 
           <input
@@ -265,8 +311,8 @@ const handleRegister = async (e: React.FormEvent) => {
           />
 
           <input
-            type="login"
-            placeholder={t.login || "Log In"}
+            type="text" // Changed to text for login, as 'login' is not a standard HTML input type
+            placeholder={t.login || "Username"}
             value={login}
             onChange={(e) => setLogin(e.target.value)}
             className={`px-4 py-2 rounded ${
@@ -362,7 +408,7 @@ const handleRegister = async (e: React.FormEvent) => {
           isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-200 text-gray-700"
         }`}
       >
-        {t.copyright}
+        {t.copyright || "© 2025 Pop&Go! All rights reserved."}
       </footer>
     </div>
   );

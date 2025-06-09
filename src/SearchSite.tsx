@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react"; // Import useMemo
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { translations } from "./Translations/TranslationsSearchSite";
 
@@ -18,39 +18,48 @@ import GermanyFlag from "/src/assets/flags/germany.svg?react";
 import SpainFlag from "/src/assets/flags/spain.svg?react";
 
 const SearchSite = () => {
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem("preferredTheme");
+    return savedTheme ? savedTheme === "dark" : true;
+  });
   const [searchQuery, setSearchQuery] = useState("");
-  const [language, setLanguage] = useState("EN");
+  const [language, setLanguage] = useState(() => {
+    return localStorage.getItem("preferredLanguage") || "EN";
+  });
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [funkoData, setFunkoData] = useState([]);
-  const [results, setResults] = useState([]);
+  const [filteredAndSortedResults, setFilteredAndSortedResults] = useState([]); // Renamed 'results'
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-
-  // Filtry
   const [categoryFilter, setCategoryFilter] = useState("");
   const [showExclusiveOnly, setShowExclusiveOnly] = useState(false);
   const [sortOption, setSortOption] = useState("titleAsc");
 
   const navigate = useNavigate();
   const location = useLocation();
+  const dropdownRef = useRef(null);
+  const buttonRef = useRef(null);
 
-  // Get query parameter from URL
   const queryParams = new URLSearchParams(location.search);
   const queryParam = queryParams.get("q") || "";
 
-  // Obliczenia paginacji
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = results.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(results.length / itemsPerPage);
+  // Calculate totalPages based on the *filtered and sorted* results
+  const totalPages = Math.ceil(filteredAndSortedResults.length / itemsPerPage);
 
-  // Zbierz unikalne serie
-  const availableSeries = [...new Set(funkoData.flatMap((item) => item.series))];
+  // Derive currentItems using useMemo to optimize and recalculate only when dependencies change
+  const currentItems = useMemo(() => {
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    return filteredAndSortedResults.slice(indexOfFirstItem, indexOfLastItem);
+  }, [currentPage, itemsPerPage, filteredAndSortedResults]); // Dependencies
 
-    const languages = {
+  const availableSeries = useMemo(() => {
+    return [...new Set(funkoData.flatMap((item: any) => item.series))];
+  }, [funkoData]);
+
+  const languages = {
     EN: { name: "English", flag: <UKFlag className="w-5 h-5" /> },
     PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
     RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
@@ -59,7 +68,7 @@ const SearchSite = () => {
     DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
   };
 
-  // Pobieranie danych
+  // Fetch data
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -79,87 +88,121 @@ const SearchSite = () => {
     };
     fetchData();
   }, []);
- 
-  // Initialize search query from URL when component mounts
+
+  useEffect(() => {
+  localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
+  if (isDarkMode) {
+    document.documentElement.classList.add("dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+  }
+}, [isDarkMode]);
+
+  // Initialize search query from URL
   useEffect(() => {
     if (queryParam) {
       setSearchQuery(queryParam);
     }
   }, [queryParam]);
 
-  // Wyszukiwanie + filtry + sortowanie
+  // Close language dropdown when clicking outside
   useEffect(() => {
-    if (queryParam && funkoData.length > 0) {
-      let filteredResults = funkoData.filter((item) =>
-        item.title.toLowerCase().includes(queryParam.toLowerCase())
-      );
-
-      // Filtr po serii
-      if (categoryFilter) {
-        filteredResults = filteredResults.filter((item) =>
-          item.series.includes(categoryFilter)
-        );
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        showLanguageDropdown &&
+        dropdownRef.current &&
+        buttonRef.current &&
+        !(dropdownRef.current as Node).contains(event.target as Node) &&
+        !(buttonRef.current as Node).contains(event.target as Node)
+      ) {
+        setShowLanguageDropdown(false);
       }
+    };
 
-      // Filtr po exclusive
-      if (showExclusiveOnly) {
-        filteredResults = filteredResults.filter((item) => item.exclusive === true);
-      }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showLanguageDropdown]);
 
-      // Sortowanie
-      switch (sortOption) {
-        case "titleDesc":
-          filteredResults.sort((a, b) => b.title.localeCompare(a.title));
-          break;
-        case "numberAsc":
-          filteredResults.sort((a, b) => a.number - b.number);
-          break;
-        case "numberDesc":
-          filteredResults.sort((a, b) => b.number - a.number);
-          break;
-        case "titleAsc":
-        default:
-          filteredResults.sort((a, b) => a.title.localeCompare(b.title));
-          break;
-      }
-
-      setResults(filteredResults);
-      setCurrentPage(1);
-    } else {
-      setResults([]);
+  // Effect for filtering and sorting the main data.
+  // This state (`filteredAndSortedResults`) should hold ALL results
+  // after filters and sorting, but BEFORE pagination slicing.
+  useEffect(() => {
+    if (funkoData.length === 0) {
+      setFilteredAndSortedResults([]);
+      return;
     }
+
+    let currentProcessedResults = funkoData.filter((item: any) =>
+      item.title.toLowerCase().includes(queryParam.toLowerCase())
+    );
+
+    if (categoryFilter) {
+      currentProcessedResults = currentProcessedResults.filter((item: any) =>
+        item.series.includes(categoryFilter)
+      );
+    }
+
+    if (showExclusiveOnly) {
+      currentProcessedResults = currentProcessedResults.filter(
+        (item: any) => item.exclusive === true
+      );
+    }
+
+    switch (sortOption) {
+      case "titleDesc":
+        currentProcessedResults.sort((a: any, b: any) => b.title.localeCompare(a.title));
+        break;
+      case "numberAsc":
+        currentProcessedResults.sort((a: any, b: any) => (a.number || 0) - (b.number || 0));
+        break;
+      case "numberDesc":
+        currentProcessedResults.sort((a: any, b: any) => (b.number || 0) - (a.number || 0));
+        break;
+      case "titleAsc":
+      default:
+        currentProcessedResults.sort((a: any, b: any) => a.title.localeCompare(b.title));
+        break;
+    }
+
+    setFilteredAndSortedResults(currentProcessedResults);
+    setCurrentPage(1); // Reset to first page when filters/sort/search change
   }, [queryParam, categoryFilter, showExclusiveOnly, sortOption, funkoData]);
 
-  // Obsługa języka
-  const selectLanguage = (lang) => {
+
+  // Save language preference
+  useEffect(() => {
+    localStorage.setItem("preferredLanguage", language);
+  }, [language]);
+
+  // Save theme preference and apply class to document.documentElement
+  useEffect(() => {
+    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDarkMode]);
+
+  const t = translations[language] || translations["EN"];
+
+  const selectLanguage = (lang: string) => {
     setLanguage(lang);
-    localStorage.setItem("preferredLanguage", lang);
     setShowLanguageDropdown(false);
   };
-  const t = translations[language] || translations["EN"];
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem("preferredLanguage");
-    if (savedLanguage) setLanguage(savedLanguage);
-    
-    // Check for saved theme preference
-    const savedTheme = localStorage.getItem("preferredTheme");
-    if (savedTheme) setIsDarkMode(savedTheme === "dark");
-  }, []);
 
   const toggleTheme = () => {
-    const newMode = !isDarkMode;
-    setIsDarkMode(newMode);
-    localStorage.setItem("preferredTheme", newMode ? "dark" : "light");
+    setIsDarkMode(!isDarkMode);
   };
 
   const toggleLanguageDropdown = () => setShowLanguageDropdown((prev) => !prev);
 
-  const handleSearch = (e) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/searchsite?q=${encodeURIComponent(searchQuery.trim())}`);
     } else {
-      navigate("/searchsite");
+      navigate("/searchsite"); // Clear search query from URL
     }
   };
 
@@ -177,23 +220,24 @@ const SearchSite = () => {
     }
   };
 
-  const goToPage = (pageNumber) => {
+  const goToPage = (pageNumber: number | string) => {
     if (pageNumber !== "...") {
-      setCurrentPage(pageNumber);
+      setCurrentPage(Number(pageNumber));
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
-  // Paginacja
   const getDisplayedPages = () => {
     const totalDisplayedPages = 5;
     const halfDisplay = Math.floor(totalDisplayedPages / 2);
     let startPage = Math.max(currentPage - halfDisplay, 1);
     let endPage = Math.min(startPage + totalDisplayedPages - 1, totalPages);
+
     if (endPage - startPage + 1 < totalDisplayedPages) {
       startPage = Math.max(endPage - totalDisplayedPages + 1, 1);
     }
-    const pages = [];
+
+    const pages: (number | string)[] = [];
 
     if (startPage > 1) {
       pages.push(1);
@@ -269,6 +313,7 @@ const SearchSite = () => {
           {/* Language Dropdown */}
           <div className="relative">
             <button
+              ref={buttonRef}
               onClick={toggleLanguageDropdown}
               className={`p-2 rounded-full flex items-center gap-1 ${
                 isDarkMode
@@ -289,6 +334,7 @@ const SearchSite = () => {
 
             {showLanguageDropdown && (
               <div
+                ref={dropdownRef}
                 className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
                   isDarkMode ? "bg-gray-700" : "bg-white"
                 }`}
@@ -326,7 +372,11 @@ const SearchSite = () => {
             }`}
             aria-label="Toggle theme"
           >
-            {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
+            {isDarkMode ? (
+              <SunIcon className="w-6 h-6" />
+            ) : (
+              <MoonIcon className="w-6 h-6" />
+            )}
           </button>
         </div>
 
@@ -345,7 +395,7 @@ const SearchSite = () => {
         </div>
       </header>
 
-      {/* Filtry */}
+      {/* Filters */}
       <div className="p-4 flex flex-wrap gap-4 justify-center">
         <select
           value={categoryFilter}
@@ -382,7 +432,7 @@ const SearchSite = () => {
         </select>
       </div>
 
-      {/* Główna zawartość */}
+      {/* Main Content */}
       <main className="flex-grow p-8 flex flex-col items-center justify-center">
         {error ? (
           <p className="text-red-500">{error}</p>
@@ -390,15 +440,17 @@ const SearchSite = () => {
           <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-yellow-500"></div>
         ) : (
           <>
-            <h2 className="text-2xl font-bold mb-4">
-              {t.searchingResults}
-              <span className="text-yellow-400"> {queryParam}</span>
-            </h2>
+            {queryParam && (
+              <h2 className="text-2xl font-bold mb-4">
+                {t.searchingResults}
+                <span className="text-yellow-400"> {queryParam}</span>
+              </h2>
+            )}
 
-            {results.length > 0 ? (
+            {filteredAndSortedResults.length > 0 ? ( // Use filteredAndSortedResults for total count
               <>
                 <ul className="w-full max-w-4xl space-y-4">
-                  {currentItems.map((item, index) => (
+                  {currentItems.map((item: any, index: number) => (
                     <li
                       key={index}
                       className={`px-6 py-4 rounded-lg flex gap-4 ${
@@ -411,8 +463,8 @@ const SearchSite = () => {
                           alt={item.title}
                           className="w-24 h-24 object-contain rounded-md"
                           onError={(e) => {
-                            e.target.src = "/src/assets/placeholder.png";
-                            e.target.onerror = null;
+                            e.currentTarget.src = "/src/assets/placeholder.png";
+                            e.currentTarget.onerror = null;
                           }}
                         />
                       </div>
@@ -438,7 +490,7 @@ const SearchSite = () => {
                   ))}
                 </ul>
 
-                {/* Paginacja */}
+                {/* Pagination */}
                 <div className="flex flex-col items-center gap-4 mt-8">
                   <div className="flex items-center gap-2">
                     <label htmlFor="itemsPerPage">{t.itemsPerPage}</label>
@@ -447,7 +499,7 @@ const SearchSite = () => {
                       value={itemsPerPage}
                       onChange={(e) => {
                         setItemsPerPage(Number(e.target.value));
-                        setCurrentPage(1);
+                        setCurrentPage(1); // Reset to first page when items per page changes
                       }}
                       className={`px-2 py-1 rounded ${isDarkMode ? "bg-gray-700" : "bg-gray-200"}`}
                     >
@@ -472,7 +524,7 @@ const SearchSite = () => {
                     >
                       &lt;
                     </button>
-                    {getDisplayedPages().map((page, index) => (
+                    {getDisplayedPages().map((page, index) =>
                       page === "..." ? (
                         <span key={index} className="px-2">
                           ...
@@ -494,7 +546,7 @@ const SearchSite = () => {
                           {page}
                         </button>
                       )
-                    ))}
+                    )}
                     <button
                       onClick={nextPage}
                       disabled={currentPage === totalPages}
@@ -511,8 +563,7 @@ const SearchSite = () => {
                   </div>
 
                   <div className="text-sm">
-                    {t.page} {currentPage} {t.of}{" "}
-                    {totalPages}
+                    {t.page} {currentPage} {t.of} {totalPages}
                   </div>
                 </div>
               </>
@@ -523,7 +574,7 @@ const SearchSite = () => {
         )}
       </main>
 
-      {/* Stopka */}
+      {/* Footer */}
       <footer
         className={`text-center py-4 ${
           isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-200 text-gray-700"

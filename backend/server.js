@@ -2,7 +2,7 @@ import express from 'express';
 import { Pool } from 'pg';
 import cors from 'cors';
 import bcrypt from 'bcrypt';
-
+//node server.js
 const app = express();
 app.use(cors());
 app.use(express.json());

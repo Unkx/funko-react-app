@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import LanguageSelectorPopup from "./LanguageSelectorPopup";
 import { translations } from "./Translations/TranslationsLogIn";
@@ -28,18 +28,36 @@ const languages = {
 };
 
 const LoginSite: React.FC = () => {
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  // Load theme from localStorage using "preferredTheme"
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem("preferredTheme");
+    return savedTheme !== null ? savedTheme === "dark" : true;
+  });
+
   const [searchQuery, setSearchQuery] = useState("");
   const [language, setLanguage] = useState("EN");
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [shouldShowPopup, setShouldShowPopup] = useState(false);
   const navigate = useNavigate();
   const t = translations[language] || translations["EN"];
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Form state
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+
+  // Save theme preference and apply globally
+  useEffect(() => {
+    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
+
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDarkMode]);
 
   // Toggle functions
   const selectLanguage = (lang: string) => {
@@ -49,6 +67,7 @@ const LoginSite: React.FC = () => {
   };
 
   const toggleTheme = () => setIsDarkMode((prev) => !prev);
+
   const toggleLanguageDropdown = () =>
     setShowLanguageDropdown((prev) => !prev);
 
@@ -64,12 +83,10 @@ const LoginSite: React.FC = () => {
   // Handle login submission
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!login || !password) {
-      setLoginError(t.goToLoginSite);
+      setLoginError(t.emptyFieldsError || "Please enter your login and password.");
       return;
     }
-
     try {
       const response = await fetch('http://localhost:5000/api/login', {
         method: 'POST',
@@ -78,27 +95,20 @@ const LoginSite: React.FC = () => {
         },
         body: JSON.stringify({ login, password }),
       });
-
       const data = await response.json();
-
       if (!response.ok) {
         setLoginError(data.error || 'Login failed');
         return;
       }
-
-      // Save user in localStorage
       localStorage.setItem("user", JSON.stringify(data.user));
-
-      // Redirect to dashboard
       navigate("/dashboardSite");
-
     } catch (err) {
       console.error("Login error:", err);
       setLoginError("Connection error. Please try again.");
     }
   };
 
-  // Load saved settings
+  // Load saved settings and handle click outside for language dropdown
   useEffect(() => {
     const savedLang = localStorage.getItem("preferredLanguage");
     if (savedLang && languages[savedLang as keyof typeof languages]) {
@@ -110,8 +120,24 @@ const LoginSite: React.FC = () => {
       setShouldShowPopup(true);
       localStorage.setItem("hasSeenLanguagePopup", "true");
     }
-  }, []);
 
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        showLanguageDropdown &&
+        dropdownRef.current &&
+        buttonRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setShowLanguageDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showLanguageDropdown]);
+  
   return (
     <div
       className={`welcome-site min-h-screen flex flex-col ${
@@ -130,7 +156,7 @@ const LoginSite: React.FC = () => {
               Pop&Go!
             </h1>
           </Link>
-          {shouldShowPopup && (
+          {shouldShowPopup && ( // Conditionally render the popup
             <LanguageSelectorPopup onClose={() => setShouldShowPopup(false)} />
           )}
         </div>
@@ -172,8 +198,9 @@ const LoginSite: React.FC = () => {
           {/* Language Dropdown */}
           <div className="relative">
             <button
+              ref={buttonRef}
               onClick={toggleLanguageDropdown}
-              className={`p-2 rounded-full flex items-center gap-1 ${
+              className={`language-toggle-button p-2 rounded-full flex items-center gap-1 ${
                 isDarkMode
                   ? "bg-gray-700 hover:bg-gray-600"
                   : "bg-gray-200 hover:bg-gray-300"
@@ -192,10 +219,10 @@ const LoginSite: React.FC = () => {
 
             {showLanguageDropdown && (
               <div
+                ref={dropdownRef} // Assign ref to the dropdown div
                 className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
                   isDarkMode ? "bg-gray-700" : "bg-white"
                 }`}
-                onClick={(e) => e.stopPropagation()}
               >
                 {Object.entries(languages).map(([code, { name, flag }]) => (
                   <button

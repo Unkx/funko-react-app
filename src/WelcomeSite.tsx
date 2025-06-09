@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import LanguageSelectorPopup from "./LanguageSelectorPopup";
 import { translations } from "./Translations/TranslationsWelcomeSite";
@@ -29,26 +29,77 @@ const languages = {
 };
 
 const WelcomeSite: React.FC = () => {
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  // Initialize isDarkMode based on localStorage, default to true (dark mode) if not found
+const [isDarkMode, setIsDarkMode] = useState(() => {
+  const savedTheme = localStorage.getItem("preferredTheme");
+  return savedTheme !== null ? savedTheme === "dark" : true;
+});
+useEffect(() => {
+  localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
+}, [isDarkMode]);
   const [searchQuery, setSearchQuery] = useState("");
   const [language, setLanguage] = useState("EN");
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [shouldShowPopup, setShouldShowPopup] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
   const t = translations[language] || translations["EN"];
+  
+ useEffect(() => {
+  localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
+  if (isDarkMode) {
+    document.documentElement.classList.add("dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+  }
+}, [isDarkMode]);
+  // Refs for click outside detection
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    // Load preferred language
     const savedLang = localStorage.getItem("preferredLanguage");
     if (savedLang && languages[savedLang as keyof typeof languages]) {
       setLanguage(savedLang);
     }
 
+    // Check if language popup should be shown
     const hasSeenPopup = localStorage.getItem("hasSeenLanguagePopup");
     if (!hasSeenPopup) {
       setShouldShowPopup(true);
       localStorage.setItem("hasSeenLanguagePopup", "true");
     }
+
+    // Check authentication status
+    const token = localStorage.getItem("authToken");
+    setIsLoggedIn(!!token);
   }, []);
+
+  // Effect to save theme preference to localStorage whenever isDarkMode changes
+  useEffect(() => {
+    localStorage.setItem("theme", JSON.stringify(isDarkMode));
+  }, [isDarkMode]);
+
+  // Handle clicks outside language dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        showLanguageDropdown &&
+        dropdownRef.current &&
+        buttonRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setShowLanguageDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showLanguageDropdown]);
 
   const selectLanguage = (lang: string) => {
     setLanguage(lang);
@@ -57,8 +108,7 @@ const WelcomeSite: React.FC = () => {
   };
 
   const toggleTheme = () => setIsDarkMode((prev) => !prev);
-  const toggleLanguageDropdown = () =>
-    setShowLanguageDropdown((prev) => !prev);
+  const toggleLanguageDropdown = () => setShowLanguageDropdown((prev) => !prev);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,8 +179,9 @@ const WelcomeSite: React.FC = () => {
           {/* Language Dropdown */}
           <div className="relative">
             <button
+              ref={buttonRef}
               onClick={toggleLanguageDropdown}
-              className={`p-2 rounded-full flex items-center gap-1 ${
+              className={`language-toggle-button p-2 rounded-full flex items-center gap-1 ${
                 isDarkMode
                   ? "bg-gray-700 hover:bg-gray-600"
                   : "bg-gray-200 hover:bg-gray-300"
@@ -149,10 +200,14 @@ const WelcomeSite: React.FC = () => {
 
             {showLanguageDropdown && (
               <div
-                className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
+                ref={dropdownRef}
+                className={`language-dropdown-container absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
                   isDarkMode ? "bg-gray-700" : "bg-white"
                 }`}
                 onClick={(e) => e.stopPropagation()}
+                role="menu"
+                aria-orientation="vertical"
+                aria-labelledby="language-button"
               >
                 {Object.entries(languages).map(([code, { name, flag }]) => (
                   <button
@@ -167,6 +222,7 @@ const WelcomeSite: React.FC = () => {
                         ? "hover:bg-gray-600"
                         : "hover:bg-gray-200"
                     }`}
+                    role="menuitem"
                   >
                     <span className="w-5 h-5">{flag}</span>
                     <span>{name}</span>
@@ -186,22 +242,39 @@ const WelcomeSite: React.FC = () => {
             }`}
             aria-label="Toggle theme"
           >
-            {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
+            {isDarkMode ? (
+              <SunIcon className="w-6 h-6" />
+            ) : (
+              <MoonIcon className="w-6 h-6" />
+            )}
           </button>
         </div>
 
-        {/* Login Button */}
+        {/* Login/Dashboard Button */}
         <div>
-          <Link
-            to="/loginSite"
-            className={`px-4 py-2 rounded ${
-              isDarkMode
-                ? "bg-yellow-500 text-black hover:bg-yellow-600"
-                : "bg-green-600 text-white hover:bg-green-700"
-            }`}
-          >
-            {translations[language].goToLoginSite || "Log In"}
-          </Link>
+          {isLoggedIn ? (
+            <Link
+              to="/dashboard"
+              className={`px-4 py-2 rounded ${
+                isDarkMode
+                  ? "bg-yellow-500 text-black hover:bg-yellow-600"
+                  : "bg-green-600 text-white hover:bg-green-700"
+              }`}
+            >
+              {translations[language].goToDashboard || "Dashboard"}
+            </Link>
+          ) : (
+            <Link
+              to="/loginSite"
+              className={`px-4 py-2 rounded ${
+                isDarkMode
+                  ? "bg-yellow-500 text-black hover:bg-yellow-600"
+                  : "bg-green-600 text-white hover:bg-green-700"
+              }`}
+            >
+              {translations[language].goToLoginSite || "Log In"}
+            </Link>
+          )}
         </div>
       </header>
 

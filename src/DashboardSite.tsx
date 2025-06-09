@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import LanguageSelectorPopup from "./LanguageSelectorPopup";
 import { translations } from "./Translations/TranslationsLogIn";
@@ -28,23 +28,42 @@ const languages = {
 };
 
 const DashboardSite: React.FC = () => {
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  // Load theme from localStorage using "preferredTheme"
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem("preferredTheme");
+    return savedTheme !== null ? savedTheme === "dark" : true;
+  });
+
   const [searchQuery, setSearchQuery] = useState("");
   const [language, setLanguage] = useState("EN");
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [shouldShowPopup, setShouldShowPopup] = useState(false);
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
 
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
+
   const t = translations[language] || translations["EN"];
 
-  // Load user data from localStorage or API
+  // Apply theme to document and save to localStorage
+  useEffect(() => {
+    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
+
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDarkMode]);
+
+  // Load user data, preferred language, popup settings
   useEffect(() => {
     const userData = localStorage.getItem("user");
     if (userData) {
       setUser(JSON.parse(userData));
     } else {
-      navigate("/LoginSite"); // Redirect to login if not authenticated
+      navigate("/LoginSite"); // Redirect if not logged in
     }
 
     const savedLang = localStorage.getItem("preferredLanguage");
@@ -57,22 +76,40 @@ const DashboardSite: React.FC = () => {
       setShouldShowPopup(true);
       localStorage.setItem("hasSeenLanguagePopup", "true");
     }
-  }, []);
 
-  // Funkcja do zmiany języka
+    // Click outside handler for language dropdown
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        showLanguageDropdown &&
+        dropdownRef.current &&
+        buttonRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setShowLanguageDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
+  }, [showLanguageDropdown, navigate]);
+
+  // Change language
   const selectLanguage = (lang: string) => {
     setLanguage(lang);
     localStorage.setItem("preferredLanguage", lang);
     setShowLanguageDropdown(false);
   };
 
-  // Funkcja do przełączania trybu ciemnego/jasnego
+  // Toggle theme
   const toggleTheme = () => setIsDarkMode((prev) => !prev);
 
-  // Funkcja do otwierania/zamykania menu języków
-  const toggleLanguageDropdown = () => setShowLanguageDropdown((prev) => !prev);
+  // Toggle language dropdown
+  const toggleLanguageDropdown = () =>
+    setShowLanguageDropdown((prev) => !prev);
 
-  // Obsługa wyszukiwania
+  // Handle search submission
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -82,6 +119,7 @@ const DashboardSite: React.FC = () => {
     }
   };
 
+  // Logout
   const handleLogout = () => {
     localStorage.removeItem("user");
     setUser(null);
@@ -148,8 +186,9 @@ const DashboardSite: React.FC = () => {
           {/* Language Dropdown */}
           <div className="relative">
             <button
+              ref={buttonRef}
               onClick={toggleLanguageDropdown}
-              className={`p-2 rounded-full flex items-center gap-1 ${
+              className={`language-toggle-button p-2 rounded-full flex items-center gap-1 ${
                 isDarkMode
                   ? "bg-gray-700 hover:bg-gray-600"
                   : "bg-gray-200 hover:bg-gray-300"
@@ -167,10 +206,10 @@ const DashboardSite: React.FC = () => {
             </button>
             {showLanguageDropdown && (
               <div
+                ref={dropdownRef}
                 className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
                   isDarkMode ? "bg-gray-700" : "bg-white"
                 }`}
-                onClick={(e) => e.stopPropagation()}
               >
                 {Object.entries(languages).map(([code, { name, flag }]) => (
                   <button
@@ -218,7 +257,6 @@ const DashboardSite: React.FC = () => {
         >
           {t.dashboardWelcome} {user?.name || ""}
         </h2>
-
         <div
           className={`max-w-2xl w-full bg-opacity-50 p-6 rounded-lg shadow-lg ${
             isDarkMode ? "bg-gray-700" : "bg-white"
@@ -233,7 +271,6 @@ const DashboardSite: React.FC = () => {
               <strong>Email:</strong> {user?.email || "N/A"}
             </li>
           </ul>
-
           <div className="mt-6">
             <button
               onClick={handleLogout}

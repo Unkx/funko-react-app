@@ -264,16 +264,18 @@ useEffect(() => {
               {translations[language].goToDashboard || "Dashboard"}
             </Link>
           ) : (
-            <Link
-              to="/loginSite"
-              className={`px-4 py-2 rounded ${
-                isDarkMode
-                  ? "bg-yellow-500 text-black hover:bg-yellow-600"
-                  : "bg-green-600 text-white hover:bg-green-700"
-              }`}
-            >
-              {translations[language].goToLoginSite || "Log In"}
-            </Link>
+          <Link
+            to={localStorage.getItem("user") ? "/dashboardSite" : "/loginSite"}
+            className={`px-4 py-2 rounded ${
+              isDarkMode
+                ? "bg-yellow-500 text-black hover:bg-yellow-600"
+                : "bg-green-600 text-white hover:bg-green-700"
+            }`}
+          >
+            {localStorage.getItem("user")
+              ? translations[language].goToDashboard || "Dashboard"
+              : translations[language].goToLoginSite || "Log In"}
+          </Link>
           )}
         </div>
       </header>

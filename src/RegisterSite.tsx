@@ -389,16 +389,18 @@ const RegisterSite: React.FC = () => {
           <span className={`${isDarkMode ? "text-gray-300" : "text-gray-700"} mr-2`}>
             {t.alreadyHaveAccount || "Already have an account?"}
           </span>
-          <Link
-            to="/loginsite"
-            className={`font-medium ${
-              isDarkMode
-                ? "text-yellow-400 hover:text-yellow-300"
-                : "text-green-600 hover:text-green-800"
-            } underline transition-colors`}
-          >
-            {t.loginNow || "Log In"}
-          </Link>
+        <Link
+          to={localStorage.getItem("user") ? "/dashboardSite" : "/loginSite"}
+          className={`px-4 py-2 rounded ${
+            isDarkMode
+              ? "bg-yellow-500 text-black hover:bg-yellow-600"
+              : "bg-green-600 text-white hover:bg-green-700"
+          }`}
+        >
+          {localStorage.getItem("user")
+            ? translations[language].goToDashboard || "Dashboard"
+            : translations[language].goToLoginSite || "Log In"}
+        </Link>
         </div>
       </main>
 

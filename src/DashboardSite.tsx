@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import LanguageSelectorPopup from "./LanguageSelectorPopup";
-import { translations } from "./Translations/TranslationsLogIn";
+import { translations } from "./Translations/TranslationsDashboard";
 
 // Icons
 import MoonIcon from "/src/assets/moon.svg?react";
@@ -34,11 +34,13 @@ const DashboardSite: React.FC = () => {
     return savedTheme !== null ? savedTheme === "dark" : true;
   });
 
+  const [name, setName] = useState("");
+
   const [searchQuery, setSearchQuery] = useState("");
   const [language, setLanguage] = useState("EN");
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [shouldShowPopup, setShouldShowPopup] = useState(false);
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; surname:string; email: string } | null>(null);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -250,25 +252,30 @@ const DashboardSite: React.FC = () => {
 
       {/* Main content - Dashboard */}
       <main className="flex-grow p-8 flex flex-col items-center">
+        <h3 className="text-xl font-semibold mb-4">{t.welcome} {user?.name || ""}</h3>
         <h2
           className={`text-3xl font-bold mb-6 ${
             isDarkMode ? "text-yellow-400" : "text-green-600"
           }`}
         >
-          {t.dashboardWelcome} {user?.name || ""}
+          {t.dashboardWelcome} 
         </h2>
+
         <div
           className={`max-w-2xl w-full bg-opacity-50 p-6 rounded-lg shadow-lg ${
             isDarkMode ? "bg-gray-700" : "bg-white"
           }`}
         >
-          <h3 className="text-xl font-semibold mb-4">Your Profile</h3>
+          <h3 className="text-xl font-semibold mb-4">{t.welcome} {user?.name || ""} {user?.surname || ""}</h3>
           <ul className="space-y-2">
             <li>
-              <strong>Name:</strong> {user?.name || "N/A"}
+              <strong>{t.name}:</strong> {user?.name || "N/A"}
             </li>
             <li>
-              <strong>Email:</strong> {user?.email || "N/A"}
+              <strong>{t.surname}:</strong> {user?.surname || "N/A"}
+            </li>
+            <li>
+              <strong>{t.email}:</strong> {user?.email || "N/A"}
             </li>
           </ul>
           <div className="mt-6">
@@ -280,7 +287,7 @@ const DashboardSite: React.FC = () => {
                   : "bg-red-500 hover:bg-red-600"
               } text-white`}
             >
-              Logout
+              {t.logout}
             </button>
           </div>
         </div>

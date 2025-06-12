@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react"; // Added useRef here
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import LanguageSelectorPopup from "./LanguageSelectorPopup";
 import { translations } from "./Translations/TranslationsLogIn"; // Assuming translations are also for Register
@@ -47,6 +47,8 @@ const RegisterSite: React.FC = () => {
   // Registration form state
   const [email, setEmail] = useState("");
   const [login, setLogin] = useState("");
+  const [name, setName] = useState("");
+  const [surname, setSurname] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [gender, setGender] = useState("");
@@ -91,8 +93,18 @@ const RegisterSite: React.FC = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegisterError(""); // Clear previous errors
-    // Basic client-side validation
-    if (!email || !login || !password || !confirmPassword || !gender || !dateOfBirth) {
+
+    // Enhanced client-side validation: check for empty strings after trimming whitespace
+    if (
+      !email.trim() ||
+      !login.trim() ||
+      !name.trim() ||
+      !surname.trim() ||
+      !password.trim() ||
+      !confirmPassword.trim() ||
+      !gender.trim() ||
+      !dateOfBirth.trim()
+    ) {
       setRegisterError(t.allFieldsRequired || "All fields are required.");
       return;
     }
@@ -101,27 +113,39 @@ const RegisterSite: React.FC = () => {
       return;
     }
 
+    // Prepare the payload for the backend
+    const payload = {
+      email,
+      login,
+      name,
+      surname,
+      password,
+      gender,
+      date_of_birth: new Date(dateOfBirth).toISOString().split('T')[0] // Format for backend
+    };
+
+    console.log("Sending registration payload:", payload); // Log the payload being sent
+
     try {
       const response = await fetch('http://localhost:5000/api/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email,
-          login,
-          password,
-          gender,
-          date_of_birth: new Date(dateOfBirth).toISOString().split('T')[0]
-        }),
+        body: JSON.stringify(payload), // Send the prepared payload
       });
+
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Registration failed');
+        throw new Error(errorData.error || errorData.message || 'Registration failed');
       }
+
+      // Registration successful
+      console.log("Registration successful!");
       navigate("/LoginSite");
+
     } catch (error: any) {
-      console.error('Registration error:', error);
+      console.error('Registration error caught in frontend:', error);
       setRegisterError(error.message || 'Failed to connect to server. Please try again.');
     }
   };
@@ -301,7 +325,7 @@ const RegisterSite: React.FC = () => {
 
           <input
             type="email"
-            placeholder={t.email || "Email"}
+            placeholder={t.email ?? "Email"}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className={`px-4 py-2 rounded ${
@@ -309,10 +333,9 @@ const RegisterSite: React.FC = () => {
             }`}
             required
           />
-
           <input
-            type="text" // Changed to text for login, as 'login' is not a standard HTML input type
-            placeholder={t.login || "Username"}
+            type="text"
+            placeholder={t.login ?? "Username"}
             value={login}
             onChange={(e) => setLogin(e.target.value)}
             className={`px-4 py-2 rounded ${
@@ -320,10 +343,29 @@ const RegisterSite: React.FC = () => {
             }`}
             required
           />
-
+          <input
+            type="text"
+            placeholder={t.name ?? "First Name"}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className={`px-4 py-2 rounded ${
+              isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
+            }`}
+            required
+          />
+          <input
+            type="text"
+            placeholder={t.surname ?? "Last Name"}
+            value={surname}
+            onChange={(e) => setSurname(e.target.value)}
+            className={`px-4 py-2 rounded ${
+              isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
+            }`}
+            required
+          />
           <input
             type="password"
-            placeholder={t.password || "Password"}
+            placeholder={t.password ?? "Password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className={`px-4 py-2 rounded ${
@@ -331,10 +373,9 @@ const RegisterSite: React.FC = () => {
             }`}
             required
           />
-
           <input
             type="password"
-            placeholder={t.confirmPassword || "Confirm Password"}
+            placeholder={t.confirmPassword ?? "Confirm Password"}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             className={`px-4 py-2 rounded ${
@@ -342,7 +383,6 @@ const RegisterSite: React.FC = () => {
             }`}
             required
           />
-
           <input
             type="date"
             value={dateOfBirth}
@@ -352,7 +392,6 @@ const RegisterSite: React.FC = () => {
             }`}
             required
           />
-
           <select
             value={gender}
             onChange={(e) => setGender(e.target.value)}
@@ -362,16 +401,15 @@ const RegisterSite: React.FC = () => {
             required
           >
             <option value="" disabled>
-              {t.selectGender || "Select Gender"}
+              {t.selectGender ?? "Select Gender"}
             </option>
-            <option value="male">{t.male || "Male"}</option>
-            <option value="female">{t.female || "Female"}</option>
-            <option value="other">{t.other || "Other"}</option>
+            <option value="male">{t.male ?? "Male"}</option>
+            <option value="female">{t.female ?? "Female"}</option>
+            <option value="other">{t.other ?? "Other"}</option>
             <option value="prefer_not_to_say">
-              {t.preferNotToSay || "Prefer not to say"}
+              {t.preferNotToSay ?? "Prefer not to say"}
             </option>
           </select>
-
           <button
             type="submit"
             className={`px-4 py-2 rounded ${
@@ -380,17 +418,17 @@ const RegisterSite: React.FC = () => {
                 : "bg-green-600 hover:bg-green-700 text-white"
             } transition-colors`}
           >
-            {t.registerButton || "Register"}
+            {t.registerButton ?? "Register"}
           </button>
         </form>
 
-        {/* Zaloguj się jeśli masz konto */}
+
         <div className="mt-4 text-center">
           <span className={`${isDarkMode ? "text-gray-300" : "text-gray-700"} mr-2`}>
             {t.alreadyHaveAccount || "Already have an account?"}
           </span>
         <Link
-          to={localStorage.getItem("user") ? "/dashboardSite" : "/loginSite"}
+          to={localStorage.getItem("user") ? "/dashboardSite" : "/loginSite"} // Corrected logic here
           className={`px-4 py-2 rounded ${
             isDarkMode
               ? "bg-yellow-500 text-black hover:bg-yellow-600"

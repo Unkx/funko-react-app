@@ -122,7 +122,7 @@ useEffect(() => {
   return (
     <div
       className={`welcome-site min-h-screen flex flex-col ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
+        isDarkMode ? "bg-gray-800 text-white" : "bg-gray-500 text-black"
       }`}
     >
       {/* Header */}

@@ -9,6 +9,7 @@ import SearchSite from "./SearchSite";
 import LoginSite from "./LoginSite"
 import RegisterSite from "./RegisterSite"
 import DashboardSite from "./DashboardSite"
+import AdminSite from "./Admin"
 import NotFound from './NotFound';
 import { NetworkProvider } from './NetworkContext';
 import { LanguageProvider } from "./LanguageContext";
@@ -27,6 +28,7 @@ root.render(
             <Route path="/LoginSite" element={<LoginSite />} />
             <Route path="/RegisterSite" element={<RegisterSite />} />
             <Route path="/DashboardSite" element={<DashboardSite />} />
+            <Route path="/AdminSite" element={<AdminSite />} />
             <Route path="/404" element={<NotFound />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

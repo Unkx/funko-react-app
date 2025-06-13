@@ -38,7 +38,7 @@ app.get('/', (req, res) => {
 app.post('/api/register', async (req, res) => {
   const { email, login, name, surname, password, gender, date_of_birth } = req.body;
 
-  if (!email || !login || !name || !surname || !password || !gender || !date_of_birth) {
+  if (!email || !login || !name || !surname || !password || !gender || !date_of_birth ) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
@@ -65,7 +65,7 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// Updated Login Endpoint
+// Updated Login Endpoint 
 app.post('/api/login', async (req, res) => {
   const { login, password } = req.body;
 
@@ -74,14 +74,10 @@ app.post('/api/login', async (req, res) => {
   }
 
   try {
-    // Fetch columns using correct names (aliased for response)
+    // Fetch user with role
     const result = await pool.query(
-      `SELECT id, email, login, password_hash, 
-              name, 
-              surname, 
-              gender, date_of_birth 
-       FROM users 
-       WHERE login = $1`,
+      `SELECT id, email, login, password_hash, name, surname, gender, date_of_birth, role 
+       FROM users WHERE login = $1`,
       [login]
     );
 
@@ -91,20 +87,52 @@ app.post('/api/login', async (req, res) => {
 
     const user = result.rows[0];
     const validPassword = await bcrypt.compare(password, user.password_hash);
-    
+
     if (!validPassword) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Remove password_hash before sending response
+    // Return user data including role
     const { password_hash, ...safeUser } = user;
-    res.json({ 
-      message: 'Login successful', 
-      user: safeUser 
+    res.json({
+      message: 'Login successful',
+      user: safeUser
     });
 
   } catch (err) {
     console.error('Login error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+app.put('/api/users/:id/settings', async (req, res) => {
+  const userId = req.params.id;
+  const { preferred_language, preferred_theme } = req.body;
+
+  if (!preferred_language && !preferred_theme) {
+    return res.status(400).json({ error: 'No settings provided' });
+  }
+
+  try {
+    const query = `
+      UPDATE users
+      SET 
+        preferred_language = COALESCE($1, preferred_language),
+        preferred_theme = COALESCE($2, preferred_theme)
+      WHERE id = $3
+      RETURNING id, preferred_language, preferred_theme
+    `;
+    const values = [preferred_language, preferred_theme, userId];
+
+    const result = await pool.query(query, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Update settings error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

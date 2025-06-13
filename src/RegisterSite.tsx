@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import LanguageSelectorPopup from "./LanguageSelectorPopup";
-import { translations } from "./Translations/TranslationsLogIn"; // Assuming translations are also for Register
+import { translations } from "./Translations/TranslationRegistersite"; // Assuming translations are also for Register
+
 
 // Icons
 import MoonIcon from "/src/assets/moon.svg?react";
@@ -88,6 +89,14 @@ const RegisterSite: React.FC = () => {
       navigate("/searchsite");
     }
   };
+
+  useEffect(() => {
+  if (isDarkMode) {
+    document.documentElement.classList.add("dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+  }
+}, [isDarkMode]);
 
   // Handle registration submission
   const handleRegister = async (e: React.FormEvent) => {
@@ -183,7 +192,7 @@ const RegisterSite: React.FC = () => {
   return (
     <div
       className={`welcome-site min-h-screen flex flex-col ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
+        isDarkMode ? "bg-gray-800 text-white" : "bg-stone-300 text-black"
       }`}
     >
       {/* Header */}
@@ -391,6 +400,7 @@ const RegisterSite: React.FC = () => {
               isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
             }`}
             required
+            lang={language.toLowerCase()} // Add this line
           />
           <select
             value={gender}

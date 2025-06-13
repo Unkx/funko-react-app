@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import LanguageSelectorPopup from "./LanguageSelectorPopup";
-import { translations } from "./Translations/TranslationsWelcomeSite";
-import "./WelcomeSite.css";
+import { translations } from "./Translations/TranslationsDashboard";
 
 // Icons
 import MoonIcon from "/src/assets/moon.svg?react";
@@ -28,62 +27,59 @@ const languages = {
   ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
 };
 
-const WelcomeSite: React.FC = () => {
-  // Initialize isDarkMode based on localStorage, default to true (dark mode) if not found
-const [isDarkMode, setIsDarkMode] = useState(() => {
-  const savedTheme = localStorage.getItem("preferredTheme");
-  return savedTheme !== null ? savedTheme === "dark" : true;
-});
-useEffect(() => {
-  localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
-}, [isDarkMode]);
+const Admin: React.FC = () => {
+  // Load theme from localStorage using "preferredTheme"
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem("preferredTheme");
+    return savedTheme !== null ? savedTheme === "dark" : true;
+  });
+
+  const [name, setName] = useState("");
+
   const [searchQuery, setSearchQuery] = useState("");
   const [language, setLanguage] = useState("EN");
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [shouldShowPopup, setShouldShowPopup] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const navigate = useNavigate();
-  const t = translations[language] || translations["EN"];
-  
- useEffect(() => {
-  localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
-  if (isDarkMode) {
-    document.documentElement.classList.add("dark");
-  } else {
-    document.documentElement.classList.remove("dark");
-  }
-}, [isDarkMode]);
-  // Refs for click outside detection
+  const [user, setUser] = useState<{ name: string; surname:string; email: string } | null>(null);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const navigate = useNavigate();
 
+  const t = translations[language] || translations["EN"];
+
+  // Apply theme to document and save to localStorage
   useEffect(() => {
-    // Load preferred language
+    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
+
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDarkMode]);
+
+  // Load user data, preferred language, popup settings
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      setUser(JSON.parse(userData));
+    } else {
+      navigate("/LoginSite"); // Redirect if not logged in
+    }
+
     const savedLang = localStorage.getItem("preferredLanguage");
     if (savedLang && languages[savedLang as keyof typeof languages]) {
       setLanguage(savedLang);
     }
 
-    // Check if language popup should be shown
     const hasSeenPopup = localStorage.getItem("hasSeenLanguagePopup");
     if (!hasSeenPopup) {
       setShouldShowPopup(true);
       localStorage.setItem("hasSeenLanguagePopup", "true");
     }
 
-    // Check authentication status
-    const token = localStorage.getItem("authToken");
-    setIsLoggedIn(!!token);
-  }, []);
-
-  
-  // Effect to save theme preference to localStorage whenever isDarkMode changes
-  useEffect(() => {
-    localStorage.setItem("theme", JSON.stringify(isDarkMode));
-  }, [isDarkMode]);
-
-  // Handle clicks outside language dropdown
-  useEffect(() => {
+    // Click outside handler for language dropdown
     const handleClickOutside = (event: MouseEvent) => {
       if (
         showLanguageDropdown &&
@@ -97,20 +93,25 @@ useEffect(() => {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
+    return () =>
       document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showLanguageDropdown]);
+  }, [showLanguageDropdown, navigate]);
 
+  // Change language
   const selectLanguage = (lang: string) => {
     setLanguage(lang);
     localStorage.setItem("preferredLanguage", lang);
     setShowLanguageDropdown(false);
   };
 
+  // Toggle theme
   const toggleTheme = () => setIsDarkMode((prev) => !prev);
-  const toggleLanguageDropdown = () => setShowLanguageDropdown((prev) => !prev);
 
+  // Toggle language dropdown
+  const toggleLanguageDropdown = () =>
+    setShowLanguageDropdown((prev) => !prev);
+
+  // Handle search submission
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -120,14 +121,19 @@ useEffect(() => {
     }
   };
 
-  return (
+  // Logout
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    setUser(null);
+    navigate("/LoginSite");
+  };
 
+  return (
     <div
       className={`welcome-site min-h-screen flex flex-col ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-stone-300 text-black"
+        isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
       }`}
     >
-      
       {/* Header */}
       <header className="py-4 px-8 flex flex-wrap md:flex-nowrap justify-between items-center gap-4 relative">
         <div className="flex-shrink-0">
@@ -200,17 +206,12 @@ useEffect(() => {
                 }`}
               />
             </button>
-
             {showLanguageDropdown && (
               <div
                 ref={dropdownRef}
-                className={`language-dropdown-container absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
+                className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
                   isDarkMode ? "bg-gray-700" : "bg-white"
                 }`}
-                onClick={(e) => e.stopPropagation()}
-                role="menu"
-                aria-orientation="vertical"
-                aria-labelledby="language-button"
               >
                 {Object.entries(languages).map(([code, { name, flag }]) => (
                   <button
@@ -225,7 +226,6 @@ useEffect(() => {
                         ? "hover:bg-gray-600"
                         : "hover:bg-gray-200"
                     }`}
-                    role="menuitem"
                   >
                     <span className="w-5 h-5">{flag}</span>
                     <span>{name}</span>
@@ -245,62 +245,58 @@ useEffect(() => {
             }`}
             aria-label="Toggle theme"
           >
-            {isDarkMode ? (
-              <SunIcon className="w-6 h-6" />
-            ) : (
-              <MoonIcon className="w-6 h-6" />
-            )}
+            {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
-        </div>
-
-        {/* Login/Dashboard Button */}
-        <div>
-          {isLoggedIn ? (
-            <Link
-              to="/dashboard"
-              className={`px-4 py-2 rounded ${
-                isDarkMode
-                  ? "bg-yellow-500 text-black hover:bg-yellow-600"
-                  : "bg-green-600 text-white hover:bg-green-700"
-              }`}
-            >
-              {translations[language].goToDashboard || "Dashboard"}
-            </Link>
-          ) : (
-          <Link
-            to={localStorage.getItem("user") ? "/dashboardSite" : "/loginSite"}
-            className={`px-4 py-2 rounded ${
-              isDarkMode
-                ? "bg-yellow-500 text-black hover:bg-yellow-600"
-                : "bg-green-600 text-white hover:bg-green-700"
-            }`}
-          >
-            {localStorage.getItem("user")
-              ? translations[language].goToDashboard || "Dashboard"
-              : translations[language].goToLoginSite || "Log In"}
-          </Link>
-          )}
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="flex-grow p-8 flex flex-col items-center justify-center">
-        <Link
-          to="/searchsite"
-          className={`px-6 py-3 rounded-lg font-bold ${
-            isDarkMode
-              ? "bg-yellow-500 hover:bg-yellow-600"
-              : "bg-green-600 hover:bg-green-700"
-          } transition-colors`}
+      {/* Main content - Dashboard */}
+      <main className="flex-grow p-8 flex flex-col items-center">
+        <h3 className="text-xl font-semibold mb-4">{t.welcome} {user?.name || ""}</h3>
+        <h2
+          className={`text-3xl font-bold mb-6 ${
+            isDarkMode ? "text-yellow-400" : "text-green-600"
+          }`}
         >
-          {t.goToSearch}
-        </Link>
+          {t.dashboardWelcome} 
+        </h2>
+
+        <div
+          className={`max-w-2xl w-full bg-opacity-50 p-6 rounded-lg shadow-lg ${
+            isDarkMode ? "bg-gray-700" : "bg-white"
+          }`}
+        >
+          <h3 className="text-xl font-semibold mb-4">{t.welcome} {user?.name || ""} {user?.surname || ""}</h3>
+          <ul className="space-y-2">
+            <li>
+              <strong>{t.name}:</strong> {user?.name || "N/A"}
+            </li>
+            <li>
+              <strong>{t.surname}:</strong> {user?.surname || "N/A"}
+            </li>
+            <li>
+              <strong>{t.email}:</strong> {user?.email || "N/A"}
+            </li>
+          </ul>
+          <div className="mt-6">
+            <button
+              onClick={handleLogout}
+              className={`px-4 py-2 rounded ${
+                isDarkMode
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-red-500 hover:bg-red-600"
+              } text-white`}
+            >
+              {t.logout}
+            </button>
+          </div>
+        </div>
       </main>
 
       {/* Footer */}
       <footer
         className={`text-center py-4 ${
-          isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-300 text-gray-700"
+          isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-200 text-gray-700"
         }`}
       >
         {t.copyright}
@@ -309,4 +305,4 @@ useEffect(() => {
   );
 };
 
-export default WelcomeSite;
+export default Admin;

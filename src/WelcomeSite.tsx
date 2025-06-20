@@ -124,7 +124,7 @@ useEffect(() => {
 
     <div
       className={`welcome-site min-h-screen flex flex-col ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-stone-300 text-black"
+        isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
       }`}
     >
       

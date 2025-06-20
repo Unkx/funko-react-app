@@ -34,13 +34,12 @@ const Admin: React.FC = () => {
     return savedTheme !== null ? savedTheme === "dark" : true;
   });
 
-  const [name, setName] = useState("");
-
   const [searchQuery, setSearchQuery] = useState("");
   const [language, setLanguage] = useState("EN");
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [shouldShowPopup, setShouldShowPopup] = useState(false);
-  const [user, setUser] = useState<{ name: string; surname:string; email: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; surname: string; email: string; role?: string } | null>(null); // Add role to user type
+  const [isRestricted, setIsRestricted] = useState(false); // New state for restriction popup
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -59,11 +58,23 @@ const Admin: React.FC = () => {
     }
   }, [isDarkMode]);
 
-  // Load user data, preferred language, popup settings
+  // Load user data, preferred language, popup settings, and handle access control
   useEffect(() => {
     const userData = localStorage.getItem("user");
     if (userData) {
-      setUser(JSON.parse(userData));
+      const parsedUser = JSON.parse(userData);
+      setUser(parsedUser);
+
+      // Access Control: Check if user is an admin
+      if (parsedUser.role !== "admin") {
+        setIsRestricted(true); // Set restriction state to true
+        // Optionally, you can still redirect after showing the message,
+        // or just prevent rendering the main content.
+        // For this example, we'll just show the popup.
+        // navigate("/"); // Example: Redirect to home if not admin
+      } else {
+        setIsRestricted(false); // User is admin, no restriction
+      }
     } else {
       navigate("/LoginSite"); // Redirect if not logged in
     }
@@ -95,7 +106,7 @@ const Admin: React.FC = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () =>
       document.removeEventListener("mousedown", handleClickOutside);
-  }, [showLanguageDropdown, navigate]);
+  }, [showLanguageDropdown, navigate]); // Added navigate to dependency array for completeness, though it's used for the initial redirect
 
   // Change language
   const selectLanguage = (lang: string) => {
@@ -128,6 +139,32 @@ const Admin: React.FC = () => {
     navigate("/LoginSite");
   };
 
+  if (isRestricted) {
+    return (
+      <div
+        className={`min-h-screen flex items-center justify-center ${
+          isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
+        }`}
+      >
+        <div
+          className={`p-8 rounded-lg shadow-xl text-center ${
+            isDarkMode ? "bg-red-800 text-white" : "bg-red-500 text-white"
+          }`}
+        >
+          <h2 className="text-2xl font-bold mb-4">Access Restricted</h2>
+          <p className="text-lg">You do not have administrative privileges to view this page.</p>
+          <button
+            onClick={() => navigate("/")} // Redirect to home or another suitable page
+            className="mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition duration-300"
+          >
+            Go to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // If not restricted, render the full admin dashboard
   return (
     <div
       className={`welcome-site min-h-screen flex flex-col ${
@@ -258,7 +295,7 @@ const Admin: React.FC = () => {
             isDarkMode ? "text-yellow-400" : "text-green-600"
           }`}
         >
-          {t.dashboardWelcome} 
+          {t.dashboardWelcome}
         </h2>
 
         <div

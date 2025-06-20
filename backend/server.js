@@ -137,6 +137,27 @@ app.put('/api/users/:id/settings', async (req, res) => {
   }
 });
 
+// Middleware do sprawdzania roli "admin"
+const isAdmin = (req, res, next) => {
+  const user = req.user; // Załóżmy, że masz autoryzację JWT i dane użytkownika w req.user
+
+  if (!user || user.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  next();
+};
+
+// Użyj tego middleware dla wszystkich endpointów admina
+app.get('/api/admin/users', isAdmin, async (req, res) => {
+  try {
+    const users = await pool.query('SELECT * FROM users WHERE role = $1', ['user']);
+    res.json(users.rows);
+  } catch (err) {
+    console.error('Error fetching users:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

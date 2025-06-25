@@ -29,6 +29,7 @@ pool.query('SELECT NOW()', (err, res) => {
   }
 });
 
+
 // Root endpoint for testing API
 app.get('/', (req, res) => {
   res.send('Welcome to the Funko React App Backend API!');
@@ -148,16 +149,33 @@ const isAdmin = (req, res, next) => {
   next();
 };
 
-// Użyj tego middleware dla wszystkich endpointów admina
-app.get('/api/admin/users', isAdmin, async (req, res) => {
+app.get("/api/admin/users", isAdmin, async (req, res) => {
   try {
-    const users = await pool.query('SELECT * FROM users WHERE role = $1', ['user']);
-    res.json(users.rows);
+    const result = await pool.query("SELECT * FROM users");
+    res.json(result.rows);
   } catch (err) {
-    console.error('Error fetching users:', err);
-    res.status(500).json({ error: 'Server error' });
+    console.error("Błąd przy pobieraniu użytkowników:", err);
+    res.status(500).json({ error: "Serwer niedostępny" });
   }
 });
+// Usuwanie użytkownika przez admina
+app.delete('/api/admin/users/:id', isAdmin, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING *', [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ message: 'Użytkownik został usunięty', deletedUser: result.rows[0] });
+  } catch (err) {
+    console.error('Error deleting user:', err);
+    res.status(500).json({ error: 'Cannot delete user' });
+  }
+});
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

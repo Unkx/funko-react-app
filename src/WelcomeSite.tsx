@@ -255,31 +255,26 @@ useEffect(() => {
 
         {/* Login/Dashboard Button */}
         <div>
-          {isLoggedIn ? (
-            <Link
-              to="/dashboard"
-              className={`px-4 py-2 rounded ${
-                isDarkMode
-                  ? "bg-yellow-500 text-black hover:bg-yellow-600"
-                  : "bg-green-600 text-white hover:bg-green-700"
-              }`}
-            >
-              {translations[language].goToDashboard || "Dashboard"}
-            </Link>
-          ) : (
-          <Link
-            to={localStorage.getItem("user") ? "/dashboardSite" : "/loginSite"}
-            className={`px-4 py-2 rounded ${
-              isDarkMode
-                ? "bg-yellow-500 text-black hover:bg-yellow-600"
-                : "bg-green-600 text-white hover:bg-green-700"
-            }`}
-          >
-            {localStorage.getItem("user")
-              ? translations[language].goToDashboard || "Dashboard"
-              : translations[language].goToLoginSite || "Log In"}
-          </Link>
-          )}
+          <button
+          onClick={() => {
+            const user = JSON.parse(localStorage.getItem("user") || "{}");
+            if (user.role === "admin") {
+              navigate("/adminsite");
+            } else if (user.role === "user"){
+              navigate("/dashboardSite");
+            } else {
+              navigate("/LoginSite");
+            }
+            }}
+          className={`flex items-center gap-2 px-4 py-2 rounded ${
+            isDarkMode
+              ? "bg-yellow-500 text-black hover:bg-yellow-600"
+              : "bg-green-600 text-white hover:bg-green-700"
+          }`}
+        >
+
+  {translations[language].goToDashboard || "Dashboard"}
+</button>
         </div>
       </header>
 

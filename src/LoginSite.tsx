@@ -170,37 +170,6 @@
             )}
           </div>
 
-          {/* Search Form */}
-          <form
-            onSubmit={handleSearch}
-            className={`flex-grow max-w-lg mx-auto flex rounded-lg overflow-hidden ${
-              isDarkMode ? "bg-gray-700" : "bg-gray-100"
-            }`}
-          >
-            <input
-              type="text"
-              placeholder={t.searchPlaceholder}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className={`flex-grow px-4 py-2 outline-none ${
-                isDarkMode
-                  ? "bg-gray-700 text-white placeholder-gray-400"
-                  : "bg-white text-black"
-              }`}
-              aria-label="Search input"
-            />
-            <button
-              type="submit"
-              className={`px-4 py-2 ${
-                isDarkMode
-                  ? "bg-yellow-500 hover:bg-yellow-600"
-                  : "bg-green-600 hover:bg-green-700"
-              }`}
-              aria-label="Search"
-            >
-              <SearchIcon className="w-5 h-5" />
-            </button>
-          </form>
 
           {/* Theme & Language Toggle */}
           <div className="flex-shrink-0 flex gap-4">

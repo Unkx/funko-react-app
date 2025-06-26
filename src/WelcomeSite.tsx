@@ -259,7 +259,7 @@ useEffect(() => {
           onClick={() => {
             const user = JSON.parse(localStorage.getItem("user") || "{}");
             if (user.role === "admin") {
-              navigate("/adminsite");
+              navigate("/adminSite");
             } else if (user.role === "user"){
               navigate("/dashboardSite");
             } else {
@@ -273,7 +273,7 @@ useEffect(() => {
           }`}
         >
 
-  {translations[language].goToDashboard || "Dashboard"}
+  {t.goToDashboard || "Dashboard"}
 </button>
         </div>
       </header>

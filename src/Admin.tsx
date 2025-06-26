@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import LanguageSelectorPopup from "./LanguageSelectorPopup";
-import { translations } from "./Translations/TranslationRegistersite"; // Assuming translations are also for Register
+import { translations } from "./Translations/TranslationAdmin"; // Assuming translations are also for Register
 
 // Ikony SVG
 import MoonIcon from "/src/assets/moon.svg?react";
@@ -41,11 +41,22 @@ const Admin = () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   // Sprawdzenie dostępu – tylko admin może wejść
-  useEffect(() => {
-    if (!user.id || user.role !== "admin") {
-      navigate("/dashboardSite");
-    }
-  }, [navigate]);
+if (!user || user.role !== "admin") {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-800 text-center px-4">
+      <p className="text-red-600 text-2xl font-semibold mb-4">
+        {t.accessRestricted || "You have no access here"}
+      </p>
+      <Link
+        to="/"
+        className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition"
+      >
+        {t.goBackToMainsite || "Go back to main site"}
+      </Link>
+    </div>
+  );
+}
+
 
   // Pobierz użytkowników z API
   useEffect(() => {
@@ -199,7 +210,7 @@ const Admin = () => {
             isDarkMode ? "bg-gray-700" : "bg-white"
           }`}
         >
-          <h3 className="text-xl font-semibold mb-4">Lista użytkowników</h3>
+          <h3 className="text-xl font-semibold mb-4">{t.listOfUsers}</h3>
 
           {loading ? (
             <p>{t.loading}</p>

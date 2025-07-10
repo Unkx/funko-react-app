@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import LanguageSelectorPopup from "./LanguageSelectorPopup";
-import { translations } from "./Translations/TranslationAdmin"; // Assuming translations are also for Register
+// import LanguageSelectorPopup from "./LanguageSelectorPopup"; // This component is not used in the provided code, so commented out.
+import { translations } from "./Translations/TranslationAdmin";
 
-// Ikony SVG
+// SVG Icons
 import MoonIcon from "/src/assets/moon.svg?react";
 import SunIcon from "/src/assets/sun.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 
-// Flag SVGs
+// Flag SVGs (assuming these are correctly imported as React components)
 import UKFlag from "/src/assets/flags/uk.svg?react";
 import PolandFlag from "/src/assets/flags/poland.svg?react";
 import RussiaFlag from "/src/assets/flags/russia.svg?react";
@@ -17,12 +17,23 @@ import FranceFlag from "/src/assets/flags/france.svg?react";
 import GermanyFlag from "/src/assets/flags/germany.svg?react";
 import SpainFlag from "/src/assets/flags/spain.svg?react";
 
-
+// Define the shape of a user object for better type safety
+interface User {
+  id: number;
+  login: string;
+  email: string;
+  name: string;
+  surname: string;
+  role: string;
+  created_at: string;
+  last_login: string | null;
+  is_active?: boolean; // Optional, added by the backend query
+  // Add other user properties as needed
+}
 
 const Admin = () => {
   const navigate = useNavigate();
 
-  // Ustawienia motywu i języka
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem("preferredTheme") === "dark";
   });
@@ -32,54 +43,89 @@ const Admin = () => {
   });
 
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState<User[]>([]); // Specify User array type
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const t = translations[language];
 
-  // Dane użytkownika z localStorage
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  // Retrieve user data and token from localStorage
+  const user: User | null = JSON.parse(localStorage.getItem("user") || "null");
+  const token: string | null = localStorage.getItem("token");
 
-  // Sprawdzenie dostępu – tylko admin może wejść
-if (!user || user.role !== "admin") {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-800 text-center px-4">
-      <p className="text-red-600 text-2xl font-semibold mb-4">
-        {t.accessRestricted || "You have no access here"}
-      </p>
-      <Link
-        to="/"
-        className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition"
-      >
-        {t.goBackToMainsite || "Go back to main site"}
-      </Link>
-    </div>
-  );
-}
+  // Access check – only admin with a valid token can enter
+  useEffect(() => {
+    if (!token || !user || user.role !== "admin") {
+      // Use a timeout to ensure the render happens before redirect
+      const timer = setTimeout(() => {
+        navigate("/loginSite", { replace: true }); // Redirect to login, prevent going back to admin
+      }, 500); // Small delay for rendering access restricted message
+
+      return () => clearTimeout(timer); // Cleanup timeout
+    }
+  }, [user, token, navigate]);
 
 
-  // Pobierz użytkowników z API
+  // Display "Access Restricted" while checking or if unauthorized
+  if (!token || !user || user.role !== "admin") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-800 text-center px-4">
+        <p className="text-red-600 text-2xl font-semibold mb-4">
+          {t.accessRestricted || "You have no access here."}
+        </p>
+        <Link
+          to="/"
+          className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition"
+        >
+          {t.goBackToMainsite || "Go back to main site"}
+        </Link>
+      </div>
+    );
+  }
+
+
+  // Fetch users from API
   useEffect(() => {
     const fetchUsers = async () => {
+      setLoading(true);
+      setError(null);
       try {
         const response = await fetch("http://localhost:5000/api/admin/users", {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`, // Jeśli używasz JWT
+            // Attach the JWT to the Authorization header
+            Authorization: `Bearer ${token}`,
           },
         });
-        const data = await response.json();
+
+        if (!response.ok) {
+          if (response.status === 401 || response.status === 403) {
+            // Token expired or invalid, force re-login
+            localStorage.removeItem("user");
+            localStorage.removeItem("token");
+            navigate("/loginSite");
+            setError(t.sessionExpired || "Session expired or unauthorized. Please log in again.");
+            return;
+          }
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to fetch users.");
+        }
+
+        const data: User[] = await response.json();
         setUsers(data);
-      } catch (err) {
-        console.error("Błąd pobierania użytkowników:", err);
+      } catch (err: any) {
+        console.error("Error fetching users:", err);
+        setError(err.message || "Failed to load users. Server error.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUsers();
-  }, []);
+    if (token && user?.role === "admin") {
+      fetchUsers();
+    }
+  }, [token, user?.role, navigate, t.sessionExpired]); // Re-fetch if token or user role changes
 
-  // Przełączanie motywu
+  // Toggle theme
   const toggleTheme = () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
@@ -92,19 +138,49 @@ if (!user || user.role !== "admin") {
     }
   };
 
-  // Wybór języka
+  // Select language
   const selectLanguage = (lang: string) => {
     setLanguage(lang);
     localStorage.setItem("preferredLanguage", lang);
     setShowLanguageDropdown(false);
   };
 
-  // Wylogowanie
+  // Logout
   const handleLogout = () => {
     localStorage.removeItem("user");
-    localStorage.removeItem("token"); // Jeśli używasz JWT
+    localStorage.removeItem("token");
     navigate("/loginSite");
   };
+
+  // Handle user deletion
+  const handleDeleteUser = async (userId: number, userLogin: string) => {
+    if (!window.confirm(`${t.confirmDelete} ${userLogin}?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/admin/users/${userId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete user.");
+      }
+
+      // No need to parse response if it's just a success, but helpful for messages
+      // const result = await response.json();
+      alert(`${t.userDeleted} ${userLogin}`);
+      setUsers(users.filter((u) => u.id !== userId)); // Update state
+    } catch (err: any) {
+      console.error("Error deleting user:", err);
+      alert(`${t.failedToDeleteUser}: ${err.message}`);
+    }
+  };
+
 
   return (
     <div
@@ -124,7 +200,7 @@ if (!user || user.role !== "admin") {
           </h1>
         </Link>
 
-        {/* Język i motyw */}
+        {/* Language and Theme */}
         <div className="flex gap-4">
           <div className="relative">
             <button
@@ -147,7 +223,8 @@ if (!user || user.role !== "admin") {
                   isDarkMode ? "bg-gray-700" : "bg-white"
                 }`}
               >
-                {Object.entries(language).map(([code, { name, flag }]) => (
+                {/* Assuming 'translations' object has a structure suitable for mapping languages */}
+                {Object.entries(translations).map(([code, langData]) => (
                   <button
                     key={code}
                     onClick={() => selectLanguage(code)}
@@ -159,15 +236,21 @@ if (!user || user.role !== "admin") {
                         : ""
                     }`}
                   >
-                    <span className="w-5 h-5">{flag}</span>
-                    <span>{name}</span>
+                    {/* Render flag based on language code - adjust if your 'translations' object is different */}
+                    {code === 'EN' && <UKFlag className="w-5 h-5" />}
+                    {code === 'PL' && <PolandFlag className="w-5 h-5" />}
+                    {code === 'RU' && <RussiaFlag className="w-5 h-5" />}
+                    {code === 'FR' && <FranceFlag className="w-5 h-5" />}
+                    {code === 'DE' && <GermanyFlag className="w-5 h-5" />}
+                    {code === 'ES' && <SpainFlag className="w-5 h-5" />}
+                    <span>{langData.languageName || code}</span> {/* Display language name from translations */}
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Motyw */}
+          {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
             className={`p-2 rounded-full ${
@@ -177,22 +260,10 @@ if (!user || user.role !== "admin") {
           >
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
-
-          {/* Wylogowanie */}
-          {/* <button
-            onClick={handleLogout}
-            className={`p-2 rounded-full flex items-center gap-1 ${
-              isDarkMode ? "bg-red-600 hover:bg-red-700" : "bg-red-500 hover:bg-red-600"
-            } text-white`}
-            aria-label="Logout"
-          >
-
-            <span>{t.logout}</span>
-          </button> */}
         </div>
       </header>
 
-      {/* Główna zawartość */}
+      {/* Main Content */}
       <main className="flex-grow p-8 flex flex-col items-center">
         <h3 className="text-xl font-semibold mb-4">
           {t.welcome}, {user?.name || "Admin"} {user?.surname || ""}
@@ -214,6 +285,8 @@ if (!user || user.role !== "admin") {
 
           {loading ? (
             <p>{t.loading}</p>
+          ) : error ? (
+            <p className="text-red-500">{error}</p>
           ) : users.length > 0 ? (
             <table
               className={`w-full border-collapse ${
@@ -229,7 +302,8 @@ if (!user || user.role !== "admin") {
                   <th className="px-4 py-2">Email</th>
                   <th className="px-4 py-2">Rola</th>
                   <th className="px-4 py-2">Data rejestracji</th>
-                  <th className="px-4 py-2">Ostatni login</th>
+                  <th className="px-4 py-2">Ostatnia aktywność</th> {/* Changed to Aktywność */}
+                  <th className="px-4 py-2">Status</th> {/* New column for online/offline */}
                   <th className="px-4 py-2">Akcje</th>
                 </tr>
               </thead>
@@ -250,29 +324,19 @@ if (!user || user.role !== "admin") {
                     </td>
                     <td className="px-4 py-2">
                       {user.last_login
-                        ? new Date(user.last_login).toLocaleDateString()
+                        ? `${new Date(user.last_login).toLocaleDateString()} ${new Date(user.last_login).toLocaleTimeString()}`
                         : "Nigdy"}
+                    </td>
+                    <td className="px-4 py-2">
+                      {user.is_active ? (
+                        <span className="text-green-500 font-semibold">{t.online}</span>
+                      ) : (
+                        <span className="text-red-500 font-semibold">{t.offline}</span>
+                      )}
                     </td>
                     <td className="px-4 py-2 text-right">
                       <button
-                        onClick={() => {
-                          if (window.confirm("Czy na pewno usunąć tego użytkownika?")) {
-                            fetch(`http://localhost:5000/api/admin/users/${user.id}`, {
-                              method: "DELETE",
-                              headers: {
-                                Authorization: `Bearer ${localStorage.getItem("token")}`,
-                              },
-                            })
-                              .then((res) => res.json())
-                              .then(() => {
-                                alert(`${t.userDeleted} ${user.login}`);
-                                setUsers(users.filter((u) => u.id !== user.id));
-                              })
-                              .catch((err) =>
-                                console.error("Nie udało się usunąć użytkownika:", err)
-                              );
-                          }
-                        }}
+                        onClick={() => handleDeleteUser(user.id, user.login)}
                         className={`px-3 py-1 rounded ${
                           isDarkMode ? "bg-red-600 hover:bg-red-700" : "bg-red-500 hover:bg-red-600"
                         } text-white`}
@@ -285,7 +349,7 @@ if (!user || user.role !== "admin") {
 
                 {users.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="text-center py-4">
+                    <td colSpan={8} className="text-center py-4"> {/* Adjusted colspan */}
                       {t.noUsersFound}
                     </td>
                   </tr>
@@ -296,24 +360,24 @@ if (!user || user.role !== "admin") {
             <p>{t.noUsersFound}</p>
           )}
 
-          
+
         </div>
 
-         <div className="mt-6">
-            <button
-              onClick={handleLogout}
-              className={`px-4 py-2 rounded ${
-                isDarkMode
-                  ? "bg-red-600 hover:bg-red-700"
-                  : "bg-red-500 hover:bg-red-600"
-              } text-white`}
-            >
-              {t.logout || "Logout"}
-            </button>
-          </div>  
+        <div className="mt-6">
+          <button
+            onClick={handleLogout}
+            className={`px-4 py-2 rounded ${
+              isDarkMode
+                ? "bg-red-600 hover:bg-red-700"
+                : "bg-red-500 hover:bg-red-600"
+            } text-white`}
+          >
+            {t.logout || "Logout"}
+          </button>
+        </div>
       </main>
 
-      {/* Stopka */}
+      {/* Footer */}
       <footer
         className={`text-center py-4 ${
           isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-200 text-gray-700"

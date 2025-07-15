@@ -29,60 +29,56 @@ const languages = {
 };
 
 const WelcomeSite: React.FC = () => {
-  // Initialize isDarkMode based on localStorage, default to true (dark mode) if not found
-const [isDarkMode, setIsDarkMode] = useState(() => {
-  const savedTheme = localStorage.getItem("preferredTheme");
-  return savedTheme !== null ? savedTheme === "dark" : true;
-});
-useEffect(() => {
-  localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
-}, [isDarkMode]);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem("preferredTheme");
+    return savedTheme !== null ? savedTheme === "dark" : true;
+  });
+
   const [searchQuery, setSearchQuery] = useState("");
   const [language, setLanguage] = useState("EN");
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [shouldShowPopup, setShouldShowPopup] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   const navigate = useNavigate();
   const t = translations[language] || translations["EN"];
-  
- useEffect(() => {
-  localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
-  if (isDarkMode) {
-    document.documentElement.classList.add("dark");
-  } else {
-    document.documentElement.classList.remove("dark");
-  }
-}, [isDarkMode]);
-  // Refs for click outside detection
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
+  // Handle theme changes
   useEffect(() => {
-    // Load preferred language
+    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDarkMode]);
+
+  // Load preferences on mount
+  useEffect(() => {
     const savedLang = localStorage.getItem("preferredLanguage");
     if (savedLang && languages[savedLang as keyof typeof languages]) {
       setLanguage(savedLang);
     }
 
-    // Check if language popup should be shown
     const hasSeenPopup = localStorage.getItem("hasSeenLanguagePopup");
     if (!hasSeenPopup) {
       setShouldShowPopup(true);
       localStorage.setItem("hasSeenLanguagePopup", "true");
     }
 
-    // Check authentication status
     const token = localStorage.getItem("authToken");
     setIsLoggedIn(!!token);
   }, []);
 
-  
-  // Effect to save theme preference to localStorage whenever isDarkMode changes
+  // Save theme to storage
   useEffect(() => {
     localStorage.setItem("theme", JSON.stringify(isDarkMode));
   }, [isDarkMode]);
 
-  // Handle clicks outside language dropdown
+  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -95,7 +91,6 @@ useEffect(() => {
         setShowLanguageDropdown(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
@@ -121,19 +116,17 @@ useEffect(() => {
   };
 
   return (
-
     <div
       className={`welcome-site min-h-screen flex flex-col ${
         isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
       }`}
     >
-      
       {/* Header */}
-      <header className="py-4 px-8 flex flex-wrap md:flex-nowrap justify-between items-center gap-4 relative">
-        <div className="flex-shrink-0">
+      <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
+        <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
           <Link to="/" className="no-underline">
             <h1
-              className={`text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
+              className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
                 isDarkMode ? "text-yellow-400" : "text-green-600"
               }`}
             >
@@ -148,7 +141,7 @@ useEffect(() => {
         {/* Search Form */}
         <form
           onSubmit={handleSearch}
-          className={`flex-grow max-w-lg mx-auto flex rounded-lg overflow-hidden ${
+          className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden ${
             isDarkMode ? "bg-gray-700" : "bg-gray-100"
           }`}
         >
@@ -177,10 +170,9 @@ useEffect(() => {
           </button>
         </form>
 
-        {/* Theme & Language Toggle */}
-        <div className="flex-shrink-0 flex gap-4">
-          {/* Language Dropdown */}
-          <div className="relative">
+        {/* Theme & Language Toggle + Login Button */}
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto justify-end">
+          <div className="relative inline-block">
             <button
               ref={buttonRef}
               onClick={toggleLanguageDropdown}
@@ -200,7 +192,6 @@ useEffect(() => {
                 }`}
               />
             </button>
-
             {showLanguageDropdown && (
               <div
                 ref={dropdownRef}
@@ -208,9 +199,6 @@ useEffect(() => {
                   isDarkMode ? "bg-gray-700" : "bg-white"
                 }`}
                 onClick={(e) => e.stopPropagation()}
-                role="menu"
-                aria-orientation="vertical"
-                aria-labelledby="language-button"
               >
                 {Object.entries(languages).map(([code, { name, flag }]) => (
                   <button
@@ -225,7 +213,6 @@ useEffect(() => {
                         ? "hover:bg-gray-600"
                         : "hover:bg-gray-200"
                     }`}
-                    role="menuitem"
                   >
                     <span className="w-5 h-5">{flag}</span>
                     <span>{name}</span>
@@ -251,38 +238,35 @@ useEffect(() => {
               <MoonIcon className="w-6 h-6" />
             )}
           </button>
-        </div>
 
-        {/* Login/Dashboard Button */}
-        <div>
+          {/* Dashboard/Login Button */}
           <button
-          onClick={() => {
-            const user = JSON.parse(localStorage.getItem("user") || "{}");
-            if (user.role === "admin") {
-              navigate("/adminSite");
-            } else if (user.role === "user"){
-              navigate("/dashboardSite");
-            } else {
-              navigate("/LoginSite");
-            }
+            onClick={() => {
+              const user = JSON.parse(localStorage.getItem("user") || "{}");
+              if (user.role === "admin") {
+                navigate("/adminSite");
+              } else if (user.role === "user") {
+                navigate("/dashboardSite");
+              } else {
+                navigate("/LoginSite");
+              }
             }}
-          className={`flex items-center gap-2 px-4 py-2 rounded ${
-            isDarkMode
-              ? "bg-yellow-500 text-black hover:bg-yellow-600"
-              : "bg-green-600 text-white hover:bg-green-700"
-          }`}
-        >
-
-  {t.goToDashboard || "Dashboard"}
-</button>
+            className={`flex items-center gap-2 px-4 py-2 rounded ${
+              isDarkMode
+                ? "bg-yellow-500 text-black hover:bg-yellow-600"
+                : "bg-green-600 text-white hover:bg-green-700"
+            }`}
+          >
+            {t.goToDashboard || "Dashboard"}
+          </button>
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="flex-grow p-8 flex flex-col items-center justify-center">
+      {/* Main Content */}
+      <main className="flex-grow p-4 sm:p-8 flex flex-col items-center justify-center">
         <Link
           to="/searchsite"
-          className={`px-6 py-3 rounded-lg font-bold ${
+          className={`px-6 py-3 rounded-lg font-bold text-center ${
             isDarkMode
               ? "bg-yellow-500 hover:bg-yellow-600"
               : "bg-green-600 hover:bg-green-700"

@@ -28,7 +28,9 @@ const SearchSite = () => {
   });
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [funkoData, setFunkoData] = useState([]);
-  const [filteredAndSortedResults, setFilteredAndSortedResults] = useState([]); // Renamed 'results'
+  const [filteredAndSortedResults, setFilteredAndSortedResults] = useState(
+    []
+  ); // Renamed 'results'
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -90,13 +92,13 @@ const SearchSite = () => {
   }, []);
 
   useEffect(() => {
-  localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
-  if (isDarkMode) {
-    document.documentElement.classList.add("dark");
-  } else {
-    document.documentElement.classList.remove("dark");
-  }
-}, [isDarkMode]);
+    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDarkMode]);
 
   // Initialize search query from URL
   useEffect(() => {
@@ -150,24 +152,31 @@ const SearchSite = () => {
 
     switch (sortOption) {
       case "titleDesc":
-        currentProcessedResults.sort((a: any, b: any) => b.title.localeCompare(a.title));
+        currentProcessedResults.sort((a: any, b: any) =>
+          b.title.localeCompare(a.title)
+        );
         break;
       case "numberAsc":
-        currentProcessedResults.sort((a: any, b: any) => (a.number || 0) - (b.number || 0));
+        currentProcessedResults.sort(
+          (a: any, b: any) => (a.number || 0) - (b.number || 0)
+        );
         break;
       case "numberDesc":
-        currentProcessedResults.sort((a: any, b: any) => (b.number || 0) - (a.number || 0));
+        currentProcessedResults.sort(
+          (a: any, b: any) => (b.number || 0) - (a.number || 0)
+        );
         break;
       case "titleAsc":
       default:
-        currentProcessedResults.sort((a: any, b: any) => a.title.localeCompare(b.title));
+        currentProcessedResults.sort((a: any, b: any) =>
+          a.title.localeCompare(b.title)
+        );
         break;
     }
 
     setFilteredAndSortedResults(currentProcessedResults);
     setCurrentPage(1); // Reset to first page when filters/sort/search change
   }, [queryParam, categoryFilter, showExclusiveOnly, sortOption, funkoData]);
-
 
   // Save language preference
   useEffect(() => {
@@ -256,6 +265,19 @@ const SearchSite = () => {
     return pages;
   };
 
+    const loginButtonTo = useMemo(() => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (user?.role === "admin") return "/adminSite";
+    if (user?.role === "user") return "/dashboardSite";
+    return "/loginSite";
+  }, []);
+
+  const loginButtonText = useMemo(() => {
+    return localStorage.getItem("user")
+      ? t.goToDashboard || "Dashboard"
+      : t.goToLoginSite || "Log In";
+  }, [t]);
+
   return (
     <div
       className={`search-site min-h-screen flex flex-col ${
@@ -263,7 +285,7 @@ const SearchSite = () => {
       }`}
     >
       {/* Header */}
-      <header className="py-4 px-8 flex flex-wrap md:flex-nowrap justify-between items-center gap-4 relative">
+      <header className="py-4 px-4 sm:px-8 flex flex-wrap md:flex-nowrap justify-between items-center gap-4 relative">
         <div className="flex-shrink-0">
           <Link to="/" className="no-underline">
             <h1
@@ -279,7 +301,7 @@ const SearchSite = () => {
         {/* Search Form */}
         <form
           onSubmit={handleSearch}
-          className={`flex-grow max-w-lg mx-auto flex rounded-lg overflow-hidden ${
+          className={`flex-grow max-w-lg w-full md:w-auto mx-auto flex rounded-lg overflow-hidden ${
             isDarkMode ? "bg-gray-700" : "bg-gray-100"
           }`}
         >
@@ -309,7 +331,7 @@ const SearchSite = () => {
         </form>
 
         {/* Theme & Language Toggle */}
-        <div className="flex-shrink-0 flex gap-4">
+        <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0">
           {/* Language Dropdown */}
           <div className="relative">
             <button
@@ -381,20 +403,18 @@ const SearchSite = () => {
         </div>
 
         {/* Login Button */}
-        <div>
-        <Link
-          to={localStorage.getItem("user") ? "/dashboardSite" : "/loginSite"}
-          className={`px-4 py-2 rounded ${
-            isDarkMode
-              ? "bg-yellow-500 text-black hover:bg-yellow-600"
-              : "bg-green-600 text-white hover:bg-green-700"
-          }`}
-        >
-          {localStorage.getItem("user")
-            ? translations[language].goToDashboard || "Dashboard"
-            : translations[language].goToLoginSite || "Log In"}
-        </Link>
-        </div>
+          <div>
+            <Link
+              to={loginButtonTo}
+              className={`px-4 py-2 rounded ${
+                isDarkMode
+                  ? "bg-yellow-500 text-black hover:bg-yellow-600"
+                  : "bg-green-600 text-white hover:bg-green-700"
+              }`}
+            >
+              {loginButtonText}
+            </Link>
+          </div>
       </header>
 
       {/* Filters */}
@@ -417,7 +437,9 @@ const SearchSite = () => {
             type="checkbox"
             checked={showExclusiveOnly}
             onChange={() => setShowExclusiveOnly(!showExclusiveOnly)}
-            className={`rounded ${isDarkMode ? "accent-yellow-500" : "accent-green-600"}`}
+            className={`rounded ${
+              isDarkMode ? "accent-yellow-500" : "accent-green-600"
+            }`}
           />
           {t.exclusiveOnly}
         </label>
@@ -435,7 +457,7 @@ const SearchSite = () => {
       </div>
 
       {/* Main Content */}
-      <main className="flex-grow p-8 flex flex-col items-center justify-center">
+      <main className="flex-grow p-4 sm:p-8 flex flex-col items-center justify-center">
         {error ? (
           <p className="text-red-500">{error}</p>
         ) : isLoading ? (
@@ -443,23 +465,23 @@ const SearchSite = () => {
         ) : (
           <>
             {queryParam && (
-              <h2 className="text-2xl font-bold mb-4">
+              <h2 className="text-xl sm:text-2xl font-bold mb-4 text-center">
                 {t.searchingResults}
                 <span className="text-yellow-400"> {queryParam}</span>
               </h2>
             )}
 
-            {filteredAndSortedResults.length > 0 ? ( // Use filteredAndSortedResults for total count
+            {filteredAndSortedResults.length > 0 ? (
               <>
                 <ul className="w-full max-w-4xl space-y-4">
                   {currentItems.map((item: any, index: number) => (
                     <li
                       key={index}
-                      className={`px-6 py-4 rounded-lg flex gap-4 ${
+                      className={`p-4 sm:px-6 sm:py-4 rounded-lg flex flex-col sm:flex-row gap-4 ${
                         isDarkMode ? "bg-gray-700" : "bg-gray-200"
                       }`}
                     >
-                      <div className="flex-shrink-0">
+                      <div className="flex-shrink-0 mx-auto sm:mx-0">
                         <img
                           src={item.imageName || "/src/assets/placeholder.png"}
                           alt={item.title}
@@ -470,7 +492,7 @@ const SearchSite = () => {
                           }}
                         />
                       </div>
-                      <div className="flex-grow">
+                      <div className="flex-grow text-center sm:text-left">
                         <h3 className="text-lg font-bold">{item.title}</h3>
                         <p className="text-sm">
                           {t.series}: {item.series.join(", ")}
@@ -503,7 +525,9 @@ const SearchSite = () => {
                         setItemsPerPage(Number(e.target.value));
                         setCurrentPage(1); // Reset to first page when items per page changes
                       }}
-                      className={`px-2 py-1 rounded ${isDarkMode ? "bg-gray-700" : "bg-gray-200"}`}
+                      className={`px-2 py-1 rounded ${
+                        isDarkMode ? "bg-gray-700" : "bg-gray-200"
+                      }`}
                     >
                       <option value="5">5</option>
                       <option value="10">10</option>
@@ -512,7 +536,7 @@ const SearchSite = () => {
                     </select>
                   </div>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex flex-wrap justify-center items-center gap-1">
                     <button
                       onClick={prevPage}
                       disabled={currentPage === 1}

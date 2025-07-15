@@ -277,7 +277,7 @@ const Admin = () => {
         </h2>
 
         <div
-          className={`max-w-4xl w-full bg-opacity-50 p-6 rounded-lg shadow-lg ${
+          className={`max-w-6xl w-full bg-opacity-50 p-6 rounded-lg shadow-lg ${
             isDarkMode ? "bg-gray-700" : "bg-white"
           }`}
         >
@@ -288,6 +288,7 @@ const Admin = () => {
           ) : error ? (
             <p className="text-red-500">{error}</p>
           ) : users.length > 0 ? (
+            
             <table
               className={`w-full border-collapse ${
                 isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
@@ -297,14 +298,14 @@ const Admin = () => {
                 className={`${isDarkMode ? "bg-gray-700" : "bg-gray-200"} text-left`}
               >
                 <tr>
-                  <th className="px-4 py-2">ID</th>
-                  <th className="px-4 py-2">Login</th>
-                  <th className="px-4 py-2">Email</th>
-                  <th className="px-4 py-2">Rola</th>
-                  <th className="px-4 py-2">Data rejestracji</th>
-                  <th className="px-4 py-2">Ostatnia aktywność</th> {/* Changed to Aktywność */}
-                  <th className="px-4 py-2">Status</th> {/* New column for online/offline */}
-                  <th className="px-4 py-2">Akcje</th>
+                  <th className="px-4 py-2">{t.UserID || "ID"}</th>
+                  <th className="px-4 py-2"> {t.UserName || "Login"}</th>
+                  <th className="px-4 py-2"> {t.UserEmail ||"Email"} </th>
+                  <th className="px-4 py-2" > {t.UserRole ||"Role" } </th>
+                  <th className="px-4 py-2" >{t.UserDateOfRegistration ||"Date Of Registration"} </th>
+                  <th className="px-4 py-2" >{t.UserLastActivity ||"Last Activity: "} </th>
+                  <th className="px-4 py-2" >{t.UserStatus ||"Status" } </th>
+                  <th className="px-4 py-2" >{t.UserDelete || "Delete user :"} </th>
                 </tr>
               </thead>
               <tbody>
@@ -324,8 +325,11 @@ const Admin = () => {
                     </td>
                     <td className="px-4 py-2">
                       {user.last_login
-                        ? `${new Date(user.last_login).toLocaleDateString()} ${new Date(user.last_login).toLocaleTimeString()}`
-                        : "Nigdy"}
+                        ? (() => {
+                            const date = new Date(user.last_login);
+                            return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+                          })()
+                        : t.never}
                     </td>
                     <td className="px-4 py-2">
                       {user.is_active ? (

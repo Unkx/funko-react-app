@@ -12,6 +12,20 @@ export const translations = {
     userDeleted: "User deleted:",
     accessRestricted:"You have no access here",
     goBackToMainsite:"Go back to Main site ",
+    
+    UserID: "User ID: ",
+    UserName: "User Name",
+    UserEmail: "User Email",
+    UserRole: "Role",
+    UserDateOfRegistration: "Date Of Registration",
+    UserLastActivity: "Last Activity",
+    UserStatus: "User Status",
+    UserDelete: "Delete User",
+
+    online:"Online",
+    offline:"Offline",
+
+    never:"Never",
   },
   PL: {
     dashboardWelcome: "Panel Administratora",
@@ -25,6 +39,20 @@ export const translations = {
     userDeleted: "Użytkownik usunięty:",
     accessRestricted:"Nie masz tu dostępu",
     goBackToMainsite:"Wróc na stronę główną",
+    
+    UserID: "ID użytkownika: ",
+    UserName: "Nazwa użytkownika",
+    UserEmail: "Email",
+    UserRole: "Rola",
+    UserDateOfRegistration: "Data rejestracji",
+    UserLastActivity: "Ostatnia aktywność",
+    UserStatus: "Status użytkownika",
+    UserDelete: "Usuń użytkownika",
+
+    online:"Online",
+    offline:"Offline",
+
+    never:"Nigdy",
   },
   RU: {
     dashboardWelcome: "Панель администратора",
@@ -38,6 +66,20 @@ export const translations = {
     userDeleted: "Пользователь удален:",
     accessRestricted: "У вас нет доступа сюда",
     goBackToMainsite:"Вернуться на главную страницу сайта",
+    
+    UserID: "Идентификатор пользователя: ",
+    UserName: "Имя пользователя",
+    UserEmail: "Email",
+    UserRole: "Роль",
+    UserDateOfRegistration: "Дата регистрации",
+    UserLastActivity: "Последняя активность",
+    UserStatus: "Статус пользователя",
+    UserDelete: "Удалить пользователя",
+
+    online:"Online",
+    offline:"Offline",    
+
+    never:"никогда",
   },
   ES: {
     dashboardWelcome: "Panel de administrador",
@@ -51,6 +93,20 @@ export const translations = {
     userDeleted: "Usuario eliminado:",
     accessRestricted: "Usted no tiene acceso aquí",
     goBackToMainSite: "Volver al sitio principal",
+    
+    UserID: "ID :",
+    UserName: "Nombre de usuario",
+    UserEmail: "Email",
+    UserRole: "Función",
+    UserDateOfRegistration: "Fecha de registro",
+    UserLastActivity: "Última actividad",
+    UserStatus: "Estado del usuario",
+    UserDelete: "Eliminar usuario",
+
+    online:"Online",
+    offline:"Offline", 
+
+    never:"Nunca",
   },
   FR: {
     dashboardWelcome: "Tableau de bord administrateur",
@@ -64,6 +120,20 @@ export const translations = {
     userDeleted: "Utilisateur supprimé:",
     accessRestricted: "Vous n'avez pas accès ici",
     goBackToMainSite: "Retourner au site principal",
+
+    UserID: "ID: ",
+    UserName: "Nom de l'utilisateur",
+    UserEmail: "User E-Mail",
+    UserRole: "Rôle",
+    UserDateOfRegistration: "Date d'enregistrement",
+    UserLastActivity: "Dernière activité",
+    UserStatus: "Statut de l'utilisateur",
+    UserDelete: "Supprimer l'utilisateur",
+
+    online:"Online",
+    offline:"Offline", 
+
+    never: "Jamais",
   },
   DE: {
     dashboardWelcome: "Admin-Dashboard",
@@ -77,5 +147,19 @@ export const translations = {
     userDeleted: "Benutzer gelöscht:",
     accessRestricted: "Sie haben hier keinen Zugang",
     goBackToMainSite: "Zurück zur Hauptseite",
+    
+    UserID: "ID: ",
+    UserName: "Benutzername",
+    UserEmail: "Email",
+    UserRole: "Rolle",
+    UserDateOfRegistration: "Registrierungsdatum",
+    UserLastActivity: "Letzte Aktivität",
+    UserStatus: "Benutzerstatus",
+    UserDelete: "Benutzer löschen",
+
+    online:"Online",
+    offline:"Offline", 
+
+    never: "Niemals",
   },
 };

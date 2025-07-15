@@ -12,7 +12,7 @@ const LanguageSelectorPopup = ({ onClose }: { onClose: () => void }) => {
     France: "FR",
     Spain: "ES",
     Russia: "RU",
-    "United States": "EN",
+    US: "EN",
     Canada: "EN",
   };
 

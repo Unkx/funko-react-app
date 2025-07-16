@@ -221,7 +221,70 @@ app.get("/api/admin/users", authenticateToken, isAdmin, async (req, res) => {
         res.status(500).json({ error: "Server error fetching user data" });
     }
 });
+// Add to your server routes
+app.put('/api/users/:id', authenticateToken, async (req, res) => {
+    const userId = req.params.id;
+    const { name, surname, gender, date_of_birth } = req.body;
 
+    // Ensure the authenticated user can only update their own profile
+    if (req.user.id !== parseInt(userId) && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Forbidden: You can only update your own profile' });
+    }
+
+    try {
+        const query = `
+            UPDATE users
+            SET
+                name = COALESCE($1, name),
+                surname = COALESCE($2, surname),
+                gender = COALESCE($3, gender),
+                date_of_birth = COALESCE($4, date_of_birth),
+                updated_at = NOW()
+            WHERE id = $5
+            RETURNING id, name, surname, email, login, gender, date_of_birth, role, created_at, last_login
+        `;
+        const values = [name, surname, gender, date_of_birth, userId];
+
+        const result = await pool.query(query, values);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Update user error:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// Add this endpoint to get single user details
+app.get('/api/users/:id', authenticateToken, async (req, res) => {
+    const userId = req.params.id;
+
+    // Ensure the authenticated user can only access their own profile
+    // Or admin can access any profile
+    if (req.user.id !== parseInt(userId) && req.user.role !== 'admin') {
+        return res.status(403).json({ error: 'Forbidden: You can only access your own profile' });
+    }
+
+    try {
+        const result = await pool.query(
+            `SELECT id, email, login, name, surname, gender, date_of_birth, role, created_at, last_login
+             FROM users WHERE id = $1`,
+            [userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Get user error:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
 // Admin endpoint to delete a user (protected by authenticateToken and isAdmin)
 app.delete('/api/admin/users/:id', authenticateToken, isAdmin, async (req, res) => {
     const { id } = req.params;

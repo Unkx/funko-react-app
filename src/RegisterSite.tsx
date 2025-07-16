@@ -130,6 +130,7 @@ const RegisterSite: React.FC = () => {
       surname,
       password,
       gender,
+      role: "user",
       date_of_birth: new Date(dateOfBirth).toISOString().split('T')[0] // Format for backend
     };
 
@@ -151,7 +152,7 @@ const RegisterSite: React.FC = () => {
 
       // Registration successful
       console.log("Registration successful!");
-      navigate("/LoginSite");
+      navigate("/dashboardSite");
 
     } catch (error: any) {
       console.error('Registration error caught in frontend:', error);
@@ -247,7 +248,7 @@ const RegisterSite: React.FC = () => {
         {/* Theme & Language Toggle */}
         <div className="flex-shrink-0 flex gap-4">
           {/* Language Dropdown */}
-          <div className="relative">
+          <div className="relative inline-block">
             <button
               ref={buttonRef} // Assign ref to the button
               onClick={toggleLanguageDropdown}
@@ -437,8 +438,8 @@ const RegisterSite: React.FC = () => {
           <span className={`${isDarkMode ? "text-gray-300" : "text-gray-700"} mr-2`}>
             {t.alreadyHaveAccount || "Already have an account?"}
           </span>
-        <Link
-          to={localStorage.getItem("user") ? "/dashboardSite" : "/loginSite"} // Corrected logic here
+       <Link
+          to={localStorage.getItem("user") ? "/dashboardSite" : "/LoginSite"}
           className={`px-4 py-2 rounded ${
             isDarkMode
               ? "bg-yellow-500 text-black hover:bg-yellow-600"

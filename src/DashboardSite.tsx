@@ -9,6 +9,9 @@ import SunIcon from "/src/assets/sun.svg?react";
 import SearchIcon from "/src/assets/search.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
+import EditIcon from "/src/assets/edit.svg?react";
+import SaveIcon from "/src/assets/save.svg?react";
+import CancelIcon from "/src/assets/cancel.svg?react";
 
 // Flags
 import UKFlag from "/src/assets/flags/uk.svg?react";
@@ -27,20 +30,39 @@ const languages = {
   ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
 };
 
+interface User {
+  id: number;
+  name: string;
+  surname: string;
+  email: string;
+  login: string;
+  gender: string;
+  date_of_birth: string;
+  role: string;
+  created_at: string;
+  last_login: string;
+}
+
 const DashboardSite: React.FC = () => {
-  // Load theme from localStorage using "preferredTheme"
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem("preferredTheme");
     return savedTheme !== null ? savedTheme === "dark" : true;
   });
 
-  const [name, setName] = useState("");
-
   const [searchQuery, setSearchQuery] = useState("");
   const [language, setLanguage] = useState("EN");
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [shouldShowPopup, setShouldShowPopup] = useState(false);
-  const [user, setUser] = useState<{ name: string; surname:string; email: string } | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    surname: "",
+    gender: "",
+    date_of_birth: ""
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -48,7 +70,6 @@ const DashboardSite: React.FC = () => {
 
   const t = translations[language] || translations["EN"];
 
-  // Apply theme to document and save to localStorage
   useEffect(() => {
     localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
 
@@ -59,14 +80,44 @@ const DashboardSite: React.FC = () => {
     }
   }, [isDarkMode]);
 
-  // Load user data, preferred language, popup settings
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      setUser(JSON.parse(userData));
-    } else {
-      navigate("/LoginSite"); // Redirect if not logged in
-    }
+    const fetchUserData = async () => {
+      const userData = localStorage.getItem("user");
+      const token = localStorage.getItem("token");
+      
+      if (!userData || !token) {
+        navigate("/LoginSite");
+        return;
+      }
+
+      try {
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+        setEditForm({
+          name: parsedUser.name,
+          surname: parsedUser.surname,
+          gender: parsedUser.gender,
+          date_of_birth: parsedUser.date_of_birth
+        });
+
+        // Fetch fresh user data from server
+        const response = await fetch(`http://localhost:5000/api/users/${parsedUser.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const freshUserData = await response.json();
+          setUser(freshUserData);
+          localStorage.setItem("user", JSON.stringify(freshUserData));
+        }
+      } catch (err) {
+        console.error("Failed to fetch user data:", err);
+      }
+    };
+
+    fetchUserData();
 
     const savedLang = localStorage.getItem("preferredLanguage");
     if (savedLang && languages[savedLang as keyof typeof languages]) {
@@ -79,7 +130,6 @@ const DashboardSite: React.FC = () => {
       localStorage.setItem("hasSeenLanguagePopup", "true");
     }
 
-    // Click outside handler for language dropdown
     const handleClickOutside = (event: MouseEvent) => {
       if (
         showLanguageDropdown &&
@@ -93,25 +143,18 @@ const DashboardSite: React.FC = () => {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showLanguageDropdown, navigate]);
 
-  // Change language
   const selectLanguage = (lang: string) => {
     setLanguage(lang);
     localStorage.setItem("preferredLanguage", lang);
     setShowLanguageDropdown(false);
   };
 
-  // Toggle theme
   const toggleTheme = () => setIsDarkMode((prev) => !prev);
+  const toggleLanguageDropdown = () => setShowLanguageDropdown((prev) => !prev);
 
-  // Toggle language dropdown
-  const toggleLanguageDropdown = () =>
-    setShowLanguageDropdown((prev) => !prev);
-
-  // Handle search submission
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -121,11 +164,76 @@ const DashboardSite: React.FC = () => {
     }
   };
 
-  // Logout
   const handleLogout = () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("token");
     setUser(null);
     navigate("/LoginSite");
+  };
+
+  const handleEditClick = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    if (user) {
+      setEditForm({
+        name: user.name,
+        surname: user.surname,
+        gender: user.gender,
+        date_of_birth: user.date_of_birth
+      });
+    }
+    setError("");
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSaveChanges = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    setError("");
+    
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`http://localhost:5000/api/users/${user.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(editForm)
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update profile");
+      }
+      
+      const updatedUser = await response.json();
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      setIsEditing(false);
+    } catch (err) {
+      console.error("Update error:", err);
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString(language);
   };
 
   return (
@@ -139,7 +247,7 @@ const DashboardSite: React.FC = () => {
         <div className="flex-shrink-0">
           <Link to="/" className="no-underline">
             <h1
-              className={`text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
+              className={`text-3xl font-bold font-[Special_Gothic_Expanded_One] tracking-wide ${
                 isDarkMode ? "text-yellow-400" : "text-green-600"
               }`}
             >
@@ -266,18 +374,144 @@ const DashboardSite: React.FC = () => {
             isDarkMode ? "bg-gray-700" : "bg-white"
           }`}
         >
-          <h3 className="text-xl font-semibold mb-4">{t.welcome} {user?.name || ""} {user?.surname || ""}</h3>
-          <ul className="space-y-2">
-            <li>
-              <strong>{t.name}:</strong> {user?.name || "N/A"}
-            </li>
-            <li>
-              <strong>{t.surname}:</strong> {user?.surname || "N/A"}
-            </li>
-            <li>
-              <strong>{t.email}:</strong> {user?.email || "N/A"}
-            </li>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-semibold">{t.profile}</h3>
+            {!isEditing ? (
+              <button
+                onClick={handleEditClick}
+                className={`p-2 rounded ${
+                  isDarkMode
+                    ? "bg-yellow-500 hover:bg-yellow-600"
+                    : "bg-green-600 hover:bg-green-700"
+                } text-white flex items-center gap-1`}
+              >
+                <EditIcon className="w-4 h-4" />
+                <span>{t.edit}</span>
+              </button>
+            ) : (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSaveChanges}
+                  disabled={isLoading}
+                  className={`p-2 rounded flex items-center gap-1 ${
+                    isDarkMode
+                      ? "bg-green-500 hover:bg-green-600"
+                      : "bg-green-600 hover:bg-green-700"
+                  } text-white`}
+                >
+                  <SaveIcon className="w-4 h-4" />
+                  <span>{isLoading ? t.saving : t.save}</span>
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  className={`p-2 rounded flex items-center gap-1 ${
+                    isDarkMode
+                      ? "bg-gray-500 hover:bg-gray-600"
+                      : "bg-gray-300 hover:bg-gray-400"
+                  }`}
+                >
+                  <CancelIcon className="w-4 h-4" />
+                  <span>{t.cancel}</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {error && (
+            <div className={`mb-4 p-2 rounded ${
+              isDarkMode ? "bg-red-900 text-red-200" : "bg-red-200 text-red-800"
+            }`}>
+              {error}
+            </div>
+          )}
+
+          <ul className="space-y-3">
+            {isEditing ? (
+              <>
+                <li className="flex flex-wrap items-center">
+                  <strong className="w-full md:w-1/3">{t.name}:</strong>
+                  <input
+                    type="text"
+                    name="name"
+                    value={editForm.name}
+                    onChange={handleInputChange}
+                    className={`flex-grow px-3 py-1 rounded ${
+                      isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"
+                    }`}
+                  />
+                </li>
+                <li className="flex flex-wrap items-center">
+                  <strong className="w-full md:w-1/3">{t.surname}:</strong>
+                  <input
+                    type="text"
+                    name="surname"
+                    value={editForm.surname}
+                    onChange={handleInputChange}
+                    className={`flex-grow px-3 py-1 rounded ${
+                      isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"
+                    }`}
+                  />
+                </li>
+                <li className="flex flex-wrap items-center">
+                  <strong className="w-full md:w-1/3">{t.gender}:</strong>
+                  <select
+                    name="gender"
+                    value={editForm.gender}
+                    onChange={handleInputChange}
+                    className={`flex-grow px-3 py-1 rounded ${
+                      isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"
+                    }`}
+                  >
+                    <option value="">{t.selectGender}</option>
+                    <option value="male">{t.male}</option>
+                    <option value="female">{t.female}</option>
+                    <option value="other">{t.other}</option>
+                    <option value="prefer_not_to_say">{t.preferNotToSay}</option>
+                  </select>
+                </li>
+                <li className="flex flex-wrap items-center">
+                  <strong className="w-full md:w-1/3">{t.dateOfBirth}:</strong>
+                  <input
+                    type="date"
+                    name="date_of_birth"
+                    value={editForm.date_of_birth}
+                    onChange={handleInputChange}
+                    className={`flex-grow px-3 py-1 rounded ${
+                      isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"
+                    }`}
+                  />
+                </li>
+              </>
+            ) : (
+              <>
+                <li>
+                  <strong>{t.name}:</strong> {user?.name || "N/A"}
+                </li>
+                <li>
+                  <strong>{t.surname}:</strong> {user?.surname || "N/A"}
+                </li>
+                <li>
+                  <strong>{t.email}:</strong> {user?.email || "N/A"}
+                </li>
+                <li>
+                  <strong>{t.login}:</strong> {user?.login || "N/A"}
+                </li>
+                <li>
+                  <strong>{t.gender}:</strong> {user?.gender ? t[user.gender] || user.gender : "N/A"}
+                </li>
+                <li>
+                  <strong>{t.dateOfBirth}:</strong> {formatDate(user?.date_of_birth || "")}
+                </li>
+                <li>
+                  <strong>{t.userSince}:</strong> {formatDate(user?.created_at || "")}
+                </li>
+                <li>
+                  <strong>{t.lastLogin}:</strong> {formatDate(user?.last_login || "")}
+                </li>
+              </>
+            )}
           </ul>
+          
           <div className="mt-6">
             <button
               onClick={handleLogout}

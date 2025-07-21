@@ -6,6 +6,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import WelcomeSite from "./WelcomeSite";
 import SearchSite from "./SearchSite";
+import FunkoDetails from "./FunkoDetails";
 import LoginSite from "./LoginSite"
 import RegisterSite from "./RegisterSite"
 import DashboardSite from "./DashboardSite"
@@ -25,6 +26,7 @@ root.render(
           <Routes>
             <Route path="/" element={<WelcomeSite />} />
             <Route path="/SearchSite" element={<SearchSite />} />
+            <Route path="/funko/:id" element={<FunkoDetails />} />
             <Route path="/LoginSite" element={<LoginSite />} />
             <Route path="/RegisterSite" element={<RegisterSite />} />
             <Route path="/DashboardSite" element={<DashboardSite />} />

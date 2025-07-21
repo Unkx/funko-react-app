@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react"; // Import useMemo
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { translations } from "./Translations/TranslationsSearchSite";
 
@@ -9,13 +9,78 @@ import SearchIcon from "/src/assets/search.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 
-// Flags
+// Add a simple CloseIcon if you don't have one as a separate SVG file
+const CloseIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    {...props}
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+  </svg>
+);
+
+
+// Flags (assuming these paths are correct)
 import UKFlag from "/src/assets/flags/uk.svg?react";
 import PolandFlag from "/src/assets/flags/poland.svg?react";
 import RussiaFlag from "/src/assets/flags/russia.svg?react";
 import FranceFlag from "/src/assets/flags/france.svg?react";
 import GermanyFlag from "/src/assets/flags/germany.svg?react";
 import SpainFlag from "/src/assets/flags/spain.svg?react";
+
+// --- START NEW MODAL COMPONENT ---
+interface ImageModalProps {
+  imageUrl: string;
+  altText: string;
+  onClose: () => void;
+  isDarkMode: boolean;
+}
+
+const ImageModal: React.FC<ImageModalProps> = ({ imageUrl, altText, onClose, isDarkMode }) => {
+  useEffect(() => {
+    // Disable body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+      onClick={onClose} // Close when clicking outside the image
+    >
+      <div
+        className={`relative ${isDarkMode ? "bg-gray-800" : "bg-white"} p-4 rounded-lg shadow-xl max-w-3xl max-h-[90vh] overflow-hidden`}
+        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the modal content
+      >
+        <button
+          onClick={onClose}
+          className={`absolute top-2 right-2 p-1 rounded-full ${isDarkMode ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-200 text-black hover:bg-gray-300"}`}
+          aria-label="Close image"
+        >
+          <CloseIcon className="w-6 h-6" /> {/* Using the new CloseIcon */}
+        </button>
+        <img
+          src={imageUrl}
+          alt={altText}
+          className="max-w-full max-h-[calc(90vh-60px)] object-contain" // Adjusted max-height to account for padding/button
+          onError={(e) => {
+            e.currentTarget.src = "/src/assets/placeholder.png";
+            e.currentTarget.onerror = null;
+          }}
+        />
+        <p className={`text-center mt-2 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>{altText}</p>
+      </div>
+    </div>
+  );
+};
+// --- END NEW MODAL COMPONENT ---
+
 
 const SearchSite = () => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -30,7 +95,7 @@ const SearchSite = () => {
   const [funkoData, setFunkoData] = useState([]);
   const [filteredAndSortedResults, setFilteredAndSortedResults] = useState(
     []
-  ); // Renamed 'results'
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -38,6 +103,12 @@ const SearchSite = () => {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [showExclusiveOnly, setShowExclusiveOnly] = useState(false);
   const [sortOption, setSortOption] = useState("titleAsc");
+
+  // --- NEW STATE FOR MODAL ---
+  const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
+  const [modalImageAlt, setModalImageAlt] = useState<string | null>(null);
+  // --- END NEW STATE FOR MODAL ---
+
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -47,15 +118,13 @@ const SearchSite = () => {
   const queryParams = new URLSearchParams(location.search);
   const queryParam = queryParams.get("q") || "";
 
-  // Calculate totalPages based on the *filtered and sorted* results
   const totalPages = Math.ceil(filteredAndSortedResults.length / itemsPerPage);
 
-  // Derive currentItems using useMemo to optimize and recalculate only when dependencies change
   const currentItems = useMemo(() => {
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     return filteredAndSortedResults.slice(indexOfFirstItem, indexOfLastItem);
-  }, [currentPage, itemsPerPage, filteredAndSortedResults]); // Dependencies
+  }, [currentPage, itemsPerPage, filteredAndSortedResults]);
 
   const availableSeries = useMemo(() => {
     return [...new Set(funkoData.flatMap((item: any) => item.series))];
@@ -70,6 +139,13 @@ const SearchSite = () => {
     DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
   };
 
+  // Helper to generate IDs
+  const generateId = (title: string | undefined, number: string | undefined): string => {
+    const safeTitle = title ? title.trim() : "";
+    const safeNumber = number ? number.trim() : "";
+    return `${safeTitle}-${safeNumber}`.replace(/\s+/g, "-");
+  };
+
   // Fetch data
   useEffect(() => {
     const fetchData = async () => {
@@ -80,7 +156,13 @@ const SearchSite = () => {
         );
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
-        setFunkoData(data);
+
+        // Generate IDs for the fetched data before setting it
+        const dataWithIds = data.map((item: any) => ({
+          ...item,
+          id: generateId(item.title, item.number),
+        }));
+        setFunkoData(dataWithIds); // Store data with IDs
         setError(null);
       } catch (err) {
         setError(err.message || "An error occurred while fetching data.");
@@ -126,8 +208,6 @@ const SearchSite = () => {
   }, [showLanguageDropdown]);
 
   // Effect for filtering and sorting the main data.
-  // This state (`filteredAndSortedResults`) should hold ALL results
-  // after filters and sorting, but BEFORE pagination slicing.
   useEffect(() => {
     if (funkoData.length === 0) {
       setFilteredAndSortedResults([]);
@@ -158,12 +238,12 @@ const SearchSite = () => {
         break;
       case "numberAsc":
         currentProcessedResults.sort(
-          (a: any, b: any) => (a.number || 0) - (b.number || 0)
+          (a: any, b: any) => (Number(a.number) || 0) - (Number(b.number) || 0)
         );
         break;
       case "numberDesc":
         currentProcessedResults.sort(
-          (a: any, b: any) => (b.number || 0) - (a.number || 0)
+          (a: any, b: any) => (Number(b.number) || 0) - (Number(a.number) || 0)
         );
         break;
       case "titleAsc":
@@ -277,6 +357,18 @@ const SearchSite = () => {
       ? t.goToDashboard || "Dashboard"
       : t.goToLoginSite || "Log In";
   }, [t]);
+
+  // --- NEW HANDLERS FOR MODAL ---
+  const openImageModal = (imageUrl: string, altText: string) => {
+    setModalImageUrl(imageUrl);
+    setModalImageAlt(altText);
+  };
+
+  const closeImageModal = () => {
+    setModalImageUrl(null);
+    setModalImageAlt(null);
+  };
+  // --- END NEW HANDLERS FOR MODAL ---
 
   return (
     <div
@@ -474,21 +566,27 @@ const SearchSite = () => {
             {filteredAndSortedResults.length > 0 ? (
               <>
                 <ul className="w-full max-w-4xl space-y-4">
-                  {currentItems.map((item: any, index: number) => (
+                  {currentItems.map((item: any) => (
                     <li
-                      key={index}
+                      key={item.id} // Using item.id as key is best practice
                       className={`p-4 sm:px-6 sm:py-4 rounded-lg flex flex-col sm:flex-row gap-4 ${
                         isDarkMode ? "bg-gray-700" : "bg-gray-200"
-                      }`}
+                      } cursor-pointer hover:opacity-90 transition-opacity`}
+                      onClick={() => navigate(`/funko/${item.id}`)}
                     >
                       <div className="flex-shrink-0 mx-auto sm:mx-0">
+                        {/* THE IMAGE ELEMENT - CORRECTED SRC AND ADDED MODAL CLICK */}
                         <img
-                          src={item.imageName || "/src/assets/placeholder.png"}
+                          src={item.imageName || "/src/assets/placeholder.png"} // Corrected to item.imageName
                           alt={item.title}
-                          className="w-24 h-24 object-contain rounded-md"
+                          className="w-24 h-24 object-contain rounded-md cursor-zoom-in"
                           onError={(e) => {
                             e.currentTarget.src = "/src/assets/placeholder.png";
                             e.currentTarget.onerror = null;
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevents the <li>'s navigate from firing
+                            openImageModal(item.imageName || "/src/assets/placeholder.png", item.title); // Corrected for modal
                           }}
                         />
                       </div>
@@ -523,7 +621,7 @@ const SearchSite = () => {
                       value={itemsPerPage}
                       onChange={(e) => {
                         setItemsPerPage(Number(e.target.value));
-                        setCurrentPage(1); // Reset to first page when items per page changes
+                        setCurrentPage(1);
                       }}
                       className={`px-2 py-1 rounded ${
                         isDarkMode ? "bg-gray-700" : "bg-gray-200"
@@ -586,6 +684,7 @@ const SearchSite = () => {
                     >
                       &gt;
                     </button>
+
                   </div>
 
                   <div className="text-sm">
@@ -608,6 +707,17 @@ const SearchSite = () => {
       >
         {t.copyright}
       </footer>
+
+      {/* --- NEW MODAL RENDER --- */}
+      {modalImageUrl && (
+        <ImageModal
+          imageUrl={modalImageUrl}
+          altText={modalImageAlt || "Funko Pop Image"}
+          onClose={closeImageModal}
+          isDarkMode={isDarkMode}
+        />
+      )}
+      {/* --- END NEW MODAL RENDER --- */}
     </div>
   );
 };

@@ -31,6 +31,9 @@ interface FunkoItemWithId extends FunkoItem {
   id: string;
 }
 
+
+//onst query = encodeURIComponent(funkoItem?.title || "");
+
 const FunkoDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -381,6 +384,16 @@ const FunkoDetails: React.FC = () => {
         >
           {t.backButton}
         </button>
+
+        
+        <a
+          href={`https://vinylcave.pl/pl/searchquery/${encodeURIComponent(funkoItem.title)}/1/full/5?url=${encodeURIComponent(funkoItem.title)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Search on VinylCave.pl
+        </a>
+
 
         <div
           className={`p-6 rounded-lg shadow-lg ${

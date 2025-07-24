@@ -19,6 +19,19 @@ import FranceFlag from "/src/assets/flags/france.svg?react";
 import GermanyFlag from "/src/assets/flags/germany.svg?react";
 import SpainFlag from "/src/assets/flags/spain.svg?react";
 
+// Types
+interface FunkoItem {
+  title: string;
+  number: string;
+  series: string[];
+  exclusive: boolean;
+  imageName: string;
+}
+
+interface FunkoItemWithId extends FunkoItem {
+  id: string;
+}
+
 const languages = {
   EN: { name: "English", flag: <UKFlag className="w-5 h-5" /> },
   PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
@@ -28,33 +41,28 @@ const languages = {
   ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
 };
 
+// Helper to generate consistent IDs
+const generateId = (title: string | undefined, number: string | undefined): string => {
+  const safeTitle = title ? title.trim() : "";
+  const safeNumber = number ? number.trim() : "";
+  return `${safeTitle}-${safeNumber}`.replace(/\s+/g, "-");
+};
+
 const WelcomeSite: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem("preferredTheme");
     return savedTheme !== null ? savedTheme === "dark" : true;
   });
-
   const [searchQuery, setSearchQuery] = useState("");
   const [language, setLanguage] = useState("EN");
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [shouldShowPopup, setShouldShowPopup] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
+  const [funkoData, setFunkoData] = useState<FunkoItemWithId[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   const t = translations[language] || translations["EN"];
-
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-
-  // Handle theme changes
-  useEffect(() => {
-    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDarkMode]);
 
   // Load preferences on mount
   useEffect(() => {
@@ -69,13 +77,22 @@ const WelcomeSite: React.FC = () => {
       localStorage.setItem("hasSeenLanguagePopup", "true");
     }
 
-    const token = localStorage.getItem("authToken");
-    setIsLoggedIn(!!token);
-  }, []);
+    // Load theme
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDarkMode]);
 
-  // Save theme to storage
+  // Save theme
   useEffect(() => {
-    localStorage.setItem("theme", JSON.stringify(isDarkMode));
+    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
   }, [isDarkMode]);
 
   // Close dropdown when clicking outside
@@ -97,6 +114,56 @@ const WelcomeSite: React.FC = () => {
     };
   }, [showLanguageDropdown]);
 
+  // Fetch Funko data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(
+          "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
+        );
+        if (!response.ok) throw new Error("Failed to fetch data");
+        const rawData: FunkoItem[] = await response.json();
+
+        const dataWithIds = rawData.map((item) => ({
+          ...item,
+          id: generateId(item.title, item.number),
+        }));
+
+        setFunkoData(dataWithIds);
+      } catch (err) {
+        console.error("Error loading Funko data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Get 3 random items
+  const getRandomItems = (): FunkoItemWithId[] => {
+    if (funkoData.length === 0) return [];
+    const shuffled = [...funkoData].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, 3);
+  };
+
+  // Get 3 most visited items
+  const getMostVisitedItems = (): FunkoItemWithId[] => {
+    const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
+    const sorted = [...funkoData]
+      .map((item) => ({
+        ...item,
+        visits: visitCount[item.id] || 0,
+      }))
+      .sort((a, b) => b.visits - a.visits)
+      .filter((item) => item.visits > 0);
+    return sorted.slice(0, 3);
+  };
+
+  const randomItems = getRandomItems();
+  const mostVisitedItems = getMostVisitedItems();
+
   const selectLanguage = (lang: string) => {
     setLanguage(lang);
     localStorage.setItem("preferredLanguage", lang);
@@ -104,6 +171,7 @@ const WelcomeSite: React.FC = () => {
   };
 
   const toggleTheme = () => setIsDarkMode((prev) => !prev);
+
   const toggleLanguageDropdown = () => setShowLanguageDropdown((prev) => !prev);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -113,6 +181,13 @@ const WelcomeSite: React.FC = () => {
     } else {
       navigate("/searchsite");
     }
+  };
+
+  const handleItemClick = (id: string) => {
+    // Increment visit count
+    const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
+    visitCount[id] = (visitCount[id] || 0) + 1;
+    localStorage.setItem("funkoVisitCount", JSON.stringify(visitCount));
   };
 
   return (
@@ -222,7 +297,6 @@ const WelcomeSite: React.FC = () => {
             )}
           </div>
 
-          {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
             className={`p-2 rounded-full ${
@@ -232,14 +306,9 @@ const WelcomeSite: React.FC = () => {
             }`}
             aria-label="Toggle theme"
           >
-            {isDarkMode ? (
-              <SunIcon className="w-6 h-6" />
-            ) : (
-              <MoonIcon className="w-6 h-6" />
-            )}
+            {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
 
-          {/* Dashboard/Login Button */}
           <button
             onClick={() => {
               const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -248,7 +317,7 @@ const WelcomeSite: React.FC = () => {
               } else if (user.role === "user") {
                 navigate("/dashboardSite");
               } else {
-                navigate("/LoginSite");
+                navigate("/loginSite");
               }
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded ${
@@ -263,17 +332,129 @@ const WelcomeSite: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow p-4 sm:p-8 flex flex-col items-center justify-center">
-        <Link
-          to="/searchsite"
-          className={`px-6 py-3 rounded-lg font-bold text-center ${
-            isDarkMode
-              ? "bg-yellow-500 hover:bg-yellow-600"
-              : "bg-green-600 hover:bg-green-700"
-          } transition-colors`}
-        >
-          {t.goToSearch}
-        </Link>
+      <main className="flex-grow p-4 sm:p-8 flex flex-col items-center">
+        {/* Random Items */}
+        <section className="w-full max-w-4xl mb-10">
+          <h2 className="text-2xl font-bold mb-4 text-center">{t.randomItems || "Random Funko Pops"}</h2>
+          {isLoading ? (
+            <div className="flex justify-center">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-yellow-500"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {randomItems.map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/funko/${item.id}`}
+                  onClick={() => handleItemClick(item.id)}
+                  className={`block p-4 rounded-lg ${
+                    isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-white hover:bg-gray-100"
+                  } shadow transition-transform hover:scale-105`}
+                >
+                  <img
+                    src={item.imageName || "/src/assets/placeholder.png"}
+                    alt={item.title}
+                    className="w-full h-48 object-contain rounded-md mb-3"
+                    onError={(e) => {
+                      e.currentTarget.src = "/src/assets/placeholder.png";
+                    }}
+                  />
+                  <h3 className="font-bold text-center">{item.title}</h3>
+                  <p className="text-sm text-center">
+                    #{item.number} • {item.series.join(", ")}
+                  </p>
+                  {item.exclusive && (
+                    <span
+                      className={`inline-block mt-1 px-2 py-1 rounded text-xs ${
+                        isDarkMode ? "bg-yellow-600" : "bg-green-600"
+                      }`}
+                    >
+                      {t.exclusive || "Exclusive"}
+                    </span>
+                  )}
+                </Link>
+              ))}
+
+              <Link 
+              to="/caterogies"
+              className={`block p-4 rounded-lg ${
+                    isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-white hover:bg-gray-100"
+                  } shadow transition-transform hover:scale-105`}
+                >
+                <h2 className="text-2xl font-bold mb-4 text-center">{t.goToCategories || "Go to Catergories"}</h2>
+              </Link>
+
+            </div>
+          )}
+        </section>
+
+        {/* Most Visited Items */}
+        <section className="w-full max-w-4xl">
+          <h2 className="text-2xl font-bold mb-4 text-center">{t.mostVisited || "Most Visited Funko Pops"}</h2>
+          {mostVisitedItems.length === 0 ? (
+            <p className="text-center text-gray-500">{t.noVisitsYet || "No items visited yet."}</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {mostVisitedItems.map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/funko/${item.id}`}
+                  onClick={() => handleItemClick(item.id)}
+                  className={`block p-4 rounded-lg ${
+                    isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-white hover:bg-gray-100"
+                  } shadow transition-transform hover:scale-105`}
+                >
+                  <img
+                    src={item.imageName || "/src/assets/placeholder.png"}
+                    alt={item.title}
+                    className="w-full h-48 object-contain rounded-md mb-3"
+                    onError={(e) => {
+                      e.currentTarget.src = "/src/assets/placeholder.png";
+                    }}
+                  />
+                  <h3 className="font-bold text-center">{item.title}</h3>
+                  <p className="text-sm text-center">
+                    #{item.number} • {item.series.join(", ")}
+                  </p>
+                  {item.exclusive && (
+                    <span
+                      className={`inline-block mt-1 px-2 py-1 rounded text-xs ${
+                        isDarkMode ? "bg-yellow-600" : "bg-green-600"
+                      }`}
+                    >
+                      {t.exclusive || "Exclusive"}
+                    </span>
+                  )}
+                </Link>
+              ))}
+
+              <Link 
+              to="/mostVisited"
+              className={`block p-4 rounded-lg ${
+                    isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-white hover:bg-gray-100"
+                  } shadow transition-transform hover:scale-105`}
+                >
+                <h2 className="text-2xl font-bold mb-4 text-center">{t.goToMostVisited || "Go to Most Visited"}</h2>
+              </Link>
+
+            </div>
+            
+          )}
+        </section>
+
+        {/* CTA Button */}
+        {/* <div className="mt-12">
+          <Link
+            to="/searchsite"
+            className={`px-6 py-3 rounded-lg font-bold ${
+              isDarkMode
+                ? "bg-yellow-500 hover:bg-yellow-600"
+                : "bg-green-600 hover:bg-green-700"
+            } transition-colors`}
+          >
+            {t.goToSearch}
+          </Link>
+        </div> */}
       </main>
 
       {/* Footer */}

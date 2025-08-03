@@ -13,7 +13,12 @@ export const translations = {
     lastLogin:"Last Login",
     logout: "Logout",
     searchPlaceholder: "Search for products...",
-    copyright: "© 2023 Pop&Go! All rights reserved"
+    copyright: "© 2023 Pop&Go! All rights reserved",
+    yourCollection: "Your Collection",
+    emptyCollection: "No items in your collection.",
+    condition: "Condition :",
+    yourWishlist: "Your Wishlist",
+    noItemsInWishlist: "No items in your wishlist."
   },
   PL: {
     welcome: "Witaj",
@@ -28,7 +33,12 @@ export const translations = {
     lastLogin:"Ostatnie logowanie ",
     logout: "Wyloguj się",
     searchPlaceholder: "Szukaj produktów...",
-    copyright: "© 2023 Pop&Go! Wszystkie prawa zastrzeżone"
+    copyright: "© 2023 Pop&Go! Wszystkie prawa zastrzeżone",
+    yourCollection: "Twoja Kolekcja",
+    emptyCollection: "Brak przedmiotów w twojej kolekcji.",
+    condition: "Stan :",  
+    yourWishlist: "Twoja Lista Życzeń",
+    noItemsInWishlist: "Brak przedmiotów na twojej liście życzeń."
   },
   RU: {
     welcome: "Добро пожаловать",
@@ -43,7 +53,12 @@ export const translations = {
     lastLogin:"Последний вход ",
     logout: "Выйти",
     searchPlaceholder: "Поиск товаров...",
-    copyright: "© 2023 Pop&Go! Все права защищены"
+    copyright: "© 2023 Pop&Go! Все права защищены",
+    yourCollection: "Ваша Коллекция",
+    emptyCollection: "Нет предметов в вашей коллекции.",
+    condition: "Состояние :",
+    yourWishlist: "Ваш Список Желаний",
+    noItemsInWishlist: "Нет предметов в вашем списке желаний."
   },
   ES: {
     welcome: "Bienvenido",
@@ -58,7 +73,12 @@ export const translations = {
     lastLogin:"Último inicio de sesión",
     logout: "Cerrar sesión",
     searchPlaceholder: "Buscar productos...",
-    copyright: "© 2023 Pop&Go! Todos los derechos reservados"
+    copyright: "© 2023 Pop&Go! Todos los derechos reservados",
+    yourCollection: "Tu Colección",
+    emptyCollection: "No hay elementos en tu colección.",
+    condition: "Condición :",
+    yourWishlist: "Tu Lista de Deseos",
+    noItemsInWishlist: "No hay elementos en tu lista de deseos."
   },
   FR: {
     welcome: "Bienvenue",
@@ -73,7 +93,12 @@ export const translations = {
     lastLogin:"Dernière connexion",
     logout: "Se déconnecter",
     searchPlaceholder: "Rechercher des produits...",
-    copyright: "© 2023 Pop&Go! Tous droits réservés"
+    copyright: "© 2023 Pop&Go! Tous droits réservés",
+    yourCollection: "Votre Collection",
+    emptyCollection: "Aucun article dans votre collection.",
+    condition: "État :",
+    yourWishlist: "Votre Liste de Souhaits",
+    noItemsInWishlist: "Aucun article dans votre liste de souhaits."
   },
   DE: {
     welcome: "Willkommen",
@@ -88,6 +113,11 @@ export const translations = {
     lastLogin:"Letzte Anmeldung ",
     logout: "Abmelden",
     searchPlaceholder: "Produkte suchen...",
-    copyright: "© 2023 Pop&Go! Alle Rechte vorbehalten"
+    copyright: "© 2023 Pop&Go! Alle Rechte vorbehalten",
+    yourCollection: "Ihre Sammlung",
+    emptyCollection: "Keine Artikel in Ihrer Sammlung.",
+    condition: "Zustand :",
+    yourWishlist: "Ihre Wunschliste",
+    noItemsInWishlist: "Keine Artikel in Ihrer Wunschliste."
   }
 };

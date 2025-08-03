@@ -53,7 +53,7 @@ interface FunkoItem {
   purchase_date?: string;
 }
 
-const UserCollectionSection: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => {
+const UserCollectionSection: React.FC<{ isDarkMode: boolean; t: typeof translations["EN"] }> = ({ isDarkMode, t }) => {
   const [collection, setCollection] = useState<FunkoItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -70,15 +70,15 @@ const UserCollectionSection: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }
 
   return (
     <section className={`max-w-4xl w-full mb-8 p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
-      <h3 className="text-xl font-semibold mb-4">Your Collection</h3>
-      {loading ? <p>Loading...</p> : collection.length === 0 ? <p>No items in your collection.</p> :
+      <h3 className="text-xl font-semibold mb-4">{t.yourCollection}</h3>
+      {loading ? <p>Loading...</p> : collection.length === 0 ? <p>{t.emptyCollection}</p> :
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {collection.map(item => (
             <div key={item.id} className="border rounded p-3 bg-white shadow">
               {item.image_name && <img src={item.image_name} alt={item.title} className="w-full h-32 object-contain mb-2" />}
               <div className="font-semibold">{item.title}</div>
               <div>#{item.number}</div>
-              <div>Condition: {item.condition}</div>
+              <div>{t.collection} {item.condition}</div>
               <div className="text-xs text-gray-500">Added: {item.purchase_date ? new Date(item.purchase_date).toLocaleDateString() : ""}</div>
             </div>
           ))}
@@ -88,7 +88,7 @@ const UserCollectionSection: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }
   );
 };
 
-const UserWishlistSection: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) => {
+const UserWishlistSection: React.FC<{ isDarkMode: boolean; t: typeof translations["EN"] }> = ({ isDarkMode, t }) => {
   const [wishlist, setWishlist] = useState<FunkoItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -105,8 +105,8 @@ const UserWishlistSection: React.FC<{ isDarkMode: boolean }> = ({ isDarkMode }) 
 
   return (
     <section className={`max-w-4xl w-full mb-8 p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
-      <h3 className="text-xl font-semibold mb-4">Your Wishlist</h3>
-      {loading ? <p>Loading...</p> : wishlist.length === 0 ? <p>No items in your wishlist.</p> :
+      <h3 className="text-xl font-semibold mb-4">{t.yourWishlist}</h3>
+      {loading ? <p>Loading...</p> : wishlist.length === 0 ? <p>{t.noItemsInWishlist}</p> :
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {wishlist.map(item => (
             <div key={item.id} className="border rounded p-3 bg-white shadow">
@@ -603,10 +603,10 @@ const DashboardSite: React.FC = () => {
         </section>
 
         {/* Section: Collection */}
-        <UserCollectionSection isDarkMode={isDarkMode} />
+        <UserCollectionSection isDarkMode={isDarkMode} t={t} />
 
         {/* Section: Wishlist */}
-        <UserWishlistSection isDarkMode={isDarkMode} />
+        <UserWishlistSection isDarkMode={isDarkMode} t={t} />
       </main>
 
       {/* Footer */}

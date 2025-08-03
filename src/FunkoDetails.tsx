@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { translations } from "./Translations/TranslationsFunkoDetails";
+import axios from "axios";
+
 
 // Icons
 import MoonIcon from "/src/assets/moon.svg?react";
@@ -16,6 +18,33 @@ import RussiaFlag from "/src/assets/flags/russia.svg?react";
 import FranceFlag from "/src/assets/flags/france.svg?react";
 import GermanyFlag from "/src/assets/flags/germany.svg?react";
 import SpainFlag from "/src/assets/flags/spain.svg?react";
+
+const baseURL = import.meta.env.VITE_API_BASE_URL;
+if (!baseURL) {
+  console.warn("VITE_API_BASE_URL is not set, using default localhost URL");
+}
+const api = axios.create({
+  baseURL: baseURL || "http://localhost:5000",
+});
+
+  api.interceptors.request.use((config) => {
+    // Always add Authorization header from localStorage "token"
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    // Add /api prefix if not already present
+    if (
+      config.url &&
+      !config.url.startsWith('/api') &&
+      !config.url.startsWith('http')
+    ) {
+      config.url = `/api${config.url}`;
+    }
+
+    return config;
+  });
 
 // Types
 interface FunkoItem {
@@ -48,40 +77,42 @@ const FunkoDetails: React.FC = () => {
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [inWishlist, setInWishlist] = useState(false);
   const [inCollection, setInCollection] = useState(false);
+  const [user] = useState(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        console.log("Loaded user from localStorage:", { 
+          id: parsedUser.id, 
+          login: parsedUser.login, 
+          hasToken: !!parsedUser.token 
+        });
+        return parsedUser;
+      } catch (error) {
+        console.error("Error parsing stored user:", error);
+        localStorage.removeItem("user");
+        return null;
+      }
+    }
+    return null;
+  });
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   const t = translations[language] || translations["EN"];
 
-  // Helper functions
-  const getStoredItems = (key: string): FunkoItemWithId[] => {
-    const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : [];
-  };
-
-  const saveStoredItems = (key: string, items: FunkoItemWithId[]) => {
-    localStorage.setItem(key, JSON.stringify(items));
-  };
-
-  const isInList = (list: FunkoItemWithId[], itemId: string) => {
-    return list.some((item) => item.id === itemId);
-  };
-
-  const toggleInList = (key: string, item: FunkoItemWithId) => {
-    const list = getStoredItems(key);
-    const exists = isInList(list, item.id);
-
-    if (exists) {
-      saveStoredItems(key, list.filter((i) => i.id !== item.id));
-    } else {
-      saveStoredItems(key, [...list, item]);
-    }
-
-    // Update UI state
-    setInWishlist(isInList(getStoredItems("wishlist"), item.id));
-    setInCollection(isInList(getStoredItems("collection"), item.id));
-  };
+  // Debug user state on component mount
+  useEffect(() => {
+    console.log("=== USER DEBUG INFO ===");
+    console.log("Current user state:", user);
+    console.log("User has token:", !!user?.token);
+    console.log("Token value:", user?.token);
+    console.log("LocalStorage user:", localStorage.getItem("user"));
+    console.log("LocalStorage token:", localStorage.getItem("token"));
+    console.log("=====================");
+  }, [user]);
 
   // Generate ID from title and number
   const generateId = (title: string | undefined, number: string | undefined): string => {
@@ -121,15 +152,33 @@ const FunkoDetails: React.FC = () => {
     fetchData();
   }, [id]);
 
-  // Update wishlist/collection status when funkoItem loads
+  // Check if item is in wishlist/collection when loaded or user changes
   useEffect(() => {
-    if (funkoItem) {
-      const wishlist = getStoredItems("wishlist");
-      const collection = getStoredItems("collection");
-      setInWishlist(isInList(wishlist, funkoItem.id));
-      setInCollection(isInList(collection, funkoItem.id));
-    }
-  }, [funkoItem]);
+    const checkItemStatus = async () => {
+      if (!funkoItem || !user) return;
+
+      try {
+        const [wishlistRes, collectionRes] = await Promise.all([
+          api.get(`/wishlist/check/${funkoItem.id}`),
+          api.get(`/collection/check/${funkoItem.id}`)
+        ]);
+
+        setInWishlist(wishlistRes.data.exists);
+        setInCollection(collectionRes.data.exists);
+      } catch (err) {
+        console.error("Error checking item status:", err);
+        
+        // If it's an auth error, clear the user data
+        if (axios.isAxiosError(err) && (err.response?.status === 401 || err.response?.status === 403)) {
+          console.log("Authentication error - clearing user data");
+          localStorage.removeItem("user");
+          localStorage.removeItem("token");
+        }
+      }
+    };
+
+    checkItemStatus();
+  }, [funkoItem, user]);
 
   // Theme effect
   useEffect(() => {
@@ -193,18 +242,77 @@ const FunkoDetails: React.FC = () => {
     }
   };
 
+
+  
+  // Enhanced toggle wishlist function with better error handling
+const toggleWishlist = async () => {
+  if (!user) {
+    alert(t.loginRequiredMessage || "Please log in to manage your wishlist");
+    navigate("/loginSite");
+    return;
+  }
+  if (!funkoItem || isUpdating) return;
+  setIsUpdating(true);
+  try {
+    if (inWishlist) {
+      await api.delete(`/wishlist/${funkoItem.id}`);
+    } else {
+      await api.post('/wishlist', {
+        funkoId: funkoItem.id,
+        title: funkoItem.title,
+        number: funkoItem.number,
+        imageName: funkoItem.imageName
+      });
+    }
+    setInWishlist(!inWishlist);
+  } catch (err) {
+    console.error("Wishlist update error:", err);
+    alert(t.updateError || "Error updating wishlist. Please try again.");
+  } finally {
+    setIsUpdating(false);
+  }
+};
+
+  // Enhanced toggle collection function with better error handling
+  const toggleCollection = async () => {
+    if (!user) {
+      alert(t.loginRequiredMessage || "Please log in to manage your collection");
+      navigate("/loginSite");
+      return;
+    }
+    if (!funkoItem || isUpdating) return;
+    setIsUpdating(true);
+    try {
+      if (inCollection) {
+        await api.delete(`/collection/${funkoItem.id}`);
+      } else {
+        await api.post('/collection', {
+          funkoId: funkoItem.id,
+          title: funkoItem.title,
+          number: funkoItem.number,
+          imageName: funkoItem.imageName
+        });
+      }
+      setInCollection(!inCollection);
+    } catch (err) {
+      console.error("Collection update error:", err);
+      alert(t.updateError || "Error updating collection. Please try again.");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+  
   const loginButtonTo = useMemo(() => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
     if (user?.role === "admin") return "/adminSite";
     if (user?.role === "user") return "/dashboardSite";
     return "/loginSite";
-  }, []);
+  }, [user]);
 
   const loginButtonText = useMemo(() => {
-    return localStorage.getItem("user")
+    return user
       ? t.goToDashboard || "Dashboard"
       : t.goToLoginSite || "Log In";
-  }, [t]);
+  }, [t, user]);
 
   // Loading state
   if (isLoading) {
@@ -359,6 +467,7 @@ const FunkoDetails: React.FC = () => {
           href={`https://vinylcave.pl/pl/searchquery/${encodeURIComponent(funkoItem.title)}/1/full/5?url=${encodeURIComponent(funkoItem.title)}`}
           target="_blank"
           rel="noopener noreferrer"
+          className={`mb-6 inline-block ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}
         >
           {t.searchOnVinylCave || "Search on VinylCave.pl"}
         </a>
@@ -366,10 +475,21 @@ const FunkoDetails: React.FC = () => {
         <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
           <h1 className="text-3xl font-bold mb-2">{funkoItem.title}</h1>
 
+          {/* Debug info for development */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mb-4 p-2 bg-yellow-100 text-black text-xs rounded">
+              <strong>Debug:</strong> User: {user?.login || 'Not logged in'} | 
+              Token: {user?.token ? 'Present' : 'Missing'} | 
+              Wishlist: {inWishlist ? 'Yes' : 'No'} | 
+              Collection: {inCollection ? 'Yes' : 'No'}
+            </div>
+          )}
+
           {/* Wishlist & Collection Buttons */}
           <div className="flex gap-4 mb-6">
             <button
-              onClick={() => funkoItem && toggleInList("wishlist", funkoItem)}
+              onClick={toggleWishlist}
+              disabled={isUpdating}
               className={`px-4 py-2 rounded flex-1 transition ${
                 inWishlist
                   ? isDarkMode
@@ -378,13 +498,24 @@ const FunkoDetails: React.FC = () => {
                   : isDarkMode
                   ? "bg-gray-600 hover:bg-gray-500"
                   : "bg-gray-200 hover:bg-gray-300"
-              }`}
+              } ${isUpdating ? "opacity-50 cursor-not-allowed" : ""}`}
             >
-              {inWishlist ? t.removeFromWishlist || "Remove from Wishlist" : t.addToWishlist || "Add to Wishlist"}
+              {isUpdating ? (
+                <span className="inline-flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {inWishlist ? t.removing || "Removing..." : t.adding || "Adding..."}
+                </span>
+              ) : (
+                inWishlist ? t.removeFromWishlist || "Remove from Wishlist" : t.addToWishlist || "Add to Wishlist"
+              )}
             </button>
 
             <button
-              onClick={() => funkoItem && toggleInList("collection", funkoItem)}
+              onClick={toggleCollection}
+              disabled={isUpdating}
               className={`px-4 py-2 rounded flex-1 transition ${
                 inCollection
                   ? isDarkMode
@@ -393,9 +524,19 @@ const FunkoDetails: React.FC = () => {
                   : isDarkMode
                   ? "bg-gray-600 hover:bg-gray-500"
                   : "bg-gray-200 hover:bg-gray-300"
-              }`}
+              } ${isUpdating ? "opacity-50 cursor-not-allowed" : ""}`}
             >
-              {inCollection ? t.removeFromCollection || "Remove from Collection" : t.addToCollection || "Add to Collection"}
+              {isUpdating ? (
+                <span className="inline-flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {inCollection ? t.removing || "Removing..." : t.adding || "Adding..."}
+                </span>
+              ) : (
+                inCollection ? t.removeFromCollection || "Remove from Collection" : t.addToCollection || "Add to Collection"
+              )}
             </button>
           </div>
 

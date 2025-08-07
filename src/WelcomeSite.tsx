@@ -3,23 +3,20 @@ import { Link, useNavigate } from "react-router-dom";
 import LanguageSelectorPopup from "./LanguageSelectorPopup";
 import { translations } from "./Translations/TranslationsWelcomeSite";
 import "./WelcomeSite.css";
-
-// Icons
 import MoonIcon from "/src/assets/moon.svg?react";
 import SunIcon from "/src/assets/sun.svg?react";
 import SearchIcon from "/src/assets/search.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
-
-// Flags
 import UKFlag from "/src/assets/flags/uk.svg?react";
+import USAFlag from "/src/assets/flags/usa.svg?react";
 import PolandFlag from "/src/assets/flags/poland.svg?react";
 import RussiaFlag from "/src/assets/flags/russia.svg?react";
 import FranceFlag from "/src/assets/flags/france.svg?react";
 import GermanyFlag from "/src/assets/flags/germany.svg?react";
 import SpainFlag from "/src/assets/flags/spain.svg?react";
+import WorldMap from "./Maps/WorldMap"; // ✅ Import map
 
-// Types
 interface FunkoItem {
   title: string;
   number: string;
@@ -32,43 +29,128 @@ interface FunkoItemWithId extends FunkoItem {
   id: string;
 }
 
-const languages = {
-  EN: { name: "English", flag: <UKFlag className="w-5 h-5" /> },
-  PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
-  RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
-  FR: { name: "Français", flag: <FranceFlag className="w-5 h-5" /> },
-  DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
-  ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
+// 🌍 Centralized country configuration
+const countries = {
+  USA: {
+    name: "United States",
+    flag: <USAFlag className="w-5 h-5" />,
+    region: "North America",
+    language: "EN",
+  },
+  UK: {
+    name: "United Kingdom",
+    flag: <UKFlag className="w-5 h-5" />,
+    region: "Europe",
+    language: "EN",
+  },
+  PL: {
+    name: "Poland",
+    flag: <PolandFlag className="w-5 h-5" />,
+    region: "Europe",
+    language: "PL",
+  },
+  RU: {
+    name: "Russia",
+    flag: <RussiaFlag className="w-5 h-5" />,
+    region: "Europe",
+    language: "RU",
+  },
+  FR: {
+    name: "France",
+    flag: <FranceFlag className="w-5 h-5" />,
+    region: "Europe",
+    language: "FR",
+  },
+  DE: {
+    name: "Germany",
+    flag: <GermanyFlag className="w-5 h-5" />,
+    region: "Europe",
+    language: "DE",
+  },
+  ES: {
+    name: "Spain",
+    flag: <SpainFlag className="w-5 h-5" />,
+    region: "Europe",
+    language: "ES",
+  },
 };
 
-// Helper to generate consistent IDs
+// 📚 Language display names
+const languageNames = {
+  EN: "English",
+  PL: "Polski",
+  RU: "Русский",
+  FR: "Français",
+  DE: "Deutsch",
+  ES: "Español",
+};
+
+// 🔢 Generate unique ID for Funko items
 const generateId = (title: string | undefined, number: string | undefined): string => {
-  const safeTitle = title ? title.trim() : "";
-  const safeNumber = number ? number.trim() : "";
+  const safeTitle = title?.trim() || "";
+  const safeNumber = number?.trim() || "";
   return `${safeTitle}-${safeNumber}`.replace(/\s+/g, "-");
 };
 
 const WelcomeSite: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    const savedTheme = localStorage.getItem("preferredTheme");
-    return savedTheme !== null ? savedTheme === "dark" : true;
+    const saved = localStorage.getItem("preferredTheme");
+    return saved ? saved === "dark" : true;
   });
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [language, setLanguage] = useState("EN");
-  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<string>("USA");
+  const [language, setLanguage] = useState<string>("EN");
+  const [region, setRegion] = useState<string>("North America");
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [shouldShowPopup, setShouldShowPopup] = useState(false);
   const [funkoData, setFunkoData] = useState<FunkoItemWithId[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
   const navigate = useNavigate();
   const t = translations[language] || translations["EN"];
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  // Load preferences on mount
+  // 🌐 Detect country from browser language
+  const detectCountryFromLocale = (locale: string): string | null => {
+    const map: Record<string, string> = {
+      "en-US": "USA",
+      "en-GB": "UK",
+      pl: "PL",
+      "pl-PL": "PL",
+      ru: "RU",
+      "ru-RU": "RU",
+      fr: "FR",
+      "fr-FR": "FR",
+      de: "DE",
+      "de-DE": "DE",
+      es: "ES",
+      "es-ES": "ES",
+    };
+    return map[locale] || map[locale.split("-")[0]] || null;
+  };
+
+  // 🧩 Initial setup: load preferences or detect locale
   useEffect(() => {
-    const savedLang = localStorage.getItem("preferredLanguage");
-    if (savedLang && languages[savedLang as keyof typeof languages]) {
-      setLanguage(savedLang);
+    const savedCountry = localStorage.getItem("preferredCountry");
+    const countryData = savedCountry && countries[savedCountry as keyof typeof countries]
+      ? countries[savedCountry as keyof typeof countries]
+      : null;
+
+    if (countryData) {
+      setSelectedCountry(savedCountry);
+      setLanguage(countryData.language);
+      setRegion(countryData.region);
+    } else {
+      const detected = detectCountryFromLocale(navigator.language);
+      const detectedData = detected ? countries[detected as keyof typeof countries] : null;
+      if (detectedData) {
+        setSelectedCountry(detected);
+        setLanguage(detectedData.language);
+        setRegion(detectedData.region);
+      }
     }
 
     const hasSeenPopup = localStorage.getItem("hasSeenLanguagePopup");
@@ -77,15 +159,11 @@ const WelcomeSite: React.FC = () => {
       localStorage.setItem("hasSeenLanguagePopup", "true");
     }
 
-    // Load theme
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDarkMode]);
+    if (isDarkMode) document.documentElement.classList.add("dark");
+    else document.documentElement.classList.remove("dark");
+  }, []);
 
-  // Save theme
+  // 🌙 Theme sync
   useEffect(() => {
     localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
     if (isDarkMode) {
@@ -95,26 +173,24 @@ const WelcomeSite: React.FC = () => {
     }
   }, [isDarkMode]);
 
-  // Close dropdown when clicking outside
+  // 🖱️ Close dropdown on outside click
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (e: MouseEvent) => {
       if (
-        showLanguageDropdown &&
+        showCountryDropdown &&
         dropdownRef.current &&
         buttonRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        !buttonRef.current.contains(event.target as Node)
+        !dropdownRef.current.contains(e.target as Node) &&
+        !buttonRef.current.contains(e.target as Node)
       ) {
-        setShowLanguageDropdown(false);
+        setShowCountryDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showLanguageDropdown]);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showCountryDropdown]);
 
-  // Fetch Funko data
+  // 📥 Fetch Funko data
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -124,12 +200,10 @@ const WelcomeSite: React.FC = () => {
         );
         if (!response.ok) throw new Error("Failed to fetch data");
         const rawData: FunkoItem[] = await response.json();
-
         const dataWithIds = rawData.map((item) => ({
           ...item,
           id: generateId(item.title, item.number),
         }));
-
         setFunkoData(dataWithIds);
       } catch (err) {
         console.error("Error loading Funko data:", err);
@@ -137,58 +211,73 @@ const WelcomeSite: React.FC = () => {
         setIsLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
-  // Get 3 random items
+  // 🎲 Get 3 random items
   const getRandomItems = (): FunkoItemWithId[] => {
     if (funkoData.length === 0) return [];
     const shuffled = [...funkoData].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, 3);
   };
 
-  // Get 3 most visited items
+  // 🔥 Get most visited items
   const getMostVisitedItems = (): FunkoItemWithId[] => {
     const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
-    const sorted = [...funkoData]
-      .map((item) => ({
-        ...item,
-        visits: visitCount[item.id] || 0,
-      }))
+    return [...funkoData]
+      .map((item) => ({ ...item, visits: visitCount[item.id] || 0 }))
       .sort((a, b) => b.visits - a.visits)
-      .filter((item) => item.visits > 0);
-    return sorted.slice(0, 3);
+      .filter((item) => item.visits > 0)
+      .slice(0, 3);
   };
 
-  const randomItems = getRandomItems();
-  const mostVisitedItems = getMostVisitedItems();
-
-  const selectLanguage = (lang: string) => {
-    setLanguage(lang);
-    localStorage.setItem("preferredLanguage", lang);
-    setShowLanguageDropdown(false);
-  };
-
-  const toggleTheme = () => setIsDarkMode((prev) => !prev);
-
-  const toggleLanguageDropdown = () => setShowLanguageDropdown((prev) => !prev);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/searchsite?q=${encodeURIComponent(searchQuery.trim())}`);
-    } else {
-      navigate("/searchsite");
+  // 🌍 Handle country selection
+  const handleCountryChange = (countryCode: string) => {
+    const countryData = countries[countryCode as keyof typeof countries];
+    if (countryData) {
+      setSelectedCountry(countryCode);
+      setLanguage(countryData.language);
+      setRegion(countryData.region);
+      localStorage.setItem("preferredCountry", countryCode);
+      localStorage.setItem("preferredLanguage", countryData.language);
+      setShowCountryDropdown(false);
     }
   };
 
+  // 🗺️ Handle map click
+  const handleMapCountryClick = (mapCode: string) => {
+    const codeMap: Record<string, string> = {
+      US: "USA",
+      GB: "UK",
+      DE: "DE",
+      FR: "FR",
+      PL: "PL",
+      RU: "RU",
+      ES: "ES",
+      CA: "USA", // Canada → North America
+    };
+    const appCode = codeMap[mapCode];
+    if (appCode) handleCountryChange(appCode);
+  };
+
+  // 🔍 Handle search
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    navigate(`/searchsite?q=${encodeURIComponent(searchQuery.trim())}`);
+  };
+
+  // 👁️ Track item visits
   const handleItemClick = (id: string) => {
-    // Increment visit count
     const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
     visitCount[id] = (visitCount[id] || 0) + 1;
     localStorage.setItem("funkoVisitCount", JSON.stringify(visitCount));
   };
+
+  const toggleTheme = () => setIsDarkMode((prev) => !prev);
+  const toggleCountryDropdown = () => setShowCountryDropdown((prev) => !prev);
+
+  const randomItems = getRandomItems();
+  const mostVisitedItems = getMostVisitedItems();
 
   return (
     <div
@@ -196,7 +285,7 @@ const WelcomeSite: React.FC = () => {
         isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
       }`}
     >
-      {/* Header */}
+      {/* 🔝 Header */}
       <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
         <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
           <Link to="/" className="no-underline">
@@ -213,7 +302,7 @@ const WelcomeSite: React.FC = () => {
           )}
         </div>
 
-        {/* Search Form */}
+        {/* 🔍 Search */}
         <form
           onSubmit={handleSearch}
           className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden ${
@@ -228,7 +317,7 @@ const WelcomeSite: React.FC = () => {
             className={`flex-grow px-4 py-2 outline-none ${
               isDarkMode
                 ? "bg-gray-700 text-white placeholder-gray-400"
-                : "bg-white text-black"
+                : "bg-white text-black placeholder-gray-500"
             }`}
             aria-label="Search input"
           />
@@ -238,65 +327,87 @@ const WelcomeSite: React.FC = () => {
               isDarkMode
                 ? "bg-yellow-500 hover:bg-yellow-600"
                 : "bg-green-600 hover:bg-green-700"
-            }`}
+            } text-white`}
             aria-label="Search"
           >
             <SearchIcon className="w-5 h-5" />
           </button>
         </form>
 
-        {/* Theme & Language Toggle + Login Button */}
+        {/* 🌐 Country, 🌙 Theme, 🔐 Login */}
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto justify-end">
+          {/* 🌐 Country Selector */}
           <div className="relative inline-block">
             <button
               ref={buttonRef}
-              onClick={toggleLanguageDropdown}
-              className={`language-toggle-button p-2 rounded-full flex items-center gap-1 ${
+              onClick={toggleCountryDropdown}
+              className={`p-2 rounded-full flex items-center gap-2 ${
                 isDarkMode
                   ? "bg-gray-700 hover:bg-gray-600"
                   : "bg-gray-200 hover:bg-gray-300"
               }`}
-              aria-label="Select language"
-              aria-expanded={showLanguageDropdown}
+              aria-label="Select country"
+              aria-expanded={showCountryDropdown}
             >
               <GlobeIcon className="w-5 h-5" />
-              <span className="text-sm font-medium">{language}</span>
+              <span className="flex items-center gap-1">
+                {countries[selectedCountry as keyof typeof countries]?.flag}
+                <span className="text-sm font-medium hidden sm:inline">
+                  {countries[selectedCountry as keyof typeof countries]?.name}
+                </span>
+              </span>
               <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${
-                  showLanguageDropdown ? "rotate-180" : ""
-                }`}
+                className={`w-4 h-4 transition-transform ${showCountryDropdown ? "rotate-180" : ""}`}
               />
             </button>
-            {showLanguageDropdown && (
+
+            {showCountryDropdown && (
               <div
                 ref={dropdownRef}
-                className={`language-dropdown-container absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
+                className={`absolute right-0 mt-2 w-64 rounded-md shadow-lg py-1 z-50 max-h-80 overflow-y-auto ${
                   isDarkMode ? "bg-gray-700" : "bg-white"
                 }`}
                 onClick={(e) => e.stopPropagation()}
               >
-                {Object.entries(languages).map(([code, { name, flag }]) => (
-                  <button
-                    key={code}
-                    onClick={() => selectLanguage(code)}
-                    className={`w-full text-left px-4 py-2 flex items-center gap-2 ${
-                      language === code
-                        ? isDarkMode
-                          ? "bg-yellow-500 text-black"
-                          : "bg-green-600 text-white"
-                        : isDarkMode
-                        ? "hover:bg-gray-600"
-                        : "hover:bg-gray-200"
-                    }`}
-                  >
-                    <span className="w-5 h-5">{flag}</span>
-                    <span>{name}</span>
-                  </button>
+                {(["North America", "Europe"] as const).map((regionName) => (
+                  <div key={regionName}>
+                    <div
+                      className={`px-4 py-2 text-xs font-semibold ${
+                        isDarkMode ? "text-gray-300" : "text-gray-500"
+                      }`}
+                    >
+                      {regionName}
+                    </div>
+                    {Object.entries(countries)
+                      .filter(([, country]) => country.region === regionName)
+                      .map(([code, country]) => (
+                        <button
+                          key={code}
+                          onClick={() => handleCountryChange(code)}
+                          className={`w-full text-left px-4 py-2 flex items-center justify-between ${
+                            selectedCountry === code
+                              ? isDarkMode
+                                ? "bg-yellow-500 text-black"
+                                : "bg-green-600 text-white"
+                              : isDarkMode
+                              ? "hover:bg-gray-600"
+                              : "hover:bg-gray-200"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="w-5 h-5">{country.flag}</span>
+                            <span>{country.name}</span>
+                          </div>
+                          <span className="text-xs opacity-75">{languageNames[country.language]}</span>
+                        </button>
+                      ))}
+                  </div>
                 ))}
               </div>
             )}
           </div>
 
+          {/* 🌙 Theme Toggle */}
           <button
             onClick={toggleTheme}
             className={`p-2 rounded-full ${
@@ -309,16 +420,11 @@ const WelcomeSite: React.FC = () => {
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
 
+          {/* 🔐 Dashboard/Login */}
           <button
             onClick={() => {
               const user = JSON.parse(localStorage.getItem("user") || "{}");
-              if (user.role === "admin") {
-                navigate("/adminSite");
-              } else if (user.role === "user") {
-                navigate("/dashboardSite");
-              } else {
-                navigate("/loginSite");
-              }
+              navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginSite");
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded ${
               isDarkMode
@@ -331,10 +437,25 @@ const WelcomeSite: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* 🧭 Main Content */}
       <main className="flex-grow p-4 sm:p-8 flex flex-col items-center">
-        {/* Random Items */}
-        <section className="w-full max-w-4xl mb-10">
+        {/* 📍 Current language & region */}
+        <div className={`mb-6 text-center ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
+          <p className="text-sm">
+            {languageNames[language]} • {region}
+          </p>
+        </div>
+
+        {/* 🌍 Interactive World Map */}
+        <section className="w-full max-w-6xl mt-12">
+          <h2 className="text-2xl font-bold mb-4 text-center">
+            {t.regionMapTitle || "Explore by Region"}
+          </h2>
+          <WorldMap onSelectCountry={handleMapCountryClick} />
+        </section>
+
+        {/* 🎲 Random Items */}
+        <section className="w-full max-w-4xl mt-10 mb-10">
           <h2 className="text-2xl font-bold mb-4 text-center">{t.randomItems || "Random Funko Pops"}</h2>
           {isLoading ? (
             <div className="flex justify-center">
@@ -367,30 +488,28 @@ const WelcomeSite: React.FC = () => {
                     <span
                       className={`inline-block mt-1 px-2 py-1 rounded text-xs ${
                         isDarkMode ? "bg-yellow-600" : "bg-green-600"
-                      }`}
+                      } text-white`}
                     >
                       {t.exclusive || "Exclusive"}
                     </span>
                   )}
                 </Link>
               ))}
-
-              <Link 
-              to="/caterogies"
-              className={`block p-4 rounded-lg ${
-                    isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-white hover:bg-gray-100"
-                  } shadow transition-transform hover:scale-105`}
-                >
-                <h2 className="text-2xl font-bold mb-4 text-center">{t.goToCategories || "Go to Catergories"}</h2>
+              <Link
+                to="/categories"
+                className={`block p-4 rounded-lg flex items-center justify-center h-full ${
+                  isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-white hover:bg-gray-100"
+                } shadow transition-transform hover:scale-105`}
+              >
+                <h2 className="text-xl font-bold">{t.goToCategories || "Browse Categories"}</h2>
               </Link>
-
             </div>
           )}
         </section>
 
-        {/* Most Visited Items */}
+        {/* 🔥 Most Visited */}
         <section className="w-full max-w-4xl">
-          <h2 className="text-2xl font-bold mb-4 text-center">{t.mostVisited || "Most Visited Funko Pops"}</h2>
+          <h2 className="text-2xl font-bold mb-4 text-center">{t.mostVisited || "Most Visited"}</h2>
           {mostVisitedItems.length === 0 ? (
             <p className="text-center text-gray-500">{t.noVisitsYet || "No items visited yet."}</p>
           ) : (
@@ -420,44 +539,27 @@ const WelcomeSite: React.FC = () => {
                     <span
                       className={`inline-block mt-1 px-2 py-1 rounded text-xs ${
                         isDarkMode ? "bg-yellow-600" : "bg-green-600"
-                      }`}
+                      } text-white`}
                     >
                       {t.exclusive || "Exclusive"}
                     </span>
                   )}
                 </Link>
               ))}
-
-              <Link 
-              to="/mostVisited"
-              className={`block p-4 rounded-lg ${
-                    isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-white hover:bg-gray-100"
-                  } shadow transition-transform hover:scale-105`}
-                >
-                <h2 className="text-2xl font-bold mb-4 text-center">{t.goToMostVisited || "Go to Most Visited"}</h2>
+              <Link
+                to="/mostVisited"
+                className={`block p-4 rounded-lg flex items-center justify-center h-full ${
+                  isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-white hover:bg-gray-100"
+                } shadow transition-transform hover:scale-105`}
+              >
+                <h2 className="text-xl font-bold">{t.goToMostVisited || "View All Popular"}</h2>
               </Link>
-
             </div>
-            
           )}
         </section>
-
-        {/* CTA Button */}
-        {/* <div className="mt-12">
-          <Link
-            to="/searchsite"
-            className={`px-6 py-3 rounded-lg font-bold ${
-              isDarkMode
-                ? "bg-yellow-500 hover:bg-yellow-600"
-                : "bg-green-600 hover:bg-green-700"
-            } transition-colors`}
-          >
-            {t.goToSearch}
-          </Link>
-        </div> */}
       </main>
 
-      {/* Footer */}
+      {/* 📝 Footer */}
       <footer
         className={`text-center py-4 ${
           isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-300 text-gray-700"

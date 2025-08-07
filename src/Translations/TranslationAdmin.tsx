@@ -26,6 +26,13 @@ export const translations = {
     offline:"Offline",
 
     never:"Never",
+
+    makeAdmin: "Make Admin",
+    confirmMakeAdmin: "Promote to admin ",
+    userPromoted: "User promoted:",
+    failedToPromote: "Failed to promote user:",
+    UserActions: "Actions",
+
   },
   PL: {
     dashboardWelcome: "Panel Administratora",
@@ -53,6 +60,12 @@ export const translations = {
     offline:"Offline",
 
     never:"Nigdy",
+
+    makeAdmin: "Uczyń administratorem",
+    confirmMakeAdmin: "Czy chcesz uczynić tego użytkownika administratorem ",
+    userPromoted: "Użytkownik został mianowany:",
+    failedToPromote: "Nie udało się mianować:",
+    UserActions: "Akcje"
   },
   RU: {
     dashboardWelcome: "Панель администратора",
@@ -80,6 +93,13 @@ export const translations = {
     offline:"Offline",    
 
     never:"никогда",
+
+    makeAdmin: "Сделать администратором",
+    confirmMakeAdmin: "Вы хотите сделать этого пользователя администратором ",
+    userPromoted: "Пользователь назначен:",
+    failedToPromote: "Не удалось назначить:",
+    UserActions: "Действия"
+
   },
   ES: {
     dashboardWelcome: "Panel de administrador",
@@ -107,6 +127,12 @@ export const translations = {
     offline:"Offline", 
 
     never:"Nunca",
+
+    makeAdmin: "Nombrar administrador",
+    confirmMakeAdmin: "¿Desea nombrar administrador a este usuario ",
+    userPromoted: "El usuario ha sido nombrado:",
+    failedToPromote: "No se ha podido nombrar:",
+    UserActions: "Acciones"
   },
   FR: {
     dashboardWelcome: "Tableau de bord administrateur",
@@ -134,6 +160,12 @@ export const translations = {
     offline:"Offline", 
 
     never: "Jamais",
+
+    makeAdmin : " Nommer administrateur ",
+    confirmMakeAdmin : " Voulez-vous nommer cet utilisateur administrateur ",
+    userPromoted : " L'utilisateur a été nommé : ",
+    failedToPromote : " Échec de la nomination : ",
+    UserActions : " Actions "
   },
   DE: {
     dashboardWelcome: "Admin-Dashboard",
@@ -161,5 +193,11 @@ export const translations = {
     offline:"Offline", 
 
     never: "Niemals",
+
+    makeAdmin: "Zum Administrator machen",
+    confirmMakeAdmin: "Möchten Sie diesen Benutzer zum Administrator machen ",
+    userPromoted: "Der Benutzer wurde ernannt:",
+    failedToPromote: "Die Ernennung ist fehlgeschlagen:",
+    UserActions: "Aktionen"
   },
 };

@@ -160,6 +160,8 @@ const RegisterSite: React.FC = () => {
     }
   };
 
+
+  
   // Combined useEffect for initial setup and click outside logic
   useEffect(() => {
     const savedLang = localStorage.getItem("preferredLanguage");

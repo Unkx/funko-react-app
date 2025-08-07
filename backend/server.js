@@ -14,6 +14,7 @@ import fetch from 'node-fetch';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+
 // ======================
 // CONFIGURATION
 // ======================
@@ -33,16 +34,14 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 // ======================
 // MIDDLEWARE
 // ======================
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
+});
+
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
-
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
 
 
 // Authentication middleware
@@ -73,6 +72,73 @@ const isAdmin = (req, res, next) => {
   }
   next();
 };
+
+// AUTHENTICATION & AUTHORIZATION
+const requireAdmin = (req, res, next) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ error: "Access denied. Admins only." });
+  }
+  next();
+};
+
+
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // Add PATCH here
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Add this right before your PATCH route
+app.options('/api/admin/users/:id/role', cors()); // Explicit OPTIONS handler
+
+// PATCH: Zmień rolę użytkownika (tylko dla admina)
+app.patch('/api/admin/users/:id/role', authenticateToken, isAdmin, async (req, res) => {
+  console.log('Role change request received:', {
+    params: req.params,
+    body: req.body,
+    user: req.user
+  });
+
+  const { id } = req.params;
+  const { role } = req.body;
+
+  if (!['user', 'admin'].includes(role)) {
+    console.log('Invalid role received:', role);
+    return res.status(400).json({ 
+      error: 'Invalid role. Only "user" or "admin" allowed.' 
+    });
+  }
+
+  try {
+    console.log('Attempting to update user role...');
+    const result = await pool.query(
+      `UPDATE users SET role = $1 WHERE id = $2 RETURNING id, login, email, role`,
+      [role, id]
+    );
+
+    if (result.rows.length === 0) {
+      console.log('User not found with ID:', id);
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    console.log('Role updated successfully:', result.rows[0]);
+    res.json({
+      message: `User role updated to ${role}.`,
+      user: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Detailed error updating user role:', {
+      message: err.message,
+      stack: err.stack,
+      query: err.query, // This will show the actual SQL query that failed
+      parameters: err.parameters
+    });
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
+
+
 
 // ======================
 // UTILITY FUNCTIONS
@@ -523,6 +589,9 @@ const deleteUser = async (req, res) => {
     res.status(500).json({ error: 'Failed to delete user' });
   }
 };
+
+app.get('/api/admin/users', authenticateToken, isAdmin, getAllUsers);
+app.delete('/api/admin/users/:id', authenticateToken, isAdmin, deleteUser);
 
 // ======================
 // DATABASE SEEDING

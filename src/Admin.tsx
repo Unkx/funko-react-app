@@ -73,6 +73,9 @@ const Admin = () => {
     );
   }
 
+
+
+  
   useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
@@ -110,6 +113,8 @@ const Admin = () => {
     }
   }, [token, user?.role, navigate, t.sessionExpired]);
 
+
+  // Function to toggle dark mode
   const toggleTheme = () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
@@ -129,6 +134,7 @@ const Admin = () => {
     navigate("/loginSite");
   };
 
+  // Function to handle deleting a user
   const handleDeleteUser = async (userId: number, userLogin: string) => {
     if (!window.confirm(`${t.confirmDelete} ${userLogin}?`)) return;
 
@@ -149,6 +155,40 @@ const Admin = () => {
       setUsers(users.filter((u) => u.id !== userId));
     } catch (err: any) {
       alert(`${t.failedToDeleteUser}: ${err.message}`);
+    }
+  };
+
+  // Function to handle making a user an admin
+  const handleMakeAdmin = async (userId: number, userLogin: string) => {
+    if (!window.confirm(`${t.confirmMakeAdmin} ${userLogin}?`)) return;
+
+    try {
+      console.log("Sending PATCH request...");
+      const response = await fetch(`http://localhost:5000/api/admin/users/${userId}/role`, {
+        method: "PATCH", // Ensure this is uppercase PATCH
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({ role: "admin" }),
+      });
+
+      console.log("Received response:", response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to promote user.");
+      }
+
+      const data = await response.json();
+      alert(`${t.userPromoted} ${data.user.login}`);
+      
+      setUsers(users.map(u => 
+        u.id === userId ? { ...u, role: "admin" } : u
+      ));
+    } catch (err) {
+      console.error("Full error:", err);
+      alert(`${t.failedToPromote}: ${err.message}`);
     }
   };
 
@@ -189,7 +229,7 @@ const Admin = () => {
                     {code === 'FR' && <FranceFlag className="w-5 h-5" />}
                     {code === 'DE' && <GermanyFlag className="w-5 h-5" />}
                     {code === 'ES' && <SpainFlag className="w-5 h-5" />}
-                    <span>{langData.languageName || code}</span>
+                    <span>{code}</span>
                   </button>
                 ))}
               </div>
@@ -235,6 +275,10 @@ const Admin = () => {
                     <th className="px-2 sm:px-4 py-2">{t.UserLastActivity}</th>
                     <th className="px-2 sm:px-4 py-2">{t.UserStatus}</th>
                     <th className="px-2 sm:px-4 py-2">{t.UserDelete}</th>
+
+
+                    <th className="px-2 sm:px-4 py-2">{t.UserActions || "User Action"}</th>
+
                   </tr>
                 </thead>
                 <tbody>
@@ -263,6 +307,21 @@ const Admin = () => {
                           {t.deleteUser}
                         </button>
                       </td>
+
+                      <td className="px-2 sm:px-4 py-2 text-right space-x-2">
+                        {user.role !== "admin" && (
+                          <button
+                            onClick={() => handleMakeAdmin(user.id, user.login)}
+                            className={`px-3 py-1 rounded text-xs sm:text-sm ${
+                              isDarkMode ? "bg-yellow-600 hover:bg-yellow-700" : "bg-yellow-500 hover:bg-yellow-600"
+                            } text-black font-medium transition`}
+                          >
+                            {t.makeAdmin || "Make Admin"}
+                          </button>
+                        )}
+
+                      </td>
+                      
                     </tr>
                   ))}
                   {users.length === 0 && (

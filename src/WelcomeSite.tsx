@@ -273,6 +273,18 @@ const WelcomeSite: React.FC = () => {
     localStorage.setItem("funkoVisitCount", JSON.stringify(visitCount));
   };
 
+  // 🌍 Show world map first time
+  const [showWorldMapFirstTime, setShowWorldMapFirstTime] = useState(false);
+  //
+  useEffect(() => {
+    const hasSeenMap = localStorage.getItem("hasSeenWorldMap");
+    if (!hasSeenMap) {
+      setShowWorldMapFirstTime(true);
+      localStorage.setItem("hasSeenWorldMap", "true");
+    }
+  }, []);
+
+
   const toggleTheme = () => setIsDarkMode((prev) => !prev);
   const toggleCountryDropdown = () => setShowCountryDropdown((prev) => !prev);
 
@@ -285,6 +297,28 @@ const WelcomeSite: React.FC = () => {
         isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
       }`}
     >
+      {showWorldMapFirstTime && (
+  <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+    <div className="relative bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-4xl w-full">
+      <button
+        onClick={() => setShowWorldMapFirstTime(false)}
+        className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
+      >
+        ✕
+      </button>
+      <h2 className="text-2xl font-bold mb-4 text-center">
+        {t.regionMapTitle || "Explore by Region"}
+      </h2>
+      <WorldMap
+        onSelectCountry={(code) => {
+          handleMapCountryClick(code);
+          setShowWorldMapFirstTime(false);
+        }}
+      />
+    </div>
+  </div>
+)}
+
       {/* 🔝 Header */}
       <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
         <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
@@ -297,9 +331,10 @@ const WelcomeSite: React.FC = () => {
               Pop&Go!
             </h1>
           </Link>
-          {shouldShowPopup && (
+          {/* unused language selector popup */} 
+          {/* {shouldShowPopup && (
             <LanguageSelectorPopup onClose={() => setShouldShowPopup(false)} />
-          )}
+          )} */}
         </div>
 
         {/* 🔍 Search */}
@@ -446,13 +481,13 @@ const WelcomeSite: React.FC = () => {
           </p>
         </div>
 
-        {/* 🌍 Interactive World Map */}
+        {/* 🌍 Interactive World Map
         <section className="w-full max-w-6xl mt-12">
           <h2 className="text-2xl font-bold mb-4 text-center">
             {t.regionMapTitle || "Explore by Region"}
           </h2>
           <WorldMap onSelectCountry={handleMapCountryClick} />
-        </section>
+        </section> */}
 
         {/* 🎲 Random Items */}
         <section className="w-full max-w-4xl mt-10 mb-10">

@@ -43,6 +43,16 @@ app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
 
+// ✅ CORRECT: cors() must come BEFORE any routes
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Explicit OPTIONS handler for PATCH
+app.options('/api/admin/users/:id/role', cors());
 
 // Authentication middleware
 const authenticateToken = (req, res, next) => {
@@ -81,6 +91,54 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
+// ======================
+// ADMIN ITEMS CONTROLLERS
+// ======================
+
+const addItem = async (req, res) => {
+  const { title, number, category, series, exclusive, imageName } = req.body;
+
+  // Validate required fields
+  if (!title || !number || !category) {
+    return res.status(400).json({ error: 'Title, number, and category are required.' });
+  }
+
+  try {
+    // Generate consistent ID format
+    const id = `${title}-${number}`.replace(/\s+/g, '-').toLowerCase();
+
+    // Insert or update funko_items table
+    const result = await pool.query(
+      `
+      INSERT INTO funko_items (id, title, number, category, series, exclusive, image_name)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (id) DO UPDATE SET
+        title = EXCLUDED.title,
+        number = EXCLUDED.number,
+        category = EXCLUDED.category,
+        series = EXCLUDED.series,
+        exclusive = EXCLUDED.exclusive,
+        image_name = EXCLUDED.image_name
+      RETURNING *
+      `,
+      [
+        id,
+        title,
+        number,
+        category,
+        series ? JSON.stringify(series) : null,
+        exclusive || false,
+        imageName || null
+      ]
+    );
+
+    console.log("✅ Item added:", result.rows[0]);
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('❌ Error adding item:', err);
+    res.status(500).json({ error: 'Failed to add item.' });
+  }
+};
 
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
@@ -593,6 +651,43 @@ const deleteUser = async (req, res) => {
 app.get('/api/admin/users', authenticateToken, isAdmin, getAllUsers);
 app.delete('/api/admin/users/:id', authenticateToken, isAdmin, deleteUser);
 
+const getAdminItems = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, title, number, category, 
+              CASE 
+                WHEN series IS NOT NULL THEN series::text
+                ELSE '[]'
+              END as series,
+              exclusive, image_name as imageName 
+       FROM funko_items 
+       ORDER BY category, title, number`
+    );
+    
+    // Parse the series JSON for each item
+    const items = result.rows.map(item => ({
+      ...item,
+      series: item.series ? JSON.parse(item.series) : []
+    }));
+    
+    res.json(items);
+  } catch (err) {
+    console.error('Error fetching admin items:', err);
+    res.status(500).json({ error: 'Failed to load items' });
+  }
+};
+
+// Add route
+app.get("/api/admin/items", authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM funko_items ORDER BY id ASC");
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching items:", err.message);
+    res.status(500).send("Server error fetching items.");
+  }
+});
+
 // ======================
 // DATABASE SEEDING
 // ======================
@@ -636,9 +731,19 @@ const seedDatabase = async () => {
 // ======================
 // ROUTES
 // ======================
+
+// Admin routes
+app.get('/api/admin/users', authenticateToken, isAdmin, getAllUsers);
+app.get('/api/admin/items', authenticateToken, isAdmin, getAdminItems);
+app.post('/api/admin/items', authenticateToken, isAdmin, addItem);
+app.delete('/api/admin/users/:id', authenticateToken, isAdmin, deleteUser);
+
 // Auth routes
 app.post('/api/register', registerUser);
 app.post('/api/login', loginUser);
+
+// Wishlist routes
+app.post('/api/wishlist', authenticateToken, addToWishlist);
 
 // Wishlist routes
 app.post('/api/wishlist', authenticateToken, addToWishlist);
@@ -656,10 +761,6 @@ app.get('/api/collection/check/:funkoId', authenticateToken, checkCollectionItem
 app.get('/api/users/:id', authenticateToken, getUserProfile);
 app.put('/api/users/:id', authenticateToken, updateUserProfile);
 app.put('/api/users/:id/settings', authenticateToken, updateUserSettings);
-
-// Admin routes
-app.get('/api/admin/users', authenticateToken, isAdmin, getAllUsers);
-app.delete('/api/admin/users/:id', authenticateToken, isAdmin, deleteUser);
 
 // Health check
 app.get('/', (req, res) => {

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { translations } from "./Translations/TranslationAdmin";
+import ItemList from "./ItemList.tsx"; // Import the new ItemList component
 
 // SVG Icons
 import MoonIcon from "/src/assets/moon.svg?react";
 import SunIcon from "/src/assets/sun.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
+
 
 // Flag SVGs
 import UKFlag from "/src/assets/flags/uk.svg?react";
@@ -28,26 +30,49 @@ interface User {
   is_active?: boolean;
 }
 
+interface Item {
+  id: number;
+  title: string;
+  number: string;
+  category: string;
+  series: string[];
+  exclusive: boolean;
+  imageName: string;
+}
+
 const Admin = () => {
   // Constants
-  //admin musi miec ID 1 w postgreSQL, bo inaczej nie bedzie mial uprawnien do usuwania innych adminow
   const SUPER_ADMIN_ID = 1;
   const SUPER_ADMIN_USERNAME = "admin";
-  
+
   // Hooks
   const navigate = useNavigate();
-  
+
   // State
-  const [isDarkMode, setIsDarkMode] = useState(() => 
+  const [isDarkMode, setIsDarkMode] = useState(() =>
     localStorage.getItem("preferredTheme") === "dark"
   );
-  const [language, setLanguage] = useState(() => 
+  const [language, setLanguage] = useState(() =>
     localStorage.getItem("preferredLanguage") || "EN"
   );
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Item related state is now primarily handled by ItemList.tsx,
+  // but we keep newItem and showAddItemModal for the modal itself.
+  const [showAddItemModal, setShowAddItemModal] = useState(false);
+  const [newItem, setNewItem] = useState<Item>({
+    id: 0,
+    title: "",
+    number: "",
+    category: "",
+    series: [],
+    exclusive: false,
+    imageName: "",
+  });
 
   // Derived values
   const t = translations[language];
@@ -60,16 +85,9 @@ const Admin = () => {
   };
 
   const canDeleteUser = (targetUser: User): boolean => {
-    // Current user must be logged in and admin
     if (!currentUser || currentUser.role !== "admin") return false;
-    
-    // Cannot delete yourself
     if (currentUser.id === targetUser.id) return false;
-    
-    // Super admin can delete anyone except themselves
     if (isSuperAdmin(currentUser)) return true;
-    
-    // Regular admin can only delete regular users
     return targetUser.role !== "admin";
   };
 
@@ -83,13 +101,14 @@ const Admin = () => {
     }
   }, [currentUser, token, navigate]);
 
+  // Fetch users effect
   useEffect(() => {
     const fetchUsers = async () => {
-      if (!token || !currentUser?.role === "admin") return;
-      
+      if (!token || !(currentUser?.role === "admin")) return;
+
       setLoading(true);
       setError(null);
-      
+
       try {
         const response = await fetch("http://localhost:5000/api/admin/users", {
           headers: { Authorization: `Bearer ${token}` },
@@ -103,10 +122,11 @@ const Admin = () => {
             setError(t.sessionExpired || "Session expired.");
             return;
           }
-          throw new Error(await response.text() || "Failed to fetch users.");
+          throw new Error((await response.text()) || "Failed to fetch users.");
         }
 
-        setUsers(await response.json());
+        const usersData = await response.json();
+        setUsers(usersData);
       } catch (err: any) {
         setError(err.message || "Failed to load users.");
       } finally {
@@ -115,7 +135,7 @@ const Admin = () => {
     };
 
     fetchUsers();
-  }, [token, currentUser?.role, navigate, t.sessionExpired]);
+  }, [token, currentUser?.role, t.sessionExpired, navigate]); // Added dependencies
 
   // Handlers
   const toggleTheme = () => {
@@ -145,23 +165,23 @@ const Admin = () => {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ role: "admin" }),
       });
 
-      if (!response.ok) throw new Error(await response.text() || "Failed to promote user.");
+      if (!response.ok) throw new Error((await response.text()) || "Failed to promote user.");
 
       const data = await response.json();
       alert(`${t.userPromoted} ${data.user.login}`);
-      setUsers(users.map(u => u.id === userId ? { ...u, role: "admin" } : u));
+      setUsers(users.map((u) => (u.id === userId ? { ...u, role: "admin" } : u)));
     } catch (err: any) {
       alert(`${t.failedToPromote}: ${err.message}`);
     }
   };
 
   const handleDeleteUser = async (userId: number, userLogin: string) => {
-    const userToDelete = users.find(u => u.id === userId);
+    const userToDelete = users.find((u) => u.id === userId);
     if (!userToDelete) return;
 
     if (isSuperAdmin(userToDelete)) {
@@ -182,12 +202,57 @@ const Admin = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!response.ok) throw new Error(await response.text() || "Failed to delete user.");
+      if (!response.ok) throw new Error((await response.text()) || "Failed to delete user.");
 
       alert(`${t.userDeleted} ${userLogin}`);
-      setUsers(users.filter(u => u.id !== userId));
+      setUsers(users.filter((u) => u.id !== userId));
     } catch (err: any) {
       alert(`${t.failedToDelete}: ${err.message}`);
+    }
+  };
+
+  const handleAddItem = async () => {
+    if (!newItem.title || !newItem.number || !newItem.category) {
+      alert("Please fill in required fields (title, number, category).");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:5000/api/admin/items", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newItem),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to add item.");
+      }
+
+      const createdItem = await response.json();
+
+      // You might want to refresh the ItemList data after adding a new item.
+      // This could involve passing a refresh function down to ItemList,
+      // or simply letting ItemList refetch its current page data.
+      alert(`Item added: ${createdItem.title}`);
+      setShowAddItemModal(false);
+      setNewItem({
+        id: 0,
+        title: "",
+        number: "",
+        category: "",
+        series: [],
+        exclusive: false,
+        imageName: "",
+      });
+      // Optionally, force ItemList to re-fetch to show the new item
+      // This would require a prop in ItemList to trigger refetch, e.g., a 'refetchTrigger' state
+    } catch (err: any) {
+      console.error('Add item error:', err);
+      alert(`Failed to add item: ${err.message}`);
     }
   };
 
@@ -213,13 +278,13 @@ const Admin = () => {
     <div className={`min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-100 text-black"}`}>
       {/* Header */}
       <header className="py-4 px-4 sm:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <Link to="/" className="no-underline">
+        <Link to="/" className="no-underline flex-shrink-0">
           <h1 className={`text-3xl sm:text-4xl font-bold font-[Special_Gothic_Expanded_One] ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
             Pop&Go!
           </h1>
         </Link>
 
-        {/* Language and Theme */}
+        {/* Language, Theme, and Logout */}
         <div className="flex flex-wrap gap-3 items-center justify-center sm:justify-end">
           <div className="relative">
             <button
@@ -228,24 +293,24 @@ const Admin = () => {
               aria-label="Change language"
             >
               <GlobeIcon className="w-5 h-5" />
-              <span>{language}</span>
+              <span className="hidden sm:inline">{language}</span>
               <ChevronDownIcon className={`w-4 h-4 transition-transform ${showLanguageDropdown ? "rotate-180" : ""}`} />
             </button>
 
             {showLanguageDropdown && (
               <div className={`absolute right-0 mt-2 w-48 max-w-full rounded-md shadow-lg py-1 z-10 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
-                {Object.entries(translations).map(([code, langData]) => (
+                {Object.entries(translations).map(([code]) => (
                   <button
                     key={code}
                     onClick={() => selectLanguage(code)}
-                    className={`w-full text-left px-4 py-2 flex items-center gap-2 text-base ${language === code ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : ""}`}
+                    className={`w-full text-left px-4 py-2 flex items-center gap-2 text-base ${language === code ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : "hover:bg-gray-100 dark:hover:bg-gray-600"}`}
                   >
-                    {code === 'EN' && <UKFlag className="w-5 h-5" />}
-                    {code === 'PL' && <PolandFlag className="w-5 h-5" />}
-                    {code === 'RU' && <RussiaFlag className="w-5 h-5" />}
-                    {code === 'FR' && <FranceFlag className="w-5 h-5" />}
-                    {code === 'DE' && <GermanyFlag className="w-5 h-5" />}
-                    {code === 'ES' && <SpainFlag className="w-5 h-5" />}
+                    {code === "EN" && <UKFlag className="w-5 h-5" />}
+                    {code === "PL" && <PolandFlag className="w-5 h-5" />}
+                    {code === "RU" && <RussiaFlag className="w-5 h-5" />}
+                    {code === "FR" && <FranceFlag className="w-5 h-5" />}
+                    {code === "DE" && <GermanyFlag className="w-5 h-5" />}
+                    {code === "ES" && <SpainFlag className="w-5 h-5" />}
                     <span>{code}</span>
                   </button>
                 ))}
@@ -260,24 +325,25 @@ const Admin = () => {
           >
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
+
+        
         </div>
       </header>
 
       {/* Main Content */}
       <main className="flex-grow px-4 sm:px-8 py-6 flex flex-col items-center">
-        <h3 className="text-xl sm:text-2xl font-semibold mb-2">
-          {t.welcome}, {currentUser?.name} {currentUser?.surname}
-          {isSuperAdmin(currentUser) && (
-            <span className="ml-2 px-2 py-1 text-xs bg-purple-600 text-white rounded-full">
-              SUPER ADMIN
-            </span>
-          )}
-        </h3>
-        <h2 className={`text-3xl sm:text-4xl font-bold mb-6 ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
-          {t.dashboardWelcome}
-        </h2>
 
-        <div className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+        {/* Notes section */}
+        <div className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+            <h3 className="text-xl sm:text-2xl font-semibold mb-4 text-center">{t.notes || "Notes"}:</h3>
+            <ul className="list-disc list-inside space-y-2">
+                <li>{t.note1 || "Create two subpages for the user list and item list"}</li>
+                <li>{t.note2 || "Organize the item list and refactor it (so the page uses less memory)"}</li>
+            </ul>
+        </div>
+
+        {/* Users Section */}
+        <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} mb-8`}>
           <h3 className="text-xl sm:text-2xl font-semibold mb-4">{t.listOfUsers}</h3>
 
           {loading ? (
@@ -286,53 +352,53 @@ const Admin = () => {
             <p className="text-red-500 text-lg">{error}</p>
           ) : (
             <div className="overflow-x-auto w-full">
-              <table className={`min-w-full border-collapse text-base sm:text-lg ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
+              <table className={`min-w-full border-collapse text-sm sm:text-base ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
                 <thead className={`${isDarkMode ? "bg-gray-700" : "bg-gray-200"} text-left`}>
                   <tr>
-                    <th className="w-16 px-2 sm:px-3 py-2 text-center font-semibold">{t.UserID}</th>
-                    <th className="w-24 px-2 sm:px-3 py-2 font-semibold">{t.UserName}</th>
-                    <th className="w-48 px-2 sm:px-3 py-2 font-semibold">{t.UserEmail}</th>
-                    <th className="w-24 px-2 sm:px-3 py-2 text-center font-semibold">{t.UserRole}</th>
-                    <th className="w-32 px-2 sm:px-3 py-2 text-center font-semibold">{t.UserDateOfRegistration}</th>
-                    <th className="w-40 px-2 sm:px-3 py-2 text-center font-semibold">{t.UserLastActivity}</th>
-                    <th className="w-24 px-2 sm:px-3 py-2 text-center font-semibold">{t.UserStatus}</th>
-                    <th className="w-24 px-2 sm:px-3 py-2 text-center font-semibold">{t.UserActions || "Actions"}</th>
-                    <th className="w-24 px-2 sm:px-3 py-2 text-center font-semibold">{t.DeleteUser || "Delete"}</th>
+                    <th className="w-16 px-2 sm:px-3 py-2 text-center font-semibold">ID</th>
+                    <th className="px-2 sm:px-3 py-2 font-semibold">Login</th>
+                    <th className="px-2 sm:px-3 py-2 font-semibold hidden md:table-cell">Email</th>
+                    <th className="px-2 sm:px-3 py-2 text-center font-semibold">Role</th>
+                    <th className="px-2 sm:px-3 py-2 text-center font-semibold hidden lg:table-cell">Date of Registration</th>
+                    <th className="px-2 sm:px-3 py-2 text-center font-semibold hidden lg:table-cell">Last Activity</th>
+                    <th className="px-2 sm:px-3 py-2 text-center font-semibold">Status</th>
+                    <th className="px-2 sm:px-3 py-2 text-center font-semibold">Actions</th>
+                    <th className="px-2 sm:px-3 py-2 text-center font-semibold">Delete</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.map((user) => (
-                    <tr key={user.id} className={`transition-colors ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-100 hover:bg-gray-200"}`}>
+                    <tr key={user.id} className={`transition-colors ${isDarkMode ? "even:bg-gray-700 odd:bg-gray-600 hover:bg-gray-500" : "even:bg-gray-100 odd:bg-white hover:bg-gray-200"}`}>
                       <td className="w-16 px-2 sm:px-3 py-2 text-center">
                         {user.id}
                         {isSuperAdmin(user) && (
                           <span className="block text-xs text-purple-600">★</span>
                         )}
                       </td>
-                      <td className="w-24 px-2 sm:px-3 py-2 truncate" title={user.login}>{user.login}</td>
-                      <td className="w-48 px-2 sm:px-3 py-2 truncate" title={user.email}>{user.email}</td>
-                      <td className="w-24 px-2 sm:px-3 py-2 capitalize text-center">
+                      <td className="px-2 sm:px-3 py-2 truncate max-w-[100px]" title={user.login}>{user.login}</td>
+                      <td className="px-2 sm:px-3 py-2 truncate hidden md:table-cell" title={user.email}>{user.email}</td>
+                      <td className="px-2 sm:px-3 py-2 capitalize text-center">
                         {user.role}
                         {isSuperAdmin(user) && (
                           <span className="block text-xs text-purple-600">super</span>
                         )}
                       </td>
-                      <td className="w-32 px-2 sm:px-3 py-2 text-center">{new Date(user.created_at).toLocaleDateString()}</td>
-                      <td className="w-40 px-2 sm:px-3 py-2 text-center text-sm">
+                      <td className="px-2 sm:px-3 py-2 text-center hidden lg:table-cell">{new Date(user.created_at).toLocaleDateString()}</td>
+                      <td className="px-2 sm:px-3 py-2 text-center text-xs hidden lg:table-cell">
                         {user.last_login ? new Date(user.last_login).toLocaleString() : t.never}
                       </td>
-                      <td className="w-24 px-2 sm:px-3 py-2 text-center">
+                      <td className="px-2 sm:px-3 py-2 text-center">
                         {user.is_active ? (
-                          <span className="text-green-500 font-semibold text-sm">{t.online}</span>
+                          <span className="text-green-500 font-semibold text-xs sm:text-sm">{t.online}</span>
                         ) : (
-                          <span className="text-red-500 font-semibold text-sm">{t.offline}</span>
+                          <span className="text-red-500 font-semibold text-xs sm:text-sm">{t.offline}</span>
                         )}
                       </td>
-                      <td className="w-24 px-2 sm:px-3 py-2 text-center">
+                      <td className="px-2 sm:px-3 py-2 text-center">
                         {user.role !== "admin" && (
                           <button
                             onClick={() => handleMakeAdmin(user.id, user.login)}
-                            className={`px-2 py-1 rounded text-sm ${
+                            className={`px-2 py-1 rounded text-xs sm:text-sm ${
                               isDarkMode ? "bg-yellow-600 hover:bg-yellow-700" : "bg-yellow-500 hover:bg-yellow-600"
                             } text-black font-medium transition whitespace-nowrap`}
                             title={t.makeAdmin || "Make Admin"}
@@ -341,11 +407,11 @@ const Admin = () => {
                           </button>
                         )}
                       </td>
-                      <td className="w-24 px-2 sm:px-3 py-2 text-center">
+                      <td className="px-2 sm:px-3 py-2 text-center">
                         {canDeleteUser(user) && (
                           <button
                             onClick={() => handleDeleteUser(user.id, user.login)}
-                            className={`px-2 py-1 rounded text-sm ${
+                            className={`px-2 py-1 rounded text-xs sm:text-sm ${
                               isDarkMode ? "bg-red-600 hover:bg-red-700" : "bg-red-500 hover:bg-red-600"
                             } text-white font-medium transition whitespace-nowrap`}
                             title={t.deleteUser || "Delete User"}
@@ -367,21 +433,178 @@ const Admin = () => {
               </table>
             </div>
           )}
-        </div>
+        </section>
 
-        <div className="mt-6">
-          <button
-            onClick={handleLogout}
-            className={`px-4 py-2 rounded text-lg ${isDarkMode ? "bg-red-600 hover:bg-red-700" : "bg-red-500 hover:bg-red-600"} text-white`}
-          >
-            {t.logout}
-          </button>
-        </div>
+        {/* Items Section (now uses ItemList component) */}
+        <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mt-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+          <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4 sm:gap-0">
+            <h3 className="text-xl sm:text-2xl font-semibold">{t.listOfItems || "List of Items"}</h3>
+            <button
+              onClick={() => setShowAddItemModal(true)}
+              className={`px-4 py-2 rounded font-medium flex items-center gap-1 ${
+                isDarkMode
+                  ? "bg-blue-600 hover:bg-blue-700 text-white"
+                  : "bg-blue-500 hover:bg-blue-600 text-white"
+              } transition`}
+            >
+              + {t.addItem || "Add Item"}
+            </button>
+          </div>
+
+          <ItemList
+            token={token}
+            currentUserRole={currentUser?.role}
+            isDarkMode={isDarkMode}
+            t={(key: string) => (translations[language] as any)[key]} // Pass translation function
+          />
+        </section>
+
+        {/* Add Item Modal */}
+        {showAddItemModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" onClick={() => setShowAddItemModal(false)}>
+            <div
+              className={`w-full max-w-md p-6 rounded-lg shadow-xl ${isDarkMode ? "bg-gray-800" : "bg-white"}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-semibold mb-4">{t.addItem || "Add New Item"}</h3>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleAddItem();
+                }}
+              >
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">{t.itemTitle || "Title"}</label>
+                  <input
+                    type="text"
+                    value={newItem.title}
+                    onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
+                    className={`w-full p-2 border rounded ${
+                      isDarkMode
+                        ? "bg-gray-700 border-gray-600 text-white"
+                        : "bg-white border-gray-300 text-black"
+                    }`}
+                    required
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">{t.itemNumber || "Number"}</label>
+                  <input
+                    type="text"
+                    value={newItem.number}
+                    onChange={(e) => setNewItem({ ...newItem, number: e.target.value })}
+                    className={`w-full p-2 border rounded ${
+                      isDarkMode
+                        ? "bg-gray-700 border-gray-600 text-white"
+                        : "bg-white border-gray-300 text-black"
+                    }`}
+                    required
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">{t.category || "Category"}</label>
+                  <input
+                    type="text"
+                    value={newItem.category}
+                    onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
+                    className={`w-full p-2 border rounded ${
+                      isDarkMode
+                        ? "bg-gray-700 border-gray-600 text-white"
+                        : "bg-white border-gray-300 text-black"
+                    }`}
+                    required
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">{t.series || "Series (comma-separated)"}</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Marvel, Avengers"
+                    value={newItem.series.join(", ")}
+                    onChange={(e) =>
+                      setNewItem({
+                        ...newItem,
+                        series: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+                      })
+                    }
+                    className={`w-full p-2 border rounded ${
+                      isDarkMode
+                        ? "bg-gray-700 border-gray-600 text-white"
+                        : "bg-white border-gray-300 text-black"
+                    }`}
+                  />
+                </div>
+
+                <div className="mb-4 flex items-center">
+                  <input
+                    type="checkbox"
+                    id="exclusive"
+                    checked={newItem.exclusive}
+                    onChange={(e) => setNewItem({ ...newItem, exclusive: e.target.checked })}
+                    className="mr-2 h-5 w-5"
+                  />
+                  <label htmlFor="exclusive" className="text-sm font-medium">
+                    {t.exclusive || "Exclusive"}
+                  </label>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">{t.imageName || "Image Name"}</label>
+                  <input
+                    type="text"
+                    value={newItem.imageName}
+                    onChange={(e) => setNewItem({ ...newItem, imageName: e.target.value })}
+                    className={`w-full p-2 border rounded ${
+                      isDarkMode
+                        ? "bg-gray-700 border-gray-600 text-white"
+                        : "bg-white border-gray-300 text-black"
+                    }`}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddItemModal(false)}
+                    className={`px-4 py-2 rounded ${
+                      isDarkMode ? "bg-gray-600 hover:bg-gray-500" : "bg-gray-300 hover:bg-gray-400"
+                    } transition`}
+                  >
+                    {t.cancel || "Cancel"}
+                  </button>
+                  <button
+                    type="submit"
+                    className={`px-4 py-2 rounded ${
+                      isDarkMode ? "bg-green-600 hover:bg-green-700" : "bg-green-500 hover:bg-green-600"
+                    } text-white transition`}
+                  >
+                    {t.addItem || "Add Item"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        <h3 className={'px-4 py-2' }/>
+            <button
+              onClick={handleLogout}
+              className={`px-4 py-2 rounded ${
+                isDarkMode
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-red-500 hover:bg-red-600"
+              } text-white`}
+            >
+              {t.logout}
+            </button>
       </main>
 
       {/* Footer */}
-      <footer className={`text-center py-4 text-base ${isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-200 text-gray-700"}`}>
-        {t.copyright}
+      <footer className={`py-4 text-center text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+        &copy; {new Date().getFullYear()} Pop&Go! — {t.adminPanel || "Admin Panel"}
       </footer>
     </div>
   );

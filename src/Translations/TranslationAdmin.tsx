@@ -33,6 +33,7 @@ export const translations = {
     failedToPromote: "Failed to promote user:",
     UserActions: "Actions",
 
+    listOfItems: "List of Items",
   },
   PL: {
     dashboardWelcome: "Panel Administratora",

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { FixedSizeList } from "react-window";
+import { translations } from "./Translations/TranslationItemList";
 
 interface Item {
   id: number;
@@ -126,13 +127,13 @@ const ItemList: React.FC<ItemListProps> = ({ token, currentUserRole, isDarkMode,
         <div className="flex flex-col">
           {/* Header - Updated order to match the row */}
           <div className={`flex items-center text-sm font-semibold ${isDarkMode ? "bg-gray-700 text-gray-300" : "bg-gray-200 text-gray-700"} sticky top-0 z-10`}>
-            <div className="w-64 px-2 py-2 text-left">Title</div>
-            <div className="w-16 px-2 py-2 text-center">ID</div>
-            <div className="w-16 px-2 py-2 text-center">Number</div>
-            <div className="w-32 px-2 py-2 text-center">Category</div>
-            <div className="w-32 px-2 py-2 text-center">Series</div>
-            <div className="w-24 px-2 py-2 text-center">Exclusive</div>
-            <div className="w-24 px-2 py-2 text-center">Image</div>
+            <div className="w-64 px-2 py-2 text-left">{t.Title || 'Title'}</div>
+            <div className="w-16 px-2 py-2 text-center">{t.ID || 'ID'}</div>
+            <div className="w-16 px-2 py-2 text-center">{t.Number || 'Number'}</div>
+            <div className="w-32 px-2 py-2 text-center">{t.Category || 'Category'}</div>
+            <div className="w-32 px-2 py-2 text-center">{t.Series || 'Series'}</div>
+            <div className="w-24 px-2 py-2 text-center">{t.Exclusives || 'Exclusives'}</div>
+            <div className="w-24 px-2 py-2 text-center">{t.Image || 'Image'}</div>
           </div>
 
           {/* Scrollable List */}

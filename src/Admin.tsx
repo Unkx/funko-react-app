@@ -8,7 +8,10 @@ import MoonIcon from "/src/assets/moon.svg?react";
 import SunIcon from "/src/assets/sun.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
-
+import UsersIcon from "/src/assets/users.svg?react";
+import EyeIcon from "/src/assets/eye.svg?react";
+import ChartIcon from "/src/assets/chart.svg?react";
+import CalendarIcon from "/src/assets/calendar.svg?react";
 
 // Flag SVGs
 import UKFlag from "/src/assets/flags/uk.svg?react";
@@ -40,6 +43,19 @@ interface Item {
   imageName: string;
 }
 
+interface SiteStats {
+  totalUsers: number;
+  totalItems: number;
+  newUsersLast7Days: number;
+  newUsersLast30Days: number;
+  activeUsersLast24Hours: number;
+  totalVisits: number;
+  averageUsersPerDay: number;
+  mostActiveUser: string;
+  itemsAddedLast7Days: number;
+  itemsAddedLast30Days: number;
+}
+
 const Admin = () => {
   // Constants
   const SUPER_ADMIN_ID = 1;
@@ -60,6 +76,8 @@ const Admin = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [siteStats, setSiteStats] = useState<SiteStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   // Item related state is now primarily handled by ItemList.tsx,
   // but we keep newItem and showAddItemModal for the modal itself.
@@ -136,6 +154,34 @@ const Admin = () => {
 
     fetchUsers();
   }, [token, currentUser?.role, t.sessionExpired, navigate]); // Added dependencies
+
+  // Fetch site statistics
+  useEffect(() => {
+    const fetchSiteStats = async () => {
+      if (!token || !(currentUser?.role === "admin")) return;
+
+      setStatsLoading(true);
+
+      try {
+        const response = await fetch("http://localhost:5000/api/admin/stats", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+          throw new Error((await response.text() ) || "Failed to fetch site statistics.");
+        }
+
+        const statsData = await response.json();
+        setSiteStats(statsData);
+      } catch (err: any) {
+        console.error( t.failedToLoadStatictics ||"Failed to load site statistics:", err);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    fetchSiteStats();
+  }, [token, currentUser?.role]);
 
   // Handlers
   const toggleTheme = () => {
@@ -332,6 +378,94 @@ const Admin = () => {
 
       {/* Main Content */}
       <main className="flex-grow px-4 sm:px-8 py-6 flex flex-col items-center">
+
+        {/* Site Statistics Section */}
+        <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+          <h3 className="text-xl sm:text-2xl font-semibold mb-6 text-center flex items-center justify-center gap-2">
+            <ChartIcon className="w-6 h-6" />
+            {t.siteStatistics || "Site Statistics"}
+          </h3>
+
+          {statsLoading ? (
+            <p className="text-center text-lg">{t.loadingStatistics || "Loading statistics..."}</p>
+          ) : siteStats ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Total Users */}
+              <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-blue-50"}`}>
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 text-blue-600 mb-2">
+                  <UsersIcon className="w-6 h-6" />
+                </div>
+                <h4 className="font-semibold text-lg mb-1">{t.totalUsers || "Total Users"}</h4>
+                <p className="text-2xl font-bold">{siteStats.totalUsers}</p>
+              </div>
+
+              {/* Total Items */}
+              <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-green-50"}`}>
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-green-100 text-green-600 mb-2">
+                  <EyeIcon className="w-6 h-6" />
+                </div>
+                <h4 className="font-semibold text-lg mb-1">{t.totalItems || "Total Items"}</h4>
+                <p className="text-2xl font-bold">{siteStats.totalItems}</p>
+              </div>
+
+              {/* New Users (Last 7 Days) */}
+              <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-purple-50"}`}>
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 text-purple-600 mb-2">
+                  <CalendarIcon className="w-6 h-6" />
+                </div>
+                <h4 className="font-semibold text-lg mb-1">{t.newUsers7Days || "New Users (7 Days)"}</h4>
+                <p className="text-2xl font-bold">{siteStats.newUsersLast7Days}</p>
+              </div>
+
+              {/* Active Users (Last 24h) */}
+              <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-orange-50"}`}>
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 text-orange-600 mb-2">
+                  <EyeIcon className="w-6 h-6" />
+                </div>
+                <h4 className="font-semibold text-lg mb-1">{t.activeUsers24h || "Active Users (24h)"}</h4>
+                <p className="text-2xl font-bold">{siteStats.activeUsersLast24Hours}</p>
+              </div>
+
+              {/* Total Visits */}
+              <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-red-50"}`}>
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 text-red-600 mb-2">
+                  <EyeIcon className="w-6 h-6" />
+                </div>
+                <h4 className="font-semibold text-lg mb-1">{t.totalVisits || "Total Visits"}</h4>
+                <p className="text-2xl font-bold">{siteStats.totalVisits}</p>
+              </div>
+
+              {/* Average Users Per Day */}
+              <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-indigo-50"}`}>
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 mb-2">
+                  <ChartIcon className="w-6 h-6" />
+                </div>
+                <h4 className="font-semibold text-lg mb-1">{t.avgUsersPerDay || "Avg. Users/Day"}</h4>
+                <p className="text-2xl font-bold">{siteStats.averageUsersPerDay}</p>
+              </div>
+
+              {/* Most Active User */}
+              <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-pink-50"}`}>
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-pink-100 text-pink-600 mb-2">
+                  <UsersIcon className="w-6 h-6" />
+                </div>
+                <h4 className="font-semibold text-lg mb-1">{t.mostActiveUser || "Most Active User"}</h4>
+                <p className="text-xl font-bold truncate max-w-full">{siteStats.mostActiveUser || "N/A"}</p>
+              </div>
+
+              {/* Items Added (Last 30 Days) */}
+              <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-teal-50"}`}>
+                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-teal-100 text-teal-600 mb-2">
+                  <CalendarIcon className="w-6 h-6" />
+                </div>
+                <h4 className="font-semibold text-lg mb-1">{t.itemsAdded30Days || "Items Added (30 Days)"}</h4>
+                <p className="text-2xl font-bold">{siteStats.itemsAddedLast30Days}</p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-center text-red-500">{t.failedToLoadStatictics || "Failed to load statistics."}</p>
+          )}
+        </section>
 
         {/* Notes section */}
         <div className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>

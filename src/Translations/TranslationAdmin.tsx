@@ -33,7 +33,21 @@ export const translations = {
     failedToPromote: "Failed to promote user:",
     UserActions: "Actions",
 
+    addItem: "Add Item",
+    itemName: "Item Name",  
+    itemTitle: "Item Title",
+    itemNumber: "Item Number",
+    category: "Category",
+    series: "Series",
+    imageName: "Image Name",
+    itemAdded: "Item added",
+    cancel: "Cancel",
+    addItemError: "Failed to add item.",
     listOfItems: "List of Items",
+
+    siteStatistics: "Site Statistics",
+    loadingStatistics: "Loading statistics...",
+    failedToLoadStatictics: "Failed to load site statistics",
   },
   PL: {
     dashboardWelcome: "Panel Administratora",
@@ -66,7 +80,23 @@ export const translations = {
     confirmMakeAdmin: "Czy chcesz uczynić tego użytkownika administratorem ",
     userPromoted: "Użytkownik został mianowany:",
     failedToPromote: "Nie udało się mianować:",
-    UserActions: "Akcje"
+    UserActions: "Akcje",
+
+    addItem: "Dodaj przedmiot",
+    itemName: "Nazwa przedmiotu",
+    itemTitle: "Tytuł przedmiotu",
+    itemNumber: "Numer przedmiotu",
+    category: "Kategoria",
+    series: "Seria",
+    imageName: "Nazwa zdjęcia",
+    itemAdded: "Przedmiot dodany",
+    cancel: "Anuluj",
+    addItemError: "Nie udało się dodać przedmiotu.",
+    listOfItems: "Lista przedmiotów",
+
+    siteStatistics: "Statystyki strony",
+    loadingStatistics: "Ładowanie statystyk...",
+    failedToLoadStatictics: "Nie udało się załadować statystyk strony"
   },
   RU: {
     dashboardWelcome: "Панель администратора",
@@ -99,7 +129,23 @@ export const translations = {
     confirmMakeAdmin: "Вы хотите сделать этого пользователя администратором ",
     userPromoted: "Пользователь назначен:",
     failedToPromote: "Не удалось назначить:",
-    UserActions: "Действия"
+    UserActions: "Действия",
+
+    addItem: "Добавить элемент",
+    itemTitle: "Название элемента",
+    itemNumber: "Номер элемента",
+    category: "Категория",
+    series: "Серия",
+    imageName: "Имя изображения",
+    itemName: "Название элемента",
+    itemAdded: "Элемент добавлен",
+    cancel: "Отмена",
+    addItemError: "Не удалось добавить элемент.",
+    listOfItems: "Список элементов",
+
+    siteStatistics: "Статистика сайта",
+    loadingStatistics: "Загрузка статистики...",
+    failedToLoadStatictics: "Не удалось загрузить статистику сайта"
 
   },
   ES: {
@@ -133,7 +179,24 @@ export const translations = {
     confirmMakeAdmin: "¿Desea nombrar administrador a este usuario ",
     userPromoted: "El usuario ha sido nombrado:",
     failedToPromote: "No se ha podido nombrar:",
-    UserActions: "Acciones"
+    UserActions: "Acciones",
+
+    addItem: "Añadir elemento",
+    itemName: "Nombre del elemento",
+    itemTitle: "Título del elemento",
+    itemNumber: "Número del elemento",
+    category: "Categoría",
+    series: "Serie",
+    imageName: "Nombre de la imagen",
+    itemAdded: "Elemento añadido",
+    cancel: "Cancelar",
+    addItemError: "No se ha podido añadir el elemento.",
+    listOfItems: "Lista de elementos",
+
+    siteStatistics: "Estadísticas del sitio",
+    loadingStatistics: "Cargando estadísticas...",
+    failedToLoadStatictics: "No se han podido cargar las estadísticas del sitio",
+
   },
   FR: {
     dashboardWelcome: "Tableau de bord administrateur",
@@ -166,7 +229,23 @@ export const translations = {
     confirmMakeAdmin : " Voulez-vous nommer cet utilisateur administrateur ",
     userPromoted : " L'utilisateur a été nommé : ",
     failedToPromote : " Échec de la nomination : ",
-    UserActions : " Actions "
+    UserActions : " Actions ",
+
+    addItem: "Ajouter un élément",
+    itemName: "Nom de l'élément",
+    itemTitle: "Titre de l'élément",
+    itemNumber: "Numéro de l'élément",
+    category: "Catégorie",
+    series: "Série",
+    imageName: "Nom de l'image",
+    cancel: "Annuler",
+    itemAdded: "Élément ajouté",
+    addItemError: "Échec de l'ajout de l'élément.",
+    listOfItems: "Liste des éléments",
+
+    siteStatistics: "Statistiques du site",
+    loadingStatistics: "Chargement des statistiques...",
+    failedToLoadStatictics: "Échec du chargement des statistiques du site",
   },
   DE: {
     dashboardWelcome: "Admin-Dashboard",
@@ -199,6 +278,22 @@ export const translations = {
     confirmMakeAdmin: "Möchten Sie diesen Benutzer zum Administrator machen ",
     userPromoted: "Der Benutzer wurde ernannt:",
     failedToPromote: "Die Ernennung ist fehlgeschlagen:",
-    UserActions: "Aktionen"
+    UserActions: "Aktionen",
+
+    addItem: "Element hinzufügen",
+    itemName: "Elementname",
+    itemTitle: "Elementtitel",
+    itemNumber: "Elementnummer",
+    category: "Kategorie",
+    series: "Serie",
+    imageName: "Bildname",
+    cancel: "Abbrechen",
+    itemAdded: "Element hinzugefügt",
+    addItemError: "Fehler beim Hinzufügen des Elements.",
+    listOfItems: "Liste der Elemente",
+
+    siteStatistics: "Website-Statistiken",
+    loadingStatistics: "Lade Statistiken...",
+    failedToLoadStatictics: "Fehler beim Laden der Website-Statistiken",
   },
 };

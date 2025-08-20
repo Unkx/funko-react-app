@@ -6,8 +6,14 @@ export const translations = {
     Category: "Category",   
     Series: "Series",
     Exclusives: "Exclusives",
-    Image: "Image"
+    Image: "Image",
 
+    Previous: "Previous",
+    Next: "Next",
+    page: "Page",
+    of: "of",
+    showingItems: "Showing items",
+    loading: "Loading...",
   },
     PL: {
     Title: "Tytuł",
@@ -16,8 +22,14 @@ export const translations = {
     Category: "Kategoria",
     Series: "Seria",
     Exclusives: "Ekskluzywne",
-    Image: "Obraz"
-    
+    Image: "Obraz",
+
+    Previous: "Poprzednia strona",
+    Next: "Następna strona",
+    page: "Strona",
+    of: "z",
+    showingItems: "Wyświetlanie",
+    loading: "Ładowanie...",
   },
   RU: {
     Title: "Название",
@@ -26,8 +38,11 @@ export const translations = {
     Category: "Категория",
     Series: "Серия",
     Exclusives: "Эксклюзивы",
-    Image: "Изображение"
-
+    Image: "Изображение",
+    page: "Страница",
+    of: "из",
+    showingItems: "Отображение",
+    loading: "Загрузка...",
   },
   ES: {
     Title: "Título",
@@ -36,7 +51,11 @@ export const translations = {
     Category: "Categoría",
     Series: "Serie",
     Exclusives: "Exclusivos",
-    Image: "Imagen"
+    Image: "Imagen",
+    page: "Página",
+    of: "de",
+    showingItems: "Mostrando",
+    loading: "Cargando...",
   },
   FR: {
     Title: "Titre",
@@ -45,8 +64,11 @@ export const translations = {
     Category: "Catégorie",
     Series: "Série",
     Exclusives: "Exclusifs",
-    Image: "Image"
-
+    Image: "Image",
+    page: "Page",
+    of: "de",
+    showingItems: "Affichage",
+    loading: "Chargement...",
   },
   DE: {
     Title: "Titel",
@@ -55,7 +77,10 @@ export const translations = {
     Category: "Kategorie",
     Series: "Serie",
     Exclusives: "Exklusive",
-    Image: "Bild"
-
+    Image: "Bild",
+    page: "Seite",
+    of: "von",
+    showingItems: "Anzeigen",
+    loading: "Laden...",
   },
 };

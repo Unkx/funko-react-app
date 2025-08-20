@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { FixedSizeList } from "react-window";
 import { translations } from "./Translations/TranslationItemList";
+import LeftArrow from "./assets/left-arrow.svg?react";
+import RightArrow from "./assets/right-arrow.svg?react";
 
 interface Item {
   id: number;
@@ -127,13 +129,13 @@ const ItemList: React.FC<ItemListProps> = ({ token, currentUserRole, isDarkMode,
         <div className="flex flex-col">
           {/* Header - Updated order to match the row */}
           <div className={`flex items-center text-sm font-semibold ${isDarkMode ? "bg-gray-700 text-gray-300" : "bg-gray-200 text-gray-700"} sticky top-0 z-10`}>
-            <div className="w-64 px-2 py-2 text-left">{t.Title || 'Title'}</div>
-            <div className="w-16 px-2 py-2 text-center">{t.ID || 'ID'}</div>
-            <div className="w-16 px-2 py-2 text-center">{t.Number || 'Number'}</div>
-            <div className="w-32 px-2 py-2 text-center">{t.Category || 'Category'}</div>
-            <div className="w-32 px-2 py-2 text-center">{t.Series || 'Series'}</div>
-            <div className="w-24 px-2 py-2 text-center">{t.Exclusives || 'Exclusives'}</div>
-            <div className="w-24 px-2 py-2 text-center">{t.Image || 'Image'}</div>
+            <div className="w-64 px-2 py-2 text-left">{t('Title') || 'Title'}</div>
+            <div className="w-16 px-2 py-2 text-center">{t('ID') || 'ID'}</div>
+            <div className="w-16 px-2 py-2 text-center">{t('Number') || 'Number'}</div>
+            <div className="w-32 px-2 py-2 text-center">{t('Category') || 'Category'}</div>
+            <div className="w-32 px-2 py-2 text-center">{t('Series') || 'Series'}</div>
+            <div className="w-24 px-2 py-2 text-center">{t('Exclusives') || 'Exclusives'}</div>
+            <div className="w-24 px-2 py-2 text-center">{t('Image') || 'Image'}</div>
           </div>
 
           {/* Scrollable List */}
@@ -158,17 +160,19 @@ const ItemList: React.FC<ItemListProps> = ({ token, currentUserRole, isDarkMode,
             disabled={currentPage === 1}
             className={`px-4 py-2 rounded font-medium ${isDarkMode ? "bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700" : "bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200"} text-black transition`}
           >
-            {t("previous") || "Previous"}
+            <LeftArrow className="w-6 h-6" />
+            {/* {t("Previous") || "Previous"} */}
           </button>
           <span className={`${isDarkMode ? "text-white" : "text-black"}`}>
-            {t("page")} {currentPage} {t.of || "of"} {totalPages}
+            {t("page")} {currentPage} {t("of") || t.of || "of"} {totalPages}
           </span>
           <button
             onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
             disabled={currentPage === totalPages}
             className={`px-4 py-2 rounded font-medium ${isDarkMode ? "bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700" : "bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200"} text-black transition`}
           >
-            {t("next") || "Next"}
+            {/* {t("next") || "Next"} */}
+            <RightArrow className="w-6 h-6" />
           </button>
         </div>
       )}

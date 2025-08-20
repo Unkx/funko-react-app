@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tailwindcss -i ./src/index.css -o ./public/style.css --watch",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "build": "vite build",
+    "build:css": "tailwindcss -i ./src/index.css -o ./public/style.css",
+    "preview": "vite preview",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@react-jvectormap/core": "^1.0.4",

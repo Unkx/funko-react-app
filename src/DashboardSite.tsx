@@ -4,22 +4,22 @@ import LanguageSelectorPopup from "./LanguageSelectorPopup";
 import { translations } from "./Translations/TranslationsDashboard";
 
 // Icons
-import MoonIcon from "/src/assets/moon.svg?react";
-import SunIcon from "/src/assets/sun.svg?react";
-import SearchIcon from "/src/assets/search.svg?react";
-import GlobeIcon from "/src/assets/globe.svg?react";
-import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
-import EditIcon from "/src/assets/edit.svg?react";
-import SaveIcon from "/src/assets/save.svg?react";
-import CancelIcon from "/src/assets/cancel.svg?react";
+import MoonIcon from "./assets/moon.svg?react";
+import SunIcon from "./assets/sun.svg?react";
+import SearchIcon from "./assets/search.svg?react";
+import GlobeIcon from "./assets/globe.svg?react";
+import ChevronDownIcon from "./assets/chevron-down.svg?react";
+import EditIcon from "./assets/edit.svg?react";
+import SaveIcon from "./assets/save.svg?react";
+import CancelIcon from "./assets/cancel.svg?react";
 
 // Flags
-import UKFlag from "/src/assets/flags/uk.svg?react";
-import PolandFlag from "/src/assets/flags/poland.svg?react";
-import RussiaFlag from "/src/assets/flags/russia.svg?react";
-import FranceFlag from "/src/assets/flags/france.svg?react";
-import GermanyFlag from "/src/assets/flags/germany.svg?react";
-import SpainFlag from "/src/assets/flags/spain.svg?react";
+import UKFlag from "./assets/flags/UK.svg?react";
+import PolandFlag from "./assets/flags/poland.svg?react";
+import RussiaFlag from "./assets/flags/russia.svg?react";
+import FranceFlag from "./assets/flags/france.svg?react";
+import GermanyFlag from "./assets/flags/germany.svg?react";
+import SpainFlag from "./assets/flags/spain.svg?react";
 
 const languages = {
   EN: { name: "English", flag: <UKFlag className="w-5 h-5" /> },

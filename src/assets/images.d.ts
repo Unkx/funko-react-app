@@ -1,13 +1,19 @@
 // src/images.d.ts
 declare module '*.png' {
-  const value: string;
-  export default value;
+  const pngValue: string;
+  export default pngValue;
 }
 declare module '*.jpg' {
-  const value: string;
-  export default value;
+  const jpgValue: string;
+  export default jpgValue;
 }
 declare module '*.svg' {
-  const value: string;
-  export default value;
+  const svgValue: string;
+  export default svgValue;
+}
+
+declare module '*.svg?react' {
+  import * as React from 'react';
+  const svgReactComponent: React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
+  export default svgReactComponent;
 }

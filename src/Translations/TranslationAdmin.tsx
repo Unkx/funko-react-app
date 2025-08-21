@@ -48,6 +48,16 @@ export const translations = {
     siteStatistics: "Site Statistics",
     loadingStatistics: "Loading statistics...",
     failedToLoadStatictics: "Failed to load site statistics",
+
+    totalUsers: "Total Users",
+    totalItems: "Total Items",
+    newUsers: "New Users",
+    totalVisits: "Total Visits",
+    avgUsersPerDay: "Average Users/Day",
+    mostActiveUser: "Most Active User",
+    itemsAdded: "Items Added (30 Days)",
+
+
   },
   PL: {
     dashboardWelcome: "Panel Administratora",
@@ -96,7 +106,15 @@ export const translations = {
 
     siteStatistics: "Statystyki strony",
     loadingStatistics: "Ładowanie statystyk...",
-    failedToLoadStatictics: "Nie udało się załadować statystyk strony"
+    failedToLoadStatictics: "Nie udało się załadować statystyk strony",
+
+    totalUsers: "Łączna liczba użytkowników",
+    totalItems: "Łączna liczba przedmiotów",
+    newUsers: "Nowi użytkownicy",
+    totalVisits: "Łączna liczba wizyt",
+    avgUsersPerDay: "Średnia liczba użytkowników/dzień",
+    mostActiveUser: "Najbardziej aktywny użytkownik",
+    itemsAdded: "Przedmioty dodane (30 dni)",
   },
   RU: {
     dashboardWelcome: "Панель администратора",
@@ -145,7 +163,15 @@ export const translations = {
 
     siteStatistics: "Статистика сайта",
     loadingStatistics: "Загрузка статистики...",
-    failedToLoadStatictics: "Не удалось загрузить статистику сайта"
+    failedToLoadStatictics: "Не удалось загрузить статистику сайта",
+
+    totalUsers: "Всего пользователей",
+    totalItems: "Всего элементов",
+    newUsers: "Новые пользователи",
+    totalVisits: "Всего посещений",
+    avgUsersPerDay: "Среднее количество пользователей в день",
+    mostActiveUser: "Самый активный пользователь",
+    itemsAdded: "Добавленные элементы (30 дней)",
 
   },
   ES: {
@@ -197,6 +223,14 @@ export const translations = {
     loadingStatistics: "Cargando estadísticas...",
     failedToLoadStatictics: "No se han podido cargar las estadísticas del sitio",
 
+    totalUsers: "Total de usuarios",
+    totalItems: "Total de elementos",
+    newUsers: "Nuevos usuarios",
+    totalVisits: "Total de visitas",
+    avgUsersPerDay: "Usuarios promedio/día",
+    mostActiveUser: "Usuario más activo",
+    itemsAdded: "Elementos añadidos (30 días)",
+
   },
   FR: {
     dashboardWelcome: "Tableau de bord administrateur",
@@ -246,6 +280,15 @@ export const translations = {
     siteStatistics: "Statistiques du site",
     loadingStatistics: "Chargement des statistiques...",
     failedToLoadStatictics: "Échec du chargement des statistiques du site",
+  
+    totalUsers: "Total des utilisateurs",
+    totalItems: "Total des éléments",
+    newUsers: "Nouveaux utilisateurs",
+    totalVisits: "Total des visites",
+    avgUsersPerDay: "Utilisateurs moyens/jour",
+    mostActiveUser: "Utilisateur le plus actif",
+    itemsAdded: "Éléments ajoutés (30 jours)",
+
   },
   DE: {
     dashboardWelcome: "Admin-Dashboard",
@@ -295,5 +338,14 @@ export const translations = {
     siteStatistics: "Website-Statistiken",
     loadingStatistics: "Lade Statistiken...",
     failedToLoadStatictics: "Fehler beim Laden der Website-Statistiken",
+ 
+    totalUsers: "Gesamtzahl der Benutzer",
+    totalItems: "Gesamtzahl der Elemente",
+    newUsersAdded: "Neue Benutzer",
+    totalVisits: "Gesamtbesuche",
+    avgUsersPerDay: "Durchschnittliche Benutzer/Tag",
+    mostActiveUser: "Aktivster Benutzer",
+    itemsAdded: "Hinzugefügte Elemente",
+
   },
 };

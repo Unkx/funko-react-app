@@ -413,7 +413,7 @@ const Admin = () => {
                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 text-purple-600 mb-2">
                   <CalendarIcon className="w-6 h-6" />
                 </div>
-                <h4 className="font-semibold text-lg mb-1">{t.newUsers7Days || "New Users (7 Days)"}</h4>
+                <h4 className="font-semibold text-lg mb-1">{t.newUsers || "New Users (7 Days)"}</h4>
                 <p className="text-2xl font-bold">{siteStats.newUsersLast7Days}</p>
               </div>
 
@@ -458,7 +458,7 @@ const Admin = () => {
                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-teal-100 text-teal-600 mb-2">
                   <CalendarIcon className="w-6 h-6" />
                 </div>
-                <h4 className="font-semibold text-lg mb-1">{t.itemsAdded30Days || "Items Added (30 Days)"}</h4>
+                <h4 className="font-semibold text-lg mb-1">{t.itemsAdded || "Items Added (30 Days)"}</h4>
                 <p className="text-2xl font-bold">{siteStats.itemsAddedLast30Days}</p>
               </div>
             </div>

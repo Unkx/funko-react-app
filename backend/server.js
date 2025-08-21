@@ -738,6 +738,84 @@ app.get('/api/admin/items', authenticateToken, isAdmin, getAdminItems);
 app.post('/api/admin/items', authenticateToken, isAdmin, addItem);
 app.delete('/api/admin/users/:id', authenticateToken, isAdmin, deleteUser);
 
+// ======================
+// ADMIN STATS ROUTE
+// ======================
+app.get('/api/admin/stats', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const [
+      totalUsersRes,
+      totalItemsRes,
+      newUsers7DaysRes,
+      newUsers30DaysRes,
+      activeUsers24hRes,
+      totalItemsAdded7DaysRes,
+      totalItemsAdded30DaysRes,
+    ] = await Promise.all([
+      // Total Users
+      pool.query('SELECT COUNT(*) AS count FROM users'),
+
+      // Total Items
+      pool.query('SELECT COUNT(*) AS count FROM funko_items'),
+
+      // New Users (Last 7 Days)
+      pool.query('SELECT COUNT(*) AS count FROM users WHERE created_at >= NOW() - INTERVAL \'7 days\''),
+
+      // New Users (Last 30 Days)
+      pool.query('SELECT COUNT(*) AS count FROM users WHERE created_at >= NOW() - INTERVAL \'30 days\''),
+
+      // Active Users (Last 24 Hours)
+      pool.query('SELECT COUNT(*) AS count FROM users WHERE last_login >= NOW() - INTERVAL \'24 hours\''),
+
+      // Items Added (Last 7 Days)
+      pool.query('SELECT COUNT(*) AS count FROM funko_items WHERE created_at >= NOW() - INTERVAL \'7 days\''),
+
+      // Items Added (Last 30 Days)
+      pool.query('SELECT COUNT(*) AS count FROM funko_items WHERE created_at >= NOW() - INTERVAL \'30 days\''),
+    ]);
+
+    // Average users per day: total users / days since first registration
+    let avgUsersPerDay = 0;
+    const firstUser = await pool.query('SELECT MIN(created_at) AS first_date FROM users');
+    const firstDate = firstUser.rows[0]?.first_date;
+    if (firstDate) {
+      const daysSinceStart = Math.max(1, Math.floor((new Date() - new Date(firstDate)) / (1000 * 60 * 60 * 24)));
+      avgUsersPerDay = Math.round(parseInt(totalUsersRes.rows[0].count) / daysSinceStart);
+    }
+
+    // Most Active User (based on how many wishlist or collection items they have)
+    const mostActiveUserRes = await pool.query(`
+      SELECT u.login
+      FROM users u
+      LEFT JOIN wishlist w ON u.id = w.user_id
+      LEFT JOIN collection c ON u.id = c.user_id
+      GROUP BY u.id, u.login
+      ORDER BY (COUNT(w.funko_id) + COUNT(c.funko_id)) DESC
+      LIMIT 1
+    `);
+
+    const mostActiveUser = mostActiveUserRes.rows[0]?.login || 'N/A';
+
+    // Construct response object matching your frontend's `SiteStats` interface
+    const stats = {
+      totalUsers: parseInt(totalUsersRes.rows[0].count),
+      totalItems: parseInt(totalItemsRes.rows[0].count),
+      newUsersLast7Days: parseInt(newUsers7DaysRes.rows[0].count),
+      newUsersLast30Days: parseInt(newUsers30DaysRes.rows[0].count),
+      activeUsersLast24Hours: parseInt(activeUsers24hRes.rows[0].count),
+      totalVisits: 0, // You don't have a visits table yet — placeholder
+      averageUsersPerDay: avgUsersPerDay,
+      mostActiveUser,
+      itemsAddedLast7Days: parseInt(totalItemsAdded7DaysRes.rows[0].count),
+      itemsAddedLast30Days: parseInt(totalItemsAdded30DaysRes.rows[0].count),
+    };
+
+    res.json(stats);
+  } catch (err) {
+    console.error('Error fetching admin stats:', err);
+    res.status(500).json({ error: 'Failed to load site statistics.' });
+  }
+});
 // Auth routes
 app.post('/api/register', registerUser);
 app.post('/api/login', loginUser);

@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { translations } from "./Translations/TranslationAdmin";
-import ItemList from "./ItemList.tsx"; // Import the new ItemList component
+import ItemList from "./ItemList.tsx";
 
 // SVG Icons
-import MoonIcon from "/src/assets/moon.svg?react";
-import SunIcon from "/src/assets/sun.svg?react";
+import MoonIcon from "./assets/moon.svg?react";
+import SunIcon from "./assets/sun.svg?react";
+import SearchIcon from "/src/assets/search.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 import UsersIcon from "/src/assets/users.svg?react";
@@ -15,6 +16,7 @@ import CalendarIcon from "/src/assets/calendar.svg?react";
 
 // Flag SVGs
 import UKFlag from "/src/assets/flags/uk.svg?react";
+import USAFlag from "/src/assets/flags/usa.svg?react";
 import PolandFlag from "/src/assets/flags/poland.svg?react";
 import RussiaFlag from "/src/assets/flags/russia.svg?react";
 import FranceFlag from "/src/assets/flags/france.svg?react";
@@ -56,6 +58,62 @@ interface SiteStats {
   itemsAddedLast30Days: number;
 }
 
+// 🌍 Centralized country configuration
+const countries = {
+  USA: {
+    name: "United States",
+    flag: <USAFlag className="w-5 h-5" />,
+    region: "North America",
+    language: "EN",
+  },
+  UK: {
+    name: "United Kingdom",
+    flag: <UKFlag className="w-5 h-5" />,
+    region: "Europe",
+    language: "EN",
+  },
+  PL: {
+    name: "Poland",
+    flag: <PolandFlag className="w-5 h-5" />,
+    region: "Europe",
+    language: "PL",
+  },
+  RU: {
+    name: "Russia",
+    flag: <RussiaFlag className="w-5 h-5" />,
+    region: "Europe",
+    language: "RU",
+  },
+  FR: {
+    name: "France",
+    flag: <FranceFlag className="w-5 h-5" />,
+    region: "Europe",
+    language: "FR",
+  },
+  DE: {
+    name: "Germany",
+    flag: <GermanyFlag className="w-5 h-5" />,
+    region: "Europe",
+    language: "DE",
+  },
+  ES: {
+    name: "Spain",
+    flag: <SpainFlag className="w-5 h-5" />,
+    region: "Europe",
+    language: "ES",
+  },
+};
+
+// 📚 Language display names
+const languageNames = {
+  EN: "English",
+  PL: "Polski",
+  RU: "Русский",
+  FR: "Français",
+  DE: "Deutsch",
+  ES: "Español",
+};
+
 const Admin = () => {
   // Constants
   const SUPER_ADMIN_ID = 1;
@@ -68,10 +126,15 @@ const Admin = () => {
   const [isDarkMode, setIsDarkMode] = useState(() =>
     localStorage.getItem("preferredTheme") === "dark"
   );
-  const [language, setLanguage] = useState(() =>
-    localStorage.getItem("preferredLanguage") || "EN"
+  const [selectedCountry, setSelectedCountry] = useState<string>(() => 
+    localStorage.getItem("preferredCountry") || "USA"
   );
-  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const [language, setLanguage] = useState<string>(() => {
+    const savedLanguage = localStorage.getItem("preferredLanguage");
+    return savedLanguage || "EN";
+  });
+  const [region, setRegion] = useState<string>("North America");
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
 
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,8 +142,7 @@ const Admin = () => {
   const [siteStats, setSiteStats] = useState<SiteStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
-  // Item related state is now primarily handled by ItemList.tsx,
-  // but we keep newItem and showAddItemModal for the modal itself.
+  // Item related state
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [newItem, setNewItem] = useState<Item>({
     id: 0,
@@ -92,8 +154,12 @@ const Admin = () => {
     imageName: "",
   });
 
+  // Refs
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
   // Derived values
-  const t = translations[language];
+  const t = translations[language] || translations["EN"];
   const currentUser: User | null = JSON.parse(localStorage.getItem("user") || "null");
   const token: string | null = localStorage.getItem("token");
 
@@ -109,6 +175,25 @@ const Admin = () => {
     return targetUser.role !== "admin";
   };
 
+  // 🌐 Detect country from browser language
+  const detectCountryFromLocale = (locale: string): string | null => {
+    const map: Record<string, string> = {
+      "en-US": "USA",
+      "en-GB": "UK",
+      pl: "PL",
+      "pl-PL": "PL",
+      ru: "RU",
+      "ru-RU": "RU",
+      fr: "FR",
+      "fr-FR": "FR",
+      de: "DE",
+      "de-DE": "DE",
+      es: "ES",
+      "es-ES": "ES",
+    };
+    return map[locale] || map[locale.split("-")[0]] || null;
+  };
+
   // Effects
   useEffect(() => {
     if (!token || !currentUser || currentUser.role !== "admin") {
@@ -118,6 +203,58 @@ const Admin = () => {
       return () => clearTimeout(timer);
     }
   }, [currentUser, token, navigate]);
+
+  // 🧩 Initial setup: load preferences or detect locale
+  useEffect(() => {
+    const savedCountry = localStorage.getItem("preferredCountry");
+    const countryData = savedCountry && countries[savedCountry as keyof typeof countries]
+      ? countries[savedCountry as keyof typeof countries]
+      : null;
+
+    if (countryData) {
+      setSelectedCountry(savedCountry);
+      setLanguage(countryData.language);
+      setRegion(countryData.region);
+    } else {
+      const detected = detectCountryFromLocale(navigator.language);
+      const detectedData = detected ? countries[detected as keyof typeof countries] : null;
+      if (detectedData) {
+        setSelectedCountry(detected);
+        setLanguage(detectedData.language);
+        setRegion(detectedData.region);
+      }
+    }
+
+    if (isDarkMode) document.documentElement.classList.add("dark");
+    else document.documentElement.classList.remove("dark");
+  }, []);
+
+  // 🌙 Theme sync
+  useEffect(() => {
+    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDarkMode]);
+
+  // 🖱️ Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        showCountryDropdown &&
+        dropdownRef.current &&
+        buttonRef.current &&
+        !dropdownRef.current.contains(e.target as Node) &&
+        !buttonRef.current.contains(e.target as Node)
+      ) {
+        setShowCountryDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showCountryDropdown]);
 
   // Fetch users effect
   useEffect(() => {
@@ -153,7 +290,7 @@ const Admin = () => {
     };
 
     fetchUsers();
-  }, [token, currentUser?.role, t.sessionExpired, navigate]); // Added dependencies
+  }, [token, currentUser?.role, t.sessionExpired, navigate]);
 
   // Fetch site statistics
   useEffect(() => {
@@ -188,14 +325,22 @@ const Admin = () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
     localStorage.setItem("preferredTheme", newMode ? "dark" : "light");
-    document.documentElement.classList.toggle("dark", newMode);
   };
 
-  const selectLanguage = (lang: string) => {
-    setLanguage(lang);
-    localStorage.setItem("preferredLanguage", lang);
-    setShowLanguageDropdown(false);
+  // 🌍 Handle country selection
+  const handleCountryChange = (countryCode: string) => {
+    const countryData = countries[countryCode as keyof typeof countries];
+    if (countryData) {
+      setSelectedCountry(countryCode);
+      setLanguage(countryData.language);
+      setRegion(countryData.region);
+      localStorage.setItem("preferredCountry", countryCode);
+      localStorage.setItem("preferredLanguage", countryData.language);
+      setShowCountryDropdown(false);
+    }
   };
+
+  const toggleCountryDropdown = () => setShowCountryDropdown((prev) => !prev);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -279,10 +424,6 @@ const Admin = () => {
       }
 
       const createdItem = await response.json();
-
-      // You might want to refresh the ItemList data after adding a new item.
-      // This could involve passing a refresh function down to ItemList,
-      // or simply letting ItemList refetch its current page data.
       alert(`Item added: ${createdItem.title}`);
       setShowAddItemModal(false);
       setNewItem({
@@ -294,8 +435,6 @@ const Admin = () => {
         exclusive: false,
         imageName: "",
       });
-      // Optionally, force ItemList to re-fetch to show the new item
-      // This would require a prop in ItemList to trigger refetch, e.g., a 'refetchTrigger' state
     } catch (err: any) {
       console.error('Add item error:', err);
       alert(`Failed to add item: ${err.message}`);
@@ -330,35 +469,74 @@ const Admin = () => {
           </h1>
         </Link>
 
-        {/* Language, Theme, and Logout */}
+        {/* Country, Theme, and Logout */}
         <div className="flex flex-wrap gap-3 items-center justify-center sm:justify-end">
-          <div className="relative">
+          {/* 🌐 Country Selector */}
+          <div className="relative inline-block">
             <button
-              onClick={() => setShowLanguageDropdown((prev) => !prev)}
-              className={`p-2 rounded-full flex items-center gap-1 text-base ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}
-              aria-label="Change language"
+              ref={buttonRef}
+              onClick={toggleCountryDropdown}
+              className={`p-2 rounded-full flex items-center gap-2 ${
+                isDarkMode
+                  ? "bg-gray-700 hover:bg-gray-600"
+                  : "bg-gray-200 hover:bg-gray-300"
+              }`}
+              aria-label="Select country"
+              aria-expanded={showCountryDropdown}
             >
               <GlobeIcon className="w-5 h-5" />
-              <span className="hidden sm:inline">{language}</span>
-              <ChevronDownIcon className={`w-4 h-4 transition-transform ${showLanguageDropdown ? "rotate-180" : ""}`} />
+              <span className="flex items-center gap-1">
+                {countries[selectedCountry as keyof typeof countries]?.flag}
+                <span className="text-sm font-medium hidden sm:inline">
+                  {countries[selectedCountry as keyof typeof countries]?.name}
+                </span>
+              </span>
+              <ChevronDownIcon
+                className={`w-4 h-4 transition-transform ${showCountryDropdown ? "rotate-180" : ""}`}
+              />
             </button>
 
-            {showLanguageDropdown && (
-              <div className={`absolute right-0 mt-2 w-48 max-w-full rounded-md shadow-lg py-1 z-10 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
-                {Object.entries(translations).map(([code]) => (
-                  <button
-                    key={code}
-                    onClick={() => selectLanguage(code)}
-                    className={`w-full text-left px-4 py-2 flex items-center gap-2 text-base ${language === code ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : "hover:bg-gray-100 dark:hover:bg-gray-600"}`}
-                  >
-                    {code === "EN" && <UKFlag className="w-5 h-5" />}
-                    {code === "PL" && <PolandFlag className="w-5 h-5" />}
-                    {code === "RU" && <RussiaFlag className="w-5 h-5" />}
-                    {code === "FR" && <FranceFlag className="w-5 h-5" />}
-                    {code === "DE" && <GermanyFlag className="w-5 h-5" />}
-                    {code === "ES" && <SpainFlag className="w-5 h-5" />}
-                    <span>{code}</span>
-                  </button>
+            {showCountryDropdown && (
+              <div
+                ref={dropdownRef}
+                className={`absolute right-0 mt-2 w-64 rounded-md shadow-lg py-1 z-50 max-h-80 overflow-y-auto ${
+                  isDarkMode ? "bg-gray-700" : "bg-white"
+                }`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {(["North America", "Europe"] as const).map((regionName) => (
+                  <div key={regionName}>
+                    <div
+                      className={`px-4 py-2 text-xs font-semibold ${
+                        isDarkMode ? "text-gray-300" : "text-gray-500"
+                      }`}
+                    >
+                      {regionName}
+                    </div>
+                    {Object.entries(countries)
+                      .filter(([, country]) => country.region === regionName)
+                      .map(([code, country]) => (
+                        <button
+                          key={code}
+                          onClick={() => handleCountryChange(code)}
+                          className={`w-full text-left px-4 py-2 flex items-center justify-between ${
+                            selectedCountry === code
+                              ? isDarkMode
+                                ? "bg-yellow-500 text-black"
+                                : "bg-green-600 text-white"
+                              : isDarkMode
+                              ? "hover:bg-gray-600"
+                              : "hover:bg-gray-200"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="w-5 h-5">{country.flag}</span>
+                            <span>{country.name}</span>
+                          </div>
+                          <span className="text-xs opacity-75">{languageNames[country.language]}</span>
+                        </button>
+                      ))}
+                  </div>
                 ))}
               </div>
             )}
@@ -372,12 +550,27 @@ const Admin = () => {
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
 
-        
+          <button
+            onClick={handleLogout}
+            className={`px-4 py-2 rounded ${
+              isDarkMode
+                ? "bg-red-600 hover:bg-red-700"
+                : "bg-red-500 hover:bg-red-600"
+            } text-white`}
+          >
+            {t.logout}
+          </button>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="flex-grow px-4 sm:px-8 py-6 flex flex-col items-center">
+        {/* 📍 Current language & region */}
+        <div className={`mb-6 text-center ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
+          <p className="text-sm">
+            {languageNames[language]} • {region}
+          </p>
+        </div>
 
         {/* Site Statistics Section */}
         <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
@@ -569,7 +762,7 @@ const Admin = () => {
           )}
         </section>
 
-        {/* Items Section (now uses ItemList component) */}
+        {/* Items Section */}
         <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mt-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
           <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4 sm:gap-0">
             <h3 className="text-xl sm:text-2xl font-semibold">{t.listOfItems || "List of Items"}</h3>
@@ -589,7 +782,7 @@ const Admin = () => {
             token={token}
             currentUserRole={currentUser?.role}
             isDarkMode={isDarkMode}
-            t={(key: string) => (translations[language] as any)[key]} // Pass translation function
+            t={(key: string) => (translations[language] as any)[key]}
           />
         </section>
 
@@ -722,18 +915,6 @@ const Admin = () => {
             </div>
           </div>
         )}
-
-        <h3 className={'px-4 py-2' }/>
-            <button
-              onClick={handleLogout}
-              className={`px-4 py-2 rounded ${
-                isDarkMode
-                  ? "bg-red-600 hover:bg-red-700"
-                  : "bg-red-500 hover:bg-red-600"
-              } text-white`}
-            >
-              {t.logout}
-            </button>
       </main>
 
       {/* Footer */}

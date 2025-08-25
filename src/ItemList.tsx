@@ -16,7 +16,7 @@ interface Item {
 
 interface ItemListProps {
   token: string | null;
-  currentUserRole: string | undefined;
+  currentUserRole: string ;
   isDarkMode: boolean;
   t: (key: string) => string;
 }

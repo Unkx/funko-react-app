@@ -396,12 +396,12 @@ const checkWishlistItem = async (req, res) => {
       [userId, funkoId]
     );
 
-    if (!result.rows[0].exists && !funkoId.endsWith('-undefined')) {
-      result = await pool.query(
-        `SELECT EXISTS(SELECT 1 FROM wishlist WHERE user_id = $1 AND funko_id = $2)`,
-        [userId, `${funkoId}-undefined`]
-      );
-    }
+    // if (!result.rows[0].exists && !funkoId.endsWith('-undefined')) {
+    //   result = await pool.query(
+    //     `SELECT EXISTS(SELECT 1 FROM wishlist WHERE user_id = $1 AND funko_id = $2)`,
+    //     [userId, `${funkoId}-undefined`]
+    //   );
+    // }
 
     res.json({ exists: result.rows[0].exists });
   } catch (err) {

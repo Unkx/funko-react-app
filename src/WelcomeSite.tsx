@@ -86,7 +86,7 @@ const languageNames = {
 };
 
 // 🔢 Generate unique ID for Funko items
-const generateId = (title: string | undefined, number: string | undefined): string => {
+const generateId = (title: string , number: string ): string => { // | undefined
   const safeTitle = title?.trim() || "";
   const safeNumber = number?.trim() || "";
   return `${safeTitle}-${safeNumber}`.replace(/\s+/g, "-");

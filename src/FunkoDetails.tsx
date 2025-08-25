@@ -71,6 +71,24 @@ interface PricePoint {
   price: number;
 }
 
+interface PriceResult {
+  shop: string;
+  price: string;
+  inStock: boolean;
+  url: string;
+  lastUpdated: string;
+  country: string;
+  countryFlag: string;
+  countryCode: string;
+}
+
+interface Shop {
+  name: string;
+  url: string;
+  searchUrl: string;
+  currency: string;
+}
+
 const FunkoDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -90,6 +108,12 @@ const FunkoDetails: React.FC = () => {
   const [inCollection, setInCollection] = useState(false);
   const [isUpdatingWishlist, setIsUpdatingWishlist] = useState(false);
   const [isUpdatingCollection, setIsUpdatingCollection] = useState(false);
+
+  // Price scraper states
+  const [priceResults, setPriceResults] = useState<PriceResult[]>([]);
+  const [isPriceLoading, setIsPriceLoading] = useState(false);
+  const [selectedCountries, setSelectedCountries] = useState(['poland', 'germany', 'france']);
+  const [showAllPrices, setShowAllPrices] = useState(false);
 
   const [relatedItems, setRelatedItems] = useState<FunkoItemWithId[]>([]);
   const [priceHistory, setPriceHistory] = useState<PricePoint[]>([]);
@@ -114,13 +138,139 @@ const FunkoDetails: React.FC = () => {
 
   const t = translations[language] || translations["EN"];
 
+  // Shop configurations by country
+  const shops: Record<string, Shop[]> = {
+    poland: [
+      { name: 'Empik', url: 'empik.com', searchUrl: 'https://www.empik.com/szukaj/produkty?q=', currency: 'PLN' },
+      { name: 'Allegro', url: 'allegro.pl', searchUrl: 'https://allegro.pl/listing?string=', currency: 'PLN' },
+      { name: 'Media Markt PL', url: 'mediamarkt.pl', searchUrl: 'https://www.mediamarkt.pl/pl/search.html?query=', currency: 'PLN' },
+      { name: 'Komputronik', url: 'komputronik.pl', searchUrl: 'https://www.komputronik.pl/search/', currency: 'PLN' }, // Note: supports simple path search
+      { name: 'Merlin.pl', url: 'merlin.pl', searchUrl: 'https://merlin.pl/szukaj/?q=', currency: 'PLN' }
+    ],
+    uk: [
+      { name: 'Forbidden Planet', url: 'forbiddenplanet.com', searchUrl: 'https://forbiddenplanet.com/catalog/?q=', currency: 'GBP' },
+      { name: 'Game', url: 'game.co.uk', searchUrl: 'https://www.game.co.uk/en/search/?q=', currency: 'GBP' },
+      { name: 'Argos', url: 'argos.co.uk', searchUrl: 'https://www.argos.co.uk/search/', currency: 'GBP' }, // Note: Argos uses path-based search
+      { name: 'Amazon UK', url: 'amazon.co.uk', searchUrl: 'https://www.amazon.co.uk/s?k=', currency: 'GBP' },
+      { name: 'Smyths Toys', url: 'smythstoys.com', searchUrl: 'https://www.smythstoys.com/uk/en-gb/search/?text=', currency: 'GBP' }
+    ],
+    usa: [
+      { name: 'Hot Topic', url: 'hottopic.com', searchUrl: 'https://www.hottopic.com/search?q=', currency: 'USD' },
+      { name: 'GameStop', url: 'gamestop.com', searchUrl: 'https://www.gamestop.com/search/?q=', currency: 'USD' },
+      { name: 'Target', url: 'target.com', searchUrl: 'https://www.target.com/s?searchTerm=', currency: 'USD' },
+      { name: 'Amazon US', url: 'amazon.com', searchUrl: 'https://www.amazon.com/s?k=', currency: 'USD' },
+      { name: 'Entertainment Earth', url: 'entertainmentearth.com', searchUrl: 'https://www.entertainmentearth.com/s/?query1=', currency: 'USD' }
+    ],
+    germany: [
+      { name: 'Elbenwald', url: 'elbenwald.de', searchUrl: 'https://www.elbenwald.de/search?sSearch=', currency: 'EUR' },
+      { name: 'Amazon DE', url: 'amazon.de', searchUrl: 'https://www.amazon.de/s?k=', currency: 'EUR' },
+      { name: 'MediaMarkt DE', url: 'mediamarkt.de', searchUrl: 'https://www.mediamarkt.de/de/search.html?query=', currency: 'EUR' },
+      { name: 'GameStop DE', url: 'gamestop.de', searchUrl: 'https://www.gamestop.de/SearchResult/QuickSearch?q=', currency: 'EUR' },
+      { name: 'Müller', url: 'mueller.de', searchUrl: 'https://www.mueller.de/suche/?q=', currency: 'EUR' }
+    ],
+    france: [
+      { name: 'Fnac', url: 'fnac.com', searchUrl: 'https://www.fnac.com/SearchResult/ResultList.aspx?Search=', currency: 'EUR' },
+      { name: 'Amazon FR', url: 'amazon.fr', searchUrl: 'https://www.amazon.fr/s?k=', currency: 'EUR' },
+      { name: 'Cultura', url: 'cultura.com', searchUrl: 'https://www.cultura.com/catalogsearch/result/?q=', currency: 'EUR' },
+      { name: 'Micromania', url: 'micromania.fr', searchUrl: 'https://www.micromania.fr/search?text=', currency: 'EUR' },
+      { name: 'Leclerc', url: 'e.leclerc', searchUrl: 'https://www.e.leclerc/search?text=', currency: 'EUR' }
+    ],
+    russia: [
+      { name: 'Ozon', url: 'ozon.ru', searchUrl: 'https://www.ozon.ru/search/?text=', currency: 'RUB' },
+      { name: 'Wildberries', url: 'wildberries.ru', searchUrl: 'https://www.wildberries.ru/catalog/0/search.aspx?search=', currency: 'RUB' },
+      { name: 'M.Video', url: 'mvideo.ru', searchUrl: 'https://www.mvideo.ru/search?text=', currency: 'RUB' },
+      { name: 'Citilink', url: 'citilink.ru', searchUrl: 'https://www.citilink.ru/search/?text=', currency: 'RUB' },
+      { name: 'DNS Shop', url: 'dns-shop.ru', searchUrl: 'https://www.dns-shop.ru/search/?q=', currency: 'RUB' }
+    ]
+  };
+
+  const countries = {
+    poland: { name: 'Poland', flag: '🇵🇱' },
+    uk: { name: 'United Kingdom', flag: '🇬🇧' },
+    usa: { name: 'United States', flag: '🇺🇸' },
+    germany: { name: 'Germany', flag: '🇩🇪' },
+    france: { name: 'France', flag: '🇫🇷' },
+    russia: { name: 'Russia', flag: '🇷🇺' }
+  };
+
   const generateId = (
-    title: string | undefined,
-    number: string | undefined
+    title: string ,
+    number: string
   ): string => {
     const safeTitle = title ? title.trim() : "";
     const safeNumber = number ? number.trim() : "";
     return `${safeTitle}-${safeNumber}`.replace(/\s+/g, "-");
+  };
+
+  // Mock price scraping function
+  const scrapePrice = async (shop: Shop, query: string, countryCode: string): Promise<PriceResult> => {
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 500));
+    
+    // Generate mock price data
+    const basePrice = Math.random() * 50 + 10; // $10-60
+    const currency = shop.currency;
+    const multipliers: Record<string, number> = { PLN: 4.2, GBP: 0.8, USD: 1, EUR: 0.9, RUB: 75 };
+    const price = (basePrice * multipliers[currency]).toFixed(2);
+    
+    // Mock availability
+    const inStock = Math.random() > 0.3;
+    
+    return {
+      shop: shop.name,
+      price: `${price} ${currency}`,
+      inStock,
+      url: shop.searchUrl + encodeURIComponent(query),
+      lastUpdated: new Date().toLocaleString(),
+      country: countries[countryCode as keyof typeof countries].name,
+      countryFlag: countries[countryCode as keyof typeof countries].flag,
+      countryCode
+    };
+  };
+
+  // Search prices for current Funko
+  const searchPrices = async () => {
+    if (!funkoItem) return;
+    
+    setIsPriceLoading(true);
+    setPriceResults([]);
+    
+    try {
+      const searchPromises: Promise<PriceResult>[] = [];
+      const query = `${funkoItem.title} funko pop ${funkoItem.number}`;
+
+      for (const countryCode of selectedCountries) {
+        const countryShops = shops[countryCode];
+        if (countryShops) {
+          for (const shop of countryShops) {
+            searchPromises.push(scrapePrice(shop, query, countryCode));
+          }
+        }
+      }
+
+      const results = await Promise.all(searchPromises);
+      const sortedResults = results.sort((a, b) => {
+        if (a.inStock && !b.inStock) return -1;
+        if (!a.inStock && b.inStock) return 1;
+        return parseFloat(a.price) - parseFloat(b.price);
+      });
+      
+      setPriceResults(sortedResults);
+    } catch (error) {
+      console.error('Price search failed:', error);
+    } finally {
+      setIsPriceLoading(false);
+    }
+  };
+
+  const handleCountryToggle = (countryCode: string) => {
+    setSelectedCountries(prev => {
+      if (prev.includes(countryCode)) {
+        return prev.filter(c => c !== countryCode);
+      } else {
+        return [...prev, countryCode];
+      }
+    });
   };
 
   // Fetch Funko data
@@ -136,7 +286,8 @@ const FunkoDetails: React.FC = () => {
 
         const dataWithIds: FunkoItemWithId[] = data.map((item) => ({
           ...item,
-          id: generateId(item.title, item.number),
+          title: item.title || "Unknown Title",
+          id: generateId(item.title || "Unknown Title", item.number || ""),
         }));
 
         const foundItem = dataWithIds.find((item) => item.id === id);
@@ -169,6 +320,13 @@ const FunkoDetails: React.FC = () => {
     };
     fetchData();
   }, [id]);
+
+  // Auto-search prices when funko item loads
+  useEffect(() => {
+    if (funkoItem && selectedCountries.length > 0) {
+      searchPrices();
+    }
+  }, [funkoItem, selectedCountries]);
 
   // Check item in wishlist/collection
   useEffect(() => {
@@ -323,6 +481,8 @@ const FunkoDetails: React.FC = () => {
   const loginButtonText = useMemo(() => {
     return user ? t.goToDashboard || "Dashboard" : t.goToLoginSite || "Log In";
   }, [t, user]);
+
+  const displayedPriceResults = showAllPrices ? priceResults : priceResults.slice(0, 6);
 
   if (isLoading) {
     return (
@@ -588,6 +748,128 @@ const FunkoDetails: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Price Comparison Section */}
+        <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Price Comparison</h2>
+            <button
+              onClick={searchPrices}
+              disabled={isPriceLoading}
+              className={`px-4 py-2 rounded ${
+                isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"
+              } disabled:opacity-50`}
+            >
+              {isPriceLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                  Searching...
+                </div>
+              ) : (
+                'Refresh Prices'
+              )}
+            </button>
+          </div>
+
+          {/* Country Filters */}
+          <div className="mb-4">
+            <p className="text-sm font-medium mb-2">Search in countries:</p>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(countries).map(([code, country]) => (
+                <button
+                  key={code}
+                  onClick={() => handleCountryToggle(code)}
+                  className={`px-3 py-1 rounded text-sm ${
+                    selectedCountries.includes(code)
+                      ? isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"
+                      : isDarkMode ? "bg-gray-600 text-gray-300" : "bg-gray-200 text-gray-700"
+                  }`}
+                >
+                  {country.flag} {country.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Price Results */}
+          {priceResults.length > 0 ? (
+            <div>
+              <p className="text-sm text-gray-500 mb-4">
+                Found {priceResults.length} results from {selectedCountries.length} countries
+              </p>
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {displayedPriceResults.map((result, index) => (
+                  <div
+                    key={index}
+                    className={`p-4 rounded border-l-4 ${
+                      result.inStock
+                        ? isDarkMode ? "border-green-500 bg-gray-600" : "border-green-500 bg-green-50"
+                        : isDarkMode ? "border-red-500 bg-gray-600" : "border-red-500 bg-red-50"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-semibold">{result.shop}</h3>
+                        <p className="text-xs text-gray-500 flex items-center gap-1">
+                          {result.countryFlag} {result.country}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-lg">{result.price}</p>
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          result.inStock 
+                            ? "bg-green-500 text-white" 
+                            : "bg-red-500 text-white"
+                        }`}>
+                          {result.inStock ? "In Stock" : "Out of Stock"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-xs text-gray-400">
+                        Updated: {result.lastUpdated}
+                      </p>
+                      <a
+                        href={result.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`px-3 py-1 text-sm rounded ${
+                          isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"
+                        } hover:opacity-80`}
+                      >
+                        Visit
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {priceResults.length > 6 && (
+                <div className="text-center mt-4">
+                  <button
+                    onClick={() => setShowAllPrices(!showAllPrices)}
+                    className={`px-4 py-2 rounded ${
+                      isDarkMode ? "bg-gray-600 text-white" : "bg-gray-200 text-black"
+                    }`}
+                  >
+                    {showAllPrices ? 'Show Less' : `Show All ${priceResults.length} Results`}
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : isPriceLoading ? (
+            <div className="text-center py-8">
+              <div className={`animate-spin rounded-full h-8 w-8 border-2 border-current border-t-transparent mx-auto mb-2 ${
+                isDarkMode ? "text-yellow-500" : "text-green-600"
+              }`}></div>
+              <p>Searching for prices across {selectedCountries.length} countries...</p>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <p>Select countries and click "Refresh Prices" to compare prices</p>
+            </div>
+          )}
         </div>
 
         {/* Price Chart */}

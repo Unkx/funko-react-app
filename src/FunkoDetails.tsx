@@ -75,11 +75,13 @@ interface PriceResult {
   shop: string;
   price: string;
   inStock: boolean;
+  productFound: boolean;
   url: string;
   lastUpdated: string;
   country: string;
   countryFlag: string;
   countryCode: string;
+  searchStatus: 'found' | 'not_found' | 'error' | 'checking';
 }
 
 interface Shop {
@@ -144,13 +146,13 @@ const FunkoDetails: React.FC = () => {
       { name: 'Empik', url: 'empik.com', searchUrl: 'https://www.empik.com/szukaj/produkty?q=', currency: 'PLN' },
       { name: 'Allegro', url: 'allegro.pl', searchUrl: 'https://allegro.pl/listing?string=', currency: 'PLN' },
       { name: 'Media Markt PL', url: 'mediamarkt.pl', searchUrl: 'https://www.mediamarkt.pl/pl/search.html?query=', currency: 'PLN' },
-      { name: 'Komputronik', url: 'komputronik.pl', searchUrl: 'https://www.komputronik.pl/search/', currency: 'PLN' }, // Note: supports simple path search
+      { name: 'Komputronik', url: 'komputronik.pl', searchUrl: 'https://www.komputronik.pl/search/', currency: 'PLN' },
       { name: 'Merlin.pl', url: 'merlin.pl', searchUrl: 'https://merlin.pl/szukaj/?q=', currency: 'PLN' }
     ],
     uk: [
       { name: 'Forbidden Planet', url: 'forbiddenplanet.com', searchUrl: 'https://forbiddenplanet.com/catalog/?q=', currency: 'GBP' },
       { name: 'Game', url: 'game.co.uk', searchUrl: 'https://www.game.co.uk/en/search/?q=', currency: 'GBP' },
-      { name: 'Argos', url: 'argos.co.uk', searchUrl: 'https://www.argos.co.uk/search/', currency: 'GBP' }, // Note: Argos uses path-based search
+      { name: 'Argos', url: 'argos.co.uk', searchUrl: 'https://www.argos.co.uk/search/', currency: 'GBP' },
       { name: 'Amazon UK', url: 'amazon.co.uk', searchUrl: 'https://www.amazon.co.uk/s?k=', currency: 'GBP' },
       { name: 'Smyths Toys', url: 'smythstoys.com', searchUrl: 'https://www.smythstoys.com/uk/en-gb/search/?text=', currency: 'GBP' }
     ],
@@ -194,37 +196,57 @@ const FunkoDetails: React.FC = () => {
   };
 
   const generateId = (
-    title: string ,
-    number: string
+    title: string | undefined,
+    number: string | undefined
   ): string => {
     const safeTitle = title ? title.trim() : "";
     const safeNumber = number ? number.trim() : "";
     return `${safeTitle}-${safeNumber}`.replace(/\s+/g, "-");
   };
 
-  // Mock price scraping function
+  // Mock price scraping function with product availability checking
   const scrapePrice = async (shop: Shop, query: string, countryCode: string): Promise<PriceResult> => {
     // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 500));
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 3000 + 1000));
     
-    // Generate mock price data
+    // Simulate product search success rate (some products won't be found on all sites)
+    const productFound = Math.random() > 0.25; // 75% chance of finding the product
+    
+    if (!productFound) {
+      return {
+        shop: shop.name,
+        price: 'N/A',
+        inStock: false,
+        productFound: false,
+        url: shop.searchUrl + encodeURIComponent(query),
+        lastUpdated: new Date().toLocaleString(),
+        country: countries[countryCode as keyof typeof countries].name,
+        countryFlag: countries[countryCode as keyof typeof countries].flag,
+        countryCode,
+        searchStatus: 'not_found'
+      };
+    }
+    
+    // Generate mock price data for found products
     const basePrice = Math.random() * 50 + 10; // $10-60
     const currency = shop.currency;
     const multipliers: Record<string, number> = { PLN: 4.2, GBP: 0.8, USD: 1, EUR: 0.9, RUB: 75 };
     const price = (basePrice * multipliers[currency]).toFixed(2);
     
-    // Mock availability
-    const inStock = Math.random() > 0.3;
+    // Mock availability (product found but might be out of stock)
+    const inStock = Math.random() > 0.2; // 80% chance of being in stock if product exists
     
     return {
       shop: shop.name,
       price: `${price} ${currency}`,
       inStock,
+      productFound: true,
       url: shop.searchUrl + encodeURIComponent(query),
       lastUpdated: new Date().toLocaleString(),
       country: countries[countryCode as keyof typeof countries].name,
       countryFlag: countries[countryCode as keyof typeof countries].flag,
-      countryCode
+      countryCode,
+      searchStatus: 'found'
     };
   };
 
@@ -249,10 +271,25 @@ const FunkoDetails: React.FC = () => {
       }
 
       const results = await Promise.all(searchPromises);
+      
+      // Sort results: product found & in stock first, then found but out of stock, then not found
       const sortedResults = results.sort((a, b) => {
-        if (a.inStock && !b.inStock) return -1;
-        if (!a.inStock && b.inStock) return 1;
-        return parseFloat(a.price) - parseFloat(b.price);
+        // Priority 1: Product found vs not found
+        if (a.productFound && !b.productFound) return -1;
+        if (!a.productFound && b.productFound) return 1;
+        
+        // Priority 2: If both found, in stock vs out of stock
+        if (a.productFound && b.productFound) {
+          if (a.inStock && !b.inStock) return -1;
+          if (!a.inStock && b.inStock) return 1;
+          
+          // Priority 3: If both have same stock status, sort by price
+          if (a.inStock && b.inStock) {
+            return parseFloat(a.price) - parseFloat(b.price);
+          }
+        }
+        
+        return 0;
       });
       
       setPriceResults(sortedResults);
@@ -286,8 +323,7 @@ const FunkoDetails: React.FC = () => {
 
         const dataWithIds: FunkoItemWithId[] = data.map((item) => ({
           ...item,
-          title: item.title || "Unknown Title",
-          id: generateId(item.title || "Unknown Title", item.number || ""),
+          id: generateId(item.title, item.number),
         }));
 
         const foundItem = dataWithIds.find((item) => item.id === id);
@@ -795,56 +831,122 @@ const FunkoDetails: React.FC = () => {
           {/* Price Results */}
           {priceResults.length > 0 ? (
             <div>
-              <p className="text-sm text-gray-500 mb-4">
-                Found {priceResults.length} results from {selectedCountries.length} countries
-              </p>
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-sm text-gray-500">
+                  Found {priceResults.filter(r => r.productFound).length} products 
+                  ({priceResults.filter(r => r.productFound && r.inStock).length} in stock) 
+                  from {selectedCountries.length} countries
+                </p>
+                <div className="flex gap-2 text-xs">
+                  <span className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-green-500 rounded"></div>
+                    Found & In Stock
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-yellow-500 rounded"></div>
+                    Found & Out of Stock
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-gray-500 rounded"></div>
+                    Not Found
+                  </span>
+                </div>
+              </div>
+              
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {displayedPriceResults.map((result, index) => (
                   <div
                     key={index}
-                    className={`p-4 rounded border-l-4 ${
-                      result.inStock
+                    className={`p-4 rounded border-l-4 transition-all ${
+                      !result.productFound
+                        ? isDarkMode ? "border-gray-500 bg-gray-600 opacity-60" : "border-gray-400 bg-gray-100 opacity-60"
+                        : result.inStock
                         ? isDarkMode ? "border-green-500 bg-gray-600" : "border-green-500 bg-green-50"
-                        : isDarkMode ? "border-red-500 bg-gray-600" : "border-red-500 bg-red-50"
+                        : isDarkMode ? "border-yellow-500 bg-gray-600" : "border-yellow-500 bg-yellow-50"
                     }`}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <h3 className="font-semibold">{result.shop}</h3>
+                        <h3 className="font-semibold flex items-center gap-2">
+                          {result.shop}
+                          {!result.productFound && (
+                            <span className="text-xs bg-gray-500 text-white px-2 py-1 rounded">
+                              Not Listed
+                            </span>
+                          )}
+                        </h3>
                         <p className="text-xs text-gray-500 flex items-center gap-1">
                           {result.countryFlag} {result.country}
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-lg">{result.price}</p>
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          result.inStock 
-                            ? "bg-green-500 text-white" 
-                            : "bg-red-500 text-white"
-                        }`}>
-                          {result.inStock ? "In Stock" : "Out of Stock"}
-                        </span>
+                        {result.productFound ? (
+                          <>
+                            <p className="font-bold text-lg">{result.price}</p>
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              result.inStock 
+                                ? "bg-green-500 text-white" 
+                                : "bg-yellow-500 text-black"
+                            }`}>
+                              {result.inStock ? "In Stock" : "Out of Stock"}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <p className="font-bold text-lg text-gray-400">N/A</p>
+                            <span className="text-xs px-2 py-1 rounded bg-gray-500 text-white">
+                              Not Available
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
+                    
+                    {result.productFound && (
+                      <div className="mb-2 text-xs text-gray-500">
+                        <p>Product found on site</p>
+                      </div>
+                    )}
+                    
                     <div className="flex justify-between items-center">
                       <p className="text-xs text-gray-400">
-                        Updated: {result.lastUpdated}
+                        Checked: {result.lastUpdated}
                       </p>
                       <a
                         href={result.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`px-3 py-1 text-sm rounded ${
-                          isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"
-                        } hover:opacity-80`}
+                        className={`px-3 py-1 text-sm rounded transition-all ${
+                          result.productFound
+                            ? isDarkMode 
+                              ? "bg-yellow-500 text-black hover:bg-yellow-400" 
+                              : "bg-green-600 text-white hover:bg-green-700"
+                            : isDarkMode
+                              ? "bg-gray-500 text-white hover:bg-gray-400"
+                              : "bg-gray-400 text-white hover:bg-gray-500"
+                        }`}
                       >
-                        Visit
+                        {result.productFound ? 'View Product' : 'Search Site'}
                       </a>
+                    </div>
+                    
+                    {/* Availability indicator bar */}
+                    <div className="mt-2">
+                      <div className="w-full bg-gray-200 rounded-full h-1">
+                        <div 
+                          className={`h-1 rounded-full transition-all duration-500 ${
+                            !result.productFound 
+                              ? "w-0 bg-gray-400"
+                              : result.inStock 
+                                ? "w-full bg-green-500" 
+                                : "w-full bg-yellow-500"
+                          }`}
+                        ></div>
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
-              
               {priceResults.length > 6 && (
                 <div className="text-center mt-4">
                   <button
@@ -857,6 +959,47 @@ const FunkoDetails: React.FC = () => {
                   </button>
                 </div>
               )}
+
+              {/* Summary Statistics */}
+              <div className={`mt-6 p-4 rounded-lg grid grid-cols-2 md:grid-cols-4 gap-4 text-center ${
+                isDarkMode ? "bg-gray-600" : "bg-gray-100"
+              }`}>
+                <div>
+                  <p className="text-2xl font-bold text-green-500">
+                    {priceResults.filter(r => r.productFound && r.inStock).length}
+                  </p>
+                  <p className="text-sm text-gray-500">Available</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-yellow-500">
+                    {priceResults.filter(r => r.productFound && !r.inStock).length}
+                  </p>
+                  <p className="text-sm text-gray-500">Out of Stock</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-500">
+                    {priceResults.filter(r => !r.productFound).length}
+                  </p>
+                  <p className="text-sm text-gray-500">Not Listed</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">
+                    {priceResults.filter(r => r.productFound).length > 0 ? (
+                      <>
+                        {Math.min(...priceResults
+                          .filter(r => r.productFound && r.inStock)
+                          .map(r => parseFloat(r.price.split(' ')[0]))
+                        ).toFixed(2)}
+                        {' '}
+                        {priceResults.find(r => r.productFound && r.inStock)?.price.split(' ')[1] || ''}
+                      </>
+                    ) : (
+                      'N/A'
+                    )}
+                  </p>
+                  <p className="text-sm text-gray-500">Best Price</p>
+                </div>
+              </div>
             </div>
           ) : isPriceLoading ? (
             <div className="text-center py-8">

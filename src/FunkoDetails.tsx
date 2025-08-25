@@ -1,8 +1,18 @@
+// FunkoDetails.tsx
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { translations } from "./Translations/TranslationsFunkoDetails";
 import axios from "axios";
 
+// Recharts for price history
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 // Icons
 import MoonIcon from "/src/assets/moon.svg?react";
@@ -27,37 +37,38 @@ const api = axios.create({
   baseURL: baseURL || "http://localhost:5000",
 });
 
-  api.interceptors.request.use((config) => {
-    // Always add Authorization header from localStorage "token"
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    // Add /api prefix if not already present
-    if (
-      config.url &&
-      !config.url.startsWith('/api') &&
-      !config.url.startsWith('http')
-    ) {
-      config.url = `/api${config.url}`;
-    }
-
-    return config;
-  });
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers["Authorization"] = `Bearer ${token}`;
+  }
+  if (
+    config.url &&
+    !config.url.startsWith("/api") &&
+    !config.url.startsWith("http")
+  ) {
+    config.url = `/api${config.url}`;
+  }
+  return config;
+});
 
 // Types
 interface FunkoItem {
   title: string;
   number: string;
   category: string;
-  series: string[];
-  exclusive: boolean;
-  imageName: string;
+  series?: string[];
+  exclusive?: boolean;
+  imageName?: string | null;
 }
 
 interface FunkoItemWithId extends FunkoItem {
   id: string;
+}
+
+interface PricePoint {
+  date: string;
+  price: number;
 }
 
 const FunkoDetails: React.FC = () => {
@@ -71,22 +82,23 @@ const FunkoDetails: React.FC = () => {
     return savedTheme ? savedTheme === "dark" : true;
   });
   const [searchQuery, setSearchQuery] = useState("");
-  const [language, setLanguage] = useState(() => {
-    return localStorage.getItem("preferredLanguage") || "EN";
-  });
+  const [language, setLanguage] = useState(
+    localStorage.getItem("preferredLanguage") || "EN"
+  );
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [inWishlist, setInWishlist] = useState(false);
   const [inCollection, setInCollection] = useState(false);
+  const [isUpdatingWishlist, setIsUpdatingWishlist] = useState(false);
+  const [isUpdatingCollection, setIsUpdatingCollection] = useState(false);
+
+  const [relatedItems, setRelatedItems] = useState<FunkoItemWithId[]>([]);
+  const [priceHistory, setPriceHistory] = useState<PricePoint[]>([]);
+
   const [user] = useState(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
-        console.log("Loaded user from localStorage:", { 
-          id: parsedUser.id, 
-          login: parsedUser.login, 
-          hasToken: !!parsedUser.token 
-        });
         return parsedUser;
       } catch (error) {
         console.error("Error parsing stored user:", error);
@@ -96,26 +108,16 @@ const FunkoDetails: React.FC = () => {
     }
     return null;
   });
-  const [isUpdating, setIsUpdating] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   const t = translations[language] || translations["EN"];
 
-  // Debug user state on component mount
-  useEffect(() => {
-    console.log("=== USER DEBUG INFO ===");
-    console.log("Current user state:", user);
-    console.log("User has token:", !!user?.token);
-    console.log("Token value:", user?.token);
-    console.log("LocalStorage user:", localStorage.getItem("user"));
-    console.log("LocalStorage token:", localStorage.getItem("token"));
-    console.log("=====================");
-  }, [user]);
-
-  // Generate ID from title and number
-  const generateId = (title: string | undefined, number: string | undefined): string => {
+  const generateId = (
+    title: string | undefined,
+    number: string | undefined
+  ): string => {
     const safeTitle = title ? title.trim() : "";
     const safeNumber = number ? number.trim() : "";
     return `${safeTitle}-${safeNumber}`.replace(/\s+/g, "-");
@@ -142,45 +144,58 @@ const FunkoDetails: React.FC = () => {
 
         setFunkoItem(foundItem);
         setError(null);
+
+        const related = dataWithIds.filter(
+          (item) =>
+            item.id !== foundItem.id &&
+            (item.category === foundItem.category ||
+              item.series?.some((s) => foundItem.series?.includes(s)))
+        );
+        setRelatedItems(related.slice(0, 6));
+
+        const mockPrices: PricePoint[] = [
+          { date: "2024-01-01", price: 12.99 },
+          { date: "2024-02-01", price: 14.49 },
+          { date: "2024-03-01", price: 13.99 },
+          { date: "2024-04-01", price: 15.49 },
+          { date: "2024-05-01", price: 16.29 },
+        ];
+        setPriceHistory(mockPrices);
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchData();
   }, [id]);
 
-  // Check if item is in wishlist/collection when loaded or user changes
+  // Check item in wishlist/collection
   useEffect(() => {
     const checkItemStatus = async () => {
       if (!funkoItem || !user) return;
-
       try {
         const [wishlistRes, collectionRes] = await Promise.all([
           api.get(`/wishlist/check/${funkoItem.id}`),
-          api.get(`/collection/check/${funkoItem.id}`)
+          api.get(`/collection/check/${funkoItem.id}`),
         ]);
-
         setInWishlist(wishlistRes.data.exists);
         setInCollection(collectionRes.data.exists);
       } catch (err) {
-        console.error("Error checking item status:", err);
-        
-        // If it's an auth error, clear the user data
-        if (axios.isAxiosError(err) && (err.response?.status === 401 || err.response?.status === 403)) {
-          console.log("Authentication error - clearing user data");
+        if (
+          axios.isAxiosError(err) &&
+          (err.response?.status === 401 || err.response?.status === 403)
+        ) {
           localStorage.removeItem("user");
           localStorage.removeItem("token");
+          navigate("/loginSite");
         }
       }
     };
-
     checkItemStatus();
   }, [funkoItem, user]);
 
-  // Theme effect
+  // Theme
   useEffect(() => {
     localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
     if (isDarkMode) {
@@ -190,12 +205,12 @@ const FunkoDetails: React.FC = () => {
     }
   }, [isDarkMode]);
 
-  // Language effect
+  // Language
   useEffect(() => {
     localStorage.setItem("preferredLanguage", language);
   }, [language]);
 
-  // Close dropdown on outside click
+  // Close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -212,15 +227,17 @@ const FunkoDetails: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showLanguageDropdown]);
 
-  // Languages config
-  const languages = {
-    EN: { name: "English", flag: <UKFlag className="w-5 h-5" /> },
-    PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
-    RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
-    ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
-    FR: { name: "Français", flag: <FranceFlag className="w-5 h-5" /> },
-    DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
-  };
+  const languages = useMemo(
+    () => ({
+      EN: { name: "English", flag: <UKFlag className="w-5 h-5" /> },
+      PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
+      RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
+      ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
+      FR: { name: "Français", flag: <FranceFlag className="w-5 h-5" /> },
+      DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
+    }),
+    []
+  );
 
   const selectLanguage = (lang: string) => {
     setLanguage(lang);
@@ -231,7 +248,8 @@ const FunkoDetails: React.FC = () => {
     setIsDarkMode(!isDarkMode);
   };
 
-  const toggleLanguageDropdown = () => setShowLanguageDropdown((prev) => !prev);
+  const toggleLanguageDropdown = () =>
+    setShowLanguageDropdown((prev) => !prev);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -242,66 +260,60 @@ const FunkoDetails: React.FC = () => {
     }
   };
 
-
-  
-  // Enhanced toggle wishlist function with better error handling
-const toggleWishlist = async () => {
-  if (!user) {
-    alert(t.loginRequiredMessage || "Please log in to manage your wishlist");
-    navigate("/loginSite");
-    return;
-  }
-  if (!funkoItem || isUpdating) return;
-  setIsUpdating(true);
-  try {
-    if (inWishlist) {
-      await api.delete(`/wishlist/${funkoItem.id}`);
-    } else {
-      await api.post('/wishlist', {
-        funkoId: funkoItem.id,
-        title: funkoItem.title,
-        number: funkoItem.number,
-        imageName: funkoItem.imageName
-      });
-    }
-    setInWishlist(!inWishlist);
-  } catch (err) {
-    console.error("Wishlist update error:", err);
-    alert(t.updateError || "Error updating wishlist. Please try again.");
-  } finally {
-    setIsUpdating(false);
-  }
-};
-
-  // Enhanced toggle collection function with better error handling
-  const toggleCollection = async () => {
+  const toggleWishlist = async () => {
     if (!user) {
-      alert(t.loginRequiredMessage || "Please log in to manage your collection");
+      alert(t.loginRequiredMessage || "Please log in");
       navigate("/loginSite");
       return;
     }
-    if (!funkoItem || isUpdating) return;
-    setIsUpdating(true);
+    if (!funkoItem || isUpdatingWishlist) return;
+    setIsUpdatingWishlist(true);
+    try {
+      if (inWishlist) {
+        await api.delete(`/wishlist/${funkoItem.id}`);
+      } else {
+        await api.post("/wishlist", {
+          funkoId: funkoItem.id,
+          title: funkoItem.title,
+          number: funkoItem.number,
+          imageName: funkoItem.imageName,
+        });
+      }
+      setInWishlist(!inWishlist);
+    } catch (err) {
+      alert(t.updateError || "Error updating wishlist.");
+    } finally {
+      setIsUpdatingWishlist(false);
+    }
+  };
+
+  const toggleCollection = async () => {
+    if (!user) {
+      alert(t.loginRequiredMessage || "Please log in");
+      navigate("/loginSite");
+      return;
+    }
+    if (!funkoItem || isUpdatingCollection) return;
+    setIsUpdatingCollection(true);
     try {
       if (inCollection) {
         await api.delete(`/collection/${funkoItem.id}`);
       } else {
-        await api.post('/collection', {
+        await api.post("/collection", {
           funkoId: funkoItem.id,
           title: funkoItem.title,
           number: funkoItem.number,
-          imageName: funkoItem.imageName
+          imageName: funkoItem.imageName,
         });
       }
       setInCollection(!inCollection);
     } catch (err) {
-      console.error("Collection update error:", err);
-      alert(t.updateError || "Error updating collection. Please try again.");
+      alert(t.updateError || "Error updating collection.");
     } finally {
-      setIsUpdating(false);
+      setIsUpdatingCollection(false);
     }
   };
-  
+
   const loginButtonTo = useMemo(() => {
     if (user?.role === "admin") return "/adminSite";
     if (user?.role === "user") return "/dashboardSite";
@@ -309,29 +321,41 @@ const toggleWishlist = async () => {
   }, [user]);
 
   const loginButtonText = useMemo(() => {
-    return user
-      ? t.goToDashboard || "Dashboard"
-      : t.goToLoginSite || "Log In";
+    return user ? t.goToDashboard || "Dashboard" : t.goToLoginSite || "Log In";
   }, [t, user]);
 
-  // Loading state
   if (isLoading) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? "bg-gray-800" : "bg-neutral-400"}`}>
-        <div className={`animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 ${isDarkMode ? "border-yellow-500" : "border-green-600"}`}></div>
+      <div
+        className={`min-h-screen flex items-center justify-center ${
+          isDarkMode ? "bg-gray-800" : "bg-neutral-400"
+        }`}
+      >
+        <div
+          className={`animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 ${
+            isDarkMode ? "border-yellow-500" : "border-green-600"
+          }`}
+        ></div>
       </div>
     );
   }
 
-  // Error state
   if (error) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"}`}>
+      <div
+        className={`min-h-screen flex items-center justify-center ${
+          isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
+        }`}
+      >
         <div className="text-center p-4">
           <p className="text-red-500 mb-4">{error}</p>
           <button
             onClick={() => navigate(-1)}
-            className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"}`}
+            className={`px-4 py-2 rounded ${
+              isDarkMode
+                ? "bg-yellow-500 text-black"
+                : "bg-green-600 text-white"
+            }`}
           >
             {t.backButton}
           </button>
@@ -342,11 +366,19 @@ const toggleWishlist = async () => {
 
   if (!funkoItem) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"}`}>
+      <div
+        className={`min-h-screen flex items-center justify-center ${
+          isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
+        }`}
+      >
         <p>Error: Funko Pop data not available.</p>
         <button
           onClick={() => navigate(-1)}
-          className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"}`}
+          className={`px-4 py-2 rounded ${
+            isDarkMode
+              ? "bg-yellow-500 text-black"
+              : "bg-green-600 text-white"
+          }`}
         >
           {t.backButton}
         </button>
@@ -355,98 +387,109 @@ const toggleWishlist = async () => {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"}`}>
+    <div
+      className={`min-h-screen flex flex-col ${
+        isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
+      }`}
+    >
       {/* Header */}
       <header className="py-4 px-4 sm:px-8 flex flex-wrap md:flex-nowrap justify-between items-center gap-4 relative">
         <div className="flex-shrink-0">
           <Link to="/" className="no-underline">
-            <h1 className={`text-3xl font-bold font-[Special_Gothic_Expanded_One] ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+            <h1
+              className={`text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
+                isDarkMode ? "text-yellow-400" : "text-green-600"
+              }`}
+            >
               Pop&Go!
             </h1>
           </Link>
         </div>
 
-        {/* Search Form */}
+        {/* Search */}
         <form
           onSubmit={handleSearch}
-          className={`flex-grow max-w-lg w-full md:w-auto mx-auto flex rounded-lg overflow-hidden ${isDarkMode ? "bg-gray-700" : "bg-gray-100"}`}
+          className={`flex-grow max-w-lg w-full md:w-auto mx-auto flex rounded-lg overflow-hidden ${
+            isDarkMode ? "bg-gray-700" : "bg-gray-100"
+          }`}
         >
           <input
             type="text"
             placeholder={t.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={`flex-grow px-4 py-2 outline-none ${isDarkMode ? "bg-gray-700 text-white placeholder-gray-400" : "bg-white text-black"}`}
-            aria-label="Search input"
+            className={`flex-grow px-4 py-2 outline-none ${
+              isDarkMode
+                ? "bg-gray-700 text-white placeholder-gray-400"
+                : "bg-white text-black"
+            }`}
           />
           <button
             type="submit"
-            className={`px-4 py-2 ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"}`}
-            aria-label="Search"
+            className={`px-4 py-2 ${
+              isDarkMode ? "bg-yellow-500" : "bg-green-600"
+            }`}
           >
             <SearchIcon className="w-5 h-5" />
           </button>
         </form>
 
-        {/* Theme & Language */}
+        {/* Theme & Lang */}
         <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0">
-          {/* Language Dropdown */}
           <div className="relative">
             <button
               ref={buttonRef}
               onClick={toggleLanguageDropdown}
-              className={`p-2 rounded-full flex items-center gap-1 ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}
-              aria-label="Select language"
-              aria-expanded={showLanguageDropdown}
+              className={`p-2 rounded-full flex items-center gap-1 ${
+                isDarkMode ? "bg-gray-700" : "bg-gray-200"
+              }`}
             >
               <GlobeIcon className="w-5 h-5" />
               <span className="text-sm font-medium">{language}</span>
-              <ChevronDownIcon className={`w-4 h-4 transition-transform ${showLanguageDropdown ? "rotate-180" : ""}`} />
+              <ChevronDownIcon
+                className={`w-4 h-4 transition-transform ${
+                  showLanguageDropdown ? "rotate-180" : ""
+                }`}
+              />
             </button>
             {showLanguageDropdown && (
-              <div
-                ref={dropdownRef}
-                className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}
-                onClick={(e) => e.stopPropagation()}
-              >
-                {Object.entries(languages).map(([code, { name, flag }]) => (
+              <div className={`absolute right-0 mt-2 w-48 max-w-full rounded-md shadow-lg py-1 z-10 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+                {Object.entries(translations).map(([code]) => (
                   <button
                     key={code}
                     onClick={() => selectLanguage(code)}
-                    className={`w-full text-left px-4 py-2 flex items-center gap-2 ${
-                      language === code
-                        ? isDarkMode
-                          ? "bg-yellow-500 text-black"
-                          : "bg-green-600 text-white"
-                        : isDarkMode
-                        ? "hover:bg-gray-600"
-                        : "hover:bg-gray-200"
-                    }`}
+                    className={`w-full text-left px-4 py-2 flex items-center gap-2 text-base ${language === code ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : "hover:bg-gray-100 dark:hover:bg-gray-600"}`}
                   >
-                    <span className="w-5 h-5">{flag}</span>
-                    <span>{name}</span>
+                    {code === "EN" && <UKFlag className="w-5 h-5" />}
+                    {code === "PL" && <PolandFlag className="w-5 h-5" />}
+                    {code === "RU" && <RussiaFlag className="w-5 h-5" />}
+                    {code === "FR" && <FranceFlag className="w-5 h-5" />}
+                    {code === "DE" && <GermanyFlag className="w-5 h-5" />}
+                    {code === "ES" && <SpainFlag className="w-5 h-5" />}
+                    <span>{code}</span>
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className={`p-2 rounded-full ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}
-            aria-label="Toggle theme"
+            className={`p-2 rounded-full ${
+              isDarkMode ? "bg-gray-700" : "bg-gray-200"
+            }`}
           >
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
         </div>
 
-        {/* Login Button */}
         <div>
           <Link
             to={loginButtonTo}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-yellow-500 text-black hover:bg-yellow-600" : "bg-green-600 text-white hover:bg-green-700"
+              isDarkMode
+                ? "bg-yellow-500 text-black"
+                : "bg-green-600 text-white"
             }`}
           >
             {loginButtonText}
@@ -454,134 +497,142 @@ const toggleWishlist = async () => {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-grow container mx-auto px-4 py-8 max-w-4xl">
+      {/* Main */}
+      <main className="flex-grow container mx-auto px-4 py-8 max-w-5xl">
         <button
           onClick={() => navigate(-1)}
-          className={`mb-6 px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"}`}
+          className={`mb-6 px-4 py-2 rounded ${
+            isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"
+          }`}
         >
           {t.backButton}
         </button>
 
-        <a
-          href={`https://vinylcave.pl/pl/searchquery/${encodeURIComponent(funkoItem.title)}/1/full/5?url=${encodeURIComponent(funkoItem.title)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`mb-6 inline-block ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}
-        >
-          {t.searchOnVinylCave || "Search on VinylCave.pl"}
-        </a>
+        {/* Marketplace */}
+        <div className="mb-6 flex flex-wrap gap-3">
+          <a
+            href={`https://vinylcave.pl/pl/searchquery/${encodeURIComponent(funkoItem.title)}`}
+            target="_blank"
+            className={`${isDarkMode ? "text-yellow-400" : "text-green-600"}`}
+          >
+            {t.searchOnVinylCave || "VinylCave"}
+          </a>
+          <a
+            href={`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(funkoItem.title)}`}
+            target="_blank"
+            className={`${isDarkMode ? "text-yellow-400" : "text-green-600"}`}
+          >
+            eBay
+          </a>
+          <a
+            href={`https://www.amazon.com/s?k=${encodeURIComponent(funkoItem.title)}`}
+            target="_blank"
+            className={`${isDarkMode ? "text-yellow-400" : "text-green-600"}`}
+          >
+            Amazon
+          </a>
+        </div>
 
-        <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+        {/* Main details */}
+        <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
           <h1 className="text-3xl font-bold mb-2">{funkoItem.title}</h1>
-
-          {/* Debug info for development */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mb-4 p-2 bg-yellow-100 text-black text-xs rounded">
-              <strong>Debug:</strong> User: {user?.login || 'Not logged in'} | 
-              Token: {user?.token ? 'Present' : 'Missing'} | 
-              Wishlist: {inWishlist ? 'Yes' : 'No'} | 
-              Collection: {inCollection ? 'Yes' : 'No'}
-            </div>
-          )}
-
-          {/* Wishlist & Collection Buttons */}
           <div className="flex gap-4 mb-6">
             <button
               onClick={toggleWishlist}
-              disabled={isUpdating}
-              className={`px-4 py-2 rounded flex-1 transition ${
+              disabled={isUpdatingWishlist}
+              className={`px-4 py-2 rounded flex-1 ${
                 inWishlist
-                  ? isDarkMode
-                    ? "bg-red-600 text-white"
-                    : "bg-red-500 text-white"
-                  : isDarkMode
-                  ? "bg-gray-600 hover:bg-gray-500"
-                  : "bg-gray-200 hover:bg-gray-300"
-              } ${isUpdating ? "opacity-50 cursor-not-allowed" : ""}`}
+                  ? "bg-red-600 text-white"
+                  : "bg-gray-200 dark:bg-gray-600"
+              }`}
             >
-              {isUpdating ? (
-                <span className="inline-flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  {inWishlist ? t.removing || "Removing..." : t.adding || "Adding..."}
-                </span>
-              ) : (
-                inWishlist ? t.removeFromWishlist || "Remove from Wishlist" : t.addToWishlist || "Add to Wishlist"
-              )}
+              {inWishlist ? t.removeFromWishlist : t.addToWishlist}
             </button>
-
             <button
               onClick={toggleCollection}
-              disabled={isUpdating}
-              className={`px-4 py-2 rounded flex-1 transition ${
+              disabled={isUpdatingCollection}
+              className={`px-4 py-2 rounded flex-1 ${
                 inCollection
-                  ? isDarkMode
-                    ? "bg-green-600 text-white"
-                    : "bg-green-500 text-white"
-                  : isDarkMode
-                  ? "bg-gray-600 hover:bg-gray-500"
-                  : "bg-gray-200 hover:bg-gray-300"
-              } ${isUpdating ? "opacity-50 cursor-not-allowed" : ""}`}
+                  ? "bg-green-600 text-white"
+                  : "bg-gray-200 dark:bg-gray-600"
+              }`}
             >
-              {isUpdating ? (
-                <span className="inline-flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  {inCollection ? t.removing || "Removing..." : t.adding || "Adding..."}
-                </span>
-              ) : (
-                inCollection ? t.removeFromCollection || "Remove from Collection" : t.addToCollection || "Add to Collection"
-              )}
+              {inCollection ? t.removeFromCollection : t.addToCollection}
             </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h2 className="text-xl font-semibold mb-3">{t.details}</h2>
-              <div className="space-y-2">
-                <p>
-                  <span className="font-medium">{t.number}:</span> {funkoItem.number || "N/A"}
-                </p>
-                <p>
-                  <span className="font-medium">{t.category}:</span> {funkoItem.category || "N/A"}
-                </p>
-                <p>
-                  <span className="font-medium">{t.series}:</span> {funkoItem.series?.join(", ") || "N/A"}
-                </p>
-                {funkoItem.exclusive && (
-                  <span
-                    className={`inline-block px-2 py-1 rounded text-sm ${isDarkMode ? "bg-yellow-600" : "bg-green-600"}`}
-                  >
-                    {t.exclusive}
-                  </span>
-                )}
-              </div>
+              <p><span className="font-medium">{t.number}:</span> {funkoItem.number}</p>
+              <p><span className="font-medium">{t.category}:</span> {funkoItem.category}</p>
+              <p><span className="font-medium">{t.series}:</span> {funkoItem.series?.join(", ")}</p>
+              {funkoItem.exclusive && (
+                <span className="inline-block px-2 py-1 rounded text-sm bg-green-600">
+                  {t.exclusive}
+                </span>
+              )}
             </div>
-
             <div>
               <h2 className="text-xl font-semibold mb-3">{t.additionalInformation}</h2>
-              <div className={`p-4 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-200"}`}>
+              <div className="p-4 rounded bg-gray-200 dark:bg-gray-600">
                 {funkoItem.imageName ? (
                   <img
                     src={funkoItem.imageName}
                     alt={funkoItem.title}
-                    className="rounded w-full h-auto max-h-80 object-contain"
-                    onError={(e) => {
-                      e.currentTarget.src = "/src/assets/placeholder.png";
-                      e.currentTarget.onerror = null;
-                    }}
+                    className="rounded w-full max-h-80 object-contain"
                   />
                 ) : (
-                  <p className="italic">{t.noImageAvailable}</p>
+                  <p>{t.noImageAvailable}</p>
                 )}
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Price Chart */}
+        <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+          <h2 className="text-xl font-semibold mb-4">{t.priceHistory || "Price History"}</h2>
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={priceHistory}>
+              <XAxis dataKey="date" />
+              <YAxis domain={["auto", "auto"]} />
+              <Tooltip />
+              <Line type="monotone" dataKey="price" stroke="#82ca9d" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        
+        {/* Related items */}
+        <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+          <h2 className="text-xl font-semibold mb-4">{t.relatedItems || "Related Items"}</h2>
+          {relatedItems.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {relatedItems.map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/funko/${item.id}`}
+                  className="block rounded-lg p-3 border dark:border-gray-600 hover:shadow-lg transition"
+                >
+                  {item.imageName ? (
+                    <img
+                      src={item.imageName}
+                      alt={item.title}
+                      className="w-full h-32 object-contain mb-2"
+                    />
+                  ) : (
+                    <div className="w-full h-32 bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                      {t.noImageAvailable}
+                    </div>
+                  )}
+                  <h3 className="text-sm font-medium">{item.title}</h3>
+                  <p className="text-xs text-gray-500">{item.number}</p>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p>{t.noRelatedItems || "No related items found."}</p>
+          )}
         </div>
       </main>
 

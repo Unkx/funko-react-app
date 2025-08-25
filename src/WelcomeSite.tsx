@@ -32,13 +32,13 @@ interface FunkoItemWithId extends FunkoItem {
 // 🌍 Centralized country configuration
 const countries = {
   USA: {
-    name: "United States",
+    name: "USA",
     flag: <USAFlag className="w-5 h-5" />,
     region: "North America",
     language: "EN",
   },
   UK: {
-    name: "United Kingdom",
+    name: "UK",
     flag: <UKFlag className="w-5 h-5" />,
     region: "Europe",
     language: "EN",

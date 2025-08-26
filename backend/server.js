@@ -396,12 +396,12 @@ const checkWishlistItem = async (req, res) => {
       [userId, funkoId]
     );
 
-    // if (!result.rows[0].exists && !funkoId.endsWith('-undefined')) {
-    //   result = await pool.query(
-    //     `SELECT EXISTS(SELECT 1 FROM wishlist WHERE user_id = $1 AND funko_id = $2)`,
-    //     [userId, `${funkoId}-undefined`]
-    //   );
-    // }
+    if (!result.rows[0].exists && !funkoId.endsWith('-')) {
+      result = await pool.query(
+        `SELECT EXISTS(SELECT 1 FROM wishlist WHERE user_id = $1 AND funko_id = $2)`,
+        [userId, `${funkoId}-`]
+      );
+    }
 
     res.json({ exists: result.rows[0].exists });
   } catch (err) {
@@ -700,9 +700,9 @@ const seedDatabase = async () => {
     }
 
     console.log("🌱 Seeding database...");
-    const response = await fetch(
-      "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
-    );
+    // const response = await fetch(
+    //   "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
+    // );
     const data = await response.json();
 
     for (const item of data) {

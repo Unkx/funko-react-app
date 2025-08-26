@@ -1,3 +1,8 @@
+// -- For PostgreSQL:
+// UPDATE your_table_name 
+// SET id = SUBSTRING(id FROM 1 FOR LENGTH(id) - 10) 
+// WHERE id LIKE '%-undefined';
+
 // FunkoDetails.tsx
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
@@ -71,19 +76,6 @@ interface PricePoint {
   price: number;
 }
 
-interface PriceResult {
-  shop: string;
-  price: string;
-  inStock: boolean;
-  productFound: boolean;
-  url: string;
-  lastUpdated: string;
-  country: string;
-  countryFlag: string;
-  countryCode: string;
-  searchStatus: 'found' | 'not_found' | 'error' | 'checking';
-}
-
 interface Shop {
   name: string;
   url: string;
@@ -111,12 +103,7 @@ const FunkoDetails: React.FC = () => {
   const [isUpdatingWishlist, setIsUpdatingWishlist] = useState(false);
   const [isUpdatingCollection, setIsUpdatingCollection] = useState(false);
 
-  // Price scraper states
-  const [priceResults, setPriceResults] = useState<PriceResult[]>([]);
-  const [isPriceLoading, setIsPriceLoading] = useState(false);
   const [selectedCountries, setSelectedCountries] = useState(['poland', 'germany', 'france']);
-  const [showAllPrices, setShowAllPrices] = useState(false);
-
   const [relatedItems, setRelatedItems] = useState<FunkoItemWithId[]>([]);
   const [priceHistory, setPriceHistory] = useState<PricePoint[]>([]);
 
@@ -143,7 +130,7 @@ const FunkoDetails: React.FC = () => {
   // Shop configurations by country
   const shops: Record<string, Shop[]> = {
     poland: [
-      { name: 'Empik', url: 'empik.com', searchUrl: 'https://www.empik.com/szukaj/produkty?q=', currency: 'PLN' },
+      { name: 'Empik', url: 'empik.com', searchUrl: `https://www.empik.com/szukaj/produkty?q=`, currency: 'PLN' },
       { name: 'Allegro', url: 'allegro.pl', searchUrl: 'https://allegro.pl/listing?string=', currency: 'PLN' },
       { name: 'Media Markt PL', url: 'mediamarkt.pl', searchUrl: 'https://www.mediamarkt.pl/pl/search.html?query=', currency: 'PLN' },
       { name: 'Komputronik', url: 'komputronik.pl', searchUrl: 'https://www.komputronik.pl/search/', currency: 'PLN' },
@@ -196,108 +183,12 @@ const FunkoDetails: React.FC = () => {
   };
 
   const generateId = (
-    title: string | undefined,
-    number: string | undefined
+    title: string,
+    number: string
   ): string => {
     const safeTitle = title ? title.trim() : "";
     const safeNumber = number ? number.trim() : "";
     return `${safeTitle}-${safeNumber}`.replace(/\s+/g, "-");
-  };
-
-  // Mock price scraping function with product availability checking
-  const scrapePrice = async (shop: Shop, query: string, countryCode: string): Promise<PriceResult> => {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 3000 + 1000));
-    
-    // Simulate product search success rate (some products won't be found on all sites)
-    const productFound = Math.random() > 0.25; // 75% chance of finding the product
-    
-    if (!productFound) {
-      return {
-        shop: shop.name,
-        price: 'N/A',
-        inStock: false,
-        productFound: false,
-        url: shop.searchUrl + encodeURIComponent(query),
-        lastUpdated: new Date().toLocaleString(),
-        country: countries[countryCode as keyof typeof countries].name,
-        countryFlag: countries[countryCode as keyof typeof countries].flag,
-        countryCode,
-        searchStatus: 'not_found'
-      };
-    }
-    
-    // Generate mock price data for found products
-    const basePrice = Math.random() * 50 + 10; // $10-60
-    const currency = shop.currency;
-    const multipliers: Record<string, number> = { PLN: 4.2, GBP: 0.8, USD: 1, EUR: 0.9, RUB: 75 };
-    const price = (basePrice * multipliers[currency]).toFixed(2);
-    
-    // Mock availability (product found but might be out of stock)
-    const inStock = Math.random() > 0.2; // 80% chance of being in stock if product exists
-    
-    return {
-      shop: shop.name,
-      price: `${price} ${currency}`,
-      inStock,
-      productFound: true,
-      url: shop.searchUrl + encodeURIComponent(query),
-      lastUpdated: new Date().toLocaleString(),
-      country: countries[countryCode as keyof typeof countries].name,
-      countryFlag: countries[countryCode as keyof typeof countries].flag,
-      countryCode,
-      searchStatus: 'found'
-    };
-  };
-
-  // Search prices for current Funko
-  const searchPrices = async () => {
-    if (!funkoItem) return;
-    
-    setIsPriceLoading(true);
-    setPriceResults([]);
-    
-    try {
-      const searchPromises: Promise<PriceResult>[] = [];
-      const query = `${funkoItem.title} funko pop ${funkoItem.number}`;
-
-      for (const countryCode of selectedCountries) {
-        const countryShops = shops[countryCode];
-        if (countryShops) {
-          for (const shop of countryShops) {
-            searchPromises.push(scrapePrice(shop, query, countryCode));
-          }
-        }
-      }
-
-      const results = await Promise.all(searchPromises);
-      
-      // Sort results: product found & in stock first, then found but out of stock, then not found
-      const sortedResults = results.sort((a, b) => {
-        // Priority 1: Product found vs not found
-        if (a.productFound && !b.productFound) return -1;
-        if (!a.productFound && b.productFound) return 1;
-        
-        // Priority 2: If both found, in stock vs out of stock
-        if (a.productFound && b.productFound) {
-          if (a.inStock && !b.inStock) return -1;
-          if (!a.inStock && b.inStock) return 1;
-          
-          // Priority 3: If both have same stock status, sort by price
-          if (a.inStock && b.inStock) {
-            return parseFloat(a.price) - parseFloat(b.price);
-          }
-        }
-        
-        return 0;
-      });
-      
-      setPriceResults(sortedResults);
-    } catch (error) {
-      console.error('Price search failed:', error);
-    } finally {
-      setIsPriceLoading(false);
-    }
   };
 
   const handleCountryToggle = (countryCode: string) => {
@@ -356,13 +247,6 @@ const FunkoDetails: React.FC = () => {
     };
     fetchData();
   }, [id]);
-
-  // Auto-search prices when funko item loads
-  useEffect(() => {
-    if (funkoItem && selectedCountries.length > 0) {
-      searchPrices();
-    }
-  }, [funkoItem, selectedCountries]);
 
   // Check item in wishlist/collection
   useEffect(() => {
@@ -517,8 +401,6 @@ const FunkoDetails: React.FC = () => {
   const loginButtonText = useMemo(() => {
     return user ? t.goToDashboard || "Dashboard" : t.goToLoginSite || "Log In";
   }, [t, user]);
-
-  const displayedPriceResults = showAllPrices ? priceResults : priceResults.slice(0, 6);
 
   if (isLoading) {
     return (
@@ -707,22 +589,25 @@ const FunkoDetails: React.FC = () => {
         {/* Marketplace */}
         <div className="mb-6 flex flex-wrap gap-3">
           <a
-            href={`https://vinylcave.pl/pl/searchquery/${encodeURIComponent(funkoItem.title)}`}
+            href={`https://vinylcave.pl/pl/searchquery/${encodeURIComponent(`${funkoItem.title} ${funkoItem.number} funko pop`)}`}
             target="_blank"
+            rel="noopener noreferrer"
             className={`${isDarkMode ? "text-yellow-400" : "text-green-600"}`}
           >
             {t.searchOnVinylCave || "VinylCave"}
           </a>
           <a
-            href={`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(funkoItem.title)}`}
+            href={`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(`${funkoItem.title} ${funkoItem.number} funko pop`)}`}
             target="_blank"
+            rel="noopener noreferrer"
             className={`${isDarkMode ? "text-yellow-400" : "text-green-600"}`}
           >
             eBay
           </a>
           <a
-            href={`https://www.amazon.com/s?k=${encodeURIComponent(funkoItem.title)}`}
+            href={`https://www.amazon.com/s?k=${encodeURIComponent(`${funkoItem.title} ${funkoItem.number} funko pop`)}`}
             target="_blank"
+            rel="noopener noreferrer"
             className={`${isDarkMode ? "text-yellow-400" : "text-green-600"}`}
           >
             Amazon
@@ -786,28 +671,10 @@ const FunkoDetails: React.FC = () => {
           </div>
         </div>
 
-        {/* Price Comparison Section */}
+        {/* Shopping Links Section */}
         <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Price Comparison</h2>
-            <button
-              onClick={searchPrices}
-              disabled={isPriceLoading}
-              className={`px-4 py-2 rounded ${
-                isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"
-              } disabled:opacity-50`}
-            >
-              {isPriceLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
-                  Searching...
-                </div>
-              ) : (
-                'Refresh Prices'
-              )}
-            </button>
-          </div>
-
+          <h2 className="text-xl font-semibold mb-4">Search on Shopping Sites</h2>
+          
           {/* Country Filters */}
           <div className="mb-4">
             <p className="text-sm font-medium mb-2">Search in countries:</p>
@@ -828,189 +695,66 @@ const FunkoDetails: React.FC = () => {
             </div>
           </div>
 
-          {/* Price Results */}
-          {priceResults.length > 0 ? (
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <p className="text-sm text-gray-500">
-                  Found {priceResults.filter(r => r.productFound).length} products 
-                  ({priceResults.filter(r => r.productFound && r.inStock).length} in stock) 
-                  from {selectedCountries.length} countries
-                </p>
-                <div className="flex gap-2 text-xs">
-                  <span className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-green-500 rounded"></div>
-                    Found & In Stock
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-yellow-500 rounded"></div>
-                    Found & Out of Stock
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <div className="w-3 h-3 bg-gray-500 rounded"></div>
-                    Not Found
-                  </span>
-                </div>
-              </div>
+          {/* Direct Links to Shopping Sites */}
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {selectedCountries.flatMap(countryCode => {
+              const countryShops = shops[countryCode];
+              if (!countryShops) return [];
               
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                {displayedPriceResults.map((result, index) => (
+              return countryShops.map((shop, index) => {
+                const searchQuery = `${funkoItem.title || ""} ${funkoItem.number || ""} funko pop`.trim();
+                const searchUrl = shop.searchUrl + encodeURIComponent(searchQuery);
+
+                return (
                   <div
-                    key={index}
+                    key={`${countryCode}-${index}`}
                     className={`p-4 rounded border-l-4 transition-all ${
-                      !result.productFound
-                        ? isDarkMode ? "border-gray-500 bg-gray-600 opacity-60" : "border-gray-400 bg-gray-100 opacity-60"
-                        : result.inStock
-                        ? isDarkMode ? "border-green-500 bg-gray-600" : "border-green-500 bg-green-50"
-                        : isDarkMode ? "border-yellow-500 bg-gray-600" : "border-yellow-500 bg-yellow-50"
+                      isDarkMode ? "border-gray-500 bg-gray-600" : "border-gray-400 bg-gray-100"
                     }`}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <h3 className="font-semibold flex items-center gap-2">
-                          {result.shop}
-                          {!result.productFound && (
-                            <span className="text-xs bg-gray-500 text-white px-2 py-1 rounded">
-                              Not Listed
-                            </span>
-                          )}
+                          {shop.name}
                         </h3>
                         <p className="text-xs text-gray-500 flex items-center gap-1">
-                          {result.countryFlag} {result.country}
+                          {countries[countryCode as keyof typeof countries].flag} 
+                          {countries[countryCode as keyof typeof countries].name}
                         </p>
                       </div>
                       <div className="text-right">
-                        {result.productFound ? (
-                          <>
-                            <p className="font-bold text-lg">{result.price}</p>
-                            <span className={`text-xs px-2 py-1 rounded ${
-                              result.inStock 
-                                ? "bg-green-500 text-white" 
-                                : "bg-yellow-500 text-black"
-                            }`}>
-                              {result.inStock ? "In Stock" : "Out of Stock"}
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <p className="font-bold text-lg text-gray-400">N/A</p>
-                            <span className="text-xs px-2 py-1 rounded bg-gray-500 text-white">
-                              Not Available
-                            </span>
-                          </>
-                        )}
+                        <span className="text-xs px-2 py-1 rounded bg-gray-500 text-white">
+                          {shop.currency}
+                        </span>
                       </div>
                     </div>
                     
-                    {result.productFound && (
-                      <div className="mb-2 text-xs text-gray-500">
-                        <p>Product found on site</p>
-                      </div>
-                    )}
-                    
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center mt-4">
                       <p className="text-xs text-gray-400">
-                        Checked: {result.lastUpdated}
+                        Direct search link
                       </p>
                       <a
-                        href={result.url}
+                        href={searchUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={`px-3 py-1 text-sm rounded transition-all ${
-                          result.productFound
-                            ? isDarkMode 
-                              ? "bg-yellow-500 text-black hover:bg-yellow-400" 
-                              : "bg-green-600 text-white hover:bg-green-700"
-                            : isDarkMode
-                              ? "bg-gray-500 text-white hover:bg-gray-400"
-                              : "bg-gray-400 text-white hover:bg-gray-500"
+                          isDarkMode 
+                            ? "bg-yellow-500 text-black hover:bg-yellow-400" 
+                            : "bg-green-600 text-white hover:bg-green-700"
                         }`}
                       >
-                        {result.productFound ? 'View Product' : 'Search Site'}
+                        Search on {shop.name}
                       </a>
                     </div>
-                    
-                    {/* Availability indicator bar */}
-                    <div className="mt-2">
-                      <div className="w-full bg-gray-200 rounded-full h-1">
-                        <div 
-                          className={`h-1 rounded-full transition-all duration-500 ${
-                            !result.productFound 
-                              ? "w-0 bg-gray-400"
-                              : result.inStock 
-                                ? "w-full bg-green-500" 
-                                : "w-full bg-yellow-500"
-                          }`}
-                        ></div>
-                      </div>
-                    </div>
                   </div>
-                ))}
-              </div>
-              {priceResults.length > 6 && (
-                <div className="text-center mt-4">
-                  <button
-                    onClick={() => setShowAllPrices(!showAllPrices)}
-                    className={`px-4 py-2 rounded ${
-                      isDarkMode ? "bg-gray-600 text-white" : "bg-gray-200 text-black"
-                    }`}
-                  >
-                    {showAllPrices ? 'Show Less' : `Show All ${priceResults.length} Results`}
-                  </button>
-                </div>
-              )}
+                );
+              });
+            })}
+          </div>
 
-              {/* Summary Statistics */}
-              <div className={`mt-6 p-4 rounded-lg grid grid-cols-2 md:grid-cols-4 gap-4 text-center ${
-                isDarkMode ? "bg-gray-600" : "bg-gray-100"
-              }`}>
-                <div>
-                  <p className="text-2xl font-bold text-green-500">
-                    {priceResults.filter(r => r.productFound && r.inStock).length}
-                  </p>
-                  <p className="text-sm text-gray-500">Available</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-yellow-500">
-                    {priceResults.filter(r => r.productFound && !r.inStock).length}
-                  </p>
-                  <p className="text-sm text-gray-500">Out of Stock</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-500">
-                    {priceResults.filter(r => !r.productFound).length}
-                  </p>
-                  <p className="text-sm text-gray-500">Not Listed</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">
-                    {priceResults.filter(r => r.productFound).length > 0 ? (
-                      <>
-                        {Math.min(...priceResults
-                          .filter(r => r.productFound && r.inStock)
-                          .map(r => parseFloat(r.price.split(' ')[0]))
-                        ).toFixed(2)}
-                        {' '}
-                        {priceResults.find(r => r.productFound && r.inStock)?.price.split(' ')[1] || ''}
-                      </>
-                    ) : (
-                      'N/A'
-                    )}
-                  </p>
-                  <p className="text-sm text-gray-500">Best Price</p>
-                </div>
-              </div>
-            </div>
-          ) : isPriceLoading ? (
-            <div className="text-center py-8">
-              <div className={`animate-spin rounded-full h-8 w-8 border-2 border-current border-t-transparent mx-auto mb-2 ${
-                isDarkMode ? "text-yellow-500" : "text-green-600"
-              }`}></div>
-              <p>Searching for prices across {selectedCountries.length} countries...</p>
-            </div>
-          ) : (
+          {selectedCountries.length === 0 && (
             <div className="text-center py-8 text-gray-500">
-              <p>Select countries and click "Refresh Prices" to compare prices</p>
+              <p>Select countries to see shopping links</p>
             </div>
           )}
         </div>

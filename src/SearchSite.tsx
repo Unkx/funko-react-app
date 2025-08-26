@@ -140,7 +140,7 @@ const SearchSite = () => {
   };
 
   // Helper to generate IDs
-  const generateId = (title: string , number: string ): string => { // | undefined
+  const generateId = (title: string , number: string ): string => { // | 
     const safeTitle = title ? title.trim() : "";
     const safeNumber = number ? number.trim() : "";
     return `${safeTitle}-${safeNumber}`.replace(/\s+/g, "-");

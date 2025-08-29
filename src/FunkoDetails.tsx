@@ -1,23 +1,8 @@
-// -- For PostgreSQL:
-// UPDATE your_table_name 
-// SET id = SUBSTRING(id FROM 1 FOR LENGTH(id) - 10) 
-// WHERE id LIKE '%-undefined';
-
 // FunkoDetails.tsx
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { translations } from "./Translations/TranslationsFunkoDetails";
 import axios from "axios";
-
-// Recharts for price history
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 
 // Icons
 import MoonIcon from "/src/assets/moon.svg?react";
@@ -74,6 +59,9 @@ interface FunkoItemWithId extends FunkoItem {
 interface PricePoint {
   date: string;
   price: number;
+  shop: string;
+  country: string;
+  currency: string;
 }
 
 interface Shop {
@@ -81,6 +69,16 @@ interface Shop {
   url: string;
   searchUrl: string;
   currency: string;
+  priceSelector?: string;
+  apiEndpoint?: string;
+}
+
+interface ScrapedPrice {
+  price: number;
+  currency: string;
+  shop: string;
+  country: string;
+  date: string;
 }
 
 const FunkoDetails: React.FC = () => {
@@ -102,6 +100,9 @@ const FunkoDetails: React.FC = () => {
   const [inCollection, setInCollection] = useState(false);
   const [isUpdatingWishlist, setIsUpdatingWishlist] = useState(false);
   const [isUpdatingCollection, setIsUpdatingCollection] = useState(false);
+  const [isScrapingPrices, setIsScrapingPrices] = useState(false);
+  const [scrapingProgress, setScrapingProgress] = useState(0);
+  const [scrapingResults, setScrapingResults] = useState<ScrapedPrice[]>([]);
 
   const [selectedCountries, setSelectedCountries] = useState(['poland', 'germany', 'france']);
   const [relatedItems, setRelatedItems] = useState<FunkoItemWithId[]>([]);
@@ -127,49 +128,229 @@ const FunkoDetails: React.FC = () => {
 
   const t = translations[language] || translations["EN"];
 
-  // Shop configurations by country
+  // Shop configurations by country with price selectors
   const shops: Record<string, Shop[]> = {
     poland: [
-      { name: 'Empik', url: 'empik.com', searchUrl: `https://www.empik.com/szukaj/produkty?q=`, currency: 'PLN' },
-      { name: 'Allegro', url: 'allegro.pl', searchUrl: 'https://allegro.pl/listing?string=', currency: 'PLN' },
-      { name: 'Media Markt PL', url: 'mediamarkt.pl', searchUrl: 'https://www.mediamarkt.pl/pl/search.html?query=', currency: 'PLN' },
-      { name: 'Komputronik', url: 'komputronik.pl', searchUrl: 'https://www.komputronik.pl/search/', currency: 'PLN' },
-      { name: 'Merlin.pl', url: 'merlin.pl', searchUrl: 'https://merlin.pl/szukaj/?q=', currency: 'PLN' }
+      { 
+        name: 'Empik', 
+        url: 'empik.com', 
+        searchUrl: `https://www.empik.com/szukaj/produkty?q=`, 
+        currency: 'PLN',
+        priceSelector: '.price'
+      },
+      { 
+        name: 'Allegro', 
+        url: 'allegro.pl', 
+        searchUrl: 'https://allegro.pl/listing?string=', 
+        currency: 'PLN',
+        priceSelector: '[data-analytics-view-value]'
+      },
+      { 
+        name: 'Media Markt PL', 
+        url: 'mediamarkt.pl', 
+        searchUrl: 'https://www.mediamarkt.pl/pl/search.html?query=', 
+        currency: 'PLN',
+        priceSelector: '.whole'
+      },
+      { 
+        name: 'Komputronik', 
+        url: 'komputronik.pl', 
+        searchUrl: 'https://www.komputronik.pl/search/', 
+        currency: 'PLN',
+        priceSelector: '.price'
+      },
+      { 
+        name: 'Merlin.pl', 
+        url: 'merlin.pl', 
+        searchUrl: 'https://merlin.pl/szukaj/?q=', 
+        currency: 'PLN',
+        priceSelector: '.price'
+      }
     ],
     uk: [
-      { name: 'Forbidden Planet', url: 'forbiddenplanet.com', searchUrl: 'https://forbiddenplanet.com/catalog/?q=', currency: 'GBP' },
-      { name: 'Game', url: 'game.co.uk', searchUrl: 'https://www.game.co.uk/en/search/?q=', currency: 'GBP' },
-      { name: 'Argos', url: 'argos.co.uk', searchUrl: 'https://www.argos.co.uk/search/', currency: 'GBP' },
-      { name: 'Amazon UK', url: 'amazon.co.uk', searchUrl: 'https://www.amazon.co.uk/s?k=', currency: 'GBP' },
-      { name: 'Smyths Toys', url: 'smythstoys.com', searchUrl: 'https://www.smythstoys.com/uk/en-gb/search/?text=', currency: 'GBP' }
+      { 
+        name: 'Forbidden Planet', 
+        url: 'forbiddenplanet.com', 
+        searchUrl: 'https://forbiddenplanet.com/catalog/?q=', 
+        currency: 'GBP',
+        priceSelector: '.price'
+      },
+      { 
+        name: 'Game', 
+        url: 'game.co.uk', 
+        searchUrl: 'https://www.game.co.uk/en/search/?q=', 
+        currency: 'GBP',
+        priceSelector: '.productPrice'
+      },
+      { 
+        name: 'Argos', 
+        url: 'argos.co.uk', 
+        searchUrl: 'https://www.argos.co.uk/search/', 
+        currency: 'GBP',
+        priceSelector: '[data-test="product-price"]'
+      },
+      { 
+        name: 'Amazon UK', 
+        url: 'amazon.co.uk', 
+        searchUrl: 'https://www.amazon.co.uk/s?k=', 
+        currency: 'GBP',
+        priceSelector: '.a-price-whole'
+      },
+      { 
+        name: 'Smyths Toys', 
+        url: 'smythstoys.com', 
+        searchUrl: 'https://www.smythstoys.com/uk/en-gb/search/?text=', 
+        currency: 'GBP',
+        priceSelector: '.price'
+      }
     ],
     usa: [
-      { name: 'Hot Topic', url: 'hottopic.com', searchUrl: 'https://www.hottopic.com/search?q=', currency: 'USD' },
-      { name: 'GameStop', url: 'gamestop.com', searchUrl: 'https://www.gamestop.com/search/?q=', currency: 'USD' },
-      { name: 'Target', url: 'target.com', searchUrl: 'https://www.target.com/s?searchTerm=', currency: 'USD' },
-      { name: 'Amazon US', url: 'amazon.com', searchUrl: 'https://www.amazon.com/s?k=', currency: 'USD' },
-      { name: 'Entertainment Earth', url: 'entertainmentearth.com', searchUrl: 'https://www.entertainmentearth.com/s/?query1=', currency: 'USD' }
+      { 
+        name: 'Hot Topic', 
+        url: 'hottopic.com', 
+        searchUrl: 'https://www.hottopic.com/search?q=', 
+        currency: 'USD',
+        priceSelector: '.price'
+      },
+      { 
+        name: 'GameStop', 
+        url: 'gamestop.com', 
+        searchUrl: 'https://www.gamestop.com/search/?q=', 
+        currency: 'USD',
+        priceSelector: '.actual-price'
+      },
+      { 
+        name: 'Target', 
+        url: 'target.com', 
+        searchUrl: 'https://www.target.com/s?searchTerm=', 
+        currency: 'USD',
+        priceSelector: '[data-test="product-price"]'
+      },
+      { 
+        name: 'Amazon US', 
+        url: 'amazon.com', 
+        searchUrl: 'https://www.amazon.com/s?k=', 
+        currency: 'USD',
+        priceSelector: '.a-price-whole'
+      },
+      { 
+        name: 'Entertainment Earth', 
+        url: 'entertainmentearth.com', 
+        searchUrl: 'https://www.entertainmentearth.com/s/?query1=', 
+        currency: 'USD',
+        priceSelector: '.price'
+      }
     ],
     germany: [
-      { name: 'Elbenwald', url: 'elbenwald.de', searchUrl: 'https://www.elbenwald.de/search?sSearch=', currency: 'EUR' },
-      { name: 'Amazon DE', url: 'amazon.de', searchUrl: 'https://www.amazon.de/s?k=', currency: 'EUR' },
-      { name: 'MediaMarkt DE', url: 'mediamarkt.de', searchUrl: 'https://www.mediamarkt.de/de/search.html?query=', currency: 'EUR' },
-      { name: 'GameStop DE', url: 'gamestop.de', searchUrl: 'https://www.gamestop.de/SearchResult/QuickSearch?q=', currency: 'EUR' },
-      { name: 'Müller', url: 'mueller.de', searchUrl: 'https://www.mueller.de/suche/?q=', currency: 'EUR' }
+      { 
+        name: 'Elbenwald', 
+        url: 'elbenwald.de', 
+        searchUrl: 'https://www.elbenwald.de/search?sSearch=', 
+        currency: 'EUR',
+        priceSelector: '.price'
+      },
+      { 
+        name: 'Amazon DE', 
+        url: 'amazon.de', 
+        searchUrl: 'https://www.amazon.de/s?k=', 
+        currency: 'EUR',
+        priceSelector: '.a-price-whole'
+      },
+      { 
+        name: 'MediaMarkt DE', 
+        url: 'mediamarkt.de', 
+        searchUrl: 'https://www.mediamarkt.de/de/search.html?query=', 
+        currency: 'EUR',
+        priceSelector: '.whole'
+      },
+      { 
+        name: 'GameStop DE', 
+        url: 'gamestop.de', 
+        searchUrl: 'https://www.gamestop.de/SearchResult/QuickSearch?q=', 
+        currency: 'EUR',
+        priceSelector: '.price'
+      },
+      { 
+        name: 'Müller', 
+        url: 'mueller.de', 
+        searchUrl: 'https://www.mueller.de/suche/?q=', 
+        currency: 'EUR',
+        priceSelector: '.price'
+      }
     ],
     france: [
-      { name: 'Fnac', url: 'fnac.com', searchUrl: 'https://www.fnac.com/SearchResult/ResultList.aspx?Search=', currency: 'EUR' },
-      { name: 'Amazon FR', url: 'amazon.fr', searchUrl: 'https://www.amazon.fr/s?k=', currency: 'EUR' },
-      { name: 'Cultura', url: 'cultura.com', searchUrl: 'https://www.cultura.com/catalogsearch/result/?q=', currency: 'EUR' },
-      { name: 'Micromania', url: 'micromania.fr', searchUrl: 'https://www.micromania.fr/search?text=', currency: 'EUR' },
-      { name: 'Leclerc', url: 'e.leclerc', searchUrl: 'https://www.e.leclerc/search?text=', currency: 'EUR' }
+      { 
+        name: 'Fnac', 
+        url: 'fnac.com', 
+        searchUrl: 'https://www.fnac.com/SearchResult/ResultList.aspx?Search=', 
+        currency: 'EUR',
+        priceSelector: '.price'
+      },
+      { 
+        name: 'Amazon FR', 
+        url: 'amazon.fr', 
+        searchUrl: 'https://www.amazon.fr/s?k=', 
+        currency: 'EUR',
+        priceSelector: '.a-price-whole'
+      },
+      { 
+        name: 'Cultura', 
+        url: 'cultura.com', 
+        searchUrl: 'https://www.cultura.com/catalogsearch/result/?q=', 
+        currency: 'EUR',
+        priceSelector: '.price'
+      },
+      { 
+        name: 'Micromania', 
+        url: 'micromania.fr', 
+        searchUrl: 'https://www.micromania.fr/search?text=', 
+        currency: 'EUR',
+        priceSelector: '.price'
+      },
+      { 
+        name: 'Leclerc', 
+        url: 'e.leclerc', 
+        searchUrl: 'https://www.e.leclerc/search?text=', 
+        currency: 'EUR',
+        priceSelector: '.price'
+      }
     ],
     russia: [
-      { name: 'Ozon', url: 'ozon.ru', searchUrl: 'https://www.ozon.ru/search/?text=', currency: 'RUB' },
-      { name: 'Wildberries', url: 'wildberries.ru', searchUrl: 'https://www.wildberries.ru/catalog/0/search.aspx?search=', currency: 'RUB' },
-      { name: 'M.Video', url: 'mvideo.ru', searchUrl: 'https://www.mvideo.ru/search?text=', currency: 'RUB' },
-      { name: 'Citilink', url: 'citilink.ru', searchUrl: 'https://www.citilink.ru/search/?text=', currency: 'RUB' },
-      { name: 'DNS Shop', url: 'dns-shop.ru', searchUrl: 'https://www.dns-shop.ru/search/?q=', currency: 'RUB' }
+      { 
+        name: 'Ozon', 
+        url: 'ozon.ru', 
+        searchUrl: 'https://www.ozon.ru/search/?text=', 
+        currency: 'RUB',
+        priceSelector: '.price'
+      },
+      { 
+        name: 'Wildberries', 
+        url: 'wildberries.ru', 
+        searchUrl: 'https://www.wildberries.ru/catalog/0/search.aspx?search=', 
+        currency: 'RUB',
+        priceSelector: '.price'
+      },
+      { 
+        name: 'M.Video', 
+        url: 'mvideo.ru', 
+        searchUrl: 'https://www.mvideo.ru/search?text=', 
+        currency: 'RUB',
+        priceSelector: '.price'
+      },
+      { 
+        name: 'Citilink', 
+        url: 'citilink.ru', 
+        searchUrl: 'https://www.citilink.ru/search/?text=', 
+        currency: 'RUB',
+        priceSelector: '.price'
+      },
+      { 
+        name: 'DNS Shop', 
+        url: 'dns-shop.ru', 
+        searchUrl: 'https://www.dns-shop.ru/search/?q=', 
+        currency: 'RUB',
+        priceSelector: '.price'
+      }
     ]
   };
 
@@ -201,6 +382,57 @@ const FunkoDetails: React.FC = () => {
     });
   };
 
+  // Improved function to find related items based on series and category
+  const findRelatedItems = (currentItem: FunkoItemWithId, allItems: FunkoItemWithId[]) => {
+    if (!currentItem) return [];
+    
+    const related = allItems.filter(item => {
+      // Don't include the current item
+      if (item.id === currentItem.id) return false;
+      
+      // Check if they share the same series
+      const sharedSeries = currentItem.series && item.series && 
+        currentItem.series.some(series => item.series?.includes(series));
+      
+      // Check if they share the same category
+      const sameCategory = currentItem.category === item.category;
+      
+      // Check if they're from the same franchise (based on title similarity)
+      const titleWords = currentItem.title.toLowerCase().split(/\s+/);
+      const hasCommonWords = titleWords.some(word => 
+        word.length > 3 && item.title.toLowerCase().includes(word)
+      );
+      
+      // Prioritize items from the same series, then same category, then similar titles
+      if (sharedSeries) return true;
+      if (sameCategory && hasCommonWords) return true;
+      if (hasCommonWords) return true;
+      
+      return false;
+    });
+    
+    // Sort by relevance (items with shared series first, then same category)
+    related.sort((a, b) => {
+      const aHasSharedSeries = currentItem.series && a.series && 
+        currentItem.series.some(series => a.series?.includes(series));
+      const bHasSharedSeries = currentItem.series && b.series && 
+        currentItem.series.some(series => b.series?.includes(series));
+      
+      if (aHasSharedSeries && !bHasSharedSeries) return -1;
+      if (!aHasSharedSeries && bHasSharedSeries) return 1;
+      
+      const aSameCategory = currentItem.category === a.category;
+      const bSameCategory = currentItem.category === b.category;
+      
+      if (aSameCategory && !bSameCategory) return -1;
+      if (!aSameCategory && bSameCategory) return 1;
+      
+      return 0;
+    });
+    
+    return related.slice(0, 6); // Return top 6 related items
+  };
+
   // Fetch Funko data
   useEffect(() => {
     const fetchData = async () => {
@@ -223,22 +455,38 @@ const FunkoDetails: React.FC = () => {
         setFunkoItem(foundItem);
         setError(null);
 
-        const related = dataWithIds.filter(
-          (item) =>
-            item.id !== foundItem.id &&
-            (item.category === foundItem.category ||
-              item.series?.some((s) => foundItem.series?.includes(s)))
-        );
-        setRelatedItems(related.slice(0, 6));
+        // Use the improved related items function
+        const related = findRelatedItems(foundItem, dataWithIds);
+        setRelatedItems(related);
 
-        const mockPrices: PricePoint[] = [
-          { date: "2024-01-01", price: 12.99 },
-          { date: "2024-02-01", price: 14.49 },
-          { date: "2024-03-01", price: 13.99 },
-          { date: "2024-04-01", price: 15.49 },
-          { date: "2024-05-01", price: 16.29 },
-        ];
-        setPriceHistory(mockPrices);
+        // Load price history from API if available
+        try {
+          const priceResponse = await api.get(`/prices/${foundItem.id}`);
+          if (priceResponse.data && priceResponse.data.length > 0) {
+            setPriceHistory(priceResponse.data);
+          } else {
+            // Fallback to mock data if no price history exists
+            const mockPrices: PricePoint[] = [
+              { date: "2024-01-01", price: 12.99, shop: "Mock Data", country: "US", currency: "USD" },
+              { date: "2024-02-01", price: 14.49, shop: "Mock Data", country: "US", currency: "USD" },
+              { date: "2024-03-01", price: 13.99, shop: "Mock Data", country: "US", currency: "USD" },
+              { date: "2024-04-01", price: 15.49, shop: "Mock Data", country: "US", currency: "USD" },
+              { date: "2024-05-01", price: 16.29, shop: "Mock Data", country: "US", currency: "USD" },
+            ];
+            setPriceHistory(mockPrices);
+          }
+        } catch (err) {
+          console.error("Failed to fetch price history:", err);
+          // Fallback to mock data if API call fails
+          const mockPrices: PricePoint[] = [
+            { date: "2024-01-01", price: 12.99, shop: "Mock Data", country: "US", currency: "USD" },
+            { date: "2024-02-01", price: 14.49, shop: "Mock Data", country: "US", currency: "USD" },
+            { date: "2024-03-01", price: 13.99, shop: "Mock Data", country: "US", currency: "USD" },
+            { date: "2024-04-01", price: 15.49, shop: "Mock Data", country: "US", currency: "USD" },
+            { date: "2024-05-01", price: 16.29, shop: "Mock Data", country: "US", currency: "USD" },
+          ];
+          setPriceHistory(mockPrices);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
       } finally {
@@ -392,6 +640,70 @@ const FunkoDetails: React.FC = () => {
     }
   };
 
+  // Function to scrape prices from shopping sites
+  const scrapePrices = async () => {
+    if (!funkoItem) return;
+    
+    setIsScrapingPrices(true);
+    setScrapingProgress(0);
+    setScrapingResults([]);
+    
+    const searchQuery = `${funkoItem.title || ""} ${funkoItem.number || ""} funko pop`.trim();
+    const selectedShops = selectedCountries.flatMap(countryCode => 
+      shops[countryCode]?.map(shop => ({ ...shop, country: countryCode })) || []
+    );
+    
+    const results: ScrapedPrice[] = [];
+    
+    for (let i = 0; i < selectedShops.length; i++) {
+      const shop = selectedShops[i];
+      try {
+        setScrapingProgress(Math.round((i / selectedShops.length) * 100));
+        
+        // Call backend API to scrape prices
+        const response = await api.post('/scrape/price', {
+          url: shop.searchUrl + encodeURIComponent(searchQuery),
+          shop: shop.name,
+          country: shop.country,
+          currency: shop.currency,
+          priceSelector: shop.priceSelector
+        });
+        
+        if (response.data && response.data.price) {
+          results.push({
+            price: response.data.price,
+            currency: response.data.currency || shop.currency,
+            shop: shop.name,
+            country: shop.country,
+            date: new Date().toISOString().split('T')[0]
+          });
+        }
+      } catch (error) {
+        console.error(`Failed to scrape ${shop.name}:`, error);
+      }
+    }
+    
+    setScrapingResults(results);
+    setIsScrapingPrices(false);
+    setScrapingProgress(100);
+    
+    // Save scraped prices to database
+    if (results.length > 0) {
+      try {
+        await api.post('/prices', {
+          funkoId: funkoItem.id,
+          prices: results
+        });
+        
+        // Update price history with new data
+        const updatedPriceHistory = [...priceHistory, ...results];
+        setPriceHistory(updatedPriceHistory);
+      } catch (error) {
+        console.error("Failed to save prices:", error);
+      }
+    }
+  };
+
   const loginButtonTo = useMemo(() => {
     if (user?.role === "admin") return "/adminSite";
     if (user?.role === "user") return "/dashboardSite";
@@ -411,7 +723,7 @@ const FunkoDetails: React.FC = () => {
       >
         <div
           className={`animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 ${
-            isDarkMode ? "border-yellow-500" : "border-green-600"
+            isDarkMode ? "border-yellow-500" : "bg-green-600"
           }`}
         ></div>
       </div>
@@ -695,6 +1007,64 @@ const FunkoDetails: React.FC = () => {
             </div>
           </div>
 
+          {/* Price Scraping Button */}
+          <div className="mb-6">
+            <button
+              onClick={scrapePrices}
+              disabled={isScrapingPrices}
+              className={`px-4 py-2 rounded flex items-center gap-2 ${
+                isScrapingPrices 
+                  ? "bg-gray-400 cursor-not-allowed" 
+                  : isDarkMode 
+                    ? "bg-yellow-500 text-black" 
+                    : "bg-green-600 text-white"
+              }`}
+            >
+              {isScrapingPrices ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Scraping Prices... {scrapingProgress}%</span>
+                </>
+              ) : (
+                <span>Check Current Prices</span>
+              )}
+            </button>
+          </div>
+
+          {/* Scraping Results */}
+          {scrapingResults.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3">Current Prices</h3>
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {scrapingResults.map((result, index) => (
+                  <div
+                    key={index}
+                    className={`p-4 rounded border-l-4 ${
+                      isDarkMode ? "border-green-400 bg-gray-600" : "border-green-600 bg-green-50"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-semibold">{result.shop}</h3>
+                        <p className="text-xs text-gray-500">
+                          {countries[result.country as keyof typeof countries]?.name}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-lg font-bold">
+                          {result.price} {result.currency}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">
+                      Updated: {result.date}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Direct Links to Shopping Sites */}
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {selectedCountries.flatMap(countryCode => {
@@ -759,18 +1129,7 @@ const FunkoDetails: React.FC = () => {
           )}
         </div>
 
-        {/* Price Chart */}
-        <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
-          <h2 className="text-xl font-semibold mb-4">{t.priceHistory || "Price History"}</h2>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={priceHistory}>
-              <XAxis dataKey="date" />
-              <YAxis domain={["auto", "auto"]} />
-              <Tooltip />
-              <Line type="monotone" dataKey="price" stroke="#82ca9d" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+
         
         {/* Related items */}
         <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>

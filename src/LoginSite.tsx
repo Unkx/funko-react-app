@@ -270,7 +270,7 @@ const LoginSite: React.FC = () => {
             value={login}
             onChange={(e) => setLogin(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
             }`}
             required
           />
@@ -281,7 +281,7 @@ const LoginSite: React.FC = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
             }`}
             required
           />

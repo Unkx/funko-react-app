@@ -335,23 +335,24 @@ const RegisterSite: React.FC = () => {
             <p className="text-red-500 mb-2 text-center">{registerError}</p>
           )}
 
+
+          <input
+            type="text"
+            placeholder={t.username ?? "Username"}
+            value={login}
+            onChange={(e) => setLogin(e.target.value)}
+            className={`px-4 py-2 rounded ${
+              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+            }`}
+            required
+          />          
           <input
             type="email"
             placeholder={t.email ?? "Email"}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
-            }`}
-            required
-          />
-          <input
-            type="text"
-            placeholder={t.login ?? "Username"}
-            value={login}
-            onChange={(e) => setLogin(e.target.value)}
-            className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
             }`}
             required
           />
@@ -361,7 +362,7 @@ const RegisterSite: React.FC = () => {
             value={name}
             onChange={(e) => setName(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
             }`}
             required
           />
@@ -371,7 +372,7 @@ const RegisterSite: React.FC = () => {
             value={surname}
             onChange={(e) => setSurname(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
             }`}
             required
           />
@@ -381,7 +382,7 @@ const RegisterSite: React.FC = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
             }`}
             required
           />
@@ -391,7 +392,7 @@ const RegisterSite: React.FC = () => {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
             }`}
             required
           />
@@ -400,7 +401,7 @@ const RegisterSite: React.FC = () => {
             value={dateOfBirth}
             onChange={(e) => setDateOfBirth(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
             }`}
             required
             lang={language.toLowerCase()} // Add this line
@@ -409,7 +410,7 @@ const RegisterSite: React.FC = () => {
             value={gender}
             onChange={(e) => setGender(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
             }`}
             required
           >

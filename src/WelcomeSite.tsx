@@ -139,15 +139,15 @@ const WelcomeSite: React.FC = () => {
       ? countries[savedCountry as keyof typeof countries]
       : null;
 
-    if (countryData) {
-      setSelectedCountry(savedCountry);
+    if (countryData && savedCountry) {
+      setSelectedCountry(savedCountry as string);
       setLanguage(countryData.language);
       setRegion(countryData.region);
     } else {
       const detected = detectCountryFromLocale(navigator.language);
       const detectedData = detected ? countries[detected as keyof typeof countries] : null;
-      if (detectedData) {
-        setSelectedCountry(detected);
+      if (detectedData && detected) {
+        setSelectedCountry(detected as string);
         setLanguage(detectedData.language);
         setRegion(detectedData.region);
       }

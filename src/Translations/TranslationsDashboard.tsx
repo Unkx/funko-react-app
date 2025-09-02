@@ -18,7 +18,9 @@ export const translations = {
     emptyCollection: "No items in your collection.",
     condition: "Condition :",
     yourWishlist: "Your Wishlist",
-    noItemsInWishlist: "No items in your wishlist."
+    noItemsInWishlist: "No items in your wishlist.",
+    viewFullCollection: "View Full Collection",
+    viewFullWishlist: "View Full Wishlist",
   },
   PL: {
     welcome: "Witaj",
@@ -38,7 +40,9 @@ export const translations = {
     emptyCollection: "Brak przedmiotów w twojej kolekcji.",
     condition: "Stan :",  
     yourWishlist: "Twoja Lista Życzeń",
-    noItemsInWishlist: "Brak przedmiotów na twojej liście życzeń."
+    noItemsInWishlist: "Brak przedmiotów na twojej liście życzeń.",
+    viewFullCollection: "Zobacz pełną kolekcję",
+    viewFullWishlist: "Zobacz pełną listę życzeń",
   },
   RU: {
     welcome: "Добро пожаловать",
@@ -58,7 +62,9 @@ export const translations = {
     emptyCollection: "Нет предметов в вашей коллекции.",
     condition: "Состояние :",
     yourWishlist: "Ваш Список Желаний",
-    noItemsInWishlist: "Нет предметов в вашем списке желаний."
+    noItemsInWishlist: "Нет предметов в вашем списке желаний.",
+    viewFullCollection: "Просмотреть всю коллекцию",
+    viewFullWishlist: "Просмотреть весь список желаний",
   },
   ES: {
     welcome: "Bienvenido",
@@ -78,7 +84,9 @@ export const translations = {
     emptyCollection: "No hay elementos en tu colección.",
     condition: "Condición :",
     yourWishlist: "Tu Lista de Deseos",
-    noItemsInWishlist: "No hay elementos en tu lista de deseos."
+    noItemsInWishlist: "No hay elementos en tu lista de deseos.",
+    viewFullCollection: "Ver Colección Completa",
+    viewFullWishlist: "Ver Lista de Deseos Completa",
   },
   FR: {
     welcome: "Bienvenue",
@@ -98,7 +106,9 @@ export const translations = {
     emptyCollection: "Aucun article dans votre collection.",
     condition: "État :",
     yourWishlist: "Votre Liste de Souhaits",
-    noItemsInWishlist: "Aucun article dans votre liste de souhaits."
+    noItemsInWishlist: "Aucun article dans votre liste de souhaits.",
+    viewFullCollection: "Voir la Collection Complète",
+    viewFullWishlist: "Voir la Liste de Souhaits Complète",
   },
   DE: {
     welcome: "Willkommen",
@@ -118,6 +128,8 @@ export const translations = {
     emptyCollection: "Keine Artikel in Ihrer Sammlung.",
     condition: "Zustand :",
     yourWishlist: "Ihre Wunschliste",
-    noItemsInWishlist: "Keine Artikel in Ihrer Wunschliste."
+    noItemsInWishlist: "Keine Artikel in Ihrer Wunschliste.",
+    viewFullCollection: "Gesamte Sammlung anzeigen",
+    viewFullWishlist: "Gesamte Wunschliste anzeigen",
   }
 };

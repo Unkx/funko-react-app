@@ -604,9 +604,27 @@ const DashboardSite: React.FC = () => {
 
         {/* Section: Collection */}
         <UserCollectionSection isDarkMode={isDarkMode} t={t} />
+        <div>
+          <button onClick={() => navigate('/collection')} className={`px-4 py-2 rounded mb-8 ${
+            isDarkMode
+              ? "bg-yellow-500 hover:bg-yellow-600"
+              : "bg-green-500 hover:bg-green-600"
+          } text-white`}>
+            {t.viewFullCollection}
+          </button>
+        </div>     
 
         {/* Section: Wishlist */}
         <UserWishlistSection isDarkMode={isDarkMode} t={t} />
+        <div>
+          <button onClick={() => navigate('/collection')} className={`px-4 py-2 rounded mb-8 ${
+            isDarkMode
+              ? "bg-yellow-500 hover:bg-yellow-600"
+              : "bg-green-500 hover:bg-green-600"
+          } text-white`}>
+            {t.viewFullWishlist}
+          </button>
+        </div>   
       </main>
 
       {/* Footer */}

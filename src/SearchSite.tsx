@@ -91,6 +91,7 @@ const SearchSite = () => {
   const [language, setLanguage] = useState(() => {
     return localStorage.getItem("preferredLanguage") || "EN";
   });
+  
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [funkoData, setFunkoData] = useState([]);
   const [filteredAndSortedResults, setFilteredAndSortedResults] = useState(
@@ -422,7 +423,6 @@ const SearchSite = () => {
           </button>
         </form>
 
-        {/* Theme & Language Toggle */}
         <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0">
           {/* Language Dropdown */}
           <div className="relative">

@@ -114,6 +114,15 @@ const languageNames = {
   ES: "Español",
 };
 
+const languages = {
+  EN: { name: "English", flag: <USAFlag className="w-5 h-5" /> },
+  PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
+  RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
+  FR: { name: "Français", flag: <FranceFlag className="w-5 h-5" /> },
+  DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
+  ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
+};
+
 const Admin = () => {
   // Constants
   const SUPER_ADMIN_ID = 1;
@@ -129,12 +138,15 @@ const Admin = () => {
   const [selectedCountry, setSelectedCountry] = useState<string>(() => 
     localStorage.getItem("preferredCountry") || "USA"
   );
+
   const [language, setLanguage] = useState<string>(() => {
     const savedLanguage = localStorage.getItem("preferredLanguage");
     return savedLanguage || "EN";
   });
+
   const [region, setRegion] = useState<string>("North America");
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
 
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -175,6 +187,14 @@ const Admin = () => {
     return targetUser.role !== "admin";
   };
 
+     
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem("preferredLanguage");
+    if (savedLanguage && savedLanguage !== language) {
+      setLanguage(savedLanguage);
+    }
+  }, [language]);
+
   // 🌐 Detect country from browser language
   const detectCountryFromLocale = (locale: string): string | null => {
     const map: Record<string, string> = {
@@ -207,26 +227,34 @@ const Admin = () => {
   // 🧩 Initial setup: load preferences or detect locale
   useEffect(() => {
     const savedCountry = localStorage.getItem("preferredCountry");
+    const savedLanguage = localStorage.getItem("preferredLanguage");
+
     const countryData = savedCountry && countries[savedCountry as keyof typeof countries]
       ? countries[savedCountry as keyof typeof countries]
       : null;
 
-    if (countryData) {
+    if (countryData && savedCountry) {
       setSelectedCountry(savedCountry);
-      setLanguage(countryData.language);
+      setLanguage(
+        savedLanguage && languageNames[savedLanguage as keyof typeof languageNames]
+          ? savedLanguage
+          : countryData.language
+      );
       setRegion(countryData.region);
     } else {
       const detected = detectCountryFromLocale(navigator.language);
       const detectedData = detected ? countries[detected as keyof typeof countries] : null;
-      if (detectedData) {
+      if (detectedData && detected) {
         setSelectedCountry(detected);
-        setLanguage(detectedData.language);
+        setLanguage(
+          savedLanguage && language[savedLanguage as keyof typeof language]
+            ? savedLanguage
+            : detectedData.language
+        );
         setRegion(detectedData.region);
       }
     }
 
-    if (isDarkMode) document.documentElement.classList.add("dark");
-    else document.documentElement.classList.remove("dark");
   }, []);
 
   // 🌙 Theme sync
@@ -243,18 +271,18 @@ const Admin = () => {
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
-        showCountryDropdown &&
         dropdownRef.current &&
         buttonRef.current &&
         !dropdownRef.current.contains(e.target as Node) &&
         !buttonRef.current.contains(e.target as Node)
       ) {
-        setShowCountryDropdown(false);
+        if (showCountryDropdown) setShowCountryDropdown(false);
+        if (showLanguageDropdown) setShowLanguageDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showCountryDropdown]);
+  }, [showCountryDropdown, showLanguageDropdown]);
 
   // Fetch users effect
   useEffect(() => {
@@ -341,6 +369,14 @@ const Admin = () => {
   };
 
   const toggleCountryDropdown = () => setShowCountryDropdown((prev) => !prev);
+
+  const toggleLanguageDropdown = () => setShowLanguageDropdown((prev) => !prev);
+
+  const selectLanguage = (langCode: string) => {
+    setLanguage(langCode);
+    localStorage.setItem("preferredLanguage", langCode);
+    setShowLanguageDropdown(false);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -470,73 +506,55 @@ const Admin = () => {
         </Link>
 
         {/* Country, Theme, and Logout */}
-        <div className="flex flex-wrap gap-3 items-center justify-center sm:justify-end">
-          {/* 🌐 Country Selector */}
-          <div className="relative inline-block">
+        {/* 🌐 Country, 🌙 Theme, 🔐 Login */}
+        <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0">
+          {/* Language Dropdown */}
+          <div className="relative">
             <button
               ref={buttonRef}
-              onClick={toggleCountryDropdown}
-              className={`p-2 rounded-full flex items-center gap-2 ${
+              onClick={toggleLanguageDropdown}
+              className={`p-2 rounded-full flex items-center gap-1 ${
                 isDarkMode
                   ? "bg-gray-700 hover:bg-gray-600"
                   : "bg-gray-200 hover:bg-gray-300"
               }`}
-              aria-label="Select country"
-              aria-expanded={showCountryDropdown}
+              aria-label="Select language"
+              aria-expanded={showLanguageDropdown}
             >
               <GlobeIcon className="w-5 h-5" />
-              <span className="flex items-center gap-1">
-                {countries[selectedCountry as keyof typeof countries]?.flag}
-                <span className="text-sm font-medium hidden sm:inline">
-                  {countries[selectedCountry as keyof typeof countries]?.name}
-                </span>
-              </span>
+              <span className="text-sm font-medium">{language}</span>
               <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${showCountryDropdown ? "rotate-180" : ""}`}
+                className={`w-4 h-4 transition-transform ${
+                  showLanguageDropdown ? "rotate-180" : ""
+                }`}
               />
             </button>
 
-            {showCountryDropdown && (
+            {showLanguageDropdown && (
               <div
                 ref={dropdownRef}
-                className={`absolute right-0 mt-2 w-64 rounded-md shadow-lg py-1 z-50 max-h-80 overflow-y-auto ${
+                className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
                   isDarkMode ? "bg-gray-700" : "bg-white"
                 }`}
                 onClick={(e) => e.stopPropagation()}
               >
-                {(["North America", "Europe"] as const).map((regionName) => (
-                  <div key={regionName}>
-                    <div
-                      className={`px-4 py-2 text-xs font-semibold ${
-                        isDarkMode ? "text-gray-300" : "text-gray-500"
-                      }`}
-                    >
-                      {regionName}
-                    </div>
-                    {Object.entries(countries)
-                      .filter(([, country]) => country.region === regionName)
-                      .map(([code, country]) => (
-                        <button
-                          key={code}
-                          onClick={() => handleCountryChange(code)}
-                          className={`w-full text-left px-4 py-2 flex items-center justify-between ${
-                            selectedCountry === code
-                              ? isDarkMode
-                                ? "bg-yellow-500 text-black"
-                                : "bg-green-600 text-white"
-                              : isDarkMode
-                              ? "hover:bg-gray-600"
-                              : "hover:bg-gray-200"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="w-5 h-5">{country.flag}</span>
-                            <span>{country.name}</span>
-                          </div>
-                          <span className="text-xs opacity-75">{languageNames[country.language]}</span>
-                        </button>
-                      ))}
-                  </div>
+                {Object.entries(languages).map(([code, { name, flag }]) => (
+                  <button
+                    key={code}
+                    onClick={() => selectLanguage(code)}
+                    className={`w-full text-left px-4 py-2 flex items-center gap-2 ${
+                      language === code
+                        ? isDarkMode
+                          ? "bg-yellow-500 text-black"
+                          : "bg-green-600 text-white"
+                        : isDarkMode
+                        ? "hover:bg-gray-600"
+                        : "hover:bg-gray-200"
+                    }`}
+                  >
+                    <span className="w-5 h-5">{flag}</span>
+                    <span>{name}</span>
+                  </button>
                 ))}
               </div>
             )}
@@ -544,7 +562,7 @@ const Admin = () => {
 
           <button
             onClick={toggleTheme}
-            className={`p-2 rounded-full ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}
+            className={`p-2 rounded-full ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-600"}`}
             aria-label="Toggle theme"
           >
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}

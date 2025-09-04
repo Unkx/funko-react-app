@@ -1,3 +1,5 @@
+import { m } from "framer-motion";
+
 // Translations/TranslationsLogIn.ts
 export const translations = {
   EN: {
@@ -8,6 +10,10 @@ export const translations = {
     email: "Email",
     login:"Login",
     gender:"Gender",
+    male:"Male",
+    female:"Female",
+    preferNotToSay:"Prefer not to say",
+    other:"Other",
     dateOfBirth:"Date Of Birth: ",
     userSince:"User since :",
     lastLogin:"Last Login",
@@ -21,6 +27,10 @@ export const translations = {
     noItemsInWishlist: "No items in your wishlist.",
     viewFullCollection: "View Full Collection",
     viewFullWishlist: "View Full Wishlist",
+    dashboard: "Dashboard",
+    collection: "Collection",
+    wishlist: "Wishlist",
+
   },
   PL: {
     welcome: "Witaj",
@@ -30,6 +40,10 @@ export const translations = {
     email: "Email",
     login:"Nazwa użytkownika",
     gender:"Płeć",
+    male:"Mężczyzna",
+    female:"Kobieta",
+    preferNotToSay:"Wolę nie mówić",
+    other:"Inna",
     dateOfBirth:"Data Urodzenia",
     userSince:"Użytkownik od: ",
     lastLogin:"Ostatnie logowanie ",
@@ -43,6 +57,10 @@ export const translations = {
     noItemsInWishlist: "Brak przedmiotów na twojej liście życzeń.",
     viewFullCollection: "Zobacz pełną kolekcję",
     viewFullWishlist: "Zobacz pełną listę życzeń",
+    dashboard: "Panel",
+    collection: "Kolekcja",
+    wishlist: "Lista życzeń",
+
   },
   RU: {
     welcome: "Добро пожаловать",
@@ -52,6 +70,10 @@ export const translations = {
     email: "Электронная почта",
     login:"Имя для входа",
     gender:"пол",
+    male:"Мужской",
+    female:"Женский",
+    preferNotToSay:"Предпочитаю не говорить",
+    other:"Другой",
     dateOfBirth:"Дата рождения",
     userSince:"Пользователь с",
     lastLogin:"Последний вход ",
@@ -65,6 +87,10 @@ export const translations = {
     noItemsInWishlist: "Нет предметов в вашем списке желаний.",
     viewFullCollection: "Просмотреть всю коллекцию",
     viewFullWishlist: "Просмотреть весь список желаний",
+    dashboard: "Панель",
+    collection: "Коллекция",
+    wishlist: "Список желаний",
+
   },
   ES: {
     welcome: "Bienvenido",
@@ -74,6 +100,10 @@ export const translations = {
     email: "Correo electrónico",
     login:"Nombre de usuario",
     gender:"Sexo",
+    male:"Masculino",
+    female:"Femenino",
+    preferNotToSay:"Prefiero no decirlo",
+    other:"Otro",
     dateOfBirth:"Fecha de nacimiento",
     userSince:"Usuario desde",
     lastLogin:"Último inicio de sesión",
@@ -87,6 +117,9 @@ export const translations = {
     noItemsInWishlist: "No hay elementos en tu lista de deseos.",
     viewFullCollection: "Ver Colección Completa",
     viewFullWishlist: "Ver Lista de Deseos Completa",
+    dashboard: "Panel",
+    collection: "Colección",
+    wishlist: "Lista de deseos"
   },
   FR: {
     welcome: "Bienvenue",
@@ -96,6 +129,10 @@ export const translations = {
     email: "Email",
     login:"Nom d'utilisateur",
     gender:"Sexe",
+    male:"Homme",
+    female:"Femme",
+    preferNotToSay:"Préfère ne pas le dire",
+    other:"Autre",
     dateOfBirth:"Date de naissance",
     userSince:"Utilisateur depuis",
     lastLogin:"Dernière connexion",
@@ -109,6 +146,9 @@ export const translations = {
     noItemsInWishlist: "Aucun article dans votre liste de souhaits.",
     viewFullCollection: "Voir la Collection Complète",
     viewFullWishlist: "Voir la Liste de Souhaits Complète",
+    dashoard: "Tableau de bord",
+    collection: "Collection",
+    wishlist: "Liste de souhaits",
   },
   DE: {
     welcome: "Willkommen",
@@ -118,6 +158,10 @@ export const translations = {
     email: "E-Mail",
     login:"Anmeldename",
     gender:"Geschlecht",
+    male:"Männlich",
+    female:"Weiblich",
+    preferNotToSay:"Möchte ich nicht sagen",
+    other:"Andere",
     dateOfBirth:"Geburtsdatum",
     userSince:"Benutzer seit",
     lastLogin:"Letzte Anmeldung ",
@@ -131,5 +175,9 @@ export const translations = {
     noItemsInWishlist: "Keine Artikel in Ihrer Wunschliste.",
     viewFullCollection: "Gesamte Sammlung anzeigen",
     viewFullWishlist: "Gesamte Wunschliste anzeigen",
+    dashboard: "Dashboard",
+    collection: "Sammlung",
+    wishlist: "Wunschliste",
+
   }
 };

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import LanguageSelectorPopup from "./LanguageSelectorPopup";
 import { translations } from "./Translations/TranslationsDashboard";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Icons
 import MoonIcon from "./assets/moon.svg?react";
@@ -10,8 +11,14 @@ import SearchIcon from "./assets/search.svg?react";
 import GlobeIcon from "./assets/globe.svg?react";
 import ChevronDownIcon from "./assets/chevron-down.svg?react";
 import EditIcon from "./assets/edit.svg?react";
+import DeleteIcon from "./assets/delete.svg?react";
 import SaveIcon from "./assets/save.svg?react";
 import CancelIcon from "./assets/cancel.svg?react";
+import HeartIcon from "./assets/heart.svg?react";
+import ShoppingCartIcon from "./assets/shopping-cart.svg?react";
+import FilterIcon from "./assets/filter.svg?react";
+import StarIcon from "./assets/star.svg?react";
+import PlusIcon from "./assets/plus.svg?react";
 
 // Flags
 import UKFlag from "./assets/flags/UK.svg?react";
@@ -20,6 +27,7 @@ import RussiaFlag from "./assets/flags/russia.svg?react";
 import FranceFlag from "./assets/flags/france.svg?react";
 import GermanyFlag from "./assets/flags/germany.svg?react";
 import SpainFlag from "./assets/flags/spain.svg?react";
+import USAFlag from "./assets/flags/usa.svg?react";
 
 const languages = {
   EN: { name: "English", flag: <UKFlag className="w-5 h-5" /> },
@@ -28,6 +36,17 @@ const languages = {
   FR: { name: "Français", flag: <FranceFlag className="w-5 h-5" /> },
   DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
   ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
+  US: { name: "English (US)", flag: <USAFlag className="w-5 h-5" /> },
+};
+
+// 📚 Language display names
+const languageNames = {
+  EN: "English",
+  PL: "Polski",
+  RU: "Русский",
+  FR: "Français",
+  DE: "Deutsch",
+  ES: "Español",
 };
 
 interface User {
@@ -51,86 +70,43 @@ interface FunkoItem {
   condition?: string;
   added_date?: string;
   purchase_date?: string;
+  purchase_price?: number;
+  notes?: string;
+  series?: string;
 }
 
-const UserCollectionSection: React.FC<{ isDarkMode: boolean; t: typeof translations["EN"] }> = ({ isDarkMode, t }) => {
-  const [collection, setCollection] = useState<FunkoItem[]>([]);
-  const [loading, setLoading] = useState(true);
+interface WishlistItem {
+  id: string;
+  title: string;
+  number: string;
+  image_name?: string;
+  added_date?: string;
+  priority?: "low" | "medium" | "high";
+  notes?: string;
+  series?: string;
+  max_price?: number;
+  target_condition?: string;
+}
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-    fetch("http://localhost:5000/api/collection", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.ok ? res.json() : [])
-      .then(data => setCollection(data))
-      .finally(() => setLoading(false));
-  }, []);
-
-  return (
-    <section className={`max-w-4xl w-full mb-8 p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
-      <h3 className="text-xl font-semibold mb-4">{t.yourCollection}</h3>
-      {loading ? <p>Loading...</p> : collection.length === 0 ? <p>{t.emptyCollection}</p> :
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {collection.map(item => (
-            <div key={item.id} className="border rounded p-3 bg-white shadow">
-              {item.image_name && <img src={item.image_name} alt={item.title} className="w-full h-32 object-contain mb-2" />}
-              <div className="font-semibold">{item.title}</div>
-              <div>#{item.number}</div>
-              <div>{t.collection} {item.condition}</div>
-              <div className="text-xs text-gray-500">Added: {item.purchase_date ? new Date(item.purchase_date).toLocaleDateString() : ""}</div>
-            </div>
-          ))}
-        </div>
-      }
-    </section>
-  );
-};
-
-const UserWishlistSection: React.FC<{ isDarkMode: boolean; t: typeof translations["EN"] }> = ({ isDarkMode, t }) => {
-  const [wishlist, setWishlist] = useState<FunkoItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-    fetch("http://localhost:5000/api/wishlist", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => res.ok ? res.json() : [])
-      .then(data => setWishlist(data))
-      .finally(() => setLoading(false));
-  }, []);
-
-  return (
-    <section className={`max-w-4xl w-full mb-8 p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
-      <h3 className="text-xl font-semibold mb-4">{t.yourWishlist}</h3>
-      {loading ? <p>Loading...</p> : wishlist.length === 0 ? <p>{t.noItemsInWishlist}</p> :
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {wishlist.map(item => (
-            <div key={item.id} className="border rounded p-3 bg-white shadow">
-              {item.image_name && <img src={item.image_name} alt={item.title} className="w-full h-32 object-contain mb-2" />}
-              <div className="font-semibold">{item.title}</div>
-              <div>#{item.number}</div>
-              <div className="text-xs text-gray-500">Added: {item.added_date ? new Date(item.added_date).toLocaleDateString() : ""}</div>
-            </div>
-          ))}
-        </div>
-      }
-    </section>
-  );
-};
+type ActiveView = "dashboard" | "collection" | "wishlist";
 
 const DashboardSite: React.FC = () => {
+  const [activeView, setActiveView] = useState<ActiveView>("dashboard");
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem("preferredTheme");
     return savedTheme !== null ? savedTheme === "dark" : true;
   });
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [language, setLanguage] = useState("EN");
+
+  const [language, setLanguage] = useState<string>(() => {
+    const savedLanguage = localStorage.getItem("preferredLanguage");
+    return savedLanguage || "EN";
+  });
+
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState("GB");
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [shouldShowPopup, setShouldShowPopup] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -143,11 +119,44 @@ const DashboardSite: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Collection states
+  const [collection, setCollection] = useState<FunkoItem[]>([]);
+  const [filteredCollection, setFilteredCollection] = useState<FunkoItem[]>([]);
+  const [collectionLoading, setCollectionLoading] = useState(true);
+  const [editingCollectionItem, setEditingCollectionItem] = useState<string | null>(null);
+  const [editCollectionForm, setEditCollectionForm] = useState<Partial<FunkoItem>>({});
+  const [filterCondition, setFilterCondition] = useState<string>("all");
+  const [collectionSortBy, setCollectionSortBy] = useState<string>("title");
+  const [collectionSortOrder, setCollectionSortOrder] = useState<"asc" | "desc">("asc");
+  const [collectionSearch, setCollectionSearch] = useState("");
+  const [showCollectionFilters, setShowCollectionFilters] = useState(false);
+
+  // Wishlist states
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
+  const [filteredWishlist, setFilteredWishlist] = useState<WishlistItem[]>([]);
+  const [wishlistLoading, setWishlistLoading] = useState(true);
+  const [editingWishlistItem, setEditingWishlistItem] = useState<string | null>(null);
+  const [editWishlistForm, setEditWishlistForm] = useState<Partial<WishlistItem>>({});
+  const [filterPriority, setFilterPriority] = useState<string>("all");
+  const [wishlistSortBy, setWishlistSortBy] = useState<string>("added_date");
+  const [wishlistSortOrder, setWishlistSortOrder] = useState<"asc" | "desc">("desc");
+  const [wishlistSearch, setWishlistSearch] = useState("");
+  const [showWishlistFilters, setShowWishlistFilters] = useState(false);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
 
   const t = translations[language] || translations["EN"];
+
+  // Animation variants for page transitions
+  const pageVariants = {
+    initial: { opacity: 0, x: 50 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -50 },
+  };
+
+  
 
   useEffect(() => {
     localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
@@ -198,10 +207,6 @@ const DashboardSite: React.FC = () => {
 
     fetchUserData();
 
-    const savedLang = localStorage.getItem("preferredLanguage");
-    if (savedLang && languages[savedLang as keyof typeof languages]) {
-      setLanguage(savedLang);
-    }
 
     const hasSeenPopup = localStorage.getItem("hasSeenLanguagePopup");
     if (!hasSeenPopup) {
@@ -225,10 +230,246 @@ const DashboardSite: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showLanguageDropdown, navigate]);
 
+  // Fetch collection data
+  useEffect(() => {
+    const fetchCollection = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/LoginSite");
+        return;
+      }
+
+      try {
+        const response = await fetch("http://localhost:5000/api/collection", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setCollection(data);
+        } else {
+          setCollection([]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch collection:", error);
+        setCollection([]);
+      } finally {
+        setCollectionLoading(false);
+      }
+    };
+
+    if (activeView === "collection" || activeView === "dashboard") {
+      fetchCollection();
+    }
+  }, [navigate, activeView]);
+
+
+  // 🌍 Centralized country configuration
+const countries = {
+  USA: {
+    name: "United States",
+    flag: <USAFlag className="w-5 h-5" />,
+    region: "North America",
+    language: "EN",
+  },
+  UK: {
+    name: "United Kingdom",
+    flag: <UKFlag className="w-5 h-5" />,
+    region: "Europe",
+    language: "EN",
+  },
+  PL: {
+    name: "Poland",
+    flag: <PolandFlag className="w-5 h-5" />,
+    region: "Europe",
+    language: "PL",
+  },
+  RU: {
+    name: "Russia",
+    flag: <RussiaFlag className="w-5 h-5" />,
+    region: "Europe",
+    language: "RU",
+  },
+  FR: {
+    name: "France",
+    flag: <FranceFlag className="w-5 h-5" />,
+    region: "Europe",
+    language: "FR",
+  },
+  DE: {
+    name: "Germany",
+    flag: <GermanyFlag className="w-5 h-5" />,
+    region: "Europe",
+    language: "DE",
+  },
+  ES: {
+    name: "Spain",
+    flag: <SpainFlag className="w-5 h-5" />,
+    region: "Europe",
+    language: "ES",
+  },
+};
+
+
+  // Filter and sort collection
+  useEffect(() => {
+    let filtered = collection.filter(item => {
+      const matchesSearch = item.title.toLowerCase().includes(collectionSearch.toLowerCase()) ||
+                           item.number.toLowerCase().includes(collectionSearch.toLowerCase()) ||
+                           (item.series && item.series.toLowerCase().includes(collectionSearch.toLowerCase()));
+      
+      const matchesCondition = filterCondition === "all" || item.condition === filterCondition;
+      
+      return matchesSearch && matchesCondition;
+    });
+
+    // Sort the filtered results
+    filtered.sort((a, b) => {
+      let aValue: string | number = "";
+      let bValue: string | number = "";
+
+      switch (collectionSortBy) {
+        case "title":
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+          break;
+        case "number":
+          aValue = parseInt(a.number) || 0;
+          bValue = parseInt(b.number) || 0;
+          break;
+        case "condition":
+          aValue = a.condition || "";
+          bValue = b.condition || "";
+          break;
+        case "purchase_date":
+          aValue = new Date(a.purchase_date || "").getTime();
+          bValue = new Date(b.purchase_date || "").getTime();
+          break;
+        case "purchase_price":
+          aValue = a.purchase_price || 0;
+          bValue = b.purchase_price || 0;
+          break;
+        default:
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+      }
+
+      if (collectionSortOrder === "asc") {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+      }
+    });
+
+    setFilteredCollection(filtered);
+  }, [collection, collectionSearch, filterCondition, collectionSortBy, collectionSortOrder]);
+
+  // Fetch wishlist data
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/LoginSite");
+        return;
+      }
+
+      try {
+        const response = await fetch("http://localhost:5000/api/wishlist", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setWishlist(data);
+        } else {
+          setWishlist([]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch wishlist:", error);
+        setWishlist([]);
+      } finally {
+        setWishlistLoading(false);
+      }
+    };
+
+    if (activeView === "wishlist" || activeView === "dashboard") {
+      fetchWishlist();
+    }
+  }, [navigate, activeView]);
+
+  // Filter and sort wishlist
+  useEffect(() => {
+    let filtered = wishlist.filter(item => {
+      const matchesSearch = item.title.toLowerCase().includes(wishlistSearch.toLowerCase()) ||
+                           item.number.toLowerCase().includes(wishlistSearch.toLowerCase()) ||
+                           (item.series && item.series.toLowerCase().includes(wishlistSearch.toLowerCase()));
+      
+      const matchesPriority = filterPriority === "all" || item.priority === filterPriority;
+      
+      return matchesSearch && matchesPriority;
+    });
+
+    // Sort the filtered results
+    filtered.sort((a, b) => {
+      let aValue: string | number = "";
+      let bValue: string | number = "";
+
+      switch (wishlistSortBy) {
+        case "title":
+          aValue = a.title.toLowerCase();
+          bValue = b.title.toLowerCase();
+          break;
+        case "number":
+          aValue = parseInt(a.number) || 0;
+          bValue = parseInt(b.number) || 0;
+          break;
+        case "priority":
+          const priorityOrder = { "high": 3, "medium": 2, "low": 1 };
+          aValue = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
+          bValue = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
+          break;
+        case "added_date":
+          aValue = new Date(a.added_date || "").getTime();
+          bValue = new Date(b.added_date || "").getTime();
+          break;
+        case "max_price":
+          aValue = a.max_price || 0;
+          bValue = b.max_price || 0;
+          break;
+        default:
+          aValue = new Date(a.added_date || "").getTime();
+          bValue = new Date(b.added_date || "").getTime();
+      }
+
+      if (wishlistSortOrder === "asc") {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+      }
+    });
+
+    setFilteredWishlist(filtered);
+  }, [wishlist, wishlistSearch, filterPriority, wishlistSortBy, wishlistSortOrder]);
+
   const selectLanguage = (lang: string) => {
     setLanguage(lang);
     localStorage.setItem("preferredLanguage", lang);
     setShowLanguageDropdown(false);
+  };
+
+  const toggleCountryDropdown = () => setShowCountryDropdown((prev) => !prev);
+
+  // 🌍 Handle country selection
+  const handleCountryChange = (countryCode: string) => {
+    const countryData = countries[countryCode as keyof typeof countries];
+    if (countryData) {
+      setSelectedCountry(countryCode);
+      setLanguage(countryData.language);
+      setRegion(countryData.region);
+      localStorage.setItem("preferredCountry", countryCode);
+      localStorage.setItem("preferredLanguage", countryData.language);
+      setShowCountryDropdown(false);
+    }
   };
 
   const toggleTheme = () => setIsDarkMode((prev) => !prev);
@@ -243,8 +484,6 @@ const DashboardSite: React.FC = () => {
     }
   };
 
-
-  
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
@@ -311,27 +550,894 @@ const DashboardSite: React.FC = () => {
     }
   };
 
+  // Collection item handlers
+  const handleEditCollectionItem = (item: FunkoItem) => {
+    setEditingCollectionItem(item.id);
+    setEditCollectionForm(item);
+  };
+
+  const handleCancelCollectionEdit = () => {
+    setEditingCollectionItem(null);
+    setEditCollectionForm({});
+  };
+
+  const handleSaveCollectionEdit = async () => {
+    if (!editingCollectionItem) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/collection/${editingCollectionItem}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(editCollectionForm)
+      });
+
+      if (response.ok) {
+        const updatedItem = await response.json();
+        setCollection(prev => prev.map(item => 
+          item.id === editingCollectionItem ? updatedItem : item
+        ));
+        setEditingCollectionItem(null);
+        setEditCollectionForm({});
+      }
+    } catch (error) {
+      console.error("Failed to update item:", error);
+    }
+  };
+
+  const handleDeleteCollectionItem = async (itemId: string) => {
+    if (!confirm("Are you sure you want to remove this item from your collection?")) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/collection/${itemId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        setCollection(prev => prev.filter(item => item.id !== itemId));
+      }
+    } catch (error) {
+      console.error("Failed to delete item:", error);
+    }
+  };
+
+  const handleCollectionInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setEditCollectionForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Wishlist item handlers
+  const handleEditWishlistItem = (item: WishlistItem) => {
+    setEditingWishlistItem(item.id);
+    setEditWishlistForm(item);
+  };
+
+  const handleCancelWishlistEdit = () => {
+    setEditingWishlistItem(null);
+    setEditWishlistForm({});
+  };
+
+  const handleSaveWishlistEdit = async () => {
+    if (!editingWishlistItem) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/wishlist/${editingWishlistItem}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(editWishlistForm)
+      });
+
+      if (response.ok) {
+        const updatedItem = await response.json();
+        setWishlist(prev => prev.map(item => 
+          item.id === editingWishlistItem ? updatedItem : item
+        ));
+        setEditingWishlistItem(null);
+        setEditWishlistForm({});
+      }
+    } catch (error) {
+      console.error("Failed to update item:", error);
+    }
+  };
+
+  const handleDeleteWishlistItem = async (itemId: string) => {
+    if (!confirm("Are you sure you want to remove this item from your wishlist?")) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/wishlist/${itemId}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        setWishlist(prev => prev.filter(item => item.id !== itemId));
+      }
+    } catch (error) {
+      console.error("Failed to delete item:", error);
+    }
+  };
+
+  const handleMoveToCollection = async (item: WishlistItem) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      // Add to collection
+      const response = await fetch("http://localhost:5000/api/collection", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: item.title,
+          number: item.number,
+          image_name: item.image_name,
+          series: item.series,
+          condition: item.target_condition || "mint",
+          purchase_price: item.max_price
+        })
+      });
+
+      if (response.ok) {
+        // Remove from wishlist
+        await handleDeleteWishlistItem(item.id);
+        alert("Item moved to your collection!");
+      }
+    } catch (error) {
+      console.error("Failed to move item to collection:", error);
+    }
+  };
+
+  const handleWishlistInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setEditWishlistForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const getPriorityColor = (priority?: string) => {
+    switch (priority) {
+      case "high":
+        return "text-red-500";
+      case "medium":
+        return "text-yellow-500";
+      case "low":
+        return "text-green-500";
+      default:
+        return "text-gray-500";
+    }
+  };
+
+  const getPriorityIcon = (priority?: string) => {
+    const count = priority === "high" ? 3 : priority === "medium" ? 2 : 1;
+    return (
+      <div className="flex">
+        {[...Array(count)].map((_, i) => (
+          <StarIcon key={i} className={`w-4 h-4 ${getPriorityColor(priority)} fill-current`} />
+        ))}
+      </div>
+    );
+  };
+
+  const conditions = ["mint", "near_mint", "good", "fair", "poor"];
+  const priorities = ["low", "medium", "high"];
+
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
     return date.toLocaleDateString(language);
   };
 
+  // Render functions for different views
+  const renderDashboardView = () => (
+    <>
+      <h3 className="text-xl font-semibold mb-4 ">{t.welcome} {user?.name || ""}</h3>
+      <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+        {t.dashboardWelcome} 
+      </h2>
+
+     {/* Section: Profile Info */}
+      <section 
+        className="max-w-4xl w-full mx-auto bg-opacity-50 p-8 rounded-xl shadow-xl mb-10 dark:bg-gray-800 bg-white"
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-2xl font-bold text-gray-800 dark:text-white">{t.profile}</h3>
+          {!isEditing ? (
+            <button
+              onClick={handleEditClick}
+              className={`p-3 rounded-lg flex items-center gap-2 transition-colors ${
+                isDarkMode
+                  ? "bg-yellow-500 hover:bg-yellow-600"
+                  : "bg-green-600 hover:bg-green-700"
+              } text-white`}
+            >
+              <EditIcon className="w-5 h-5" />
+              <span className="font-medium">{t.edit}</span>
+            </button>
+          ) : (
+            <div className="flex gap-3">
+              <button
+                onClick={handleSaveChanges}
+                disabled={isLoading}
+                className={`p-3 rounded-lg flex items-center gap-2 transition-colors ${
+                  isDarkMode ? "bg-green-500 hover:bg-green-600" : "bg-green-600 hover:bg-green-700"
+                } text-white`}
+              >
+                <SaveIcon className="w-5 h-5" />
+                <span className="font-medium">{isLoading ? t.saving : t.save}</span>
+              </button>
+              <button
+                onClick={handleCancelEdit}
+                className={`p-3 rounded-lg flex items-center gap-2 transition-colors ${
+                  isDarkMode ? "bg-gray-500 hover:bg-gray-600" : "bg-gray-300 hover:bg-gray-400"
+                } text-gray-800 dark:text-white`}
+              >
+                <CancelIcon className="w-5 h-5" />
+                <span className="font-medium">{t.cancel}</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {error && (
+          <div
+            className={`mb-6 p-3 rounded-lg text-sm ${
+              isDarkMode ? "bg-red-900 text-red-200" : "bg-red-100 text-red-800"
+            }`}
+          >
+            {error}
+          </div>
+        )}
+
+        <ul className="space-y-4 text-lg">
+          {isEditing ? (
+            <>
+              <li className="flex flex-col md:flex-row md:items-center gap-2">
+                <strong className="w-full md:w-1/3 text-gray-700 dark:text-gray-300">{t.name}:</strong>
+                <input
+                  type="text"
+                  name="name"
+                  value={editForm.name}
+                  onChange={handleInputChange}
+                  className={`flex-grow px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none ${
+                    isDarkMode ? "bg-gray-700 text-white border-gray-600" : "bg-gray-50 text-gray-900 border-gray-300"
+                  }`}
+                />
+              </li>
+              <li className="flex flex-col md:flex-row md:items-center gap-2">
+                <strong className="w-full md:w-1/3 text-gray-700 dark:text-gray-300">{t.surname}:</strong>
+                <input
+                  type="text"
+                  name="surname"
+                  value={editForm.surname}
+                  onChange={handleInputChange}
+                  className={`flex-grow px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none ${
+                    isDarkMode ? "bg-gray-700 text-white border-gray-600" : "bg-gray-50 text-gray-900 border-gray-300"
+                  }`}
+                />
+              </li>
+              <li className="flex flex-col md:flex-row md:items-center gap-2">
+                <strong className="w-full md:w-1/3 text-gray-700 dark:text-gray-300">{t.gender}:</strong>
+                <select
+                  name="gender"
+                  value={editForm.gender}
+                  onChange={handleInputChange}
+                  className={`flex-grow px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none ${
+                    isDarkMode ? "bg-gray-700 text-white border-gray-100" : "bg-gray-50 text-gray-100 border-gray-300"
+                  }`}
+                >
+                  <option value="">{t.selectGender}</option>
+                  <option value="male">{t.male}</option>
+                  <option value="female">{t.female}</option>
+                  <option value="other">{t.other}</option>
+                  <option value="prefer_not_to_say">{t.preferNotToSay}</option>
+                </select>
+              </li>
+              <li className="flex flex-col md:flex-row md:items-center gap-2">
+                <strong className="w-full md:w-1/3 text-gray-700 dark:text-gray-300">{t.dateOfBirth}:</strong>
+                <input
+                  type="date"
+                  name="date_of_birth"
+                  value={editForm.date_of_birth}
+                  onChange={handleInputChange}
+                  className={`flex-grow px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none ${
+                    isDarkMode ? "bg-gray-700 text-white border-gray-600" : "bg-gray-50 text-gray-900 border-gray-300"
+                  }`}
+                />
+              </li>
+            </>
+          ) : (
+            <>
+              <li><strong className="text-gray-700 dark:text-gray-300">{t.name}:</strong> {user?.name || "N/A"}</li>
+              <li><strong className="text-gray-700 dark:text-gray-300">{t.surname}:</strong> {user?.surname || "N/A"}</li>
+              <li><strong className="text-gray-700 dark:text-gray-300">{t.email}:</strong> {user?.email || "N/A"}</li>
+              <li><strong className="text-gray-700 dark:text-gray-300">{t.login}:</strong> {user?.login || "N/A"}</li>
+              <li><strong className="text-gray-700 dark:text-gray-300">{t.gender}:</strong> {user?.gender ? t[user.gender] || user.gender : "N/A"}</li>
+              <li><strong className="text-gray-700 dark:text-gray-300">{t.dateOfBirth}:</strong> {formatDate(user?.date_of_birth || "")}</li>
+              <li><strong className="text-gray-700 dark:text-gray-300">{t.userSince}:</strong> {formatDate(user?.created_at || "")}</li>
+              <li><strong className="text-gray-700 dark:text-gray-300">{t.lastLogin}:</strong> {formatDate(user?.last_login || "")}</li>
+            </>
+          )}
+        </ul>
+
+
+      </section>
+
+      {/* Section: Collection Preview */}
+      <section className={`max-w-4xl w-full mb-8 p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold">{t.yourCollection}</h3>
+          <button 
+            onClick={() => setActiveView("collection")}
+            className={`px-3 py-1 rounded text-sm ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-500 hover:bg-green-600"} text-white`}
+          >
+            View All
+          </button>
+        </div>
+        {collectionLoading ? <p>Loading...</p> : collection.length === 0 ? <p>{t.emptyCollection}</p> :
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {collection.slice(0, 3).map(item => (
+              <div key={item.id} className="border rounded p-3 bg-white shadow">
+                {item.image_name && <img src={item.image_name} alt={item.title} className="w-full h-32 object-contain mb-2" />}
+                <div className="font-semibold">{item.title}</div>
+                <div>#{item.number}</div>
+                <div>{t.collection} {item.condition}</div>
+                <div className="text-xs text-gray-500">Added: {item.purchase_date ? new Date(item.purchase_date).toLocaleDateString() : ""}</div>
+              </div>
+            ))}
+          </div>
+        }
+      </section>
+
+      {/* Section: Wishlist Preview */}
+      <section className={`max-w-4xl w-full mb-8 p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold">{t.yourWishlist}</h3>
+          <button 
+            onClick={() => setActiveView("wishlist")}
+            className={`px-3 py-1 rounded text-sm ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-500 hover:bg-green-600"} text-white`}
+          >
+            View All
+          </button>
+        </div>
+        {wishlistLoading ? <p>Loading...</p> : wishlist.length === 0 ? <p>{t.noItemsInWishlist}</p> :
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {wishlist.slice(0, 3).map(item => (
+              <div key={item.id} className="border rounded p-3 bg-white shadow">
+                {item.image_name && <img src={item.image_name} alt={item.title} className="w-full h-32 object-contain mb-2" />}
+                <div className="font-semibold">{item.title}</div>
+                <div>#{item.number}</div>
+                <div className="text-xs text-gray-500">Added: {item.added_date ? new Date(item.added_date).toLocaleDateString() : ""}</div>
+              </div>
+            ))}
+          </div>
+        }
+      </section>
+    </>
+  );
+
+  const renderCollectionView = () => (
+    <div className="max-w-7xl mx-auto w-full">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className={`text-3xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+          {t.yourCollection}
+        </h2>
+        <button
+          onClick={() => setShowCollectionFilters(!showCollectionFilters)}
+          className={`px-4 py-2 rounded flex items-center gap-2 ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}
+        >
+          <FilterIcon className="w-4 h-4" />
+          Filters
+        </button>
+      </div>
+
+      {/* Filters */}
+      {showCollectionFilters && (
+        <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Search Collection</label>
+              <input
+                type="text"
+                value={collectionSearch}
+                onChange={(e) => setCollectionSearch(e.target.value)}
+                placeholder="Search by title, number, or series..."
+                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Condition</label>
+              <select
+                value={filterCondition}
+                onChange={(e) => setFilterCondition(e.target.value)}
+                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+              >
+                <option value="all">All Conditions</option>
+                {conditions.map(condition => (
+                  <option key={condition} value={condition}>
+                    {condition.charAt(0).toUpperCase() + condition.slice(1).replace('_', ' ')}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Sort By</label>
+              <select
+                value={collectionSortBy}
+                onChange={(e) => setCollectionSortBy(e.target.value)}
+                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+              >
+                <option value="title">Title</option>
+                <option value="number">Number</option>
+                <option value="condition">Condition</option>
+                <option value="purchase_date">Purchase Date</option>
+                <option value="purchase_price">Price</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Order</label>
+              <select
+                value={collectionSortOrder}
+                onChange={(e) => setCollectionSortOrder(e.target.value as "asc" | "desc")}
+                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+              >
+                <option value="asc">Ascending</option>
+                <option value="desc">Descending</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Collection Stats */}
+      <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+              {collection.length}
+            </div>
+            <div className="text-sm">Total Items</div>
+          </div>
+          <div>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+              {filteredCollection.length}
+            </div>
+            <div className="text-sm">Filtered Items</div>
+          </div>
+          <div>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+              ${collection.reduce((sum, item) => sum + (item.purchase_price || 0), 0).toFixed(2)}
+            </div>
+            <div className="text-sm">Total Value</div>
+          </div>
+          <div>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+              {new Set(collection.map(item => item.series)).size}
+            </div>
+            <div className="text-sm">Series</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Collection Grid */}
+      {collectionLoading ? (
+        <div className="text-center py-8">Loading your collection...</div>
+      ) : filteredCollection.length === 0 ? (
+        <div className="text-center py-8">
+          {collection.length === 0 ? (
+            <div>
+              <p className="mb-4">{t.emptyCollection}</p>
+              <Link 
+                to="/searchsite" 
+                className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"} text-white`}
+              >
+                Start Adding Items
+              </Link>
+            </div>
+          ) : (
+            <p>No items match your current filters.</p>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredCollection.map(item => (
+            <div key={item.id} className={`rounded-lg shadow-lg overflow-hidden ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+              {item.image_name && (
+                <img src={item.image_name} alt={item.title} className="w-full h-48 object-contain bg-gray-100" />
+              )}
+              <div className="p-4">
+                {editingCollectionItem === item.id ? (
+                  <div className="space-y-3">
+                    <input
+                      name="title"
+                      value={editCollectionForm.title || ""}
+                      onChange={handleCollectionInputChange}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                    />
+                    <input
+                      name="number"
+                      value={editCollectionForm.number || ""}
+                      onChange={handleCollectionInputChange}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                    />
+                    <select
+                      name="condition"
+                      value={editCollectionForm.condition || ""}
+                      onChange={handleCollectionInputChange}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                    >
+                      {conditions.map(condition => (
+                        <option key={condition} value={condition}>
+                          {condition.charAt(0).toUpperCase() + condition.slice(1).replace('_', ' ')}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      name="purchase_price"
+                      type="number"
+                      step="0.01"
+                      value={editCollectionForm.purchase_price || ""}
+                      onChange={handleCollectionInputChange}
+                      placeholder="Purchase Price"
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                    />
+                    <textarea
+                      name="notes"
+                      value={editCollectionForm.notes || ""}
+                      onChange={handleCollectionInputChange}
+                      placeholder="Notes"
+                      rows={2}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveCollectionEdit}
+                        className="flex-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded flex items-center justify-center gap-1"
+                      >
+                        <SaveIcon className="w-4 h-4" />
+                        Save
+                      </button>
+                      <button
+                        onClick={handleCancelCollectionEdit}
+                        className="flex-1 px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded flex items-center justify-center gap-1"
+                      >
+                        <CancelIcon className="w-4 h-4" />
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <h3 className="font-bold text-lg mb-2">{item.title}</h3>
+                    <p className="text-sm mb-1">#{item.number}</p>
+                    {item.series && <p className="text-sm mb-1">Series: {item.series}</p>}
+                    {item.condition && <p className="text-sm mb-1">Condition: {item.condition}</p>}
+                    {item.purchase_price && <p className="text-sm mb-1">Price: ${item.purchase_price}</p>}
+                    {item.purchase_date && (
+                      <p className="text-sm mb-1">
+                        Purchased: {new Date(item.purchase_date).toLocaleDateString()}
+                      </p>
+                    )}
+                    {item.notes && <p className="text-sm mb-3 italic">{item.notes}</p>}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEditCollectionItem(item)}
+                        className={`flex-1 px-3 py-1 rounded flex items-center justify-center gap-1 ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-500 hover:bg-blue-600"} text-white`}
+                      >
+                        <EditIcon className="w-4 h-4" />
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCollectionItem(item.id)}
+                        className="flex-1 px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded flex items-center justify-center gap-1"
+                      >
+                        <DeleteIcon className="w-4 h-4" />
+                        Remove
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderWishlistView = () => (
+    <div className="max-w-7xl mx-auto w-full">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className={`text-3xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+          {t.yourWishlist}
+        </h2>
+        <button
+          onClick={() => setShowWishlistFilters(!showWishlistFilters)}
+          className={`px-4 py-2 rounded flex items-center gap-2 ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}
+        >
+          <FilterIcon className="w-4 h-4" />
+          Filters
+        </button>
+      </div>
+
+      {/* Filters */}
+      {showWishlistFilters && (
+        <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Search Wishlist</label>
+              <input
+                type="text"
+                value={wishlistSearch}
+                onChange={(e) => setWishlistSearch(e.target.value)}
+                placeholder="Search by title, number, or series..."
+                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Priority</label>
+              <select
+                value={filterPriority}
+                onChange={(e) => setFilterPriority(e.target.value)}
+                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+              >
+                <option value="all">All Priorities</option>
+                {priorities.map(priority => (
+                  <option key={priority} value={priority}>
+                    {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Sort By</label>
+              <select
+                value={wishlistSortBy}
+                onChange={(e) => setWishlistSortBy(e.target.value)}
+                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+              >
+                <option value="added_date">Date Added</option>
+                <option value="title">Title</option>
+                <option value="number">Number</option>
+                <option value="priority">Priority</option>
+                <option value="max_price">Max Price</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Order</label>
+              <select
+                value={wishlistSortOrder}
+                onChange={(e) => setWishlistSortOrder(e.target.value as "asc" | "desc")}
+                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+              >
+                <option value="desc">Descending</option>
+                <option value="asc">Ascending</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Wishlist Stats */}
+      <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+              {wishlist.length}
+            </div>
+            <div className="text-sm">Total Items</div>
+          </div>
+          <div>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+              {wishlist.filter(item => item.priority === "high").length}
+            </div>
+            <div className="text-sm">High Priority</div>
+          </div>
+          <div>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+              ${wishlist.reduce((sum, item) => sum + (item.max_price || 0), 0).toFixed(2)}
+            </div>
+            <div className="text-sm">Total Budget</div>
+          </div>
+          <div>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+              {new Set(wishlist.map(item => item.series)).size}
+            </div>
+            <div className="text-sm">Series</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Wishlist Grid */}
+      {wishlistLoading ? (
+        <div className="text-center py-8">Loading your wishlist...</div>
+      ) : filteredWishlist.length === 0 ? (
+        <div className="text-center py-8">
+          {wishlist.length === 0 ? (
+            <div>
+              <p className="mb-4">{t.noItemsInWishlist}</p>
+              <Link 
+                to="/searchsite" 
+                className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"} text-white`}
+              >
+                Start Adding Items
+              </Link>
+            </div>
+          ) : (
+            <p>No items match your current filters.</p>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredWishlist.map(item => (
+            <div key={item.id} className={`rounded-lg shadow-lg overflow-hidden ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+              {item.image_name && (
+                <img src={item.image_name} alt={item.title} className="w-full h-48 object-contain bg-gray-100" />
+              )}
+              <div className="p-4">
+                {editingWishlistItem === item.id ? (
+                  <div className="space-y-3">
+                    <input
+                      name="title"
+                      value={editWishlistForm.title || ""}
+                      onChange={handleWishlistInputChange}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                    />
+                    <input
+                      name="number"
+                      value={editWishlistForm.number || ""}
+                      onChange={handleWishlistInputChange}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                    />
+                    <select
+                      name="priority"
+                      value={editWishlistForm.priority || ""}
+                      onChange={handleWishlistInputChange}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                    >
+                      <option value="">Select Priority</option>
+                      {priorities.map(priority => (
+                        <option key={priority} value={priority}>
+                          {priority.charAt(0).toUpperCase() + priority.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      name="max_price"
+                      type="number"
+                      step="0.01"
+                      value={editWishlistForm.max_price || ""}
+                      onChange={handleWishlistInputChange}
+                      placeholder="Max Price"
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                    />
+                    <select
+                      name="target_condition"
+                      value={editWishlistForm.target_condition || ""}
+                      onChange={handleWishlistInputChange}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                    >
+                      <option value="">Target Condition</option>
+                      {conditions.map(condition => (
+                        <option key={condition} value={condition}>
+                          {condition.charAt(0).toUpperCase() + condition.slice(1).replace('_', ' ')}
+                        </option>
+                      ))}
+                    </select>
+                    <textarea
+                      name="notes"
+                      value={editWishlistForm.notes || ""}
+                      onChange={handleWishlistInputChange}
+                      placeholder="Notes"
+                      rows={2}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveWishlistEdit}
+                        className="flex-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded flex items-center justify-center gap-1"
+                      >
+                        <SaveIcon className="w-4 h-4" />
+                        Save
+                      </button>
+                      <button
+                        onClick={handleCancelWishlistEdit}
+                        className="flex-1 px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded flex items-center justify-center gap-1"
+                      >
+                        <CancelIcon className="w-4 h-4" />
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-bold text-lg flex-1">{item.title}</h3>
+                      {item.priority && (
+                        <div className="flex items-center gap-1">
+                          {getPriorityIcon(item.priority)}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-sm mb-1">#{item.number}</p>
+                    {item.series && <p className="text-sm mb-1">Series: {item.series}</p>}
+                    {item.target_condition && <p className="text-sm mb-1">Target: {item.target_condition}</p>}
+                    {item.max_price && <p className="text-sm mb-1">Max Price: ${item.max_price}</p>}
+                    {item.added_date && (
+                      <p className="text-sm mb-1">
+                        Added: {new Date(item.added_date).toLocaleDateString()}
+                      </p>
+                    )}
+                    {item.notes && <p className="text-sm mb-3 italic">{item.notes}</p>}
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEditWishlistItem(item)}
+                          className={`flex-1 px-3 py-1 rounded flex items-center justify-center gap-1 ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-500 hover:bg-blue-600"} text-white`}
+                        >
+                          <EditIcon className="w-4 h-4" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteWishlistItem(item.id)}
+                          className="flex-1 px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded flex items-center justify-center gap-1"
+                        >
+                          <DeleteIcon className="w-4 h-4" />
+                          Remove
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => handleMoveToCollection(item)}
+                        className={`w-full px-3 py-1 rounded flex items-center justify-center gap-1 ${isDarkMode ? "bg-green-500 hover:bg-green-600" : "bg-green-600 hover:bg-green-700"} text-white`}
+                      >
+                        <ShoppingCartIcon className="w-4 h-4" />
+                        Add to Collection
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
-    <div
-      className={`welcome-site min-h-screen flex flex-col ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
-      }`}
-    >
+    <div className={`welcome-site min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"}`}>
       {/* Header */}
       <header className="py-4 px-8 flex flex-wrap md:flex-nowrap justify-between items-center gap-4 relative">
         <div className="flex-shrink-0">
           <Link to="/" className="no-underline">
-            <h1
-              className={`text-3xl font-bold font-[Special_Gothic_Expanded_One] tracking-wide ${
-                isDarkMode ? "text-yellow-400" : "text-green-600"
-              }`}
-            >
+            <h1 className={`text-3xl font-bold font-[Special_Gothic_Expanded_One] tracking-wide ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
               Pop&Go!
             </h1>
           </Link>
@@ -341,45 +1447,32 @@ const DashboardSite: React.FC = () => {
         </div>
 
         {/* Search Form */}
-        <form
-          onSubmit={handleSearch}
-          className={`flex-grow max-w-lg mx-auto flex rounded-lg overflow-hidden ${
-            isDarkMode ? "bg-gray-700" : "bg-gray-100"
-          }`}
-        >
+        <form onSubmit={handleSearch} className={`flex-grow max-w-lg mx-auto flex rounded-lg overflow-hidden ${isDarkMode ? "bg-gray-700" : "bg-gray-100"}`}>
           <input
             type="text"
             placeholder={t.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={`flex-grow px-4 py-2 outline-none ${
-              isDarkMode
-                ? "bg-gray-700 text-white placeholder-gray-400"
-                : "bg-white text-black"
-            }`}
+            className={`flex-grow px-4 py-2 outline-none ${isDarkMode ? "bg-gray-700 text-white placeholder-gray-400" : "bg-white text-black"}`}
             aria-label="Search input"
           />
           <button
             type="submit"
-            className={`px-4 py-2 ${
-              isDarkMode
-                ? "bg-yellow-500 hover:bg-yellow-600"
-                : "bg-green-600 hover:bg-green-700"
-            }`}
+            className={`px-4 py-2 ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"}`}
             aria-label="Search"
           >
             <SearchIcon className="w-5 h-5" />
           </button>
         </form>
 
-        {/* Theme & Language Toggle */}
-        <div className="flex-shrink-0 flex gap-4">
+        {/* 🌐 Country, 🌙 Theme, 🔐 Login */}
+        <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0">
           {/* Language Dropdown */}
           <div className="relative">
             <button
               ref={buttonRef}
               onClick={toggleLanguageDropdown}
-              className={`language-toggle-button p-2 rounded-full flex items-center gap-1 ${
+              className={`p-2 rounded-full flex items-center gap-1 ${
                 isDarkMode
                   ? "bg-gray-700 hover:bg-gray-600"
                   : "bg-gray-200 hover:bg-gray-300"
@@ -395,12 +1488,14 @@ const DashboardSite: React.FC = () => {
                 }`}
               />
             </button>
+
             {showLanguageDropdown && (
               <div
                 ref={dropdownRef}
                 className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
                   isDarkMode ? "bg-gray-700" : "bg-white"
                 }`}
+                onClick={(e) => e.stopPropagation()}
               >
                 {Object.entries(languages).map(([code, { name, flag }]) => (
                   <button
@@ -427,212 +1522,97 @@ const DashboardSite: React.FC = () => {
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className={`p-2 rounded-full ${
-              isDarkMode
-                ? "bg-gray-700 hover:bg-gray-600"
-                : "bg-gray-200 hover:bg-gray-300"
-            }`}
+            className={`p-2 rounded-full ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}
             aria-label="Toggle theme"
           >
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
         </div>
-      </header>
 
-      {/* Main content - Dashboard */}
-      <main className="flex-grow p-8 flex flex-col items-center">
-        <h3 className="text-xl font-semibold mb-4">{t.welcome} {user?.name || ""}</h3>
-        <h2
-          className={`text-3xl font-bold mb-6 ${
-            isDarkMode ? "text-yellow-400" : "text-green-600"
-          }`}
-        >
-          {t.dashboardWelcome} 
-        </h2>
-
-        {/* Section: Profile Info */}
-        <section className="max-w-2xl w-full bg-opacity-50 p-6 rounded-lg shadow-lg mb-8
-          dark:bg-gray-700 bg-white">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-semibold">{t.profile}</h3>
-            {!isEditing ? (
-              <button
-                onClick={handleEditClick}
-                className={`p-2 rounded ${
-                  isDarkMode
-                    ? "bg-yellow-500 hover:bg-yellow-600"
-                    : "bg-green-600 hover:bg-green-700"
-                } text-white flex items-center gap-1`}
-              >
-                <EditIcon className="w-4 h-4" />
-                <span>{t.edit}</span>
-              </button>
-            ) : (
-              <div className="flex gap-2">
-                <button
-                  onClick={handleSaveChanges}
-                  disabled={isLoading}
-                  className={`p-2 rounded flex items-center gap-1 ${
-                    isDarkMode
-                      ? "bg-green-500 hover:bg-green-600"
-                      : "bg-green-600 hover:bg-green-700"
-                  } text-white`}
-                >
-                  <SaveIcon className="w-4 h-4" />
-                  <span>{isLoading ? t.saving : t.save}</span>
-                </button>
-                <button
-                  onClick={handleCancelEdit}
-                  className={`p-2 rounded flex items-center gap-1 ${
-                    isDarkMode
-                      ? "bg-gray-500 hover:bg-gray-600"
-                      : "bg-gray-300 hover:bg-gray-400"
-                  }`}
-                >
-                  <CancelIcon className="w-4 h-4" />
-                  <span>{t.cancel}</span>
-                </button>
-              </div>
-            )}
-          </div>
-          {error && (
-            <div className={`mb-4 p-2 rounded ${
-              isDarkMode ? "bg-red-900 text-red-200" : "bg-red-200 text-red-800"
-            }`}>
-              {error}
-            </div>
-          )}
-          <ul className="space-y-3">
-            {isEditing ? (
-              <>
-                <li className="flex flex-wrap items-center">
-                  <strong className="w-full md:w-1/3">{t.name}:</strong>
-                  <input
-                    type="text"
-                    name="name"
-                    value={editForm.name}
-                    onChange={handleInputChange}
-                    className={`flex-grow px-3 py-1 rounded ${
-                      isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"
-                    }`}
-                  />
-                </li>
-                <li className="flex flex-wrap items-center">
-                  <strong className="w-full md:w-1/3">{t.surname}:</strong>
-                  <input
-                    type="text"
-                    name="surname"
-                    value={editForm.surname}
-                    onChange={handleInputChange}
-                    className={`flex-grow px-3 py-1 rounded ${
-                      isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"
-                    }`}
-                  />
-                </li>
-                <li className="flex flex-wrap items-center">
-                  <strong className="w-full md:w-1/3">{t.gender}:</strong>
-                  <select
-                    name="gender"
-                    value={editForm.gender}
-                    onChange={handleInputChange}
-                    className={`flex-grow px-3 py-1 rounded ${
-                      isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"
-                    }`}
-                  >
-                    <option value="">{t.selectGender}</option>
-                    <option value="male">{t.male}</option>
-                    <option value="female">{t.female}</option>
-                    <option value="other">{t.other}</option>
-                    <option value="prefer_not_to_say">{t.preferNotToSay}</option>
-                  </select>
-                </li>
-                <li className="flex flex-wrap items-center">
-                  <strong className="w-full md:w-1/3">{t.dateOfBirth}:</strong>
-                  <input
-                    type="date"
-                    name="date_of_birth"
-                    value={editForm.date_of_birth}
-                    onChange={handleInputChange}
-                    className={`flex-grow px-3 py-1 rounded ${
-                      isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"
-                    }`}
-                  />
-                </li>
-              </>
-            ) : (
-              <>
-                <li>
-                  <strong>{t.name}:</strong> {user?.name || "N/A"}
-                </li>
-                <li>
-                  <strong>{t.surname}:</strong> {user?.surname || "N/A"}
-                </li>
-                <li>
-                  <strong>{t.email}:</strong> {user?.email || "N/A"}
-                </li>
-                <li>
-                  <strong>{t.login}:</strong> {user?.login || "N/A"}
-                </li>
-                <li>
-                  <strong>{t.gender}:</strong> {user?.gender ? t[user.gender] || user.gender : "N/A"}
-                </li>
-                <li>
-                  <strong>{t.dateOfBirth}:</strong> {formatDate(user?.date_of_birth || "")}
-                </li>
-                <li>
-                  <strong>{t.userSince}:</strong> {formatDate(user?.created_at || "")}
-                </li>
-                <li>
-                  <strong>{t.lastLogin}:</strong> {formatDate(user?.last_login || "")}
-                </li>
-              </>
-            )}
-          </ul>
-          <div className="mt-6">
+          <div>
             <button
               onClick={handleLogout}
-              className={`px-4 py-2 rounded ${
-                isDarkMode
-                  ? "bg-red-600 hover:bg-red-700"
-                  : "bg-red-500 hover:bg-red-600"
-              } text-white`}
+              className={`flex items-center gap-2 px-4 py-2 rounded ${
+                isDarkMode ? "bg-red-600 hover:bg-red-800 " : "bg-red-500 hover:bg-red-800"
+              } text-white shadow-md`}
             >
               {t.logout}
             </button>
-          </div>
-        </section>
+        </div>
+      </header>
 
-        {/* Section: Collection */}
-        <UserCollectionSection isDarkMode={isDarkMode} t={t} />
-        <div>
-          <button onClick={() => navigate('/collection')} className={`px-4 py-2 rounded mb-8 ${
-            isDarkMode
-              ? "bg-yellow-500 hover:bg-yellow-600"
-              : "bg-green-500 hover:bg-green-600"
-          } text-white`}>
-            {t.viewFullCollection}
+      {/* Navigation */}
+      <nav className={`px-8 py-2 ${isDarkMode ? "bg-gray-700" : "bg-gray-300"}`}>
+        <div className="flex gap-4">
+          <button 
+            onClick={() => setActiveView("dashboard")} 
+            className={`px-3 py-1 rounded ${activeView === "dashboard" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}
+          >
+            {t.dashboard}
           </button>
-        </div>     
+          <button 
+            onClick={() => setActiveView("collection")} 
+            className={`px-3 py-1 rounded ${activeView === "collection" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}
+          >
+            {t.collection}
+          </button>
+          <button 
+            onClick={() => setActiveView("wishlist")} 
+            className={`px-3 py-1 rounded ${activeView === "wishlist" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}
+          >
+            {t.wishlist}
+          </button>
+        </div>
+      </nav>
 
-        {/* Section: Wishlist */}
-        <UserWishlistSection isDarkMode={isDarkMode} t={t} />
-        <div>
-          <button onClick={() => navigate('/collection')} className={`px-4 py-2 rounded mb-8 ${
-            isDarkMode
-              ? "bg-yellow-500 hover:bg-yellow-600"
-              : "bg-green-500 hover:bg-green-600"
-          } text-white`}>
-            {t.viewFullWishlist}
-          </button>
-        </div>   
+      {/* Main content */}
+      <main className="flex-grow flex items-center  justify-center px-8 py-8 relative overflow-hidden">
+        <AnimatePresence mode="wait">
+          {activeView === "dashboard" && (
+            <motion.div
+              key="dashboard"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+              //className="w-full max-w-2xl"
+            >
+              {renderDashboardView()}
+            </motion.div>
+          )}
+          {activeView === "collection" && (
+            <motion.div
+              key="collection"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+              className="w-full max-w-7xl"
+            >
+              {renderCollectionView()}
+            </motion.div>
+          )}
+          {activeView === "wishlist" && (
+            <motion.div
+              key="wishlist"
+              variants={pageVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.5, ease: "easeInOut" }}
+              className="w-full max-w-7xl"
+            >
+              {renderWishlistView()}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
 
+
       {/* Footer */}
-      <footer
-        className={`text-center py-4 ${
-          isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-200 text-gray-700"
-        }`}
-      >
+      <footer className={`text-center py-4 ${isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-200 text-gray-700"}`}>
         {t.copyright}
       </footer>
     </div>
@@ -640,3 +1620,4 @@ const DashboardSite: React.FC = () => {
 };
 
 export default DashboardSite;
+

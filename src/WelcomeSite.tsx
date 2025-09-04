@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import LanguageSelectorPopup from "./LanguageSelectorPopup";
 import { translations } from "./Translations/TranslationsWelcomeSite";
+import { useMemo } from "react";
+
 import "./WelcomeSite.css";
 import MoonIcon from "/src/assets/moon.svg?react";
 import SunIcon from "/src/assets/sun.svg?react";
@@ -29,52 +30,6 @@ interface FunkoItemWithId extends FunkoItem {
   id: string;
 }
 
-// 🌍 Centralized country configuration
-const countries = {
-  USA: {
-    name: "USA",
-    flag: <USAFlag className="w-5 h-5" />,
-    region: "North America",
-    language: "EN",
-  },
-  UK: {
-    name: "UK",
-    flag: <UKFlag className="w-5 h-5" />,
-    region: "Europe",
-    language: "EN",
-  },
-  PL: {
-    name: "Poland",
-    flag: <PolandFlag className="w-5 h-5" />,
-    region: "Europe",
-    language: "PL",
-  },
-  RU: {
-    name: "Russia",
-    flag: <RussiaFlag className="w-5 h-5" />,
-    region: "Europe",
-    language: "RU",
-  },
-  FR: {
-    name: "France",
-    flag: <FranceFlag className="w-5 h-5" />,
-    region: "Europe",
-    language: "FR",
-  },
-  DE: {
-    name: "Germany",
-    flag: <GermanyFlag className="w-5 h-5" />,
-    region: "Europe",
-    language: "DE",
-  },
-  ES: {
-    name: "Spain",
-    flag: <SpainFlag className="w-5 h-5" />,
-    region: "Europe",
-    language: "ES",
-  },
-};
-
 // 📚 Language display names
 const languageNames = {
   EN: "English",
@@ -86,7 +41,7 @@ const languageNames = {
 };
 
 // 🔢 Generate unique ID for Funko items
-const generateId = (title: string , number: string ): string => { // | 
+const generateId = (title: string, number: string): string => {
   const safeTitle = title?.trim() || "";
   const safeNumber = number?.trim() || "";
   return `${safeTitle}-${safeNumber}`.replace(/\s+/g, "-");
@@ -100,23 +55,97 @@ const WelcomeSite: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCountry, setSelectedCountry] = useState<string>("USA");
-  const [language, setLanguage] = useState<string>("EN");
+
+  const [language, setLanguage] = useState<string>(() => {
+    const saved = localStorage.getItem("preferredLanguage");
+    return saved || "EN";
+  });
+
   const [region, setRegion] = useState<string>("North America");
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
-  const [shouldShowPopup, setShouldShowPopup] = useState(false);
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const [shouldShowPopup, setShouldShowPopup] = useState(false); // Optional: remove if unused
   const [funkoData, setFunkoData] = useState<FunkoItemWithId[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showWorldMapFirstTime, setShowWorldMapFirstTime] = useState(false);
 
   const navigate = useNavigate();
-  const t = translations[language] || translations["EN"];
+  const t = useMemo(() => translations[language] || translations["EN"], [language]);  
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  // Refs for dropdowns
+  const countryDropdownRef = useRef<HTMLDivElement>(null);
+  const countryButtonRef = useRef<HTMLButtonElement>(null);
+  const languageDropdownRef = useRef<HTMLDivElement>(null);
+  const languageButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Toggle language dropdown
+  const toggleLanguageDropdown = () => {
+    setShowLanguageDropdown((prev) => !prev);
+  };
+
+  // 🌐 Centralized country configuration
+  const countries = {
+    USA: {
+      name: "USA",
+      flag: <USAFlag className="w-5 h-5" />,
+      region: "North America",
+      language: "EN",
+    },
+    UK: {
+      name: "UK",
+      flag: <UKFlag className="w-5 h-5" />,
+      region: "Europe",
+      language: "EN",
+    },
+    PL: {
+      name: "Poland",
+      flag: <PolandFlag className="w-5 h-5" />,
+      region: "Europe",
+      language: "PL",
+    },
+    RU: {
+      name: "Russia",
+      flag: <RussiaFlag className="w-5 h-5" />,
+      region: "Europe",
+      language: "RU",
+    },
+    FR: {
+      name: "France",
+      flag: <FranceFlag className="w-5 h-5" />,
+      region: "Europe",
+      language: "FR",
+    },
+    DE: {
+      name: "Germany",
+      flag: <GermanyFlag className="w-5 h-5" />,
+      region: "Europe",
+      language: "DE",
+    },
+    ES: {
+      name: "Spain",
+      flag: <SpainFlag className="w-5 h-5" />,
+      region: "Europe",
+      language: "ES",
+    },
+  };
+
+  // 🌍 Languages for dropdown (with flag)
+  const languages = {
+    US: { name: "USA", flag: <USAFlag className="w-5 h-5" /> },
+    EN: { name: "UK", flag: <UKFlag className="w-5 h-5" /> },
+    PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
+    RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
+    FR: { name: "Français", flag: <FranceFlag className="w-5 h-5" /> },
+    DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
+    ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
+  };
 
   // 🌐 Detect country from browser language
   const detectCountryFromLocale = (locale: string): string | null => {
     const map: Record<string, string> = {
+      us: "USA",
       "en-US": "USA",
+      en:"UK",
       "en-GB": "UK",
       pl: "PL",
       "pl-PL": "PL",
@@ -140,14 +169,14 @@ const WelcomeSite: React.FC = () => {
       : null;
 
     if (countryData && savedCountry) {
-      setSelectedCountry(savedCountry as string);
+      setSelectedCountry(savedCountry);
       setLanguage(countryData.language);
       setRegion(countryData.region);
     } else {
       const detected = detectCountryFromLocale(navigator.language);
       const detectedData = detected ? countries[detected as keyof typeof countries] : null;
       if (detectedData && detected) {
-        setSelectedCountry(detected as string);
+        setSelectedCountry(detected);
         setLanguage(detectedData.language);
         setRegion(detectedData.region);
       }
@@ -161,35 +190,60 @@ const WelcomeSite: React.FC = () => {
 
     if (isDarkMode) document.documentElement.classList.add("dark");
     else document.documentElement.classList.remove("dark");
-  }, []);
 
-  // 🌙 Theme sync
-  useEffect(() => {
-    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
+    // Check if user has seen world map
+    const hasSeenMap = localStorage.getItem("hasSeenWorldMap");
+    if (!hasSeenMap) {
+      setShowWorldMapFirstTime(true);
+      localStorage.setItem("hasSeenWorldMap", "true");
     }
   }, [isDarkMode]);
 
-  // 🖱️ Close dropdown on outside click
+  // 🌙 Theme sync
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        showCountryDropdown &&
-        dropdownRef.current &&
-        buttonRef.current &&
-        !dropdownRef.current.contains(e.target as Node) &&
-        !buttonRef.current.contains(e.target as Node)
-      ) {
-        setShowCountryDropdown(false);
+      localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
+      if (isDarkMode) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
       }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showCountryDropdown]);
+  }, [isDarkMode]);
 
+  // 🧩 Initial setup: load preferences or detect locale
+  useEffect(() => {
+      const savedCountry = localStorage.getItem("preferredCountry");
+      const savedLanguage = localStorage.getItem("preferredLanguage");
+      const hasSeenMap = localStorage.getItem("hasSeenWorldMap");
+
+      // Load saved language first
+      if (savedLanguage) {
+        setLanguage(savedLanguage);
+      }
+
+      // Then load country data if available
+      if (savedCountry) {
+          const countryData = countries[savedCountry as keyof typeof countries];
+          if (countryData) {
+              setSelectedCountry(savedCountry);
+              setRegion(countryData.region);
+          }
+      } else {
+        // Detect from browser if no country saved
+        const detected = detectCountryFromLocale(navigator.language);
+        const detectedData = detected ? countries[detected as keyof typeof countries] : null;
+        if (detectedData && detected) {
+          setSelectedCountry(detected);
+          setLanguage(detectedData.language);
+          setRegion(detectedData.region);
+        }
+      }
+
+      // Check if user has seen world map
+      if (!hasSeenMap) {
+        setShowWorldMapFirstTime(true);
+        localStorage.setItem("hasSeenWorldMap", "true");
+      }
+  }, []); // <-- Empty dependency array. This ensures it runs only once.
   // 📥 Fetch Funko data
   useEffect(() => {
     const fetchData = async () => {
@@ -273,20 +327,15 @@ const WelcomeSite: React.FC = () => {
     localStorage.setItem("funkoVisitCount", JSON.stringify(visitCount));
   };
 
-  // 🌍 Show world map first time
-  const [showWorldMapFirstTime, setShowWorldMapFirstTime] = useState(false);
-  //
-  useEffect(() => {
-    const hasSeenMap = localStorage.getItem("hasSeenWorldMap");
-    if (!hasSeenMap) {
-      setShowWorldMapFirstTime(true);
-      localStorage.setItem("hasSeenWorldMap", "true");
-    }
-  }, []);
-
-
+  // 🌙 Toggle theme
   const toggleTheme = () => setIsDarkMode((prev) => !prev);
-  const toggleCountryDropdown = () => setShowCountryDropdown((prev) => !prev);
+
+  // Select language
+  const selectLanguage = (lang: string) => {
+    setLanguage(lang);
+    localStorage.setItem("preferredLanguage", lang);
+    setShowLanguageDropdown(false);
+  };
 
   const randomItems = getRandomItems();
   const mostVisitedItems = getMostVisitedItems();
@@ -297,27 +346,29 @@ const WelcomeSite: React.FC = () => {
         isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
       }`}
     >
+      {/* 🌍 First-Time World Map Popup */}
       {showWorldMapFirstTime && (
-  <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-    <div className="relative bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-4xl w-full">
-      <button
-        onClick={() => setShowWorldMapFirstTime(false)}
-        className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
-      >
-        ✕
-      </button>
-      <h2 className="text-2xl font-bold mb-4 text-center">
-        {t.regionMapTitle || "Explore by Region"}
-      </h2>
-      <WorldMap
-        onSelectCountry={(code) => {
-          handleMapCountryClick(code);
-          setShowWorldMapFirstTime(false);
-        }}
-      />
-    </div>
-  </div>
-)}
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="relative bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-4xl w-full">
+            <button
+              onClick={() => setShowWorldMapFirstTime(false)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 text-2xl"
+              aria-label="Close map"
+            >
+              ✕
+            </button>
+            <h2 className="text-2xl font-bold mb-4 text-center">
+              {t.regionMapTitle || "Explore by Region"}
+            </h2>
+            <WorldMap
+              onSelectCountry={(code) => {
+                handleMapCountryClick(code);
+                setShowWorldMapFirstTime(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* 🔝 Header */}
       <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
@@ -331,10 +382,6 @@ const WelcomeSite: React.FC = () => {
               Pop&Go!
             </h1>
           </Link>
-          {/* unused language selector popup */} 
-          {/* {shouldShowPopup && (
-            <LanguageSelectorPopup onClose={() => setShouldShowPopup(false)} />
-          )} */}
         </div>
 
         {/* 🔍 Search */}
@@ -354,7 +401,7 @@ const WelcomeSite: React.FC = () => {
                 ? "bg-gray-700 text-white placeholder-gray-400"
                 : "bg-white text-black placeholder-gray-500"
             }`}
-            aria-label="Search input"
+            aria-label="Search for Funko Pops"
           />
           <button
             type="submit"
@@ -370,77 +417,59 @@ const WelcomeSite: React.FC = () => {
         </form>
 
         {/* 🌐 Country, 🌙 Theme, 🔐 Login */}
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto justify-end">
-          {/* 🌐 Country Selector */}
-          <div className="relative inline-block">
-            <button
-              ref={buttonRef}
-              onClick={toggleCountryDropdown}
-              className={`p-2 rounded-full flex items-center gap-2 ${
-                isDarkMode
-                  ? "bg-gray-700 hover:bg-gray-600"
-                  : "bg-gray-200 hover:bg-gray-300"
-              }`}
-              aria-label="Select country"
-              aria-expanded={showCountryDropdown}
-            >
-              <GlobeIcon className="w-5 h-5" />
-              <span className="flex items-center gap-1">
-                {countries[selectedCountry as keyof typeof countries]?.flag}
-                <span className="text-sm font-medium hidden sm:inline">
-                  {countries[selectedCountry as keyof typeof countries]?.name}
-                </span>
-              </span>
-              <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${showCountryDropdown ? "rotate-180" : ""}`}
-              />
-            </button>
-
-            {showCountryDropdown && (
-              <div
-                ref={dropdownRef}
-                className={`absolute right-0 mt-2 w-64 rounded-md shadow-lg py-1 z-50 max-h-80 overflow-y-auto ${
-                  isDarkMode ? "bg-gray-700" : "bg-white"
-                }`}
-                onClick={(e) => e.stopPropagation()}
-              >
-                {(["North America", "Europe"] as const).map((regionName) => (
-                  <div key={regionName}>
-                    <div
-                      className={`px-4 py-2 text-xs font-semibold ${
-                        isDarkMode ? "text-gray-300" : "text-gray-500"
+                <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0">
+                  {/* Language Dropdown */}
+                  <div className="relative">
+                    <button
+                      ref={languageButtonRef}
+                      onClick={toggleLanguageDropdown}
+                      className={`p-2 rounded-full flex items-center gap-1 ${
+                        isDarkMode
+                          ? "bg-gray-700 hover:bg-gray-600"
+                          : "bg-gray-200 hover:bg-neutral-600"
                       }`}
+                      aria-label="Select language"
+                      aria-expanded={showLanguageDropdown}
                     >
-                      {regionName}
-                    </div>
-                    {Object.entries(countries)
-                      .filter(([, country]) => country.region === regionName)
-                      .map(([code, country]) => (
-                        <button
-                          key={code}
-                          onClick={() => handleCountryChange(code)}
-                          className={`w-full text-left px-4 py-2 flex items-center justify-between ${
-                            selectedCountry === code
-                              ? isDarkMode
-                                ? "bg-yellow-500 text-black"
-                                : "bg-green-600 text-white"
-                              : isDarkMode
-                              ? "hover:bg-gray-600"
-                              : "hover:bg-gray-200"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="w-5 h-5">{country.flag}</span>
-                            <span>{country.name}</span>
-                          </div>
-                          <span className="text-xs opacity-75">{languageNames[country.language]}</span>
-                        </button>
-                      ))}
+                      <GlobeIcon className="w-5 h-5" />
+                      <span className="text-sm font-medium">{language}</span>
+                      <ChevronDownIcon
+                        className={`w-4 h-4 transition-transform ${
+                          showLanguageDropdown ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+        
+                    {showLanguageDropdown && (
+                      <div
+                        ref={languageDropdownRef}
+                        className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
+                          isDarkMode ? "bg-gray-700" : "bg-white"
+                        }`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {Object.entries(languages).map(([code, { name, flag }]) => (
+                          <button
+                            key={code}
+                            onClick={() => selectLanguage(code)}
+                            className={`w-full text-left px-4 py-2 flex items-center gap-2 ${
+                              language === code
+                                ? isDarkMode
+                                  ? "bg-yellow-500 text-black"
+                                  : "bg-green-600 text-white"
+                                : isDarkMode
+                                ? "hover:bg-gray-600"
+                                : "hover:bg-neutral-500"
+                            }`}
+                          >
+                            <span className="w-5 h-5">{flag}</span>
+                            <span>{name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+        
 
           {/* 🌙 Theme Toggle */}
           <button
@@ -448,9 +477,9 @@ const WelcomeSite: React.FC = () => {
             className={`p-2 rounded-full ${
               isDarkMode
                 ? "bg-gray-700 hover:bg-gray-600"
-                : "bg-gray-200 hover:bg-gray-300"
+                : "bg-gray-200 hover:bg-gray-600"
             }`}
-            aria-label="Toggle theme"
+            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
@@ -477,17 +506,9 @@ const WelcomeSite: React.FC = () => {
         {/* 📍 Current language & region */}
         <div className={`mb-6 text-center ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
           <p className="text-sm">
-            {languageNames[language]} • {region}
+            {languageNames[language] || "Unknown"} • {region}
           </p>
         </div>
-
-        {/* 🌍 Interactive World Map
-        <section className="w-full max-w-6xl mt-12">
-          <h2 className="text-2xl font-bold mb-4 text-center">
-            {t.regionMapTitle || "Explore by Region"}
-          </h2>
-          <WorldMap onSelectCountry={handleMapCountryClick} />
-        </section> */}
 
         {/* 🎲 Random Items */}
         <section className="w-full max-w-4xl mt-10 mb-10">

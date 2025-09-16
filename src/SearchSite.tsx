@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import Fuse from "fuse.js";
 import { translations } from "./Translations/TranslationsSearchSite";
 
 // Icons
@@ -23,8 +24,7 @@ const CloseIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
-
-// Flags (assuming these paths are correct)
+// Flags
 import UKFlag from "./assets/flags/uk.svg?react";
 import PolandFlag from "./assets/flags/poland.svg?react";
 import RussiaFlag from "./assets/flags/russia.svg?react";
@@ -42,7 +42,6 @@ interface ImageModalProps {
 
 const ImageModal: React.FC<ImageModalProps> = ({ imageUrl, altText, onClose, isDarkMode }) => {
   useEffect(() => {
-    // Disable body scroll when modal is open
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = 'unset';
@@ -52,23 +51,23 @@ const ImageModal: React.FC<ImageModalProps> = ({ imageUrl, altText, onClose, isD
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
-      onClick={onClose} // Close when clicking outside the image
+      onClick={onClose}
     >
       <div
         className={`relative ${isDarkMode ? "bg-gray-800" : "bg-white"} p-4 rounded-lg shadow-xl max-w-3xl max-h-[90vh] overflow-hidden`}
-        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the modal content
+        onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
           className={`absolute top-2 right-2 p-1 rounded-full ${isDarkMode ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-200 text-black hover:bg-gray-300"}`}
           aria-label="Close image"
         >
-          <CloseIcon className="w-6 h-6" /> {/* Using the new CloseIcon */}
+          <CloseIcon className="w-6 h-6" />
         </button>
         <img
           src={imageUrl}
           alt={altText}
-          className="max-w-full max-h-[calc(90vh-60px)] object-contain" // Adjusted max-height to account for padding/button
+          className="max-w-full max-h-[calc(90vh-60px)] object-contain"
           onError={(e) => {
             e.currentTarget.src = "/src/assets/placeholder.png";
             e.currentTarget.onerror = null;
@@ -81,6 +80,16 @@ const ImageModal: React.FC<ImageModalProps> = ({ imageUrl, altText, onClose, isD
 };
 // --- END NEW MODAL COMPONENT ---
 
+// Define the structure of a Funko Pop item
+interface FunkoItem {
+  id: number | string; // Your DB uses number, GitHub uses string
+  title: string;
+  number: string;
+  series: string[];
+  exclusive: boolean;
+  imageName?: string;
+  category?: string; // Might be present in admin items
+}
 
 const SearchSite = () => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -93,10 +102,9 @@ const SearchSite = () => {
   });
   
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
-  const [funkoData, setFunkoData] = useState([]);
-  const [filteredAndSortedResults, setFilteredAndSortedResults] = useState(
-    []
-  );
+  const [funkoData, setFunkoData] = useState<FunkoItem[]>([]);
+  const [adminItems, setAdminItems] = useState([]);
+  const [filteredAndSortedResults, setFilteredAndSortedResults] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -110,7 +118,6 @@ const SearchSite = () => {
   const [modalImageAlt, setModalImageAlt] = useState<string | null>(null);
   // --- END NEW STATE FOR MODAL ---
 
-
   const navigate = useNavigate();
   const location = useLocation();
   const dropdownRef = useRef(null);
@@ -118,6 +125,40 @@ const SearchSite = () => {
 
   const queryParams = new URLSearchParams(location.search);
   const queryParam = queryParams.get("q") || "";
+
+  // Combine funkoData and adminItems for processing
+// Update the useMemo that transforms items
+const allItems = useMemo(() => {
+  // Transform admin items to match the structure of funkoData
+  const transformedAdminItems = adminItems.map((item: any) => ({
+    ...item,
+    title: item.title || "", // Ensure title exists
+    number: item.number || "", // Ensure number exists
+    series: Array.isArray(item.series) 
+      ? item.series 
+      : item.category 
+        ? [item.category] 
+        : ["Unknown"], // Handle different series formats
+    exclusive: item.exclusive || false, // Ensure exclusive is boolean
+    id: `admin-${item.id}`, // Prefix to distinguish from GitHub data
+  }));
+
+  // Transform GitHub data to ensure consistent structure
+  const transformedFunkoData = funkoData.map((item: any) => ({
+    ...item,
+    title: item.title || "", // Ensure title exists
+    number: item.number || "", // Ensure number exists
+    series: Array.isArray(item.series) 
+      ? item.series 
+      : item.series 
+        ? [item.series] 
+        : ["Unknown"], // Ensure series is an array
+    exclusive: item.exclusive || false, // Ensure exclusive is boolean
+    id: item.id || generateId(item.title, item.number), // Use existing ID or generate one
+  }));
+
+  return [...transformedFunkoData, ...transformedAdminItems];
+}, [funkoData, adminItems]);
 
   const totalPages = Math.ceil(filteredAndSortedResults.length / itemsPerPage);
 
@@ -128,8 +169,8 @@ const SearchSite = () => {
   }, [currentPage, itemsPerPage, filteredAndSortedResults]);
 
   const availableSeries = useMemo(() => {
-    return [...new Set(funkoData.flatMap((item: any) => item.series))];
-  }, [funkoData]);
+    return [...new Set(allItems.flatMap((item: any) => item.series))];
+  }, [allItems]);
 
   const languages = {
     EN: { name: "English", flag: <UKFlag className="w-5 h-5" /> },
@@ -141,37 +182,79 @@ const SearchSite = () => {
   };
 
   // Helper to generate IDs
-  const generateId = (title: string , number: string ): string => { // | 
+  const generateId = (title: string, number: string): string => {
     const safeTitle = title ? title.trim() : "";
     const safeNumber = number ? number.trim() : "";
     return `${safeTitle}-${safeNumber}`.replace(/\s+/g, "-");
   };
 
-  // Fetch data
-  useEffect(() => {
-    const fetchData = async () => {
+// Fetch data from API (DB) first, fallback to GitHub
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      let data: FunkoItem[] = [];
+
+      // FIRST: Try to fetch from your local API (Database)
       try {
-        setIsLoading(true);
-        const response = await fetch(
+        const apiResponse = await fetch("http://localhost:5000/api/items");
+        if (!apiResponse.ok) {
+          throw new Error(`API error! Status: ${apiResponse.status}`);
+        }
+        data = await apiResponse.json();
+        console.log("Fetched data from API:", data); // For debugging
+      } catch (apiError) {
+        console.warn("Failed to fetch from local API, falling back to GitHub:", apiError.message);
+        // FALLBACK: Fetch from the static GitHub file if API fails
+        const githubResponse = await fetch(
           "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
         );
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        const data = await response.json();
-
-        // Generate IDs for the fetched data before setting it
-        const dataWithIds = data.map((item: any) => ({
+        if (!githubResponse.ok) throw new Error(`GitHub error! Status: ${githubResponse.status}`);
+        const githubData = await githubResponse.json();
+        // Generate IDs for GitHub data
+        data = githubData.map((item: any) => ({
           ...item,
           id: generateId(item.title, item.number),
         }));
-        setFunkoData(dataWithIds); // Store data with IDs
-        setError(null);
+      }
+
+      setFunkoData(data);
+      setError(null);
+    } catch (err) {
+      setError(err.message || "An error occurred while fetching data.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  fetchData();
+}, []);
+
+  // Fetch admin items from backend
+  useEffect(() => {
+    const fetchAdminItems = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/items");
+        if (response.ok) {
+          const data = await response.json();
+          setAdminItems(data);
+        } else {
+          console.warn("Failed to fetch admin items, continuing with GitHub data only");
+        }
       } catch (err) {
-        setError(err.message || "An error occurred while fetching data.");
-      } finally {
-        setIsLoading(false);
+        console.warn("Error fetching admin items:", err);
+        // Don't set error state here, just log the warning
       }
     };
-    fetchData();
+    fetchAdminItems();
+  }, []);
+
+  // Set loading to false once both data sources are attempted
+  useEffect(() => {
+    // Wait a moment to ensure both fetch operations have been attempted
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -208,71 +291,71 @@ const SearchSite = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showLanguageDropdown]);
 
-  // Effect for filtering and sorting the main data.
-  useEffect(() => {
-    if (funkoData.length === 0) {
-      setFilteredAndSortedResults([]);
-      return;
-    }
+  // Effect for filtering and sorting the combined data
+// Replace the useEffect that handles filtering and sorting with this updated version
+useEffect(() => {
+  if (allItems.length === 0) {
+    setFilteredAndSortedResults([]);
+    return;
+  }
 
-    let currentProcessedResults = funkoData.filter((item: any) =>
-      item.title.toLowerCase().includes(queryParam.toLowerCase())
+  // Normalize search query for case-insensitive matching
+  const normalizedQuery = queryParam.toLowerCase().trim();
+  
+  let currentProcessedResults = allItems.filter((item: any) => {
+    // Search in multiple fields: title, number, and series
+    const titleMatch = item.title?.toLowerCase().includes(normalizedQuery);
+    const numberMatch = item.number?.toLowerCase().includes(normalizedQuery);
+    const seriesMatch = item.series?.some((series: string) => 
+      series.toLowerCase().includes(normalizedQuery)
     );
+    
+    return titleMatch || numberMatch || seriesMatch;
+  });
 
-    if (categoryFilter) {
-      currentProcessedResults = currentProcessedResults.filter((item: any) =>
-        item.series.includes(categoryFilter)
+  if (categoryFilter) {
+    currentProcessedResults = currentProcessedResults.filter((item: any) =>
+      item.series?.includes(categoryFilter)
+    );
+  }
+
+  if (showExclusiveOnly) {
+    currentProcessedResults = currentProcessedResults.filter(
+      (item: any) => item.exclusive === true
+    );
+  }
+
+  switch (sortOption) {
+    case "titleDesc":
+      currentProcessedResults.sort((a: any, b: any) =>
+        b.title?.localeCompare(a.title || "") || 0
       );
-    }
-
-    if (showExclusiveOnly) {
-      currentProcessedResults = currentProcessedResults.filter(
-        (item: any) => item.exclusive === true
+      break;
+    case "numberAsc":
+      currentProcessedResults.sort(
+        (a: any, b: any) => (Number(a.number) || 0) - (Number(b.number) || 0)
       );
-    }
+      break;
+    case "numberDesc":
+      currentProcessedResults.sort(
+        (a: any, b: any) => (Number(b.number) || 0) - (Number(a.number) || 0)
+      );
+      break;
+    case "titleAsc":
+    default:
+      currentProcessedResults.sort((a: any, b: any) =>
+        a.title?.localeCompare(b.title || "") || 0
+      );
+      break;
+  }
 
-    switch (sortOption) {
-      case "titleDesc":
-        currentProcessedResults.sort((a: any, b: any) =>
-          b.title.localeCompare(a.title)
-        );
-        break;
-      case "numberAsc":
-        currentProcessedResults.sort(
-          (a: any, b: any) => (Number(a.number) || 0) - (Number(b.number) || 0)
-        );
-        break;
-      case "numberDesc":
-        currentProcessedResults.sort(
-          (a: any, b: any) => (Number(b.number) || 0) - (Number(a.number) || 0)
-        );
-        break;
-      case "titleAsc":
-      default:
-        currentProcessedResults.sort((a: any, b: any) =>
-          a.title.localeCompare(b.title)
-        );
-        break;
-    }
-
-    setFilteredAndSortedResults(currentProcessedResults);
-    setCurrentPage(1); // Reset to first page when filters/sort/search change
-  }, [queryParam, categoryFilter, showExclusiveOnly, sortOption, funkoData]);
-
+  setFilteredAndSortedResults(currentProcessedResults);
+  setCurrentPage(1); // Reset to first page when filters/sort/search change
+}, [queryParam, categoryFilter, showExclusiveOnly, sortOption, allItems]);
   // Save language preference
   useEffect(() => {
     localStorage.setItem("preferredLanguage", language);
   }, [language]);
-
-  // Save theme preference and apply class to document.documentElement
-  useEffect(() => {
-    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDarkMode]);
 
   const t = translations[language] || translations["EN"];
 
@@ -346,7 +429,7 @@ const SearchSite = () => {
     return pages;
   };
 
-    const loginButtonTo = useMemo(() => {
+  const loginButtonTo = useMemo(() => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     if (user?.role === "admin") return "/adminSite";
     if (user?.role === "user") return "/dashboardSite";
@@ -370,6 +453,9 @@ const SearchSite = () => {
     setModalImageAlt(null);
   };
   // --- END NEW HANDLERS FOR MODAL ---
+
+  // Helper function to determine if item is from admin
+  const isAdminItem = (itemId: string) => itemId.startsWith('admin-');
 
   return (
     <div
@@ -495,18 +581,18 @@ const SearchSite = () => {
         </div>
 
         {/* Login Button */}
-          <div>
-            <Link
-              to={loginButtonTo}
-              className={`px-4 py-2 rounded ${
-                isDarkMode
-                  ? "bg-yellow-500 text-black hover:bg-yellow-600"
-                  : "bg-green-600 text-white hover:bg-green-700"
-              }`}
-            >
-              {loginButtonText}
-            </Link>
-          </div>
+        <div>
+          <Link
+            to={loginButtonTo}
+            className={`px-4 py-2 rounded ${
+              isDarkMode
+                ? "bg-yellow-500 text-black hover:bg-yellow-600"
+                : "bg-green-600 text-white hover:bg-green-700"
+            }`}
+          >
+            {loginButtonText}
+          </Link>
+        </div>
       </header>
 
       {/* Filters */}
@@ -568,16 +654,22 @@ const SearchSite = () => {
                 <ul className="w-full max-w-4xl space-y-4">
                   {currentItems.map((item: any) => (
                     <li
-                      key={item.id} // Using item.id as key is best practice
+                      key={item.id}
                       className={`p-4 sm:px-6 sm:py-4 rounded-lg flex flex-col sm:flex-row gap-4 ${
                         isDarkMode ? "bg-gray-700" : "bg-gray-200"
-                      } cursor-pointer hover:opacity-90 transition-opacity`}
+                      } cursor-pointer hover:opacity-90 transition-opacity relative`}
                       onClick={() => navigate(`/funko/${item.id}`)}
                     >
+                      {/* Admin Item Badge */}
+                      {isAdminItem(item.id) && (
+                        <div className="absolute top-2 right-2 px-2 py-1 text-xs rounded bg-blue-500 text-white font-semibold">
+                          ADMIN
+                        </div>
+                      )}
+                      
                       <div className="flex-shrink-0 mx-auto sm:mx-0">
-                        {/* THE IMAGE ELEMENT - CORRECTED SRC AND ADDED MODAL CLICK */}
                         <img
-                          src={item.imageName || "/src/assets/placeholder.png"} // Corrected to item.imageName
+                          src={item.imageName || "/src/assets/placeholder.png"}
                           alt={item.title}
                           className="w-24 h-24 object-contain rounded-md cursor-zoom-in"
                           onError={(e) => {
@@ -585,15 +677,15 @@ const SearchSite = () => {
                             e.currentTarget.onerror = null;
                           }}
                           onClick={(e) => {
-                            e.stopPropagation(); // Prevents the <li>'s navigate from firing
-                            openImageModal(item.imageName || "/src/assets/placeholder.png", item.title); // Corrected for modal
+                            e.stopPropagation();
+                            openImageModal(item.imageName || "/src/assets/placeholder.png", item.title);
                           }}
                         />
                       </div>
                       <div className="flex-grow text-center sm:text-left">
                         <h3 className="text-lg font-bold">{item.title}</h3>
                         <p className="text-sm">
-                          {t.series}: {item.series.join(", ")}
+                          {t.series}: {Array.isArray(item.series) ? item.series.join(", ") : item.series}
                         </p>
                         <p className="text-sm">
                           {t.number}: {item.number}
@@ -646,7 +738,7 @@ const SearchSite = () => {
                           : "bg-gray-200 hover:bg-gray-300"
                       }`}
                     >
-                      &lt;
+                      
                     </button>
                     {getDisplayedPages().map((page, index) =>
                       page === "..." ? (
@@ -682,9 +774,8 @@ const SearchSite = () => {
                           : "bg-gray-200 hover:bg-gray-300"
                       }`}
                     >
-                      &gt;
+                      
                     </button>
-
                   </div>
 
                   <div className="text-sm">
@@ -693,7 +784,12 @@ const SearchSite = () => {
                 </div>
               </>
             ) : (
-              <p>{t.noResult}</p>
+              <div className="text-center">
+                <p className="mb-4">{t.noResult}</p>
+                <p className="text-sm opacity-75">
+                  Showing {allItems.length} items ({funkoData.length} from catalog, {adminItems.length} admin items)
+                </p>
+              </div>
             )}
           </>
         )}

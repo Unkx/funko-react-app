@@ -7,13 +7,11 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import fetch from 'node-fetch';
 
-
 // ======================
 // INITIALIZATION
 // ======================
 const app = express();
 const PORT = process.env.PORT || 5000;
-
 
 // ======================
 // CONFIGURATION
@@ -139,64 +137,6 @@ const addItem = async (req, res) => {
     res.status(500).json({ error: 'Failed to add item.' });
   }
 };
-
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // Add PATCH here
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-
-// Add this right before your PATCH route
-app.options('/api/admin/users/:id/role', cors()); // Explicit OPTIONS handler
-
-// PATCH: Zmień rolę użytkownika (tylko dla admina)
-app.patch('/api/admin/users/:id/role', authenticateToken, isAdmin, async (req, res) => {
-  console.log('Role change request received:', {
-    params: req.params,
-    body: req.body,
-    user: req.user
-  });
-
-  const { id } = req.params;
-  const { role } = req.body;
-
-  if (!['user', 'admin'].includes(role)) {
-    console.log('Invalid role received:', role);
-    return res.status(400).json({ 
-      error: 'Invalid role. Only "user" or "admin" allowed.' 
-    });
-  }
-
-  try {
-    console.log('Attempting to update user role...');
-    const result = await pool.query(
-      `UPDATE users SET role = $1 WHERE id = $2 RETURNING id, login, email, role`,
-      [role, id]
-    );
-
-    if (result.rows.length === 0) {
-      console.log('User not found with ID:', id);
-      return res.status(404).json({ error: 'User not found.' });
-    }
-
-    console.log('Role updated successfully:', result.rows[0]);
-    res.json({
-      message: `User role updated to ${role}.`,
-      user: result.rows[0]
-    });
-  } catch (err) {
-    console.error('Detailed error updating user role:', {
-      message: err.message,
-      stack: err.stack,
-      query: err.query, // This will show the actual SQL query that failed
-      parameters: err.parameters
-    });
-    res.status(500).json({ error: 'Internal server error.' });
-  }
-});
-
-
 
 // ======================
 // UTILITY FUNCTIONS
@@ -367,24 +307,24 @@ const removeFromWishlist = async (req, res) => {
   }
 };
 
-  const getWishlist = async (req, res) => {
-    const userId = req.user.id;
+const getWishlist = async (req, res) => {
+  const userId = req.user.id;
 
-    try {
-      const result = await pool.query(
-        `SELECT fi.*, w.added_at FROM wishlist w
-        JOIN funko_items fi ON w.funko_id = fi.id
-        WHERE w.user_id = $1
-        ORDER BY w.added_at DESC`,
-        [userId]
-      );
+  try {
+    const result = await pool.query(
+      `SELECT fi.*, w.added_at FROM wishlist w
+      JOIN funko_items fi ON w.funko_id = fi.id
+      WHERE w.user_id = $1
+      ORDER BY w.added_at DESC`,
+      [userId]
+    );
 
-      res.json(result.rows);
-    } catch (err) {
-      console.error("Error fetching wishlist:", err);
-      res.status(500).json({ error: "Failed to load wishlist" });
-    }
-  };
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching wishlist:", err);
+    res.status(500).json({ error: "Failed to load wishlist" });
+  }
+};
 
 const checkWishlistItem = async (req, res) => {
   const { funkoId } = req.params;
@@ -648,9 +588,6 @@ const deleteUser = async (req, res) => {
   }
 };
 
-app.get('/api/admin/users', authenticateToken, isAdmin, getAllUsers);
-app.delete('/api/admin/users/:id', authenticateToken, isAdmin, deleteUser);
-
 const getAdminItems = async (req, res) => {
   try {
     const result = await pool.query(
@@ -677,16 +614,51 @@ const getAdminItems = async (req, res) => {
   }
 };
 
-// Add route
-app.get("/api/admin/items", authenticateToken, isAdmin, async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM funko_items ORDER BY id ASC");
-    res.json(result.rows);
-  } catch (err) {
-    console.error("Error fetching items:", err.message);
-    res.status(500).send("Server error fetching items.");
+// Add this search controller function
+const searchItems = async (req, res) => {
+  const { q } = req.query;
+  
+  if (!q || typeof q !== 'string') {
+    return res.status(400).json({ error: 'Search query is required' });
   }
-});
+  
+  try {
+    console.log('🔍 Searching for:', q);
+    
+    // Modified query that works with JSONB
+    const result = await pool.query(
+      `SELECT id, title, number, category, 
+              CASE 
+                WHEN series IS NOT NULL THEN series::text
+                ELSE '[]'
+              END as series,
+              exclusive, image_name as imageName 
+       FROM funko_items 
+       WHERE LOWER(title) LIKE LOWER($1) 
+          OR LOWER(number) LIKE LOWER($1)
+          OR LOWER(category) LIKE LOWER($1)
+          OR EXISTS (
+            SELECT 1 FROM jsonb_array_elements_text(series) elem 
+            WHERE LOWER(elem) LIKE LOWER($1)
+          )
+       ORDER BY category, title, number`,
+      [`%${q}%`]
+    );
+    
+    console.log('✅ Found', result.rows.length, 'items');
+    
+    // Parse the series JSON for each item
+    const items = result.rows.map(item => ({
+      ...item,
+      series: item.series ? JSON.parse(item.series) : []
+    }));
+    
+    res.json(items);
+  } catch (err) {
+    console.error('❌ Error searching items:', err);
+    res.status(500).json({ error: 'Failed to search items' });
+  }
+};
 
 // ======================
 // DATABASE SEEDING
@@ -701,27 +673,27 @@ const seedDatabase = async () => {
 
     console.log("🌱 Seeding database...");
     // const response = await fetch(
-    //   "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
+    //   "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json  "
     // );
-    const data = await response.json();
+    // const data = await response.json();
 
-    for (const item of data) {
-      const id = `${item.title}-${item.number}`.replace(/\s+/g, "-");
-      await pool.query(
-        `INSERT INTO funko_items (id, title, number, category, series, exclusive, image_name)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         ON CONFLICT (id) DO NOTHING`,
-        [
-          id,
-          item.title,
-          item.number,
-          item.category,
-          JSON.stringify(item.series),
-          item.exclusive || false,
-          item.imageName || null,
-        ]
-      );
-    }
+    // for (const item of data) {
+    //   const id = `${item.title}-${item.number}`.replace(/\s+/g, "-");
+    //   await pool.query(
+    //     `INSERT INTO funko_items (id, title, number, category, series, exclusive, image_name)
+    //      VALUES ($1, $2, $3, $4, $5, $6, $7)
+    //      ON CONFLICT (id) DO NOTHING`,
+    //     [
+    //       id,
+    //       item.title,
+    //       item.number,
+    //       item.category,
+    //       JSON.stringify(item.series),
+    //       item.exclusive || false,
+    //       item.imageName || null,
+    //     ]
+    //   );
+    // }
     console.log("✅ Database seeded successfully");
   } catch (err) {
     console.error("Database seeding error:", err);
@@ -729,14 +701,127 @@ const seedDatabase = async () => {
 };
 
 // ======================
+// DIAGNOSTIC ROUTES
+// ======================
+// Add this temporary diagnostic route
+app.get('/api/test/database', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT NOW()');
+    res.json({ 
+      success: true, 
+      message: 'Database connection successful',
+      time: result.rows[0].now
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      success: false, 
+      message: 'Database connection failed',
+      error: err.message 
+    });
+  }
+});
+
+// Add this route to check if funko_items table exists
+app.get('/api/test/items', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT COUNT(*) as count FROM funko_items');
+    const sample = await pool.query('SELECT id, title, number FROM funko_items LIMIT 3');
+    
+    res.json({
+      totalItems: parseInt(result.rows[0].count),
+      sampleItems: sample.rows,
+      message: 'Database query successful'
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: 'Failed to query items',
+      details: err.message
+    });
+  }
+});
+
+// ======================
 // ROUTES
 // ======================
+
+// Health check
+app.get('/', (req, res) => {
+  res.send('Welcome to the Funko React App Backend API!');
+});
+
+// Auth routes
+app.post('/api/register', registerUser);
+app.post('/api/login', loginUser);
+
+// User routes
+app.get('/api/users/:id', authenticateToken, getUserProfile);
+app.put('/api/users/:id', authenticateToken, updateUserProfile);
+app.put('/api/users/:id/settings', authenticateToken, updateUserSettings);
+
+// Wishlist routes
+app.post('/api/wishlist', authenticateToken, addToWishlist);
+app.delete('/api/wishlist/:funkoId', authenticateToken, removeFromWishlist);
+app.get('/api/wishlist', authenticateToken, getWishlist);
+app.get('/api/wishlist/check/:funkoId', authenticateToken, checkWishlistItem);
+
+// Collection routes
+app.post('/api/collection', authenticateToken, addToCollection);
+app.delete('/api/collection/:funkoId', authenticateToken, removeFromCollection);
+app.get('/api/collection', authenticateToken, getCollection);
+app.get('/api/collection/check/:funkoId', authenticateToken, checkCollectionItem);
 
 // Admin routes
 app.get('/api/admin/users', authenticateToken, isAdmin, getAllUsers);
 app.get('/api/admin/items', authenticateToken, isAdmin, getAdminItems);
+app.get('/api/admin/items/search', authenticateToken, isAdmin, searchItems); // Only defined once!
 app.post('/api/admin/items', authenticateToken, isAdmin, addItem);
 app.delete('/api/admin/users/:id', authenticateToken, isAdmin, deleteUser);
+
+// PATCH: Zmień rolę użytkownika (tylko dla admina)
+app.patch('/api/admin/users/:id/role', authenticateToken, isAdmin, async (req, res) => {
+  console.log('Role change request received:', {
+    params: req.params,
+    body: req.body,
+    user: req.user
+  });
+
+  const { id } = req.params;
+  const { role } = req.body;
+
+  if (!['user', 'admin'].includes(role)) {
+    console.log('Invalid role received:', role);
+    return res.status(400).json({ 
+      error: 'Invalid role. Only "user" or "admin" allowed.' 
+    });
+  }
+
+  try {
+    console.log('Attempting to update user role...');
+    const result = await pool.query(
+      `UPDATE users SET role = $1 WHERE id = $2 RETURNING id, login, email, role`,
+      [role, id]
+    );
+
+    if (result.rows.length === 0) {
+      console.log('User not found with ID:', id);
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    console.log('Role updated successfully:', result.rows[0]);
+    res.json({
+      message: `User role updated to ${role}.`,
+      user: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Detailed error updating user role:', {
+      message: err.message,
+      stack: err.stack,
+      query: err.query,
+      parameters: err.parameters
+    });
+    res.status(500).json({ error: 'Internal server error.' });
+  }
+});
 
 // ======================
 // ADMIN STATS ROUTE
@@ -816,34 +901,6 @@ app.get('/api/admin/stats', authenticateToken, isAdmin, async (req, res) => {
     res.status(500).json({ error: 'Failed to load site statistics.' });
   }
 });
-// Auth routes
-app.post('/api/register', registerUser);
-app.post('/api/login', loginUser);
-
-// Wishlist routes
-app.post('/api/wishlist', authenticateToken, addToWishlist);
-
-// Wishlist routes
-app.post('/api/wishlist', authenticateToken, addToWishlist);
-app.delete('/api/wishlist/:funkoId', authenticateToken, removeFromWishlist);
-app.get('/api/wishlist', authenticateToken, getWishlist);
-app.get('/api/wishlist/check/:funkoId', authenticateToken, checkWishlistItem);
-
-// Collection routes
-app.post('/api/collection', authenticateToken, addToCollection);
-app.delete('/api/collection/:funkoId', authenticateToken, removeFromCollection);
-app.get('/api/collection', authenticateToken, getCollection);
-app.get('/api/collection/check/:funkoId', authenticateToken, checkCollectionItem);
-
-// User routes
-app.get('/api/users/:id', authenticateToken, getUserProfile);
-app.put('/api/users/:id', authenticateToken, updateUserProfile);
-app.put('/api/users/:id/settings', authenticateToken, updateUserSettings);
-
-// Health check
-app.get('/', (req, res) => {
-  res.send('Welcome to the Funko React App Backend API!');
-});
 
 // ======================
 // SERVER STARTUP
@@ -852,15 +909,15 @@ const startServer = async () => {
   try {
     // Test database connection
     await pool.query('SELECT NOW()');
-    console.log('Database connected successfully');
+    console.log('✅ Database connected successfully');
     
     // Seed database if needed
     await seedDatabase();
     
     // Start server
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
   } catch (err) {
-    console.error('Failed to start server:', err);
+    console.error('❌ Failed to start server:', err);
     process.exit(1);
   }
 };

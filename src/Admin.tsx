@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { translations } from "./Translations/TranslationAdmin";
 import ItemList from "./ItemList.tsx";
-
 // SVG Icons
 import MoonIcon from "./assets/moon.svg?react";
 import SunIcon from "./assets/sun.svg?react";
@@ -13,7 +12,6 @@ import UsersIcon from "/src/assets/users.svg?react";
 import EyeIcon from "/src/assets/eye.svg?react";
 import ChartIcon from "/src/assets/chart.svg?react";
 import CalendarIcon from "/src/assets/calendar.svg?react";
-
 // Flag SVGs
 import UKFlag from "/src/assets/flags/uk.svg?react";
 import USAFlag from "/src/assets/flags/usa.svg?react";
@@ -127,7 +125,7 @@ const Admin = () => {
   // Constants
   const SUPER_ADMIN_ID = 1;
   const SUPER_ADMIN_USERNAME = "admin";
-
+  
   // Hooks
   const navigate = useNavigate();
 
@@ -166,9 +164,16 @@ const Admin = () => {
     imageName: "",
   });
 
+  // Search state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredItems, setFilteredItems] = useState<Item[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false); // Track typing state
+
   // Refs
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Derived values
   const t = translations[language] || translations["EN"];
@@ -186,8 +191,7 @@ const Admin = () => {
     if (isSuperAdmin(currentUser)) return true;
     return targetUser.role !== "admin";
   };
-
-     
+  
   useEffect(() => {
     const savedLanguage = localStorage.getItem("preferredLanguage");
     if (savedLanguage && savedLanguage !== language) {
@@ -228,11 +232,9 @@ const Admin = () => {
   useEffect(() => {
     const savedCountry = localStorage.getItem("preferredCountry");
     const savedLanguage = localStorage.getItem("preferredLanguage");
-
     const countryData = savedCountry && countries[savedCountry as keyof typeof countries]
       ? countries[savedCountry as keyof typeof countries]
       : null;
-
     if (countryData && savedCountry) {
       setSelectedCountry(savedCountry);
       setLanguage(
@@ -254,7 +256,6 @@ const Admin = () => {
         setRegion(detectedData.region);
       }
     }
-
   }, []);
 
   // 🌙 Theme sync
@@ -288,15 +289,12 @@ const Admin = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       if (!token || !(currentUser?.role === "admin")) return;
-
       setLoading(true);
       setError(null);
-
       try {
         const response = await fetch("http://localhost:5000/api/admin/users", {
           headers: { Authorization: `Bearer ${token}` },
         });
-
         if (!response.ok) {
           if (response.status === 401 || response.status === 403) {
             localStorage.removeItem("user");
@@ -307,7 +305,6 @@ const Admin = () => {
           }
           throw new Error((await response.text()) || "Failed to fetch users.");
         }
-
         const usersData = await response.json();
         setUsers(usersData);
       } catch (err: any) {
@@ -316,7 +313,6 @@ const Admin = () => {
         setLoading(false);
       }
     };
-
     fetchUsers();
   }, [token, currentUser?.role, t.sessionExpired, navigate]);
 
@@ -324,18 +320,14 @@ const Admin = () => {
   useEffect(() => {
     const fetchSiteStats = async () => {
       if (!token || !(currentUser?.role === "admin")) return;
-
       setStatsLoading(true);
-
       try {
         const response = await fetch("http://localhost:5000/api/admin/stats", {
           headers: { Authorization: `Bearer ${token}` },
         });
-
         if (!response.ok) {
           throw new Error((await response.text() ) || "Failed to fetch site statistics.");
         }
-
         const statsData = await response.json();
         setSiteStats(statsData);
       } catch (err: any) {
@@ -344,9 +336,45 @@ const Admin = () => {
         setStatsLoading(false);
       }
     };
-
     fetchSiteStats();
   }, [token, currentUser?.role]);
+
+  // Optimized search - only search when user has stopped typing and entered at least 2 characters
+  useEffect(() => {
+    // Clear any existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // Reset filtered items if search term is empty
+    if (searchTerm.trim().length === 0) {
+      setFilteredItems([]);
+      setIsTyping(false);
+      return;
+    }
+    
+    // Don't search if less than 2 characters
+    if (searchTerm.trim().length < 2) {
+      setIsTyping(false);
+      return;
+    }
+    
+    // Set typing state
+    setIsTyping(true);
+    
+    // Set a new timeout to perform search after user stops typing
+    searchTimeoutRef.current = setTimeout(() => {
+      handleSearchItems();
+      setIsTyping(false);
+    }, 700); // Wait 700ms after user stops typing
+    
+    // Cleanup function
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchTerm]);
 
   // Handlers
   const toggleTheme = () => {
@@ -386,7 +414,6 @@ const Admin = () => {
 
   const handleMakeAdmin = async (userId: number, userLogin: string) => {
     if (!window.confirm(`${t.confirmMakeAdmin} ${userLogin}?`)) return;
-
     try {
       const response = await fetch(`http://localhost:5000/api/admin/users/${userId}/role`, {
         method: "PATCH",
@@ -396,9 +423,7 @@ const Admin = () => {
         },
         body: JSON.stringify({ role: "admin" }),
       });
-
       if (!response.ok) throw new Error((await response.text()) || "Failed to promote user.");
-
       const data = await response.json();
       alert(`${t.userPromoted} ${data.user.login}`);
       setUsers(users.map((u) => (u.id === userId ? { ...u, role: "admin" } : u)));
@@ -410,27 +435,21 @@ const Admin = () => {
   const handleDeleteUser = async (userId: number, userLogin: string) => {
     const userToDelete = users.find((u) => u.id === userId);
     if (!userToDelete) return;
-
     if (isSuperAdmin(userToDelete)) {
       alert(t.cannotDeleteSuperAdmin || "Super admin accounts cannot be deleted.");
       return;
     }
-
     if (!canDeleteUser(userToDelete)) {
       alert(t.adminPrivilegesRequired || "You need super admin privileges to delete other admins.");
       return;
     }
-
     if (!window.confirm(`${t.confirmDeleteUser} ${userLogin}?`)) return;
-
     try {
       const response = await fetch(`http://localhost:5000/api/admin/users/${userId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-
       if (!response.ok) throw new Error((await response.text()) || "Failed to delete user.");
-
       alert(`${t.userDeleted} ${userLogin}`);
       setUsers(users.filter((u) => u.id !== userId));
     } catch (err: any) {
@@ -443,7 +462,6 @@ const Admin = () => {
       alert("Please fill in required fields (title, number, category).");
       return;
     }
-
     try {
       const response = await fetch("http://localhost:5000/api/admin/items", {
         method: "POST",
@@ -453,12 +471,10 @@ const Admin = () => {
         },
         body: JSON.stringify(newItem),
       });
-
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(errorText || "Failed to add item.");
       }
-
       const createdItem = await response.json();
       alert(`Item added: ${createdItem.title}`);
       setShowAddItemModal(false);
@@ -471,10 +487,48 @@ const Admin = () => {
         exclusive: false,
         imageName: "",
       });
+      // Clear search if we're adding a new item
+      setSearchTerm("");
+      setFilteredItems([]);
     } catch (err: any) {
       console.error('Add item error:', err);
       alert(`Failed to add item: ${err.message}`);
     }
+  };
+
+  // ✅ Optimized: Search only when user has finished typing
+  const handleSearchItems = async () => {
+    // Don't search if less than 2 characters or no token
+    if (searchTerm.trim().length < 2 || !token) return;
+    
+    setSearchLoading(true);
+    try {
+      const response = await fetch(`http://localhost:5000/api/admin/items/search?q=${encodeURIComponent(searchTerm)}`, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      // Uncommented error checking - this is crucial!
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+      }
+      
+      const searchResults = await response.json();
+      setFilteredItems(searchResults);
+    } catch (err: any) {
+      console.error("Search error:", err);
+      alert(`Search failed: ${err.message}`);
+      setFilteredItems([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchTerm("");
+    setFilteredItems([]);
+    setIsTyping(false);
   };
 
   // Early return if not authorized
@@ -795,13 +849,121 @@ const Admin = () => {
               + {t.addItem || "Add Item"}
             </button>
           </div>
+          
+          {/* Search Input */}
+          <div className="mb-6">
+            <div className="relative">
+              <SearchIcon className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`} />
+              <input
+                type="text"
+                placeholder={t.searchItems || "Search items..."}
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  // Set typing state when user types
+                  setIsTyping(true);
+                }}
+                className={`w-full pl-10 pr-10 py-2 border rounded-lg ${
+                  isDarkMode
+                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                    : "bg-white border-gray-300 text-black placeholder-gray-500"
+                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              />
+              {searchTerm && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-red-500 hover:text-red-700"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            {searchTerm && !searchLoading && (
+              <p className={`text-sm mt-2 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+                {searchTerm.trim().length < 2 ? 
+                  t.minimumCharacters || "Enter at least 2 characters to search" : 
+                  isTyping ? 
+                    t.searching || "Searching..." : 
+                    `${filteredItems.length} ${t.resultsFound || "results found"}`
+                }
+              </p>
+            )}
+            {searchLoading && (
+              <p className={`text-sm mt-2 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+                {t.searching || "Searching..."}
+              </p>
+            )}
+          </div>
 
-          <ItemList
-            token={token}
-            currentUserRole={currentUser?.role}
-            isDarkMode={isDarkMode}
-            t={(key: string) => (translations[language] as any)[key]}
-          />
+          {/* Conditionally render ItemList or search results */}
+          {searchTerm ? (
+            <div className="overflow-x-auto">
+              <table className={`min-w-full border-collapse text-sm sm:text-base ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
+                <thead className={`${isDarkMode ? "bg-gray-700" : "bg-gray-200"} text-left`}>
+                  <tr>
+                    <th className="px-2 sm:px-3 py-2 font-semibold">ID</th>
+                    <th className="px-2 sm:px-3 py-2 font-semibold">Title</th>
+                    <th className="px-2 sm:px-3 py-2 font-semibold">Number</th>
+                    <th className="px-2 sm:px-3 py-2 font-semibold">Category</th>
+                    <th className="px-2 sm:px-3 py-2 font-semibold">Series</th>
+                    <th className="px-2 sm:px-3 py-2 font-semibold text-center">Exclusive</th>
+                    <th className="px-2 sm:px-3 py-2 font-semibold">Image</th>
+                    <th className="px-2 sm:px-3 py-2 font-semibold text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredItems.map((item) => (
+                    <tr key={item.id} className={`transition-colors ${isDarkMode ? "even:bg-gray-700 odd:bg-gray-600 hover:bg-gray-500" : "even:bg-gray-100 odd:bg-white hover:bg-gray-200"}`}>
+                      <td className="px-2 sm:px-3 py-2">{item.id}</td>
+                      <td className="px-2 sm:px-3 py-2">{item.title}</td>
+                      <td className="px-2 sm:px-3 py-2">{item.number}</td>
+                      <td className="px-2 sm:px-3 py-2">{item.category}</td>
+                      <td className="px-2 sm:px-3 py-2">
+                        {item.series && item.series.length > 0 ? item.series.join(", ") : "-"}
+                      </td>
+                      <td className="px-2 sm:px-3 py-2 text-center">
+                        {item.exclusive ? (
+                          <span className="text-green-500 font-semibold">✓</span>
+                        ) : (
+                          <span className="text-red-500 font-semibold">✗</span>
+                        )}
+                      </td>
+                      <td className="px-2 sm:px-3 py-2">
+                        {item.imageName ? item.imageName : "-"}
+                      </td>
+                      <td className="px-2 sm:px-3 py-2 text-center">
+                        <button
+                          onClick={() => {
+                            // Handle edit item if needed
+                            console.log("Edit item:", item.id);
+                          }}
+                          className={`px-2 py-1 rounded text-xs sm:text-sm ${
+                            isDarkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
+                          } text-white font-medium transition mx-1`}
+                        >
+                          {t.edit || "Edit"}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredItems.length === 0 && searchTerm.trim().length >= 2 && !searchLoading && !isTyping && (
+                    <tr>
+                      <td colSpan={8} className="text-center py-4 text-lg">
+                        {t.noItemsFound || "No items found matching your search"}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <ItemList
+              token={token}
+              currentUserRole={currentUser?.role}
+              isDarkMode={isDarkMode}
+              t={(key: string) => (translations[language] as any)[key]}
+            />
+          )}
         </section>
 
         {/* Add Item Modal */}

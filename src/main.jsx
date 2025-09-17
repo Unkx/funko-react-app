@@ -95,6 +95,7 @@ import NotFound from './NotFound';
 import CollectionPage from "./CollectionPage";
 import WishlistPage from "./WishlistPage";
 
+
 import { NetworkProvider } from './NetworkContext';
 import { LanguageProvider } from "./LanguageContext";
 

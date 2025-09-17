@@ -531,6 +531,97 @@ const Admin = () => {
     setIsTyping(false);
   };
 
+
+  // Add this helper function at the top of your Admin component, after the interfaces
+const generateFunkoId = (title: string, number: string): string => {
+  return `${title}-${number}`
+    .replace(/[^\w\s-]/g, '') // Remove special characters except spaces and hyphens
+    .replace(/\s+/g, '-')      // Replace spaces with hyphens
+    .toLowerCase()             // Convert to lowercase
+    .replace(/-+/g, '-')       // Replace multiple hyphens with single hyphen
+    .replace(/^-|-$/g, '');    // Remove leading/trailing hyphens
+};
+
+// Add this function to handle item navigation
+const handleItemNavigation = (item: Item) => {
+  // Use the item's existing ID if it's already in the correct format
+  let funkoId = String(item.id);
+  
+  console.log('Admin - Navigating to item:', item);
+  console.log('Admin - Original ID:', funkoId);
+  
+  // Check if the ID is already in the correct format (contains hyphens and looks like title-number)
+  const isCorrectFormat = /^[a-z0-9]+-\d+.*$/.test(funkoId.toLowerCase());
+  
+  if (!isCorrectFormat && item.title && item.number) {
+    // Generate the ID using the same logic as the backend
+    funkoId = generateFunkoId(item.title, item.number);
+    console.log('Admin - Generated new ID:', funkoId);
+  }
+  
+  console.log('Admin - Final ID for navigation:', funkoId);
+  
+  // Navigate to the item detail page
+  navigate(`/item/${encodeURIComponent(funkoId)}`);
+};
+
+// Replace your search results table rows with this updated version:
+{filteredItems.map((item) => (
+  <tr 
+    key={item.id} 
+    className={`transition-colors cursor-pointer ${
+      isDarkMode 
+        ? "even:bg-gray-700 odd:bg-gray-600 hover:bg-gray-500" 
+        : "even:bg-gray-100 odd:bg-white hover:bg-gray-200"
+    }`}
+    onClick={() => handleItemNavigation(item)}
+    title="Click to view item details"
+  >
+    <td className="px-2 sm:px-3 py-2">{item.id}</td>
+    <td className="px-2 sm:px-3 py-2">{item.title}</td>
+    <td className="px-2 sm:px-3 py-2">{item.number}</td>
+    <td className="px-2 sm:px-3 py-2">{item.category}</td>
+    <td className="px-2 sm:px-3 py-2">
+      {item.series && item.series.length > 0 ? item.series.join(", ") : "-"}
+    </td>
+    <td className="px-2 sm:px-3 py-2 text-center">
+      {item.exclusive ? (
+        <span className="text-green-500 font-semibold">✓</span>
+      ) : (
+        <span className="text-red-500 font-semibold">✗</span>
+      )}
+    </td>
+    <td className="px-2 sm:px-3 py-2">
+      {item.imageName ? item.imageName : "-"}
+    </td>
+    <td className="px-2 sm:px-3 py-2 text-center">
+      <button
+        onClick={(e) => {
+          e.stopPropagation(); // Prevent row click
+          handleItemNavigation(item);
+        }}
+        className={`px-2 py-1 rounded text-xs sm:text-sm ${
+          isDarkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
+        } text-white font-medium transition mx-1`}
+      >
+        {t.view || "View"}
+      </button>
+      <button
+        onClick={(e) => {
+          e.stopPropagation(); // Prevent row click
+          // Handle edit item functionality here
+          console.log("Edit item:", item.id);
+        }}
+        className={`px-2 py-1 rounded text-xs sm:text-sm ${
+          isDarkMode ? "bg-yellow-600 hover:bg-yellow-700" : "bg-yellow-500 hover:bg-yellow-600"
+        } text-white font-medium transition mx-1`}
+      >
+        {t.edit || "Edit"}
+      </button>
+    </td>
+  </tr>
+))}
+
   // Early return if not authorized
   if (!token || !currentUser || currentUser.role !== "admin") {
     return (

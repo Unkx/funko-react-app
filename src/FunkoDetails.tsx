@@ -363,13 +363,15 @@ const FunkoDetails: React.FC = () => {
     russia: { name: 'Russia', flag: '🇷🇺' }
   };
 
-  const generateId = (
-    title: string,
-    number: string
-  ): string => {
+  const generateId = (title: string, number: string): string => {
     const safeTitle = title ? title.trim() : "";
     const safeNumber = number ? number.trim() : "";
-    return `${safeTitle}-${safeNumber}`.replace(/\s+/g, "-");
+    return `${safeTitle}-${safeNumber}`
+      .replace(/[^\w\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-')     // Replace spaces with hyphens
+      .toLowerCase()            // Convert to lowercase
+      .replace(/-+/g, '-')      // Replace multiple hyphens with single
+      .replace(/^-|-$/g, '');   // Remove leading/trailing hyphens
   };
 
   const handleCountryToggle = (countryCode: string) => {
@@ -433,68 +435,135 @@ const FunkoDetails: React.FC = () => {
     return related.slice(0, 6); // Return top 6 related items
   };
 
-  // Fetch Funko data
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(
-          "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
-        );
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        const data: FunkoItem[] = await response.json();
+  const normalizeId = (id: string): string => {
+  return id
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .toLowerCase()
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+};
 
-        const dataWithIds: FunkoItemWithId[] = data.map((item) => ({
-          ...item,
-          id: generateId(item.title, item.number),
-        }));
+ // Fetch Funko data
+// Replace the fetchData function in useEffect:
+const fetchData = async () => {
+  try {
+    setIsLoading(true);
+    
+    if (!id) {
+      throw new Error("No ID provided");
+    }
 
-        const foundItem = dataWithIds.find((item) => item.id === id);
-        if (!foundItem) throw new Error("Funko Pop not found");
-
-        setFunkoItem(foundItem);
+    console.log("Searching for ID:", id);
+    
+    // First try the direct API call with the ID
+    try {
+      const apiResponse = await api.get(`/api/items/${encodeURIComponent(id)}`);
+      if (apiResponse.data) {
+        console.log("Found in database:", apiResponse.data);
+        setFunkoItem({...apiResponse.data, id});
         setError(null);
-
-        // Use the improved related items function
-        const related = findRelatedItems(foundItem, dataWithIds);
-        setRelatedItems(related);
-
-        // Load price history from API if available
+        
+        // Load related items
         try {
-          const priceResponse = await api.get(`/prices/${foundItem.id}`);
-          if (priceResponse.data && priceResponse.data.length > 0) {
-            setPriceHistory(priceResponse.data);
-          } else {
-            // Fallback to mock data if no price history exists
-            const mockPrices: PricePoint[] = [
-              { date: "2024-01-01", price: 12.99, shop: "Mock Data", country: "US", currency: "USD" },
-              { date: "2024-02-01", price: 14.49, shop: "Mock Data", country: "US", currency: "USD" },
-              { date: "2024-03-01", price: 13.99, shop: "Mock Data", country: "US", currency: "USD" },
-              { date: "2024-04-01", price: 15.49, shop: "Mock Data", country: "US", currency: "USD" },
-              { date: "2024-05-01", price: 16.29, shop: "Mock Data", country: "US", currency: "USD" },
-            ];
-            setPriceHistory(mockPrices);
+          const allItemsResponse = await api.get('/api/items');
+          if (allItemsResponse.data) {
+            const related = findRelatedItems(apiResponse.data, allItemsResponse.data);
+            setRelatedItems(related);
           }
-        } catch (err) {
-          console.error("Failed to fetch price history:", err);
-          // Fallback to mock data if API call fails
-          const mockPrices: PricePoint[] = [
-            { date: "2024-01-01", price: 12.99, shop: "Mock Data", country: "US", currency: "USD" },
-            { date: "2024-02-01", price: 14.49, shop: "Mock Data", country: "US", currency: "USD" },
-            { date: "2024-03-01", price: 13.99, shop: "Mock Data", country: "US", currency: "USD" },
-            { date: "2024-04-01", price: 15.49, shop: "Mock Data", country: "US", currency: "USD" },
-            { date: "2024-05-01", price: 16.29, shop: "Mock Data", country: "US", currency: "USD" },
-          ];
-          setPriceHistory(mockPrices);
+        } catch (e) {
+          console.error("Could not load related items:", e);
         }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
+        
         setIsLoading(false);
+        return;
       }
-    };
-    fetchData();
-  }, [id]);
+    } catch (apiError) {
+      console.log("Item not found via direct API call, trying alternative methods...");
+    }
+
+    // If direct API call failed, try to search for the item
+    const searchParams = extractSearchParamsFromId(id);
+    console.log("Extracted search params:", searchParams);
+    
+    try {
+      // Search for items with similar title
+      const searchResponse = await api.get(`/api/items/search?q=${encodeURIComponent(searchParams.title)}`);
+      
+      if (searchResponse.data && searchResponse.data.length > 0) {
+        // Try to find the best match
+        let foundItem = searchResponse.data.find((item: any) => 
+          item.id === id || generateId(item.title, item.number) === id
+        );
+        
+        // If no exact match, take the first result
+        if (!foundItem && searchResponse.data.length > 0) {
+          foundItem = searchResponse.data[0];
+          console.log("Using first search result:", foundItem);
+        }
+        
+        if (foundItem) {
+          setFunkoItem({...foundItem, id: foundItem.id});
+          setError(null);
+          
+          // Load related items from search results
+          const related = findRelatedItems(foundItem, searchResponse.data);
+          setRelatedItems(related);
+          
+          setIsLoading(false);
+          return;
+        }
+      }
+    } catch (searchError) {
+      console.error("Search also failed:", searchError);
+    }
+
+    // Final fallback: GitHub data
+    console.log("Trying GitHub data as final fallback...");
+    const response = await fetch(
+      "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
+    );
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+    const data: FunkoItem[] = await response.json();
+
+    const dataWithIds: FunkoItemWithId[] = data.map((item) => ({
+      ...item,
+      id: generateId(item.title, item.number),
+    }));
+
+    // Try to find item by ID match
+    let foundItem = dataWithIds.find((item) => item.id === id);
+    
+    // If not found by ID, try to find by title similarity
+    if (!foundItem) {
+      foundItem = dataWithIds.find((item) => 
+        item.title.toLowerCase().includes(searchParams.title.toLowerCase()) ||
+        generateId(item.title, item.number).includes(id.toLowerCase())
+      );
+    }
+
+    if (!foundItem) throw new Error("Funko Pop not found");
+
+    setFunkoItem(foundItem);
+    setError(null);
+
+    // Find related items from GitHub data
+    const related = findRelatedItems(foundItem, dataWithIds);
+    setRelatedItems(related);
+
+  } catch (err) {
+    console.error("Error loading item:", err);
+    setError(err instanceof Error ? err.message : "An error occurred");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+// In FunkoDetails.tsx, add this debug effect
+useEffect(() => {
+  console.log("Current ID from URL:", id);
+  console.log("Looking for item with ID:", id);
+}, [id]);
 
   // Check item in wishlist/collection
   useEffect(() => {

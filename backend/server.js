@@ -141,6 +141,17 @@ const addItem = async (req, res) => {
 // ======================
 // UTILITY FUNCTIONS
 // ======================
+
+// Add this function to generate consistent IDs
+const generateFunkoId = (title, number) => {
+  return `${title}-${number}`
+    .replace(/[^\w\s-]/g, '') // Remove special characters except spaces and hyphens
+    .replace(/\s+/g, '-')      // Replace spaces with hyphens
+    .toLowerCase()             // Convert to lowercase
+    .replace(/-+/g, '-')       // Replace multiple hyphens with single hyphen
+    .replace(/^-|-$/g, '');    // Remove leading/trailing hyphens
+};
+
 const hashPassword = async (password) => {
   return await bcrypt.hash(password, 10);
 };
@@ -157,7 +168,7 @@ const generateToken = (user) => {
       email: user.email,
       role: user.role
     },
-    JWT_SECRET,
+    JWT_SECRET, // ← MUST be same as in authenticateToken
     { expiresIn: JWT_EXPIRES_IN }
   );
 };
@@ -184,10 +195,10 @@ const registerUser = async (req, res) => {
     res.status(201).json(newUser.rows[0]);
   } catch (err) {
     if (err.code === '23505') {
-      if (err.detail.includes('email')) {
+      if (err.detail && err.detail.includes('email')) {
         return res.status(409).json({ error: 'Email already registered' });
       }
-      if (err.detail.includes('login')) {
+      if (err.detail && err.detail.includes('login')) {
         return res.status(409).json({ error: 'Login name already taken' });
       }
     }
@@ -243,6 +254,7 @@ const loginUser = async (req, res) => {
 // ======================
 // WISHLIST CONTROLLERS
 // ======================
+// (unchanged)
 const addToWishlist = async (req, res) => {
   const { funkoId, title, number, imageName } = req.body;
   const userId = req.user.id;
@@ -274,8 +286,8 @@ const addToWishlist = async (req, res) => {
       return res.status(200).json({ message: "Already in wishlist" });
     }
 
-    res.status(201).json({ 
-      message: "Added to wishlist", 
+    res.status(201).json({
+      message: "Added to wishlist",
       item: { id: funkoId, title, number, imageName }
     });
   } catch (err) {
@@ -353,6 +365,7 @@ const checkWishlistItem = async (req, res) => {
 // ======================
 // COLLECTION CONTROLLERS
 // ======================
+// (unchanged)
 const addToCollection = async (req, res) => {
   const { funkoId, title, number, imageName, condition = "Mint" } = req.body;
   const userId = req.user.id;
@@ -384,8 +397,8 @@ const addToCollection = async (req, res) => {
       return res.status(200).json({ message: "Already in collection" });
     }
 
-    res.status(201).json({ 
-      message: "Added to collection", 
+    res.status(201).json({
+      message: "Added to collection",
       item: { id: funkoId, title, number, imageName, condition }
     });
   } catch (err) {
@@ -518,6 +531,33 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
+const getAdminItems = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, title, number, category, 
+              CASE 
+                WHEN series IS NOT NULL THEN series::text
+                ELSE '[]'
+              END as series,
+              exclusive, image_name as imageName 
+       FROM funko_items 
+       ORDER BY category, title, number`
+    );
+    
+    // Parse the series JSON for each item
+    const items = result.rows.map(item => ({
+      ...item,
+      // Corrected line: parse the series as JSON and return it as an array
+      series: item.series ? JSON.parse(item.series) : []
+    }));
+    
+    res.json(items);
+  } catch (err) {
+    console.error('Error fetching admin items:', err);
+    res.status(500).json({ error: 'Failed to load items' });
+  }
+};
+
 const updateUserSettings = async (req, res) => {
   if (req.user.id !== parseInt(req.params.id) && req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Forbidden: You can only update your own settings' });
@@ -588,32 +628,6 @@ const deleteUser = async (req, res) => {
   }
 };
 
-const getAdminItems = async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT id, title, number, category, 
-              CASE 
-                WHEN series IS NOT NULL THEN series::text
-                ELSE '[]'
-              END as series,
-              exclusive, image_name as imageName 
-       FROM funko_items 
-       ORDER BY category, title, number`
-    );
-    
-    // Parse the series JSON for each item
-    const items = result.rows.map(item => ({
-      ...item,
-      series: item.series ? JSON.parse(item.series) : []
-    }));
-    
-    res.json(items);
-  } catch (err) {
-    console.error('Error fetching admin items:', err);
-    res.status(500).json({ error: 'Failed to load items' });
-  }
-};
-
 // Add this search controller function
 const searchItems = async (req, res) => {
   const { q } = req.query;
@@ -672,28 +686,7 @@ const seedDatabase = async () => {
     }
 
     console.log("🌱 Seeding database...");
-    // const response = await fetch(
-    //   "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json  "
-    // );
-    // const data = await response.json();
-
-    // for (const item of data) {
-    //   const id = `${item.title}-${item.number}`.replace(/\s+/g, "-");
-    //   await pool.query(
-    //     `INSERT INTO funko_items (id, title, number, category, series, exclusive, image_name)
-    //      VALUES ($1, $2, $3, $4, $5, $6, $7)
-    //      ON CONFLICT (id) DO NOTHING`,
-    //     [
-    //       id,
-    //       item.title,
-    //       item.number,
-    //       item.category,
-    //       JSON.stringify(item.series),
-    //       item.exclusive || false,
-    //       item.imageName || null,
-    //     ]
-    //   );
-    // }
+    // (seed commented out on purpose)
     console.log("✅ Database seeded successfully");
   } catch (err) {
     console.error("Database seeding error:", err);
@@ -749,6 +742,189 @@ app.get('/', (req, res) => {
   res.send('Welcome to the Funko React App Backend API!');
 });
 
+// ---------- PUBLIC item routes ----------
+app.get('/api/items', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, title, number, category, 
+              CASE 
+                WHEN series IS NOT NULL THEN series::text
+                ELSE '[]'
+              END as series,
+              exclusive, image_name as "imageName"
+       FROM funko_items
+       ORDER BY category, title, number`
+    );
+
+    const items = result.rows.map(item => ({
+      ...item,
+      series: item.series ? JSON.parse(item.series) : []
+    }));
+
+    res.json(items);
+  } catch (err) {
+    console.error("❌ Error fetching items:", err);
+    res.status(500).json({ error: "Failed to load items" });
+  }
+});
+
+// Public search route: search all items in database (including admin-added ones)
+app.get('/api/items/search', async (req, res) => {
+  const { q } = req.query;
+  
+  if (!q || typeof q !== 'string') {
+    return res.status(400).json({ error: 'Search query is required' });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT id, title, number, category, 
+              CASE 
+                WHEN series IS NOT NULL THEN series::text
+                ELSE '[]'
+              END as series,
+              exclusive, image_name as "imageName"
+       FROM funko_items
+       WHERE LOWER(title) LIKE LOWER($1) 
+          OR LOWER(number) LIKE LOWER($1)
+          OR LOWER(category) LIKE LOWER($1)
+          OR EXISTS (
+            SELECT 1 FROM jsonb_array_elements_text(series) elem 
+            WHERE LOWER(elem) LIKE LOWER($1)
+          )
+       ORDER BY category, title, number`,
+      [`%${q}%`]
+    );
+
+    const items = result.rows.map(item => ({
+      ...item,
+      series: item.series ? JSON.parse(item.series) : []
+    }));
+
+    res.json(items);
+  } catch (err) {
+    console.error("❌ Error searching items:", err);
+    res.status(500).json({ error: "Failed to search items" });
+  }
+});
+// Add this route after your existing /api/items routes
+// In your backend server code, improve the /api/items/:id route:
+// Improved /api/items/:id route with better error handling and debugging
+app.get('/api/items/:id', async (req, res) => {
+  const { id } = req.params;
+  
+  console.log('🔍 Looking for item with ID:', id);
+  console.log('🔍 URL decoded ID:', decodeURIComponent(id));
+  
+  try {
+    const decodedId = decodeURIComponent(id);
+    let result;
+    
+    // Strategy 1: Exact match with decoded ID
+    result = await pool.query(
+      `SELECT id, title, number, category, 
+              CASE 
+                WHEN series IS NOT NULL THEN series::text
+                ELSE '[]'
+              END as series,
+              exclusive, image_name as "imageName"
+       FROM funko_items 
+       WHERE id = $1`,
+      [decodedId]
+    );
+    
+    console.log('✅ Strategy 1 (exact match) results:', result.rows.length);
+    
+    // Strategy 2: Case-insensitive exact match
+    if (result.rows.length === 0) {
+      result = await pool.query(
+        `SELECT id, title, number, category, 
+                CASE 
+                  WHEN series IS NOT NULL THEN series::text
+                  ELSE '[]'
+                END as series,
+                exclusive, image_name as "imageName"
+         FROM funko_items 
+         WHERE LOWER(id) = LOWER($1)`,
+        [decodedId]
+      );
+      console.log('✅ Strategy 2 (case-insensitive) results:', result.rows.length);
+    }
+    
+    // Strategy 3: Parse ID and search by title-number combination
+    if (result.rows.length === 0) {
+      // Handle different ID formats: "title-number", "title-number-", etc.
+      const idParts = decodedId.split('-').filter(part => part.length > 0);
+      
+      if (idParts.length >= 2) {
+        const numberPart = idParts[idParts.length - 1]; // Last part as number
+        const titleParts = idParts.slice(0, -1); // Everything except last part
+        const titlePart = titleParts.join(' '); // Join with spaces
+        
+        console.log('🔍 Strategy 3 - Title:', titlePart, 'Number:', numberPart);
+        
+        result = await pool.query(
+          `SELECT id, title, number, category, 
+                  CASE 
+                    WHEN series IS NOT NULL THEN series::text
+                    ELSE '[]'
+                  END as series,
+                  exclusive, image_name as "imageName"
+           FROM funko_items 
+           WHERE LOWER(title) = LOWER($1) AND LOWER(number) = LOWER($2)`,
+          [titlePart, numberPart]
+        );
+        console.log('✅ Strategy 3 (title-number) results:', result.rows.length);
+      }
+    }
+    
+    // Strategy 4: Fuzzy search by title if nothing found
+    if (result.rows.length === 0) {
+      const searchTerm = decodedId.replace(/-/g, ' ');
+      console.log('🔍 Strategy 4 - Fuzzy search term:', searchTerm);
+      
+      result = await pool.query(
+        `SELECT id, title, number, category, 
+                CASE 
+                  WHEN series IS NOT NULL THEN series::text
+                  ELSE '[]'
+                END as series,
+                exclusive, image_name as "imageName"
+         FROM funko_items 
+         WHERE LOWER(title) LIKE LOWER($1)
+         LIMIT 1`,
+        [`%${searchTerm}%`]
+      );
+      console.log('✅ Strategy 4 (fuzzy search) results:', result.rows.length);
+    }
+
+    if (result.rows.length === 0) {
+      console.log('❌ Item not found with any strategy for ID:', id);
+      
+      // Debug: Show some sample IDs from database
+      const sampleIds = await pool.query('SELECT id FROM funko_items LIMIT 5');
+      console.log('📋 Sample IDs in database:', sampleIds.rows.map(r => r.id));
+      
+      return res.status(404).json({ 
+        error: 'Funko Pop not found',
+        searchedId: decodedId,
+        suggestions: sampleIds.rows.map(r => r.id)
+      });
+    }
+
+    const item = {
+      ...result.rows[0],
+      series: result.rows[0].series ? JSON.parse(result.rows[0].series) : []
+    };
+
+    console.log('✅ Found item:', item);
+    res.json(item);
+  } catch (err) {
+    console.error('❌ Error fetching item:', err);
+    res.status(500).json({ error: 'Failed to load item' });
+  }
+});
+
 // Auth routes
 app.post('/api/register', registerUser);
 app.post('/api/login', loginUser);
@@ -772,8 +948,8 @@ app.get('/api/collection/check/:funkoId', authenticateToken, checkCollectionItem
 
 // Admin routes
 app.get('/api/admin/users', authenticateToken, isAdmin, getAllUsers);
-app.get('/api/admin/items', authenticateToken, isAdmin, getAdminItems);
-app.get('/api/admin/items/search', authenticateToken, isAdmin, searchItems); // Only defined once!
+
+app.get('/api/admin/items/search', authenticateToken, isAdmin, searchItems);
 app.post('/api/admin/items', authenticateToken, isAdmin, addItem);
 app.delete('/api/admin/users/:id', authenticateToken, isAdmin, deleteUser);
 
@@ -902,6 +1078,43 @@ app.get('/api/admin/stats', authenticateToken, isAdmin, async (req, res) => {
   }
 });
 
+
+// ======================
+// FIX THE ADMIN ITEMS ROUTE
+// ======================
+
+app.get("/api/admin/items", authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = (page - 1) * limit;
+
+    const countResult = await pool.query("SELECT COUNT(*) FROM funko_items");
+    const totalItems = parseInt(countResult.rows[0].count);
+    const totalPages = Math.ceil(totalItems / limit);
+
+    const result = await pool.query(
+      `SELECT id, title, number, category, 
+              CASE WHEN series IS NOT NULL THEN series::text ELSE '[]' END as series,
+              exclusive, image_name as "imageName"
+       FROM funko_items
+       ORDER BY category, title, number
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+
+    const items = result.rows.map(item => ({
+      ...item,
+      series: item.series ? JSON.parse(item.series) : []
+    }));
+
+    // Return the paginated response
+    res.json({ items, totalItems, totalPages });
+  } catch (err) {
+    console.error("❌ Error fetching admin items:", err);
+    res.status(500).json({ error: "Failed to load items" });
+  }
+});
 // ======================
 // SERVER STARTUP
 // ======================

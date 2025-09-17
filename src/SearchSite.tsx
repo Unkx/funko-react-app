@@ -182,11 +182,50 @@ const allItems = useMemo(() => {
   };
 
   // Helper to generate IDs
-  const generateId = (title: string, number: string): string => {
-    const safeTitle = title ? title.trim() : "";
-    const safeNumber = number ? number.trim() : "";
-    return `${safeTitle}-${safeNumber}`.replace(/\s+/g, "-");
-  };
+// Ensure you're using the same generateId function
+const generateId = (title: string, number: string): string => {
+  const safeTitle = title ? title.trim() : "";
+  const safeNumber = number ? number.trim() : "";
+  return `${safeTitle}-${safeNumber}`
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .toLowerCase()
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+};
+
+// And when displaying search results, use:
+{currentItems.map((item: any) => {
+  const itemId = item.id || generateId(item.title, item.number || '');
+  return (
+    <li
+      key={itemId}
+      className={`p-4 sm:px-6 sm:py-4 rounded-lg flex flex-col sm:flex-row gap-4 ${
+        isDarkMode ? "bg-gray-700" : "bg-gray-200"
+      } cursor-pointer hover:opacity-90 transition-opacity relative`}
+      onClick={() => navigate(`/funko/${encodeURIComponent(itemId)}`)}
+    >
+      {/* ... rest of your item display ... */}
+    </li>
+  );
+})}
+
+
+// Add this function to extract search parameters from ID
+const extractSearchParamsFromId = (id: string) => {
+  // Try to split by hyphen to get title and number
+  const parts = id.split('-');
+  
+  if (parts.length >= 2 && !isNaN(Number(parts[parts.length - 1]))) {
+    // Format: "title-number"
+    const number = parts.pop() || '';
+    const title = parts.join(' ');
+    return { title, number };
+  }
+  
+  // If no number found, treat the whole thing as title
+  return { title: id.replace(/-/g, ' '), number: '' };
+};
 
 // Fetch data from API (DB) first, fallback to GitHub
 useEffect(() => {
@@ -658,7 +697,13 @@ useEffect(() => {
                       className={`p-4 sm:px-6 sm:py-4 rounded-lg flex flex-col sm:flex-row gap-4 ${
                         isDarkMode ? "bg-gray-700" : "bg-gray-200"
                       } cursor-pointer hover:opacity-90 transition-opacity relative`}
-                      onClick={() => navigate(`/funko/${item.id}`)}
+                      onClick={() => {
+                        // Ensure we have a properly formatted ID
+                        const properId = item.id.includes('-') 
+                          ? item.id 
+                          : generateId(item.title, item.number || '');
+                        navigate(`/funko/${encodeURIComponent(properId)}`);
+                      }}
                     >
                       {/* Admin Item Badge */}
                       {isAdminItem(item.id) && (

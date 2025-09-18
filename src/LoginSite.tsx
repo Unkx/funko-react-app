@@ -37,7 +37,8 @@ const LoginSite: React.FC = () => {
   });
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [language, setLanguage] = useState("EN");
+  type LanguageKey = keyof typeof translations;
+  const [language, setLanguage] = useState<LanguageKey>("EN");
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [shouldShowPopup, setShouldShowPopup] = useState(false);
   const navigate = useNavigate();

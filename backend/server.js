@@ -743,24 +743,26 @@ app.get('/', (req, res) => {
 });
 
 // ---------- PUBLIC item routes ----------
+// Replace your /api/items and /api/items/:id routes with these improved versions
+
+// Get all items with proper series parsing
 app.get('/api/items', async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT id, title, number, category, 
-              CASE 
-                WHEN series IS NOT NULL THEN series::text
-                ELSE '[]'
-              END as series,
+              series,  -- Directly use the JSONB field
               exclusive, image_name as "imageName"
        FROM funko_items
        ORDER BY category, title, number`
     );
 
+    // Properly parse the series field
     const items = result.rows.map(item => ({
       ...item,
-      series: item.series ? JSON.parse(item.series) : []
+      series: item.series || []  // Return empty array if series is null
     }));
 
+    console.log(`✅ Fetched ${items.length} items from database`);
     res.json(items);
   } catch (err) {
     console.error("❌ Error fetching items:", err);
@@ -768,7 +770,73 @@ app.get('/api/items', async (req, res) => {
   }
 });
 
-// Public search route: search all items in database (including admin-added ones)
+// Get single item with improved ID matching
+app.get('/api/items/:id', async (req, res) => {
+  const { id } = req.params;
+  
+  console.log('🔍 Looking for item with ID:', id);
+  
+  try {
+    // First try exact match
+    let result = await pool.query(
+      `SELECT id, title, number, category, 
+              series,  -- Directly use the JSONB field
+              exclusive, image_name as "imageName"
+       FROM funko_items 
+       WHERE id = $1`,
+      [id]
+    );
+    
+    // If not found, try case-insensitive search
+    if (result.rows.length === 0) {
+      result = await pool.query(
+        `SELECT id, title, number, category, 
+                series,
+                exclusive, image_name as "imageName"
+         FROM funko_items 
+         WHERE LOWER(id) = LOWER($1)`,
+        [id]
+      );
+    }
+    
+    // If still not found, try searching by title and number separately
+    if (result.rows.length === 0) {
+      // Parse the ID to extract title and number
+      const idParts = id.split('-');
+      const numberPart = idParts.pop(); // Last part is usually the number
+      const titlePart = idParts.join(' '); // Rest is the title
+      
+      if (numberPart && titlePart) {
+        result = await pool.query(
+          `SELECT id, title, number, category, 
+                  series,
+                  exclusive, image_name as "imageName"
+           FROM funko_items 
+           WHERE LOWER(title) = LOWER($1) AND number = $2`,
+          [titlePart, numberPart]
+        );
+      }
+    }
+
+    if (result.rows.length === 0) {
+      console.log('❌ Item not found with ID:', id);
+      return res.status(404).json({ error: 'Funko Pop not found' });
+    }
+
+    const item = {
+      ...result.rows[0],
+      series: result.rows[0].series || []  // Ensure series is always an array
+    };
+
+    console.log('✅ Found item:', item.id);
+    res.json(item);
+  } catch (err) {
+    console.error('❌ Error fetching item:', err);
+    res.status(500).json({ error: 'Failed to load item' });
+  }
+});
+
+// Improved search endpoint
 app.get('/api/items/search', async (req, res) => {
   const { q } = req.query;
   
@@ -779,10 +847,7 @@ app.get('/api/items/search', async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT id, title, number, category, 
-              CASE 
-                WHEN series IS NOT NULL THEN series::text
-                ELSE '[]'
-              END as series,
+              series,
               exclusive, image_name as "imageName"
        FROM funko_items
        WHERE LOWER(title) LIKE LOWER($1) 
@@ -792,13 +857,20 @@ app.get('/api/items/search', async (req, res) => {
             SELECT 1 FROM jsonb_array_elements_text(series) elem 
             WHERE LOWER(elem) LIKE LOWER($1)
           )
-       ORDER BY category, title, number`,
+       ORDER BY 
+         CASE 
+           WHEN LOWER(title) LIKE LOWER($1) THEN 1
+           WHEN LOWER(number) LIKE LOWER($1) THEN 2
+           WHEN LOWER(category) LIKE LOWER($1) THEN 3
+           ELSE 4
+         END,
+         category, title, number`,
       [`%${q}%`]
     );
 
     const items = result.rows.map(item => ({
       ...item,
-      series: item.series ? JSON.parse(item.series) : []
+      series: item.series || []
     }));
 
     res.json(items);
@@ -807,123 +879,50 @@ app.get('/api/items/search', async (req, res) => {
     res.status(500).json({ error: "Failed to search items" });
   }
 });
-// Add this route after your existing /api/items routes
-// In your backend server code, improve the /api/items/:id route:
-// Improved /api/items/:id route with better error handling and debugging
-app.get('/api/items/:id', async (req, res) => {
-  const { id } = req.params;
-  
-  console.log('🔍 Looking for item with ID:', id);
-  console.log('🔍 URL decoded ID:', decodeURIComponent(id));
-  
+
+
+// Debug endpoint to check database contents
+app.get('/api/debug/items', async (req, res) => {
   try {
-    const decodedId = decodeURIComponent(id);
-    let result;
-    
-    // Strategy 1: Exact match with decoded ID
-    result = await pool.query(
-      `SELECT id, title, number, category, 
-              CASE 
-                WHEN series IS NOT NULL THEN series::text
-                ELSE '[]'
-              END as series,
-              exclusive, image_name as "imageName"
-       FROM funko_items 
-       WHERE id = $1`,
-      [decodedId]
+    const result = await pool.query(
+      'SELECT id, title, number, category FROM funko_items LIMIT 10'
     );
-    
-    console.log('✅ Strategy 1 (exact match) results:', result.rows.length);
-    
-    // Strategy 2: Case-insensitive exact match
-    if (result.rows.length === 0) {
-      result = await pool.query(
-        `SELECT id, title, number, category, 
-                CASE 
-                  WHEN series IS NOT NULL THEN series::text
-                  ELSE '[]'
-                END as series,
-                exclusive, image_name as "imageName"
-         FROM funko_items 
-         WHERE LOWER(id) = LOWER($1)`,
-        [decodedId]
-      );
-      console.log('✅ Strategy 2 (case-insensitive) results:', result.rows.length);
-    }
-    
-    // Strategy 3: Parse ID and search by title-number combination
-    if (result.rows.length === 0) {
-      // Handle different ID formats: "title-number", "title-number-", etc.
-      const idParts = decodedId.split('-').filter(part => part.length > 0);
-      
-      if (idParts.length >= 2) {
-        const numberPart = idParts[idParts.length - 1]; // Last part as number
-        const titleParts = idParts.slice(0, -1); // Everything except last part
-        const titlePart = titleParts.join(' '); // Join with spaces
-        
-        console.log('🔍 Strategy 3 - Title:', titlePart, 'Number:', numberPart);
-        
-        result = await pool.query(
-          `SELECT id, title, number, category, 
-                  CASE 
-                    WHEN series IS NOT NULL THEN series::text
-                    ELSE '[]'
-                  END as series,
-                  exclusive, image_name as "imageName"
-           FROM funko_items 
-           WHERE LOWER(title) = LOWER($1) AND LOWER(number) = LOWER($2)`,
-          [titlePart, numberPart]
-        );
-        console.log('✅ Strategy 3 (title-number) results:', result.rows.length);
-      }
-    }
-    
-    // Strategy 4: Fuzzy search by title if nothing found
-    if (result.rows.length === 0) {
-      const searchTerm = decodedId.replace(/-/g, ' ');
-      console.log('🔍 Strategy 4 - Fuzzy search term:', searchTerm);
-      
-      result = await pool.query(
-        `SELECT id, title, number, category, 
-                CASE 
-                  WHEN series IS NOT NULL THEN series::text
-                  ELSE '[]'
-                END as series,
-                exclusive, image_name as "imageName"
-         FROM funko_items 
-         WHERE LOWER(title) LIKE LOWER($1)
-         LIMIT 1`,
-        [`%${searchTerm}%`]
-      );
-      console.log('✅ Strategy 4 (fuzzy search) results:', result.rows.length);
-    }
-
-    if (result.rows.length === 0) {
-      console.log('❌ Item not found with any strategy for ID:', id);
-      
-      // Debug: Show some sample IDs from database
-      const sampleIds = await pool.query('SELECT id FROM funko_items LIMIT 5');
-      console.log('📋 Sample IDs in database:', sampleIds.rows.map(r => r.id));
-      
-      return res.status(404).json({ 
-        error: 'Funko Pop not found',
-        searchedId: decodedId,
-        suggestions: sampleIds.rows.map(r => r.id)
-      });
-    }
-
-    const item = {
-      ...result.rows[0],
-      series: result.rows[0].series ? JSON.parse(result.rows[0].series) : []
-    };
-
-    console.log('✅ Found item:', item);
-    res.json(item);
+    res.json({
+      count: result.rows.length,
+      items: result.rows
+    });
   } catch (err) {
-    console.error('❌ Error fetching item:', err);
-    res.status(500).json({ error: 'Failed to load item' });
+    res.status(500).json({ error: err.message });
   }
 });
+
+// Debug endpoint to check a specific ID pattern
+app.get('/api/debug/id-check', async (req, res) => {
+  const { title, number } = req.query;
+
+  if (!title || !number) {
+    return res.status(400).json({ error: 'Title and number required' });
+  }
+
+  const generatedId = generateFunkoId(String(title), String(number));
+
+  try {
+    const result = await pool.query(
+      'SELECT id, title, number FROM funko_items WHERE id = $1',
+      [generatedId]
+    );
+
+    res.json({
+      input: { title, number },
+      generatedId,
+      found: result.rows.length > 0,
+      match: result.rows[0] || null
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // Auth routes
 app.post('/api/register', registerUser);

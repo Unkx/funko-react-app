@@ -1,16 +1,16 @@
+/// <reference types="vite/client" />
+
 // FunkoDetails.tsx
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { translations } from "./Translations/TranslationsFunkoDetails";
 import axios from "axios";
-
 // Icons
 import MoonIcon from "/src/assets/moon.svg?react";
 import SunIcon from "/src/assets/sun.svg?react";
 import SearchIcon from "/src/assets/search.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
-
 // Flags
 import UKFlag from "/src/assets/flags/uk.svg?react";
 import PolandFlag from "/src/assets/flags/poland.svg?react";
@@ -26,7 +26,6 @@ if (!baseURL) {
 const api = axios.create({
   baseURL: baseURL || "http://localhost:5000",
 });
-
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
@@ -51,11 +50,9 @@ interface FunkoItem {
   exclusive?: boolean;
   imageName?: string | null;
 }
-
 interface FunkoItemWithId extends FunkoItem {
   id: string;
 }
-
 interface PricePoint {
   date: string;
   price: number;
@@ -63,7 +60,6 @@ interface PricePoint {
   country: string;
   currency: string;
 }
-
 interface Shop {
   name: string;
   url: string;
@@ -72,7 +68,6 @@ interface Shop {
   priceSelector?: string;
   apiEndpoint?: string;
 }
-
 interface ScrapedPrice {
   price: number;
   currency: string;
@@ -103,11 +98,9 @@ const FunkoDetails: React.FC = () => {
   const [isScrapingPrices, setIsScrapingPrices] = useState(false);
   const [scrapingProgress, setScrapingProgress] = useState(0);
   const [scrapingResults, setScrapingResults] = useState<ScrapedPrice[]>([]);
-
   const [selectedCountries, setSelectedCountries] = useState(['poland', 'germany', 'france']);
   const [relatedItems, setRelatedItems] = useState<FunkoItemWithId[]>([]);
   const [priceHistory, setPriceHistory] = useState<PricePoint[]>([]);
-
   const [user] = useState(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -122,12 +115,9 @@ const FunkoDetails: React.FC = () => {
     }
     return null;
   });
-
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-
   const t = translations[language] || translations["EN"];
-
   // Shop configurations by country with price selectors
   const shops: Record<string, Shop[]> = {
     poland: [
@@ -353,7 +343,6 @@ const FunkoDetails: React.FC = () => {
       }
     ]
   };
-
   const countries = {
     poland: { name: 'Poland', flag: '🇵🇱' },
     uk: { name: 'United Kingdom', flag: '🇬🇧' },
@@ -362,7 +351,6 @@ const FunkoDetails: React.FC = () => {
     france: { name: 'France', flag: '🇫🇷' },
     russia: { name: 'Russia', flag: '🇷🇺' }
   };
-
   const generateId = (title: string, number: string): string => {
     const safeTitle = title ? title.trim() : "";
     const safeNumber = number ? number.trim() : "";
@@ -373,7 +361,6 @@ const FunkoDetails: React.FC = () => {
       .replace(/-+/g, '-')      // Replace multiple hyphens with single
       .replace(/^-|-$/g, '');   // Remove leading/trailing hyphens
   };
-
   const handleCountryToggle = (countryCode: string) => {
     setSelectedCountries(prev => {
       if (prev.includes(countryCode)) {
@@ -383,58 +370,60 @@ const FunkoDetails: React.FC = () => {
       }
     });
   };
-
   // Improved function to find related items based on series and category
-  const findRelatedItems = (currentItem: FunkoItemWithId, allItems: FunkoItemWithId[]) => {
-    if (!currentItem) return [];
+// Improved function to find related items based on series and category
+const findRelatedItems = (currentItem: FunkoItemWithId, allItems: FunkoItemWithId[]) => {
+  if (!currentItem || !allItems || allItems.length === 0) return [];
+  
+  const related = allItems.filter(item => {
+    // Don't include the current item
+    if (item.id === currentItem.id) return false;
     
-    const related = allItems.filter(item => {
-      // Don't include the current item
-      if (item.id === currentItem.id) return false;
-      
-      // Check if they share the same series
-      const sharedSeries = currentItem.series && item.series && 
-        currentItem.series.some(series => item.series?.includes(series));
-      
-      // Check if they share the same category
-      const sameCategory = currentItem.category === item.category;
-      
-      // Check if they're from the same franchise (based on title similarity)
-      const titleWords = currentItem.title.toLowerCase().split(/\s+/);
-      const hasCommonWords = titleWords.some(word => 
-        word.length > 3 && item.title.toLowerCase().includes(word)
-      );
-      
-      // Prioritize items from the same series, then same category, then similar titles
-      if (sharedSeries) return true;
-      if (sameCategory && hasCommonWords) return true;
-      if (hasCommonWords) return true;
-      
-      return false;
-    });
+    // Check if they share the same series (case insensitive)
+    const currentSeries = currentItem.series?.map(s => s.toLowerCase()) || [];
+    const itemSeries = item.series?.map(s => s.toLowerCase()) || [];
+    const sharedSeries = currentSeries.some(series => itemSeries.includes(series));
     
-    // Sort by relevance (items with shared series first, then same category)
-    related.sort((a, b) => {
-      const aHasSharedSeries = currentItem.series && a.series && 
-        currentItem.series.some(series => a.series?.includes(series));
-      const bHasSharedSeries = currentItem.series && b.series && 
-        currentItem.series.some(series => b.series?.includes(series));
-      
-      if (aHasSharedSeries && !bHasSharedSeries) return -1;
-      if (!aHasSharedSeries && bHasSharedSeries) return 1;
-      
-      const aSameCategory = currentItem.category === a.category;
-      const bSameCategory = currentItem.category === b.category;
-      
-      if (aSameCategory && !bSameCategory) return -1;
-      if (!aSameCategory && bSameCategory) return 1;
-      
-      return 0;
-    });
+    // Check if they share the same category
+    const sameCategory = currentItem.category?.toLowerCase() === item.category?.toLowerCase();
     
-    return related.slice(0, 6); // Return top 6 related items
-  };
-
+    // Check if they're from the same franchise (based on title similarity)
+    const titleWords = currentItem.title?.toLowerCase().split(/\s+/) || [];
+    const hasCommonWords = titleWords.some(word => 
+      word.length > 3 && item.title?.toLowerCase().includes(word)
+    );
+    
+    // Prioritize items from the same series, then same category, then similar titles
+    if (sharedSeries) return true;
+    if (sameCategory && hasCommonWords) return true;
+    if (hasCommonWords) return true;
+    return false;
+  });
+  
+  // Sort by relevance (items with shared series first, then same category)
+  related.sort((a, b) => {
+    const currentSeries = currentItem.series?.map(s => s.toLowerCase()) || [];
+    
+    const aSeries = a.series?.map(s => s.toLowerCase()) || [];
+    const aHasSharedSeries = currentSeries.some(series => aSeries.includes(series));
+    
+    const bSeries = b.series?.map(s => s.toLowerCase()) || [];
+    const bHasSharedSeries = currentSeries.some(series => bSeries.includes(series));
+    
+    if (aHasSharedSeries && !bHasSharedSeries) return -1;
+    if (!aHasSharedSeries && bHasSharedSeries) return 1;
+    
+    const aSameCategory = currentItem.category?.toLowerCase() === a.category?.toLowerCase();
+    const bSameCategory = currentItem.category?.toLowerCase() === b.category?.toLowerCase();
+    
+    if (aSameCategory && !bSameCategory) return -1;
+    if (!aSameCategory && bSameCategory) return 1;
+    
+    return 0;
+  });
+  
+  return related.slice(0, 6); // Return top 6 related items
+};
   const normalizeId = (id: string): string => {
   return id
     .replace(/[^\w\s-]/g, '')
@@ -443,128 +432,115 @@ const FunkoDetails: React.FC = () => {
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
 };
-
  // Fetch Funko data
-// Replace the fetchData function in useEffect:
+// Replace the fetchData function in your useEffect with this simplified version:
 const fetchData = async () => {
   try {
     setIsLoading(true);
-    
+    setError(null);
     if (!id) {
       throw new Error("No ID provided");
     }
-
-    console.log("Searching for ID:", id);
     
-    // First try the direct API call with the ID
-    try {
-      const apiResponse = await api.get(`/api/items/${encodeURIComponent(id)}`);
-      if (apiResponse.data) {
-        console.log("Found in database:", apiResponse.data);
-        setFunkoItem({...apiResponse.data, id});
-        setError(null);
-        
-        // Load related items
-        try {
-          const allItemsResponse = await api.get('/api/items');
-          if (allItemsResponse.data) {
-            const related = findRelatedItems(apiResponse.data, allItemsResponse.data);
-            setRelatedItems(related);
-          }
-        } catch (e) {
-          console.error("Could not load related items:", e);
-        }
-        
-        setIsLoading(false);
-        return;
-      }
-    } catch (apiError) {
-      console.log("Item not found via direct API call, trying alternative methods...");
-    }
-
-    // If direct API call failed, try to search for the item
-    const searchParams = extractSearchParamsFromId(id);
-    console.log("Extracted search params:", searchParams);
+    console.log("🔍 Searching for ID:", id);
     
+    // Try direct API call first
     try {
-      // Search for items with similar title
-      const searchResponse = await api.get(`/api/items/search?q=${encodeURIComponent(searchParams.title)}`);
+      const response = await api.get(`/api/items/${encodeURIComponent(id)}`);
+      console.log("✅ Found item via API:", response.data);
+      setFunkoItem(response.data);
       
-      if (searchResponse.data && searchResponse.data.length > 0) {
-        // Try to find the best match
-        let foundItem = searchResponse.data.find((item: any) => 
-          item.id === id || generateId(item.title, item.number) === id
-        );
-        
-        // If no exact match, take the first result
-        if (!foundItem && searchResponse.data.length > 0) {
-          foundItem = searchResponse.data[0];
-          console.log("Using first search result:", foundItem);
-        }
-        
-        if (foundItem) {
-          setFunkoItem({...foundItem, id: foundItem.id});
-          setError(null);
-          
-          // Load related items from search results
-          const related = findRelatedItems(foundItem, searchResponse.data);
+      // Load related items - with better error handling
+      try {
+        // Try to get all items from the API
+        const allItemsResponse = await api.get('/api/items');
+        if (allItemsResponse.data && Array.isArray(allItemsResponse.data)) {
+          const related = findRelatedItems(response.data, allItemsResponse.data);
           setRelatedItems(related);
-          
-          setIsLoading(false);
-          return;
+        }
+      } catch (relatedError) {
+        console.warn("Could not load related items from API:", relatedError);
+        // Try alternative approach - fetch from a different endpoint
+        try {
+          const categoryResponse = await api.get(`/api/items/category/${response.data.category}`);
+          if (categoryResponse.data && Array.isArray(categoryResponse.data)) {
+            const related = findRelatedItems(response.data, categoryResponse.data);
+            setRelatedItems(related.filter(item => item.id !== response.data.id).slice(0, 6));
+          }
+        } catch (categoryError) {
+          console.warn("Could not load items by category:", categoryError);
         }
       }
-    } catch (searchError) {
-      console.error("Search also failed:", searchError);
+      return;
+    } catch (apiError: any) {
+      console.warn("Direct API call failed:", apiError.response?.status, apiError.response?.data);
+      // If it's a 404, the item doesn't exist in the database
+      if (apiError.response?.status === 404) {
+        console.log("Item not found in database, trying fallback methods...");
+      } else {
+        // For other errors (500, network), throw immediately
+        throw apiError;
+      }
     }
-
-    // Final fallback: GitHub data
-    console.log("Trying GitHub data as final fallback...");
-    const response = await fetch(
-      "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
-    );
-    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-    const data: FunkoItem[] = await response.json();
-
-    const dataWithIds: FunkoItemWithId[] = data.map((item) => ({
-      ...item,
-      id: generateId(item.title, item.number),
-    }));
-
-    // Try to find item by ID match
-    let foundItem = dataWithIds.find((item) => item.id === id);
     
-    // If not found by ID, try to find by title similarity
-    if (!foundItem) {
-      foundItem = dataWithIds.find((item) => 
-        item.title.toLowerCase().includes(searchParams.title.toLowerCase()) ||
-        generateId(item.title, item.number).includes(id.toLowerCase())
+    // Fallback: Try GitHub data (external API)
+    console.log("🔍 Trying GitHub data as fallback...");
+    try {
+      const response = await fetch(
+        "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
       );
+      if (!response.ok) throw new Error(`GitHub API failed: ${response.status}`);
+      const data: FunkoItem[] = await response.json();
+      const dataWithIds: FunkoItemWithId[] = data.map((item) => ({
+        ...item,
+        id: generateId(item.title, item.number),
+      }));
+      
+      let foundItem = dataWithIds.find((item) => item.id === id);
+      if (!foundItem) {
+        const searchParams = extractSearchParamsFromId(id);
+        foundItem = dataWithIds.find((item) => 
+          item.title.toLowerCase().includes(searchParams.title.toLowerCase())
+        );
+      }
+      
+      if (!foundItem) throw new Error("Item not found in any source");
+      setFunkoItem(foundItem);
+      
+      // Find related items from GitHub data
+      const related = findRelatedItems(foundItem, dataWithIds);
+      setRelatedItems(related);
+    } catch (githubError) {
+      console.error("GitHub fallback failed:", githubError);
+      throw new Error("Item not found in database or external sources");
     }
-
-    if (!foundItem) throw new Error("Funko Pop not found");
-
-    setFunkoItem(foundItem);
-    setError(null);
-
-    // Find related items from GitHub data
-    const related = findRelatedItems(foundItem, dataWithIds);
-    setRelatedItems(related);
-
-  } catch (err) {
-    console.error("Error loading item:", err);
-    setError(err instanceof Error ? err.message : "An error occurred");
+  } catch (err: any) {
+    console.error("❌ All fetch methods failed:", err);
+    setError(err.message || "Failed to load item");
   } finally {
     setIsLoading(false);
   }
 };
-
+// Helper function to extract search parameters from ID
+const extractSearchParamsFromId = (id: string) => {
+  const parts = id.replace(/[^a-zA-Z0-9\s-]/g, '').split('-');
+  const numberPart = parts.find(part => /^\d+$/.test(part)) || '';
+  const titleParts = parts.filter(part => !/^\d+$/.test(part) && part.length > 0);
+  return {
+    title: titleParts.join(' ') || id.replace(/-/g, ' '),
+    number: numberPart
+  };
+};
 // In FunkoDetails.tsx, add this debug effect
 useEffect(() => {
   console.log("Current ID from URL:", id);
   console.log("Looking for item with ID:", id);
 }, [id]);
 
+// Fetch data on component mount and when id changes
+useEffect(() => {
+  fetchData();
+}, [id]);
   // Check item in wishlist/collection
   useEffect(() => {
     const checkItemStatus = async () => {
@@ -589,7 +565,6 @@ useEffect(() => {
     };
     checkItemStatus();
   }, [funkoItem, user]);
-
   // Theme
   useEffect(() => {
     localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
@@ -599,12 +574,10 @@ useEffect(() => {
       document.documentElement.classList.remove("dark");
     }
   }, [isDarkMode]);
-
   // Language
   useEffect(() => {
     localStorage.setItem("preferredLanguage", language);
   }, [language]);
-
   // Close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -621,7 +594,6 @@ useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showLanguageDropdown]);
-
   const languages = useMemo(
     () => ({
       EN: { name: "English", flag: <UKFlag className="w-5 h-5" /> },
@@ -633,19 +605,15 @@ useEffect(() => {
     }),
     []
   );
-
   const selectLanguage = (lang: string) => {
     setLanguage(lang);
     setShowLanguageDropdown(false);
   };
-
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
   };
-
   const toggleLanguageDropdown = () =>
     setShowLanguageDropdown((prev) => !prev);
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -654,7 +622,6 @@ useEffect(() => {
       navigate("/searchsite");
     }
   };
-
   const toggleWishlist = async () => {
     if (!user) {
       alert(t.loginRequiredMessage || "Please log in");
@@ -681,7 +648,6 @@ useEffect(() => {
       setIsUpdatingWishlist(false);
     }
   };
-
   const toggleCollection = async () => {
     if (!user) {
       alert(t.loginRequiredMessage || "Please log in");
@@ -708,27 +674,21 @@ useEffect(() => {
       setIsUpdatingCollection(false);
     }
   };
-
   // Function to scrape prices from shopping sites
   const scrapePrices = async () => {
     if (!funkoItem) return;
-    
     setIsScrapingPrices(true);
     setScrapingProgress(0);
     setScrapingResults([]);
-    
     const searchQuery = `${funkoItem.title || ""} ${funkoItem.number || ""} funko pop`.trim();
     const selectedShops = selectedCountries.flatMap(countryCode => 
       shops[countryCode]?.map(shop => ({ ...shop, country: countryCode })) || []
     );
-    
     const results: ScrapedPrice[] = [];
-    
     for (let i = 0; i < selectedShops.length; i++) {
       const shop = selectedShops[i];
       try {
         setScrapingProgress(Math.round((i / selectedShops.length) * 100));
-        
         // Call backend API to scrape prices
         const response = await api.post('/scrape/price', {
           url: shop.searchUrl + encodeURIComponent(searchQuery),
@@ -737,7 +697,6 @@ useEffect(() => {
           currency: shop.currency,
           priceSelector: shop.priceSelector
         });
-        
         if (response.data && response.data.price) {
           results.push({
             price: response.data.price,
@@ -751,11 +710,9 @@ useEffect(() => {
         console.error(`Failed to scrape ${shop.name}:`, error);
       }
     }
-    
     setScrapingResults(results);
     setIsScrapingPrices(false);
     setScrapingProgress(100);
-    
     // Save scraped prices to database
     if (results.length > 0) {
       try {
@@ -763,7 +720,6 @@ useEffect(() => {
           funkoId: funkoItem.id,
           prices: results
         });
-        
         // Update price history with new data
         const updatedPriceHistory = [...priceHistory, ...results];
         setPriceHistory(updatedPriceHistory);
@@ -772,17 +728,14 @@ useEffect(() => {
       }
     }
   };
-
   const loginButtonTo = useMemo(() => {
     if (user?.role === "admin") return "/adminSite";
     if (user?.role === "user") return "/dashboardSite";
     return "/loginSite";
   }, [user]);
-
   const loginButtonText = useMemo(() => {
     return user ? t.goToDashboard || "Dashboard" : t.goToLoginSite || "Log In";
   }, [t, user]);
-
   if (isLoading) {
     return (
       <div
@@ -798,7 +751,6 @@ useEffect(() => {
       </div>
     );
   }
-
   if (error) {
     return (
       <div
@@ -822,7 +774,6 @@ useEffect(() => {
       </div>
     );
   }
-
   if (!funkoItem) {
     return (
       <div
@@ -844,7 +795,6 @@ useEffect(() => {
       </div>
     );
   }
-
   return (
     <div
       className={`min-h-screen flex flex-col ${
@@ -864,7 +814,6 @@ useEffect(() => {
             </h1>
           </Link>
         </div>
-
         {/* Search */}
         <form
           onSubmit={handleSearch}
@@ -892,7 +841,6 @@ useEffect(() => {
             <SearchIcon className="w-5 h-5" />
           </button>
         </form>
-
         {/* Theme & Lang */}
         <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0">
           <div className="relative">
@@ -931,7 +879,6 @@ useEffect(() => {
               </div>
             )}
           </div>
-
           <button
             onClick={toggleTheme}
             className={`p-2 rounded-full ${
@@ -941,7 +888,6 @@ useEffect(() => {
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
         </div>
-
         <div>
           <Link
             to={loginButtonTo}
@@ -955,7 +901,6 @@ useEffect(() => {
           </Link>
         </div>
       </header>
-
       {/* Main */}
       <main className="flex-grow container mx-auto px-4 py-8 max-w-5xl">
         <button
@@ -966,7 +911,6 @@ useEffect(() => {
         >
           {t.backButton}
         </button>
-
         {/* Marketplace */}
         <div className="mb-6 flex flex-wrap gap-3">
           <a
@@ -994,7 +938,6 @@ useEffect(() => {
             Amazon
           </a>
         </div>
-
         {/* Main details */}
         <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
           <h1 className="text-3xl font-bold mb-2">{funkoItem.title}</h1>
@@ -1022,7 +965,6 @@ useEffect(() => {
               {inCollection ? t.removeFromCollection : t.addToCollection}
             </button>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h2 className="text-xl font-semibold mb-3">{t.details}</h2>
@@ -1051,11 +993,9 @@ useEffect(() => {
             </div>
           </div>
         </div>
-
         {/* Shopping Links Section */}
         <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
           <h2 className="text-xl font-semibold mb-4">Search on Shopping Sites</h2>
-          
           {/* Country Filters */}
           <div className="mb-4">
             <p className="text-sm font-medium mb-2">Search in countries:</p>
@@ -1075,7 +1015,6 @@ useEffect(() => {
               ))}
             </div>
           </div>
-
           {/* Price Scraping Button */}
           <div className="mb-6">
             <button
@@ -1099,7 +1038,6 @@ useEffect(() => {
               )}
             </button>
           </div>
-
           {/* Scraping Results */}
           {scrapingResults.length > 0 && (
             <div className="mb-6">
@@ -1133,17 +1071,14 @@ useEffect(() => {
               </div>
             </div>
           )}
-
           {/* Direct Links to Shopping Sites */}
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {selectedCountries.flatMap(countryCode => {
               const countryShops = shops[countryCode];
               if (!countryShops) return [];
-              
               return countryShops.map((shop, index) => {
                 const searchQuery = `${funkoItem.title || ""} ${funkoItem.number || ""} funko pop`.trim();
                 const searchUrl = shop.searchUrl + encodeURIComponent(searchQuery);
-
                 return (
                   <div
                     key={`${countryCode}-${index}`}
@@ -1167,7 +1102,6 @@ useEffect(() => {
                         </span>
                       </div>
                     </div>
-                    
                     <div className="flex justify-between items-center mt-4">
                       <p className="text-xs text-gray-400">
                         Direct search link
@@ -1190,49 +1124,54 @@ useEffect(() => {
               });
             })}
           </div>
-
           {selectedCountries.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               <p>Select countries to see shopping links</p>
             </div>
           )}
         </div>
-
-
-        
         {/* Related items */}
         <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
           <h2 className="text-xl font-semibold mb-4">{t.relatedItems || "Related Items"}</h2>
           {relatedItems.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {relatedItems.map((item) => (
-                <Link
-                  key={item.id}
-                  to={`/funko/${item.id}`}
-                  className="block rounded-lg p-3 border dark:border-gray-600 hover:shadow-lg transition"
-                >
-                  {item.imageName ? (
-                    <img
-                      src={item.imageName}
-                      alt={item.title}
-                      className="w-full h-32 object-contain mb-2"
-                    />
-                  ) : (
-                    <div className="w-full h-32 bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-                      {t.noImageAvailable}
-                    </div>
-                  )}
-                  <h3 className="text-sm font-medium">{item.title}</h3>
-                  <p className="text-xs text-gray-500">{item.number}</p>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <p>{t.noRelatedItems || "No related items found."}</p>
-          )}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {relatedItems.map((item) => (
+              <Link
+                key={item.id}
+                to={`/funko/${item.id}`}
+                className="block rounded-lg p-3 border dark:border-gray-600 hover:shadow-lg transition"
+              >
+                {item.imageName ? (
+                  <img
+                    src={item.imageName}
+                    alt={item.title}
+                    className="w-full h-32 object-contain mb-2"
+                  />
+                ) : (
+                  <div className="w-full h-32 bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                    {t.noImageAvailable}
+                  </div>
+                )}
+                <h3 className="text-sm font-medium">{item.title}</h3>
+                <p className="text-xs text-gray-500">{item.number}</p>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-500">{t.noRelatedItems || "No related items found."}</p>
+            <Link 
+              to="/searchsite" 
+              className={`mt-4 inline-block px-4 py-2 rounded ${
+                isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"
+              }`}
+            >
+              Browse All Items
+            </Link>
+          </div>
+        )}
         </div>
       </main>
-
       {/* Footer */}
       <footer className={`text-center py-4 ${isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-200 text-gray-700"}`}>
         {t.copyright}
@@ -1240,5 +1179,4 @@ useEffect(() => {
     </div>
   );
 };
-
 export default FunkoDetails;

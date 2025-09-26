@@ -30,27 +30,43 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 
 // ======================
-// MIDDLEWARE
+// UTILITY FUNCTIONS
 // ======================
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`);
-  next();
-});
 
-app.use(helmet());
-app.use(morgan('dev'));
-app.use(express.json());
+// Add this function to generate consistent IDs
+const generateFunkoId = (title, number) => {
+  return `${title}-${number}`
+    .replace(/[^\w\s-]/g, '') // Remove special characters except spaces and hyphens
+    .replace(/\s+/g, '-')      // Replace spaces with hyphens
+    .toLowerCase()             // Convert to lowercase
+    .replace(/-+/g, '-')       // Replace multiple hyphens with single hyphen
+    .replace(/^-|-$/g, '');    // Remove leading/trailing hyphens
+};
 
-// ✅ CORRECT: cors() must come BEFORE any routes
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+const hashPassword = async (password) => {
+  return await bcrypt.hash(password, 10);
+};
 
-// Explicit OPTIONS handler for PATCH
-app.options('/api/admin/users/:id/role', cors());
+const comparePasswords = async (password, hash) => {
+  return await bcrypt.compare(password, hash);
+};
+
+const generateToken = (user) => {
+  return jwt.sign(
+    {
+      id: user.id,
+      login: user.login,
+      email: user.email,
+      role: user.role
+    },
+    JWT_SECRET, // ← MUST be same as in authenticateToken
+    { expiresIn: JWT_EXPIRES_IN }
+  );
+};
+
+// ======================
+// AUTHENTICATION MIDDLEWARE
+// ======================
 
 // Authentication middleware
 const authenticateToken = (req, res, next) => {
@@ -90,88 +106,8 @@ const requireAdmin = (req, res, next) => {
 };
 
 // ======================
-// ADMIN ITEMS CONTROLLERS
+// CONTROLLER FUNCTIONS (DEFINED FIRST)
 // ======================
-
-const addItem = async (req, res) => {
-  const { title, number, category, series, exclusive, imageName } = req.body;
-
-  // Validate required fields
-  if (!title || !number || !category) {
-    return res.status(400).json({ error: 'Title, number, and category are required.' });
-  }
-
-  try {
-    // Generate consistent ID format
-    const id = `${title}-${number}`.replace(/\s+/g, '-').toLowerCase();
-
-    // Insert or update funko_items table
-    const result = await pool.query(
-      `
-      INSERT INTO funko_items (id, title, number, category, series, exclusive, image_name)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      ON CONFLICT (id) DO UPDATE SET
-        title = EXCLUDED.title,
-        number = EXCLUDED.number,
-        category = EXCLUDED.category,
-        series = EXCLUDED.series,
-        exclusive = EXCLUDED.exclusive,
-        image_name = EXCLUDED.image_name
-      RETURNING *
-      `,
-      [
-        id,
-        title,
-        number,
-        category,
-        series ? JSON.stringify(series) : null,
-        exclusive || false,
-        imageName || null
-      ]
-    );
-
-    console.log("✅ Item added:", result.rows[0]);
-    res.status(201).json(result.rows[0]);
-  } catch (err) {
-    console.error('❌ Error adding item:', err);
-    res.status(500).json({ error: 'Failed to add item.' });
-  }
-};
-
-// ======================
-// UTILITY FUNCTIONS
-// ======================
-
-// Add this function to generate consistent IDs
-const generateFunkoId = (title, number) => {
-  return `${title}-${number}`
-    .replace(/[^\w\s-]/g, '') // Remove special characters except spaces and hyphens
-    .replace(/\s+/g, '-')      // Replace spaces with hyphens
-    .toLowerCase()             // Convert to lowercase
-    .replace(/-+/g, '-')       // Replace multiple hyphens with single hyphen
-    .replace(/^-|-$/g, '');    // Remove leading/trailing hyphens
-};
-
-const hashPassword = async (password) => {
-  return await bcrypt.hash(password, 10);
-};
-
-const comparePasswords = async (password, hash) => {
-  return await bcrypt.compare(password, hash);
-};
-
-const generateToken = (user) => {
-  return jwt.sign(
-    {
-      id: user.id,
-      login: user.login,
-      email: user.email,
-      role: user.role
-    },
-    JWT_SECRET, // ← MUST be same as in authenticateToken
-    { expiresIn: JWT_EXPIRES_IN }
-  );
-};
 
 // ======================
 // AUTH CONTROLLERS
@@ -252,9 +188,107 @@ const loginUser = async (req, res) => {
 };
 
 // ======================
+// USER CONTROLLERS
+// ======================
+const getUserProfile = async (req, res) => {
+  const userId = req.params.id;
+
+  if (req.user.id !== parseInt(userId) && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden: You can only access your own profile' });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT id, email, login, name, surname, gender, date_of_birth, role, created_at, last_login
+       FROM users WHERE id = $1`,
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Get user error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+const updateUserProfile = async (req, res) => {
+  const userId = req.params.id;
+  const { name, surname, gender, date_of_birth } = req.body;
+
+  if (req.user.id !== parseInt(userId) && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden: You can only update your own profile' });
+  }
+
+  try {
+    const query = `
+      UPDATE users
+      SET
+        name = COALESCE($1, name),
+        surname = COALESCE($2, surname),
+        gender = COALESCE($3, gender),
+        date_of_birth = COALESCE($4, date_of_birth),
+        updated_at = NOW()
+      WHERE id = $5
+      RETURNING id, name, surname, email, login, gender, date_of_birth, role, created_at, last_login
+    `;
+    const values = [name, surname, gender, date_of_birth, userId];
+
+    const result = await pool.query(query, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Update user error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+const updateUserSettings = async (req, res) => {
+  if (req.user.id !== parseInt(req.params.id) && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden: You can only update your own settings' });
+  }
+
+  const userId = req.params.id;
+  const { preferred_language, preferred_theme } = req.body;
+
+  if (!preferred_language && !preferred_theme) {
+    return res.status(400).json({ error: 'No settings provided' });
+  }
+
+  try {
+    const query = `
+      UPDATE users
+      SET
+        preferred_language = COALESCE($1, preferred_language),
+        preferred_theme = COALESCE($2, preferred_theme)
+      WHERE id = $3
+      RETURNING id, preferred_language, preferred_theme
+    `;
+    const values = [preferred_language, preferred_theme, userId];
+
+    const result = await pool.query(query, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Update settings error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// ======================
 // WISHLIST CONTROLLERS
 // ======================
-// (unchanged)
 const addToWishlist = async (req, res) => {
   const { funkoId, title, number, imageName } = req.body;
   const userId = req.user.id;
@@ -365,7 +399,6 @@ const checkWishlistItem = async (req, res) => {
 // ======================
 // COLLECTION CONTROLLERS
 // ======================
-// (unchanged)
 const addToCollection = async (req, res) => {
   const { funkoId, title, number, imageName, condition = "Mint" } = req.body;
   const userId = req.user.id;
@@ -469,128 +502,153 @@ const checkCollectionItem = async (req, res) => {
 };
 
 // ======================
-// USER CONTROLLERS
+// ADMIN ITEMS CONTROLLERS
 // ======================
-const getUserProfile = async (req, res) => {
-  const userId = req.params.id;
+const addItem = async (req, res) => {
+  const { title, number, category, series, exclusive, imageName } = req.body;
 
-  if (req.user.id !== parseInt(userId) && req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden: You can only access your own profile' });
+  // Validate required fields
+  if (!title || !number || !category) {
+    return res.status(400).json({ error: 'Title, number, and category are required.' });
+  }
+
+  try {
+    // Generate consistent ID format
+    const id = `${title}-${number}`.replace(/\s+/g, '-').toLowerCase();
+
+    // Insert or update funko_items table
+    const result = await pool.query(
+      `
+      INSERT INTO funko_items (id, title, number, category, series, exclusive, image_name)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (id) DO UPDATE SET
+        title = EXCLUDED.title,
+        number = EXCLUDED.number,
+        category = EXCLUDED.category,
+        series = EXCLUDED.series,
+        exclusive = EXCLUDED.exclusive,
+        image_name = EXCLUDED.image_name
+      RETURNING *
+      `,
+      [
+        id,
+        title,
+        number,
+        category,
+        series ? JSON.stringify(series) : null,
+        exclusive || false,
+        imageName || null
+      ]
+    );
+
+    console.log("✅ Item added:", result.rows[0]);
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('❌ Error adding item:', err);
+    res.status(500).json({ error: 'Failed to add item.' });
+  }
+};
+
+// Submit item request
+const submitItemRequest = async (req, res) => {
+  const { title, number, reason } = req.body;
+  const userId = req.user.id;
+
+  if (!title?.trim() || !reason?.trim()) {
+    return res.status(400).json({ error: 'Title and reason are required.' });
   }
 
   try {
     const result = await pool.query(
-      `SELECT id, email, login, name, surname, gender, date_of_birth, role, created_at, last_login
-       FROM users WHERE id = $1`,
-      [userId]
+      `INSERT INTO item_requests (user_id, title, number, reason)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, title, number, reason, status, created_at`,
+      [userId, title.trim(), number?.trim() || null, reason.trim()]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    res.json(result.rows[0]);
+    res.status(201).json(result.rows[0]);
   } catch (err) {
-    console.error('Get user error:', err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Error submitting request:', err);
+    res.status(500).json({ error: 'Failed to submit request.' });
   }
 };
 
-const updateUserProfile = async (req, res) => {
-  const userId = req.params.id;
-  const { name, surname, gender, date_of_birth } = req.body;
-
-  if (req.user.id !== parseInt(userId) && req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden: You can only update your own profile' });
+const getPendingRequests = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT ir.id, ir.title, ir.number, ir.reason, ir.created_at,
+              u.login as user_login, u.email as user_email
+       FROM item_requests ir
+       JOIN users u ON ir.user_id = u.id
+       WHERE ir.status = 'pending'
+       ORDER BY ir.created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching requests:', err);
+    res.status(500).json({ error: 'Failed to load requests.' });
   }
+};
+
+const getPendingRequestsCount = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT COUNT(*) as count FROM item_requests WHERE status = 'pending'`
+    );
+    res.json({ count: parseInt(result.rows[0].count) });
+  } catch (err) {
+    console.error('Error fetching requests count:', err);
+    res.status(500).json({ error: 'Failed to load requests count.' });
+  }
+};
+
+const resolveRequest = async (req, res) => {
+  const { id } = req.params;
 
   try {
-    const query = `
-      UPDATE users
-      SET
-        name = COALESCE($1, name),
-        surname = COALESCE($2, surname),
-        gender = COALESCE($3, gender),
-        date_of_birth = COALESCE($4, date_of_birth),
-        updated_at = NOW()
-      WHERE id = $5
-      RETURNING id, name, surname, email, login, gender, date_of_birth, role, created_at, last_login
-    `;
-    const values = [name, surname, gender, date_of_birth, userId];
-
-    const result = await pool.query(query, values);
+    const result = await pool.query(
+      `UPDATE item_requests
+       SET status = 'resolved', resolved_at = NOW()
+       WHERE id = $1 AND status = 'pending'
+       RETURNING id`,
+      [id]
+    );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: 'Request not found or already resolved.' });
     }
 
-    res.json(result.rows[0]);
+    res.json({ message: 'Request marked as resolved.' });
   } catch (err) {
-    console.error('Update user error:', err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Error resolving request:', err);
+    res.status(500).json({ error: 'Failed to resolve request.' });
   }
 };
 
 const getAdminItems = async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT id, title, number, category, 
-              CASE 
-                WHEN series IS NOT NULL THEN series::text
-                ELSE '[]'
-              END as series,
-              exclusive, image_name as imageName 
-       FROM funko_items 
-       ORDER BY category, title, number`
-    );
-    
-    // Parse the series JSON for each item
-    const items = result.rows.map(item => ({
-      ...item,
-      // Corrected line: parse the series as JSON and return it as an array
-      series: item.series ? JSON.parse(item.series) : []
-    }));
-    
-    res.json(items);
-  } catch (err) {
-    console.error('Error fetching admin items:', err);
-    res.status(500).json({ error: 'Failed to load items' });
-  }
-};
-
-const updateUserSettings = async (req, res) => {
-  if (req.user.id !== parseInt(req.params.id) && req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Forbidden: You can only update your own settings' });
-  }
-
-  const userId = req.params.id;
-  const { preferred_language, preferred_theme } = req.body;
-
-  if (!preferred_language && !preferred_theme) {
-    return res.status(400).json({ error: 'No settings provided' });
-  }
-
   try {
-    const query = `
-      UPDATE users
-      SET
-        preferred_language = COALESCE($1, preferred_language),
-        preferred_theme = COALESCE($2, preferred_theme)
-      WHERE id = $3
-      RETURNING id, preferred_language, preferred_theme
-    `;
-    const values = [preferred_language, preferred_theme, userId];
-
-    const result = await pool.query(query, values);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    res.json(result.rows[0]);
+    const result = await pool.query(
+      `SELECT id, title, number, category, 
+              CASE 
+                WHEN series IS NOT NULL THEN series::text
+                ELSE '[]'
+              END as series,
+              exclusive, image_name as imageName 
+       FROM funko_items 
+       ORDER BY category, title, number`
+    );
+    
+    // Parse the series JSON for each item
+    const items = result.rows.map(item => ({
+      ...item,
+      // Corrected line: parse the series as JSON and return it as an array
+      series: item.series ? JSON.parse(item.series) : []
+    }));
+    
+    res.json(items);
   } catch (err) {
-    console.error('Update settings error:', err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Error fetching admin items:', err);
+    res.status(500).json({ error: 'Failed to load items' });
   }
 };
 
@@ -694,47 +752,30 @@ const seedDatabase = async () => {
 };
 
 // ======================
-// DIAGNOSTIC ROUTES
+// MIDDLEWARE
 // ======================
-// Add this temporary diagnostic route
-app.get('/api/test/database', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT NOW()');
-    res.json({ 
-      success: true, 
-      message: 'Database connection successful',
-      time: result.rows[0].now
-    });
-  } catch (err) {
-    res.status(500).json({ 
-      success: false, 
-      message: 'Database connection failed',
-      error: err.message 
-    });
-  }
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
 });
 
-// Add this route to check if funko_items table exists
-app.get('/api/test/items', authenticateToken, isAdmin, async (req, res) => {
-  try {
-    const result = await pool.query('SELECT COUNT(*) as count FROM funko_items');
-    const sample = await pool.query('SELECT id, title, number FROM funko_items LIMIT 3');
-    
-    res.json({
-      totalItems: parseInt(result.rows[0].count),
-      sampleItems: sample.rows,
-      message: 'Database query successful'
-    });
-  } catch (err) {
-    res.status(500).json({
-      error: 'Failed to query items',
-      details: err.message
-    });
-  }
-});
+app.use(helmet());
+app.use(morgan('dev'));
+app.use(express.json());
+
+// ✅ CORRECT: cors() must come BEFORE any routes
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Explicit OPTIONS handler for PATCH
+app.options('/api/admin/users/:id/role', cors());
 
 // ======================
-// ROUTES
+// ROUTES (DEFINED AFTER ALL CONTROLLER FUNCTIONS)
 // ======================
 
 // Health check
@@ -743,7 +784,6 @@ app.get('/', (req, res) => {
 });
 
 // ---------- PUBLIC item routes ----------
-// Replace your /api/items and /api/items/:id routes with these improved versions
 
 // Get all items with proper series parsing
 app.get('/api/items', async (req, res) => {
@@ -880,7 +920,6 @@ app.get('/api/items/search', async (req, res) => {
   }
 });
 
-
 // Debug endpoint to check database contents
 app.get('/api/debug/items', async (req, res) => {
   try {
@@ -923,7 +962,6 @@ app.get('/api/debug/id-check', async (req, res) => {
   }
 });
 
-
 // Auth routes
 app.post('/api/register', registerUser);
 app.post('/api/login', loginUser);
@@ -945,14 +983,19 @@ app.delete('/api/collection/:funkoId', authenticateToken, removeFromCollection);
 app.get('/api/collection', authenticateToken, getCollection);
 app.get('/api/collection/check/:funkoId', authenticateToken, checkCollectionItem);
 
+// Request routes
+app.post('/api/requests', authenticateToken, submitItemRequest);
+app.get('/api/admin/requests', authenticateToken, isAdmin, getPendingRequests);
+app.get('/api/admin/requests/count', authenticateToken, isAdmin, getPendingRequestsCount);
+app.patch('/api/admin/requests/:id/status', authenticateToken, isAdmin, resolveRequest);
+
 // Admin routes
 app.get('/api/admin/users', authenticateToken, isAdmin, getAllUsers);
-
 app.get('/api/admin/items/search', authenticateToken, isAdmin, searchItems);
 app.post('/api/admin/items', authenticateToken, isAdmin, addItem);
 app.delete('/api/admin/users/:id', authenticateToken, isAdmin, deleteUser);
 
-// PATCH: Zmień rolę użytkownika (tylko dla admina)
+// PATCH: Change user role (admin only)
 app.patch('/api/admin/users/:id/role', authenticateToken, isAdmin, async (req, res) => {
   console.log('Role change request received:', {
     params: req.params,
@@ -998,9 +1041,7 @@ app.patch('/api/admin/users/:id/role', authenticateToken, isAdmin, async (req, r
   }
 });
 
-// ======================
-// ADMIN STATS ROUTE
-// ======================
+// Admin stats route
 app.get('/api/admin/stats', authenticateToken, isAdmin, async (req, res) => {
   try {
     const [
@@ -1077,11 +1118,7 @@ app.get('/api/admin/stats', authenticateToken, isAdmin, async (req, res) => {
   }
 });
 
-
-// ======================
-// FIX THE ADMIN ITEMS ROUTE
-// ======================
-
+// Admin items route with pagination
 app.get("/api/admin/items", authenticateToken, isAdmin, async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -1114,6 +1151,47 @@ app.get("/api/admin/items", authenticateToken, isAdmin, async (req, res) => {
     res.status(500).json({ error: "Failed to load items" });
   }
 });
+
+// ======================
+// DIAGNOSTIC ROUTES
+// ======================
+// Add this temporary diagnostic route
+app.get('/api/test/database', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT NOW()');
+    res.json({ 
+      success: true, 
+      message: 'Database connection successful',
+      time: result.rows[0].now
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      success: false, 
+      message: 'Database connection failed',
+      error: err.message 
+    });
+  }
+});
+
+// Add this route to check if funko_items table exists
+app.get('/api/test/items', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT COUNT(*) as count FROM funko_items');
+    const sample = await pool.query('SELECT id, title, number FROM funko_items LIMIT 3');
+    
+    res.json({
+      totalItems: parseInt(result.rows[0].count),
+      sampleItems: sample.rows,
+      message: 'Database query successful'
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: 'Failed to query items',
+      details: err.message
+    });
+  }
+});
+
 // ======================
 // SERVER STARTUP
 // ======================

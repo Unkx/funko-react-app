@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import Fuse from "fuse.js";
 import { translations } from "./Translations/TranslationsSearchSite";
 
 // Icons
@@ -10,7 +9,7 @@ import SearchIcon from "./assets/search.svg?react";
 import GlobeIcon from "./assets/globe.svg?react";
 import ChevronDownIcon from "./assets/chevron-down.svg?react";
 
-// Add a simple CloseIcon if you don't have one as a separate SVG file
+// Add a simple CloseIcon
 const CloseIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -32,7 +31,7 @@ import FranceFlag from "./assets/flags/france.svg?react";
 import GermanyFlag from "./assets/flags/germany.svg?react";
 import SpainFlag from "./assets/flags/spain.svg?react";
 
-// --- START NEW MODAL COMPONENT ---
+// --- IMAGE MODAL COMPONENT ---
 interface ImageModalProps {
   imageUrl: string;
   altText: string;
@@ -78,17 +77,190 @@ const ImageModal: React.FC<ImageModalProps> = ({ imageUrl, altText, onClose, isD
     </div>
   );
 };
-// --- END NEW MODAL COMPONENT ---
+
+// --- REQUEST MODAL COMPONENT ---
+interface RequestModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  isDarkMode: boolean;
+  onSubmit: (formData: { title: string; number: string; reason: string }) => void;
+  isSubmitting: boolean;
+  submitSuccess: boolean;
+  t: any;
+}
+
+const RequestModal: React.FC<RequestModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  isDarkMode, 
+  onSubmit, 
+  isSubmitting, 
+  submitSuccess,
+  t 
+}) => {
+  const [formData, setFormData] = useState({ title: "", number: "", reason: "" });
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (submitSuccess) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [submitSuccess, onClose]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className={`relative ${isDarkMode ? "bg-gray-800" : "bg-white"} p-6 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className={`absolute top-3 right-3 p-1 rounded-full ${isDarkMode ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-200 text-black hover:bg-gray-300"}`}
+          aria-label="Close modal"
+        >
+          <CloseIcon className="w-5 h-5" />
+        </button>
+
+        <h2 className={`text-xl font-bold mb-4 ${isDarkMode ? "text-white" : "text-black"}`}>
+          {t.requestMissingItem || "Request Missing Item"}
+        </h2>
+
+        {submitSuccess ? (
+          <div className={`p-4 rounded-md ${isDarkMode ? "bg-green-900 text-green-200" : "bg-green-100 text-green-800"}`}>
+            ✅ {t.requestSubmitted || "Request submitted successfully!"}
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="title" className={`block text-sm font-medium mb-1 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>
+                {t.itemTitle || "Item Title"} *
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                required
+                className={`w-full px-3 py-2 rounded border ${
+                  isDarkMode 
+                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
+                    : "bg-white border-gray-300 text-black"
+                }`}
+                placeholder={t.titlePlaceholder || "Enter item title"}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="number" className={`block text-sm font-medium mb-1 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>
+                {t.itemNumber || "Item Number"}
+              </label>
+              <input
+                type="text"
+                id="number"
+                name="number"
+                value={formData.number}
+                onChange={handleChange}
+                className={`w-full px-3 py-2 rounded border ${
+                  isDarkMode 
+                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
+                    : "bg-white border-gray-300 text-black"
+                }`}
+                placeholder={t.numberPlaceholder || "Enter item number (optional)"}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="reason" className={`block text-sm font-medium mb-1 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>
+                {t.reason || "Reason for Request"} *
+              </label>
+              <textarea
+                id="reason"
+                name="reason"
+                value={formData.reason}
+                onChange={handleChange}
+                required
+                rows={4}
+                className={`w-full px-3 py-2 rounded border ${
+                  isDarkMode 
+                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
+                    : "bg-white border-gray-300 text-black"
+                }`}
+                placeholder={t.reasonPlaceholder || "Why are you requesting this item?"}
+              />
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className={`flex-1 px-4 py-2 rounded ${
+                  isDarkMode 
+                    ? "bg-gray-600 hover:bg-gray-500 text-white" 
+                    : "bg-gray-300 hover:bg-gray-400 text-black"
+                }`}
+                disabled={isSubmitting}
+              >
+                {t.cancel || "Cancel"}
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className={`flex-1 px-4 py-2 rounded ${
+                  isDarkMode 
+                    ? "bg-blue-600 hover:bg-blue-500 text-white" 
+                    : "bg-blue-500 hover:bg-blue-600 text-white"
+                } disabled:opacity-50`}
+              >
+                {isSubmitting ? t.submitting || "Submitting..." : t.submitRequest || "Submit Request"}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+};
 
 // Define the structure of a Funko Pop item
 interface FunkoItem {
-  id: number | string; // Your DB uses number, GitHub uses string
+  id: number | string;
   title: string;
   number: string;
   series: string[];
   exclusive: boolean;
   imageName?: string;
-  category?: string; // Might be present in admin items
+  category?: string;
 }
 
 const SearchSite = () => {
@@ -113,10 +285,12 @@ const SearchSite = () => {
   const [showExclusiveOnly, setShowExclusiveOnly] = useState(false);
   const [sortOption, setSortOption] = useState("titleAsc");
 
-  // --- NEW STATE FOR MODAL ---
+  // Modal states
   const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
   const [modalImageAlt, setModalImageAlt] = useState<string | null>(null);
-  // --- END NEW STATE FOR MODAL ---
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -126,39 +300,48 @@ const SearchSite = () => {
   const queryParams = new URLSearchParams(location.search);
   const queryParam = queryParams.get("q") || "";
 
+  // Helper to generate IDs
+  const generateId = (title: string, number: string): string => {
+    const safeTitle = title ? title.trim() : "";
+    const safeNumber = number ? number.trim() : "";
+    return `${safeTitle}-${safeNumber}`
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .toLowerCase()
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  };
+
   // Combine funkoData and adminItems for processing
-// Update the useMemo that transforms items
-const allItems = useMemo(() => {
-  // Transform admin items to match the structure of funkoData
-  const transformedAdminItems = adminItems.map((item: any) => ({
-    ...item,
-    title: item.title || "", // Ensure title exists
-    number: item.number || "", // Ensure number exists
-    series: Array.isArray(item.series) 
-      ? item.series 
-      : item.category 
-        ? [item.category] 
-        : ["Unknown"], // Handle different series formats
-    exclusive: item.exclusive || false, // Ensure exclusive is boolean
-    id: `admin-${item.id}`, // Prefix to distinguish from GitHub data
-  }));
+  const allItems = useMemo(() => {
+    const transformedAdminItems = adminItems.map((item: any) => ({
+      ...item,
+      title: item.title || "",
+      number: item.number || "",
+      series: Array.isArray(item.series) 
+        ? item.series 
+        : item.category 
+          ? [item.category] 
+          : ["Unknown"],
+      exclusive: item.exclusive || false,
+      id: `admin-${item.id}`,
+    }));
 
-  // Transform GitHub data to ensure consistent structure
-  const transformedFunkoData = funkoData.map((item: any) => ({
-    ...item,
-    title: item.title || "", // Ensure title exists
-    number: item.number || "", // Ensure number exists
-    series: Array.isArray(item.series) 
-      ? item.series 
-      : item.series 
-        ? [item.series] 
-        : ["Unknown"], // Ensure series is an array
-    exclusive: item.exclusive || false, // Ensure exclusive is boolean
-    id: item.id || generateId(item.title, item.number), // Use existing ID or generate one
-  }));
+    const transformedFunkoData = funkoData.map((item: any) => ({
+      ...item,
+      title: item.title || "",
+      number: item.number || "",
+      series: Array.isArray(item.series) 
+        ? item.series 
+        : item.series 
+          ? [item.series] 
+          : ["Unknown"],
+      exclusive: item.exclusive || false,
+      id: item.id || generateId(item.title, item.number),
+    }));
 
-  return [...transformedFunkoData, ...transformedAdminItems];
-}, [funkoData, adminItems]);
+    return [...transformedFunkoData, ...transformedAdminItems];
+  }, [funkoData, adminItems]);
 
   const totalPages = Math.ceil(filteredAndSortedResults.length / itemsPerPage);
 
@@ -181,92 +364,45 @@ const allItems = useMemo(() => {
     DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
   };
 
-  // Helper to generate IDs
-// Ensure you're using the same generateId function
-const generateId = (title: string, number: string): string => {
-  const safeTitle = title ? title.trim() : "";
-  const safeNumber = number ? number.trim() : "";
-  return `${safeTitle}-${safeNumber}`
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .toLowerCase()
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-};
-
-// And when displaying search results, use:
-{currentItems.map((item: any) => {
-  const itemId = item.id || generateId(item.title, item.number || '');
-  return (
-    <li
-      key={itemId}
-      className={`p-4 sm:px-6 sm:py-4 rounded-lg flex flex-col sm:flex-row gap-4 ${
-        isDarkMode ? "bg-gray-700" : "bg-gray-200"
-      } cursor-pointer hover:opacity-90 transition-opacity relative`}
-      onClick={() => navigate(`/funko/${encodeURIComponent(itemId)}`)}
-    >
-      {/* ... rest of your item display ... */}
-    </li>
-  );
-})}
-
-
-// Add this function to extract search parameters from ID
-const extractSearchParamsFromId = (id: string) => {
-  // Try to split by hyphen to get title and number
-  const parts = id.split('-');
-  
-  if (parts.length >= 2 && !isNaN(Number(parts[parts.length - 1]))) {
-    // Format: "title-number"
-    const number = parts.pop() || '';
-    const title = parts.join(' ');
-    return { title, number };
-  }
-  
-  // If no number found, treat the whole thing as title
-  return { title: id.replace(/-/g, ' '), number: '' };
-};
-
-// Fetch data from API (DB) first, fallback to GitHub
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      setIsLoading(true);
-      let data: FunkoItem[] = [];
-
-      // FIRST: Try to fetch from your local API (Database)
+  // Fetch data from API (DB) first, fallback to GitHub
+  useEffect(() => {
+    const fetchData = async () => {
       try {
-        const apiResponse = await fetch("http://localhost:5000/api/items");
-        if (!apiResponse.ok) {
-          throw new Error(`API error! Status: ${apiResponse.status}`);
-        }
-        data = await apiResponse.json();
-        console.log("Fetched data from API:", data); // For debugging
-      } catch (apiError) {
-        console.warn("Failed to fetch from local API, falling back to GitHub:", apiError.message);
-        // FALLBACK: Fetch from the static GitHub file if API fails
-        const githubResponse = await fetch(
-          "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
-        );
-        if (!githubResponse.ok) throw new Error(`GitHub error! Status: ${githubResponse.status}`);
-        const githubData = await githubResponse.json();
-        // Generate IDs for GitHub data
-        data = githubData.map((item: any) => ({
-          ...item,
-          id: generateId(item.title, item.number),
-        }));
-      }
+        setIsLoading(true);
+        let data: FunkoItem[] = [];
 
-      setFunkoData(data);
-      setError(null);
-    } catch (err) {
-      setError(err.message || "An error occurred while fetching data.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  fetchData();
-}, []);
+        // FIRST: Try to fetch from your local API (Database)
+        try {
+          const apiResponse = await fetch("http://localhost:5000/api/items");
+          if (!apiResponse.ok) {
+            throw new Error(`API error! Status: ${apiResponse.status}`);
+          }
+          data = await apiResponse.json();
+          console.log("Fetched data from API:", data);
+        } catch (apiError) {
+          console.warn("Failed to fetch from local API, falling back to GitHub:", apiError.message);
+          // FALLBACK: Fetch from the static GitHub file if API fails
+          const githubResponse = await fetch(
+            "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
+          );
+          if (!githubResponse.ok) throw new Error(`GitHub error! Status: ${githubResponse.status}`);
+          const githubData = await githubResponse.json();
+          data = githubData.map((item: any) => ({
+            ...item,
+            id: generateId(item.title, item.number),
+          }));
+        }
+
+        setFunkoData(data);
+        setError(null);
+      } catch (err) {
+        setError(err.message || "An error occurred while fetching data.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   // Fetch admin items from backend
   useEffect(() => {
@@ -281,7 +417,6 @@ useEffect(() => {
         }
       } catch (err) {
         console.warn("Error fetching admin items:", err);
-        // Don't set error state here, just log the warning
       }
     };
     fetchAdminItems();
@@ -289,7 +424,6 @@ useEffect(() => {
 
   // Set loading to false once both data sources are attempted
   useEffect(() => {
-    // Wait a moment to ensure both fetch operations have been attempted
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 1000);
@@ -331,66 +465,64 @@ useEffect(() => {
   }, [showLanguageDropdown]);
 
   // Effect for filtering and sorting the combined data
-// Replace the useEffect that handles filtering and sorting with this updated version
-useEffect(() => {
-  if (allItems.length === 0) {
-    setFilteredAndSortedResults([]);
-    return;
-  }
+  useEffect(() => {
+    if (allItems.length === 0) {
+      setFilteredAndSortedResults([]);
+      return;
+    }
 
-  // Normalize search query for case-insensitive matching
-  const normalizedQuery = queryParam.toLowerCase().trim();
-  
-  let currentProcessedResults = allItems.filter((item: any) => {
-    // Search in multiple fields: title, number, and series
-    const titleMatch = item.title?.toLowerCase().includes(normalizedQuery);
-    const numberMatch = item.number?.toLowerCase().includes(normalizedQuery);
-    const seriesMatch = item.series?.some((series: string) => 
-      series.toLowerCase().includes(normalizedQuery)
-    );
+    const normalizedQuery = queryParam.toLowerCase().trim();
     
-    return titleMatch || numberMatch || seriesMatch;
-  });
-
-  if (categoryFilter) {
-    currentProcessedResults = currentProcessedResults.filter((item: any) =>
-      item.series?.includes(categoryFilter)
-    );
-  }
-
-  if (showExclusiveOnly) {
-    currentProcessedResults = currentProcessedResults.filter(
-      (item: any) => item.exclusive === true
-    );
-  }
-
-  switch (sortOption) {
-    case "titleDesc":
-      currentProcessedResults.sort((a: any, b: any) =>
-        b.title?.localeCompare(a.title || "") || 0
+    let currentProcessedResults = allItems.filter((item: any) => {
+      const titleMatch = item.title?.toLowerCase().includes(normalizedQuery);
+      const numberMatch = item.number?.toLowerCase().includes(normalizedQuery);
+      const seriesMatch = item.series?.some((series: string) => 
+        series.toLowerCase().includes(normalizedQuery)
       );
-      break;
-    case "numberAsc":
-      currentProcessedResults.sort(
-        (a: any, b: any) => (Number(a.number) || 0) - (Number(b.number) || 0)
-      );
-      break;
-    case "numberDesc":
-      currentProcessedResults.sort(
-        (a: any, b: any) => (Number(b.number) || 0) - (Number(a.number) || 0)
-      );
-      break;
-    case "titleAsc":
-    default:
-      currentProcessedResults.sort((a: any, b: any) =>
-        a.title?.localeCompare(b.title || "") || 0
-      );
-      break;
-  }
+      
+      return titleMatch || numberMatch || seriesMatch;
+    });
 
-  setFilteredAndSortedResults(currentProcessedResults);
-  setCurrentPage(1); // Reset to first page when filters/sort/search change
-}, [queryParam, categoryFilter, showExclusiveOnly, sortOption, allItems]);
+    if (categoryFilter) {
+      currentProcessedResults = currentProcessedResults.filter((item: any) =>
+        item.series?.includes(categoryFilter)
+      );
+    }
+
+    if (showExclusiveOnly) {
+      currentProcessedResults = currentProcessedResults.filter(
+        (item: any) => item.exclusive === true
+      );
+    }
+
+    switch (sortOption) {
+      case "titleDesc":
+        currentProcessedResults.sort((a: any, b: any) =>
+          b.title?.localeCompare(a.title || "") || 0
+        );
+        break;
+      case "numberAsc":
+        currentProcessedResults.sort(
+          (a: any, b: any) => (Number(a.number) || 0) - (Number(b.number) || 0)
+        );
+        break;
+      case "numberDesc":
+        currentProcessedResults.sort(
+          (a: any, b: any) => (Number(b.number) || 0) - (Number(a.number) || 0)
+        );
+        break;
+      case "titleAsc":
+      default:
+        currentProcessedResults.sort((a: any, b: any) =>
+          a.title?.localeCompare(b.title || "") || 0
+        );
+        break;
+    }
+
+    setFilteredAndSortedResults(currentProcessedResults);
+    setCurrentPage(1);
+  }, [queryParam, categoryFilter, showExclusiveOnly, sortOption, allItems]);
+
   // Save language preference
   useEffect(() => {
     localStorage.setItem("preferredLanguage", language);
@@ -414,7 +546,7 @@ useEffect(() => {
     if (searchQuery.trim()) {
       navigate(`/searchsite?q=${encodeURIComponent(searchQuery.trim())}`);
     } else {
-      navigate("/searchsite"); // Clear search query from URL
+      navigate("/searchsite");
     }
   };
 
@@ -481,7 +613,7 @@ useEffect(() => {
       : t.goToLoginSite || "Log In";
   }, [t]);
 
-  // --- NEW HANDLERS FOR MODAL ---
+  // Image modal handlers
   const openImageModal = (imageUrl: string, altText: string) => {
     setModalImageUrl(imageUrl);
     setModalImageAlt(altText);
@@ -491,7 +623,43 @@ useEffect(() => {
     setModalImageUrl(null);
     setModalImageAlt(null);
   };
-  // --- END NEW HANDLERS FOR MODAL ---
+
+  // Request modal handlers
+  const handleRequestSubmit = async (formData: { title: string; number: string; reason: string }) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert(t.loginRequired || "Please log in to submit a request.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("http://localhost:5000/api/requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Submission failed");
+      }
+
+      setSubmitSuccess(true);
+    } catch (err: any) {
+      alert("Error: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCloseRequestModal = () => {
+    setShowRequestModal(false);
+    setSubmitSuccess(false);
+  };
 
   // Helper function to determine if item is from admin
   const isAdminItem = (itemId: string) => itemId.startsWith('admin-');
@@ -698,7 +866,6 @@ useEffect(() => {
                         isDarkMode ? "bg-gray-700" : "bg-gray-200"
                       } cursor-pointer hover:opacity-90 transition-opacity relative`}
                       onClick={() => {
-                        // Ensure we have a properly formatted ID
                         const properId = item.id.includes('-') 
                           ? item.id 
                           : generateId(item.title, item.number || '');
@@ -783,7 +950,7 @@ useEffect(() => {
                           : "bg-gray-200 hover:bg-gray-300"
                       }`}
                     >
-                      
+                      {t.previous || "Previous"}
                     </button>
                     {getDisplayedPages().map((page, index) =>
                       page === "..." ? (
@@ -819,7 +986,7 @@ useEffect(() => {
                           : "bg-gray-200 hover:bg-gray-300"
                       }`}
                     >
-                      
+                      {t.next || "Next"}
                     </button>
                   </div>
 
@@ -831,9 +998,14 @@ useEffect(() => {
             ) : (
               <div className="text-center">
                 <p className="mb-4">{t.noResult}</p>
-                <p className="text-sm opacity-75">
-                  Showing {allItems.length} items ({funkoData.length} from catalog, {adminItems.length} admin items)
-                </p>
+                <button
+                  onClick={() => setShowRequestModal(true)}
+                  className={`px-4 py-2 rounded ${
+                    isDarkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
+                  } text-white`}
+                >
+                  {t.requestMissingItem || "Request Missing Item"}
+                </button>
               </div>
             )}
           </>
@@ -849,7 +1021,7 @@ useEffect(() => {
         {t.copyright}
       </footer>
 
-      {/* --- NEW MODAL RENDER --- */}
+      {/* Modals */}
       {modalImageUrl && (
         <ImageModal
           imageUrl={modalImageUrl}
@@ -858,7 +1030,16 @@ useEffect(() => {
           isDarkMode={isDarkMode}
         />
       )}
-      {/* --- END NEW MODAL RENDER --- */}
+
+      <RequestModal
+        isOpen={showRequestModal}
+        onClose={handleCloseRequestModal}
+        isDarkMode={isDarkMode}
+        onSubmit={handleRequestSubmit}
+        isSubmitting={isSubmitting}
+        submitSuccess={submitSuccess}
+        t={t}
+      />
     </div>
   );
 };

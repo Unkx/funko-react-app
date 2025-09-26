@@ -170,6 +170,9 @@ const Admin = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false); // Track typing state
 
+  // Request state
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+
   // Refs
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -257,6 +260,29 @@ const Admin = () => {
       }
     }
   }, []);
+
+  // Fetch pending requests count
+  useEffect(() => {
+    if (!token || currentUser?.role !== "admin") return;
+
+    const fetchCount = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/admin/requests/count", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setPendingRequestsCount(data.count || 0);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch request count");
+      }
+    };
+
+    fetchCount();
+    const interval = setInterval(fetchCount, 30000); // every 30s
+    return () => clearInterval(interval);
+  }, [token, currentUser?.role]);
 
   // 🌙 Theme sync
   useEffect(() => {
@@ -531,96 +557,38 @@ const Admin = () => {
     setIsTyping(false);
   };
 
-
   // Add this helper function at the top of your Admin component, after the interfaces
-const generateFunkoId = (title: string, number: string): string => {
-  return `${title}-${number}`
-    .replace(/[^\w\s-]/g, '') // Remove special characters except spaces and hyphens
-    .replace(/\s+/g, '-')      // Replace spaces with hyphens
-    .toLowerCase()             // Convert to lowercase
-    .replace(/-+/g, '-')       // Replace multiple hyphens with single hyphen
-    .replace(/^-|-$/g, '');    // Remove leading/trailing hyphens
-};
+  const generateFunkoId = (title: string, number: string): string => {
+    return `${title}-${number}`
+      .replace(/[^\w\s-]/g, '') // Remove special characters except spaces and hyphens
+      .replace(/\s+/g, '-')      // Replace spaces with hyphens
+      .toLowerCase()             // Convert to lowercase
+      .replace(/-+/g, '-')       // Replace multiple hyphens with single hyphen
+      .replace(/^-|-$/g, '');    // Remove leading/trailing hyphens
+  };
 
-// Add this function to handle item navigation
-const handleItemNavigation = (item: Item) => {
-  // Use the item's existing ID if it's already in the correct format
-  let funkoId = String(item.id);
-  
-  console.log('Admin - Navigating to item:', item);
-  console.log('Admin - Original ID:', funkoId);
-  
-  // Check if the ID is already in the correct format (contains hyphens and looks like title-number)
-  const isCorrectFormat = /^[a-z0-9]+-\d+.*$/.test(funkoId.toLowerCase());
-  
-  if (!isCorrectFormat && item.title && item.number) {
-    // Generate the ID using the same logic as the backend
-    funkoId = generateFunkoId(item.title, item.number);
-    console.log('Admin - Generated new ID:', funkoId);
-  }
-  
-  console.log('Admin - Final ID for navigation:', funkoId);
-  
-  // Navigate to the item detail page
-  navigate(`/item/${encodeURIComponent(funkoId)}`);
-};
-
-// Replace your search results table rows with this updated version:
-{filteredItems.map((item) => (
-  <tr 
-    key={item.id} 
-    className={`transition-colors cursor-pointer ${
-      isDarkMode 
-        ? "even:bg-gray-700 odd:bg-gray-600 hover:bg-gray-500" 
-        : "even:bg-gray-100 odd:bg-white hover:bg-gray-200"
-    }`}
-    onClick={() => handleItemNavigation(item)}
-    title="Click to view item details"
-  >
-    <td className="px-2 sm:px-3 py-2">{item.id}</td>
-    <td className="px-2 sm:px-3 py-2">{item.title}</td>
-    <td className="px-2 sm:px-3 py-2">{item.number}</td>
-    <td className="px-2 sm:px-3 py-2">{item.category}</td>
-    <td className="px-2 sm:px-3 py-2">
-      {item.series && item.series.length > 0 ? item.series.join(", ") : "-"}
-    </td>
-    <td className="px-2 sm:px-3 py-2 text-center">
-      {item.exclusive ? (
-        <span className="text-green-500 font-semibold">✓</span>
-      ) : (
-        <span className="text-red-500 font-semibold">✗</span>
-      )}
-    </td>
-    <td className="px-2 sm:px-3 py-2">
-      {item.imageName ? item.imageName : "-"}
-    </td>
-    <td className="px-2 sm:px-3 py-2 text-center">
-      <button
-        onClick={(e) => {
-          e.stopPropagation(); // Prevent row click
-          handleItemNavigation(item);
-        }}
-        className={`px-2 py-1 rounded text-xs sm:text-sm ${
-          isDarkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
-        } text-white font-medium transition mx-1`}
-      >
-        {t.view || "View"}
-      </button>
-      <button
-        onClick={(e) => {
-          e.stopPropagation(); // Prevent row click
-          // Handle edit item functionality here
-          console.log("Edit item:", item.id);
-        }}
-        className={`px-2 py-1 rounded text-xs sm:text-sm ${
-          isDarkMode ? "bg-yellow-600 hover:bg-yellow-700" : "bg-yellow-500 hover:bg-yellow-600"
-        } text-white font-medium transition mx-1`}
-      >
-        {t.edit || "Edit"}
-      </button>
-    </td>
-  </tr>
-))}
+  // Add this function to handle item navigation
+  const handleItemNavigation = (item: Item) => {
+    // Use the item's existing ID if it's already in the correct format
+    let funkoId = String(item.id);
+    
+    console.log('Admin - Navigating to item:', item);
+    console.log('Admin - Original ID:', funkoId);
+    
+    // Check if the ID is already in the correct format (contains hyphens and looks like title-number)
+    const isCorrectFormat = /^[a-z0-9]+-\d+.*$/.test(funkoId.toLowerCase());
+    
+    if (!isCorrectFormat && item.title && item.number) {
+      // Generate the ID using the same logic as the backend
+      funkoId = generateFunkoId(item.title, item.number);
+      console.log('Admin - Generated new ID:', funkoId);
+    }
+    
+    console.log('Admin - Final ID for navigation:', funkoId);
+    
+    // Navigate to the item detail page
+    navigate(`/item/${encodeURIComponent(funkoId)}`);
+  };
 
   // Early return if not authorized
   if (!token || !currentUser || currentUser.role !== "admin") {
@@ -651,8 +619,7 @@ const handleItemNavigation = (item: Item) => {
         </Link>
 
         {/* Country, Theme, and Logout */}
-        {/* 🌐 Country, 🌙 Theme, 🔐 Login */}
-        <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0">
+        <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0 items-center">
           {/* Language Dropdown */}
           <div className="relative">
             <button
@@ -705,6 +672,7 @@ const handleItemNavigation = (item: Item) => {
             )}
           </div>
 
+          {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
             className={`p-2 rounded-full ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-600"}`}
@@ -713,6 +681,28 @@ const handleItemNavigation = (item: Item) => {
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
 
+          {/* Bell Icon for Requests - ONLY SHOW WHEN THERE ARE REQUESTS */}
+          {pendingRequestsCount > 0 && (
+            <div className="relative">
+              <button
+                onClick={() => navigate("/requests")}
+                className={`p-2 rounded-full relative ${
+                  isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"
+                }`}
+                aria-label="Pending Requests"
+              >
+                {/* Bell SVG */}
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                  {pendingRequestsCount}
+                </span>
+              </button>
+            </div>
+          )}
+
+          {/* Logout Button */}
           <button
             onClick={handleLogout}
             className={`px-4 py-2 rounded ${

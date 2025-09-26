@@ -1,0 +1,13 @@
+CREATE TABLE item_requests (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  number TEXT,
+  reason TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending', -- 'pending', 'resolved'
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  resolved_at TIMESTAMPTZ
+);
+
+CREATE INDEX idx_item_requests_status ON item_requests(status);
+CREATE INDEX idx_item_requests_user ON item_requests(user_id);

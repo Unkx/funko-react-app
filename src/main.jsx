@@ -94,6 +94,7 @@ import AdminSite from "./Admin"
 import NotFound from './NotFound';
 import CollectionPage from "./CollectionPage";
 import WishlistPage from "./WishlistPage";
+import Requests from "./Requests";
 
 
 import { NetworkProvider } from './NetworkContext';
@@ -127,6 +128,7 @@ root.render(
             <Route path="*" element={<NotFound />} />
             <Route path="/collection" element={<CollectionPage />} />
             <Route path="/wishlist" element={<WishlistPage />} />
+            <Route path="/requests" element={<Requests />} />
 
           </Routes>
         </Router>

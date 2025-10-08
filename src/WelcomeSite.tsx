@@ -488,7 +488,7 @@ const WelcomeSite: React.FC = () => {
           <button
             onClick={() => {
               const user = JSON.parse(localStorage.getItem("user") || "{}");
-              navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginSite");
+              navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginRegisterSite");
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded ${
               isDarkMode

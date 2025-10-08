@@ -116,7 +116,7 @@ export const translations = {
     sortByTitleDesc: "Título Z-A",
     sortByNumberAsc: "Número de menor a mayor",
     sortByNumberDesc: "Número de mayor a menor",
-    searchingResults: "Buscando resultados para:", ,
+    searchingResults: "Buscando resultados para:", 
     noResult: "No se encontraron resultados. Intenta con diferentes términos de búsqueda o filtros.",
     series: "Serie",
     number: "Número",

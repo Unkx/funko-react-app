@@ -762,7 +762,10 @@ const countries = {
       <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
         {t.dashboardWelcome} 
       </h2>
-
+                  <p>przetłumacz wszystko</p>
+                  <p>zamień "series" na "najdroższy item" i "najtańczy item" w kolekcji</p>
+                  <p>dodaj zapisywanie np high priority w liście życzeń, sortuj,wywal cenę, dodaj coś sensowniejszego</p>
+                  <p>wywal "series" i zrób coś innego</p>
      {/* Section: Profile Info */}
       <section 
         className="max-w-4xl w-full mx-auto bg-opacity-50 p-8 rounded-xl shadow-xl mb-10 dark:bg-gray-800 bg-white"
@@ -1023,19 +1026,19 @@ const countries = {
             <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
               {collection.length}
             </div>
-            <div className="text-sm">Total Items</div>
+            <div className="text-sm">{t.TotalItems}</div>
           </div>
           <div>
             <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
               {filteredCollection.length}
             </div>
-            <div className="text-sm">Filtered Items</div>
+            <div className="text-sm">{t.FilteredItems}</div>
           </div>
           <div>
             <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
               ${collection.reduce((sum, item) => sum + (item.purchase_price || 0), 0).toFixed(2)}
             </div>
-            <div className="text-sm">Total Value</div>
+            <div className="text-sm">{t.TotalValue}</div>
           </div>
           <div>
             <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
@@ -1058,7 +1061,7 @@ const countries = {
                 to="/searchsite" 
                 className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"} text-white`}
               >
-                Start Adding Items
+                {t.StartAddingItems}
               </Link>
             </div>
           ) : (
@@ -1252,25 +1255,25 @@ const countries = {
             <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
               {wishlist.length}
             </div>
-            <div className="text-sm">Total Items</div>
+            <div className="text-sm">{t.TotalItems}</div>
           </div>
           <div>
             <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
               {wishlist.filter(item => item.priority === "high").length}
             </div>
-            <div className="text-sm">High Priority</div>
+            <div className="text-sm">{t.HighPriority}</div>
           </div>
           <div>
             <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
               ${wishlist.reduce((sum, item) => sum + (item.max_price || 0), 0).toFixed(2)}
             </div>
-            <div className="text-sm">Total Budget</div>
+            <div className="text-sm">{t.TotalBudget}</div>
           </div>
           <div>
             <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
               {new Set(wishlist.map(item => item.series)).size}
             </div>
-            <div className="text-sm">Series</div>
+            <div className="text-sm">{t.Series}</div>
           </div>
         </div>
       </div>
@@ -1287,7 +1290,7 @@ const countries = {
                 to="/searchsite" 
                 className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"} text-white`}
               >
-                Start Adding Items
+                {t.StartAddingItems}
               </Link>
             </div>
           ) : (
@@ -1421,6 +1424,7 @@ const countries = {
                         Add to Collection
                       </button>
                     </div>
+                    
                   </>
                 )}
               </div>
@@ -1608,6 +1612,7 @@ const countries = {
             </motion.div>
           )}
         </AnimatePresence>
+        
       </main>
 
 

@@ -31,6 +31,16 @@ export const translations = {
     collection: "Collection",
     wishlist: "Wishlist",
 
+    TotalItems: "Total Items",
+    FilteredItems: "Filtered Items",
+    TotalValue: "Total Value",
+    MostValuableItem: "Most Valuable Item",
+    LeastValuableItem: "Least Valuable Item",
+    StartAddingItems: "Start Adding Items",
+
+    HighPriority: "High Priority",
+    TotalBudget: "Total Budget",
+    Series: "Series",
   },
   PL: {
     welcome: "Witaj",
@@ -61,6 +71,16 @@ export const translations = {
     collection: "Kolekcja",
     wishlist: "Lista życzeń",
 
+    TotalItems: "Łączna liczba przedmiotów",
+    FilteredItems: "Przefiltrowane przedmioty",
+    TotalValue: "Łączna wartość",
+    MostValuableItem: "Najcenniejszy przedmiot",
+    LeastValuableItem: "Najmniej wartościowy przedmiot",
+    StartAddingItems: "Zacznij dodawać przedmioty",
+
+    HighPriority: "Wysoki priorytet",
+    TotalBudget: "Całkowity budżet",
+    Series: "Serie",
   },
   RU: {
     welcome: "Добро пожаловать",
@@ -91,6 +111,16 @@ export const translations = {
     collection: "Коллекция",
     wishlist: "Список желаний",
 
+    TotalItems: "Всего предметов",
+    FilteredItems: "Отфильтрованные предметы",
+    TotalValue: "Общая стоимость",
+    MostValuableItem: "Самый ценный предмет",
+    LeastValuableItem: "Наименее ценный предмет",
+    StartAddingItems: "Начните добавлять предметы",
+
+    HighPriority: "Высокий приоритет",
+    TotalBudget: "Общий бюджет",
+    Series: "Серии",
   },
   ES: {
     welcome: "Bienvenido",
@@ -119,7 +149,18 @@ export const translations = {
     viewFullWishlist: "Ver Lista de Deseos Completa",
     dashboard: "Panel",
     collection: "Colección",
-    wishlist: "Lista de deseos"
+    wishlist: "Lista de deseos",
+
+    TotalItems: "Total de artículos",
+    FilteredItems: "Artículos filtrados",
+    TotalValue: "Valor total",
+    MostValuableItem: "Artículo más valioso",
+    LeastValuableItem: "Artículo menos valioso",
+    StartAddingItems: "Comienza a agregar artículos",
+
+    HighPriority: "Alta prioridad",
+    TotalBudget: "Presupuesto total",
+    Series: "Series",
   },
   FR: {
     welcome: "Bienvenue",
@@ -146,9 +187,20 @@ export const translations = {
     noItemsInWishlist: "Aucun article dans votre liste de souhaits.",
     viewFullCollection: "Voir la Collection Complète",
     viewFullWishlist: "Voir la Liste de Souhaits Complète",
-    dashoard: "Tableau de bord",
+    dashboard: "Tableau de bord",
     collection: "Collection",
     wishlist: "Liste de souhaits",
+
+    TotalItems: "Articles Totaux",
+    FilteredItems: "Articles Filtrés",
+    TotalValue: "Valeur Totale",
+    MostValuableItem: "Article le Plus Précieux",
+    LeastValuableItem: "Article le Moins Précieux",
+    StartAddingItems: "Commencer à ajouter des articles",
+
+    HighPriority: "Haute Priorité", 
+    TotalBudget: "Budget Total",
+    Series: "Séries",
   },
   DE: {
     welcome: "Willkommen",
@@ -179,5 +231,15 @@ export const translations = {
     collection: "Sammlung",
     wishlist: "Wunschliste",
 
+    TotalItems: "Gesamtanzahl der Artikel",
+    FilteredItems: "Gefilterte Artikel",
+    TotalValue: "Gesamtwert",
+    MostValuableItem: "Wertvollster Artikel",
+    LeastValuableItem: "Wenigster Wertvoller Artikel",
+    StartAddingItems: "Beginnen Sie mit dem Hinzufügen von Artikeln",
+
+    HighPriority: "Hohe Priorität",
+    TotalBudget: "Gesamtbudget",
+    Series: "Serien",
   }
 };

@@ -337,8 +337,22 @@ const WelcomeSite: React.FC = () => {
     setShowLanguageDropdown(false);
   };
 
-  const randomItems = getRandomItems();
-  const mostVisitedItems = getMostVisitedItems();
+// Memoize random items — only change when funkoData changes
+const randomItems = useMemo(() => {
+  if (funkoData.length === 0) return [];
+  const shuffled = [...funkoData].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, 3);
+}, [funkoData]); // Only recompute when funkoData changes
+
+// Memoize most visited items — recompute when funkoData or visit counts change
+const mostVisitedItems = useMemo(() => {
+  const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
+  return [...funkoData]
+    .map((item) => ({ ...item, visits: visitCount[item.id] || 0 }))
+    .sort((a, b) => b.visits - a.visits)
+    .filter((item) => item.visits > 0)
+    .slice(0, 3);
+}, [funkoData]); // Note: localStorage isn't reactive, so this won't auto-update on visit
 
   return (
     <div

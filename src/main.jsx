@@ -96,6 +96,9 @@ import CollectionPage from "./CollectionPage";
 import WishlistPage from "./WishlistPage";
 import Requests from "./Requests";
 
+import CategoriesSite from './CategoriesSite';
+import MostVisitedSite from './MostVisitedSite';
+
 
 import { NetworkProvider } from './NetworkContext';
 import { LanguageProvider } from "./LanguageContext";
@@ -129,7 +132,8 @@ root.render(
             <Route path="/collection" element={<CollectionPage />} />
             <Route path="/wishlist" element={<WishlistPage />} />
             <Route path="/requests" element={<Requests />} />
-
+            <Route path="/categories" element={<CategoriesSite />} />
+            <Route path="/mostVisited" element={<MostVisitedSite />} />
           </Routes>
         </Router>
       </LanguageProvider>

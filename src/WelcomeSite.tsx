@@ -26,6 +26,7 @@ interface FunkoItem {
   imageName: string;
 }
 
+
 interface FunkoItemWithId extends FunkoItem {
   id: string;
 }
@@ -46,6 +47,7 @@ const generateId = (title: string, number: string): string => {
   const safeNumber = number?.trim() || "";
   return `${safeTitle}-${safeNumber}`.replace(/\s+/g, "-");
 };
+
 
 const WelcomeSite: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -81,6 +83,164 @@ const WelcomeSite: React.FC = () => {
   // Toggle language dropdown
   const toggleLanguageDropdown = () => {
     setShowLanguageDropdown((prev) => !prev);
+  };
+
+  // 💬 Chatbot state
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [messages, setMessages] = useState<{ text: string; sender: 'user' | 'bot' }[]>([]);
+  const [inputValue, setInputValue] = useState("");
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  //  
+
+
+  // 💬 Smart bot response logic (enhanced)
+  const getBotResponse = (userInput: string): { text: string; buttons?: Array<{ label: string; action: () => void }> } => {
+    const lower = userInput.toLowerCase().trim();
+
+    // Greetings
+    if (/^(hi|hello|hey|howdy)/i.test(lower)) {
+      return {
+        text: t.chatGreeting || "Hi there! 😊 I'm PopBot! Ask me to search, browse categories, or find popular items!",
+        buttons: [
+          { label: t.buttonDashboard || "Take me to the dashboard!", action: () => navigate("/dashboardSite") },
+          { label: t.buttonLogin || "Take me to the login page", action: () => navigate("/loginRegisterSite") },
+          { label: t.buttonSearch || "Search for something", action: () => {
+            setIsChatOpen(false);
+            navigate("/searchsite");
+          } }
+        ]
+      };
+    }
+
+    // Help
+    if (/(help|what can you do)/i.test(lower)) {
+      return {
+        text: t.chatHelp || "I can help you:\n• Search for any Funko Pop\n• Go to Dashboard or Login\n• Browse Categories\n• Find Popular Items",
+        buttons: [
+          { label: t.buttonDashboard || "Go to Dashboard", action: () => navigate("/dashboardSite") },
+          { label: t.buttonLogin || "Login/Register", action: () => navigate("/loginRegisterSite") },
+          { label: t.buttonCategories || "Browse Categories", action: () => navigate("/categories") },
+          { label: t.buttonPopular || "See Most Visited", action: () => navigate("/mostVisited") }
+        ]
+      };
+    }
+
+    // Search intent
+    const searchMatch = lower.match(/(?:search|find|show me|look for)\s+(?:for\s+)?(.+)/i);
+    if (searchMatch) {
+      const query = searchMatch[1].trim();
+      if (query) {
+        navigate(`/searchsite?q=${encodeURIComponent(query)}`);
+        setIsChatOpen(false);
+        return {
+          text: t.chatSearching?.replace("{query}", query) || `Searching for "${query}"...`,
+          buttons: []
+        };
+      }
+    }
+
+    // Dashboard
+    if (/(dashboard|admin|profile|account)/i.test(lower)) {
+      navigate("/dashboardSite");
+      setIsChatOpen(false);
+      return {
+        text: t.chatGoingToDashboard || "Taking you to your dashboard!",
+        buttons: []
+      };
+    }
+
+    // Login/Register
+    if (/(login|register|sign in|sign up)/i.test(lower)) {
+      navigate("/loginRegisterSite");
+      setIsChatOpen(false);
+      return {
+        text: t.chatGoingToLogin || "Taking you to the login page!",
+        buttons: []
+      };
+    }
+
+    // Categories
+    if (/(category|browse|list|show.*categories)/i.test(lower)) {
+      navigate("/categories");
+      setIsChatOpen(false);
+      return {
+        text: t.chatGoingToCategories || "Taking you to categories!",
+        buttons: []
+      };
+    }
+
+    // Most visited / popular
+    if (/(popular|most visited|trending|hot)/i.test(lower)) {
+      navigate("/mostVisited");
+      setIsChatOpen(false);
+      return {
+        text: t.chatGoingToPopular || "Showing the most popular Funko Pops!",
+        buttons: []
+      };
+    }
+
+    // Exclusive items
+    if (/(exclusive|limited|special)/i.test(lower)) {
+      const exclusives = funkoData.filter(item => item.exclusive);
+      if (exclusives.length > 0) {
+        const sample = exclusives.slice(0, 2).map(i => i.title).join(", ");
+        return {
+          text: t.chatExclusivesFound?.replace("{count}", exclusives.length.toString()).replace("{examples}", sample) ||
+              `I found ${exclusives.length} exclusive Pops! Examples: ${sample}. View them in search.`,
+          buttons: [
+            { label: t.buttonSearchExclusives || "Show All Exclusives", action: () => {
+              setIsChatOpen(false);
+              navigate("/searchsite?q=exclusive");
+            } }
+          ]
+        };
+      }
+      return {
+        text: t.chatNoExclusives || "No exclusive items found right now.",
+        buttons: []
+      };
+    }
+
+    // Item-specific search (e.g., "Open the rapunzel funko")
+    const itemNameMatch = lower.match(/(?:open|show me|find|search for)\s+(.+?)(?:\s+funko|\s+pop|$)/i);
+    if (itemNameMatch) {
+      const itemName = itemNameMatch[1].trim();
+      if (itemName) {
+        // Try to find exact match first
+        const exactMatch = funkoData.find(item =>
+          item.title.toLowerCase().includes(itemName.toLowerCase())
+        );
+        if (exactMatch) {
+          navigate(`/funko/${exactMatch.id}`);
+          setIsChatOpen(false);
+          return {
+            text: t.chatFoundItem?.replace("{item}", itemName) || `Found "${itemName}"! Taking you there...`,
+            buttons: []
+          };
+        }
+
+        // Fallback: search for it
+        navigate(`/searchsite?q=${encodeURIComponent(itemName)}`);
+        setIsChatOpen(false);
+        return {
+          text: t.chatSearching?.replace("{query}", itemName) || `Searching for "${itemName}"...`,
+          buttons: []
+        };
+      }
+    }
+
+    // Default fallback
+    return {
+      text: t.chatFallback || "I can help you search, browse categories, or find popular Funko Pops! Try saying \"Search for Batman\" or \"Take me to dashboard\".",
+      buttons: [
+        { label: t.buttonDashboard || "Take me to dashboard", action: () => navigate("/dashboardSite") },
+        { label: t.buttonLogin || "Login/Register", action: () => navigate("/loginRegisterSite") },
+        { label: t.buttonSearch || "Search for something", action: () => {
+          setIsChatOpen(false);
+          navigate("/searchsite");
+        } }
+      ]
+    };
   };
 
   // 🌐 Centralized country configuration
@@ -520,7 +680,7 @@ const mostVisitedItems = useMemo(() => {
         {/* 📍 Current language & region */}
         <div className={`mb-6 text-center ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
           <p className="text-sm">
-            {languageNames[language] || "Unknown"} • {region}
+            {languageNames[t.language] || "Unknown"} • {region}
           </p>
         </div>
 
@@ -627,6 +787,162 @@ const mostVisitedItems = useMemo(() => {
             </div>
           )}
         </section>
+        
+
+        {/* 💬 Enhanced Chatbot */}
+        {isChatOpen && (
+          <div 
+            className="fixed inset-0 z-50 flex items-end justify-end p-4 sm:p-6"
+            onClick={() => setIsChatOpen(false)}
+          >
+            <div 
+              className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl flex flex-col h-[70vh] max-h-[600px] border border-gray-200 dark:border-gray-700"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="p-4 bg-gradient-to-r from-green-600 to-emerald-600 dark:from-yellow-500 dark:to-amber-500 text-white font-bold rounded-t-xl flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <span>🤖 PopBot</span>
+                  <span className="text-xs opacity-90">Your Funko Assistant</span>
+                </div>
+                <button
+                  onClick={() => setIsChatOpen(false)}
+                  className="text-white hover:text-gray-200 text-xl"
+                  aria-label="Close chat"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Messages */}
+              <div 
+                ref={chatContainerRef}
+                className="flex-grow p-4 overflow-y-auto space-y-3"
+              >
+                {messages.length === 0 ? (
+                  <div className="text-gray-500 dark:text-gray-400 text-sm">
+                    {t.chatWelcome || "Hello! Ask me anything about Funko Pops. Try: \"Search for Marvel\""}
+                  </div>
+                ) : (
+                  messages.map((msg, i) => (
+                    <div
+                      key={i}
+                      className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
+                          msg.sender === 'user'
+                            ? 'bg-green-600 text-white rounded-br-none'
+                            : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-bl-none'
+                        }`}
+                      >
+                        {/* Text */}
+                        {typeof msg.text === 'string' ? (
+                          msg.text.split('\n').map((line, j) => (
+                            <p key={j} className={j > 0 ? "mt-1" : ""}>
+                              {line.startsWith('•') ? (
+                                <span className="inline-block ml-2">{line}</span>
+                              ) : (
+                                line
+                              )}
+                            </p>
+                          ))
+                        ) : (
+                          <div>{msg.text}</div>
+                        )}
+
+                        {/* Buttons (if any) */}
+                        {msg.buttons && msg.buttons.length > 0 && (
+                          <div className="mt-2 flex flex-col gap-2">
+                            {msg.buttons.map((btn, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => {
+                                  btn.action();
+                                  setIsChatOpen(false); // Optional: close chat after click
+                                }}
+                                className="w-full bg-green-500 hover:bg-green-600 text-white text-sm font-medium py-2 px-3 rounded-lg transition-colors"
+                              >
+                                {btn.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Input */}
+              <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!inputValue.trim()) return;
+
+                const userMsg = inputValue.trim();
+                setMessages(prev => [...prev, { text: userMsg, sender: 'user' }]);
+                setInputValue("");
+
+                // Get bot response (now returns object with text + buttons)
+                setTimeout(() => {
+                  const botReply = getBotResponse(userMsg);
+                  setMessages(prev => [...prev, { ...botReply, sender: 'bot' }]);
+                }, 600);
+              }}
+              className="p-3 border-t border-gray-200 dark:border-gray-700"
+            >
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder={t.chatPlaceholder || "Ask about Funko Pops..."}
+                  className="flex-grow px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-black dark:text-white text-sm"
+                  aria-label="Chat input"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') setIsChatOpen(false);
+                  }}
+                />
+                <button
+                  type="submit"
+                  className="bg-green-600 hover:bg-green-700 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                >
+                  Send
+                </button>
+              </div>
+            </form>
+            </div>
+          </div>
+        )}
+
+        {/* 🤖 Chatbot Toggle Button */}
+        <button
+          onClick={() => {
+            setIsChatOpen(true);
+            if (messages.length === 0) {
+              setMessages([
+                { 
+                  text: t.chatWelcome || "Hello! Ask me anything about Funko Pops!", 
+                  sender: 'bot',
+                  buttons: [
+                    { label: t.buttonDashboard || "Take me to the dashboard!", action: () => navigate("/dashboardSite") },
+                    { label: t.buttonLogin || "Take me to the login page", action: () => navigate("/loginRegisterSite") },
+                    { label: t.buttonSearch || "Search for something", action: () => navigate("/searchsite") }
+                  ]
+                }
+              ]);
+            }
+          }}
+          className={`fixed bottom-4 right-4 w-14 h-14 rounded-full flex items-center justify-center shadow-lg z-50 transition-transform hover:scale-110 ${
+            isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"
+          }`}
+          aria-label="Open chat"
+        >
+          💬
+        </button>
+
+
       </main>
 
       {/* 📝 Footer */}

@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+// src/pages/MostVisitedSite.tsx
+import React, { useState, useEffect, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { translations } from "./Translations/TranslationsWelcomeSite";
 import "./WelcomeSite.css";
 
+// Match your backend item shape (without visits)
 interface FunkoItem {
   id: string;
   title: string;
@@ -11,6 +13,10 @@ interface FunkoItem {
   series: string[];
   exclusive: boolean;
   imageName: string;
+}
+
+// Extended with visits (client-only)
+interface FunkoItemWithVisits extends FunkoItem {
   visits: number;
 }
 
@@ -23,81 +29,97 @@ const MostVisitedSite: React.FC = () => {
     return localStorage.getItem("preferredLanguage") || "EN";
   });
   
-  const [mostVisitedItems, setMostVisitedItems] = useState<FunkoItem[]>([]);
   const [allItems, setAllItems] = useState<FunkoItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<"visits" | "title" | "category">("visits");
+  const [visitCountVersion, setVisitCountVersion] = useState(0);
 
-  const navigate = useNavigate();
   const t = translations[language] || translations["EN"];
 
-  // Fetch items and calculate visits
+  // Fetch all items from your backend
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchItems = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch("/api/items");
-        if (!response.ok) throw new Error("Failed to fetch data");
+        const response = await fetch("https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json");
+        if (!response.ok) throw new Error("Failed to fetch items");
         const items: FunkoItem[] = await response.json();
         
-        const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
-        
-        // Add visit counts to items
-        const itemsWithVisits = items.map(item => ({
+        // Generate IDs for items (same logic as WelcomeSite)
+        const itemsWithIds = items.map(item => ({
           ...item,
-          visits: visitCount[item.id] || 0
+          id: `${item.title?.trim() || ""}-${item.number?.trim() || ""}`.replace(/\s+/g, "-")
         }));
         
-        setAllItems(itemsWithVisits);
-        
-        // Get most visited (visits > 0)
-        const visited = itemsWithVisits
-          .filter(item => item.visits > 0)
-          .sort((a, b) => b.visits - a.visits);
-        
-        setMostVisitedItems(visited);
+        setAllItems(itemsWithIds);
       } catch (err) {
-        console.error("Error loading data:", err);
+        console.error("Error loading items:", err);
       } finally {
         setIsLoading(false);
       }
     };
-    
-    fetchData();
+    fetchItems();
   }, []);
 
-  // Sort items based on current sort option
-  const sortedItems = [...mostVisitedItems].sort((a, b) => {
-    switch (sortBy) {
-      case "visits":
-        return b.visits - a.visits;
-      case "title":
-        return a.title.localeCompare(b.title);
-      case "category":
-        return a.category.localeCompare(b.category);
-      default:
-        return 0;
-    }
-  });
+  // Track localStorage changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setVisitCountVersion(prev => prev + 1);
+    };
 
-  const handleItemClick = (id: string) => {
+    // Listen for storage events from other tabs/windows
+    window.addEventListener('storage', handleStorageChange);
+
+    // Listen for custom funkoVisitUpdated event (from same tab)
+    window.addEventListener('funkoVisitUpdated', handleStorageChange);
+
+    // Also refresh on focus (when user returns to this tab)
+    window.addEventListener('focus', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('funkoVisitUpdated', handleStorageChange);
+      window.removeEventListener('focus', handleStorageChange);
+    };
+  }, []);
+
+  // ✅ Compute visited items from localStorage
+  const mostVisitedItems = useMemo(() => {
     const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
-    visitCount[id] = (visitCount[id] || 0) + 1;
-    localStorage.setItem("funkoVisitCount", JSON.stringify(visitCount));
-    
-    // Update local state
-    setMostVisitedItems(prev => 
-      prev.map(item => 
-        item.id === id ? { ...item, visits: visitCount[id] } : item
-      ).sort((a, b) => b.visits - a.visits)
-    );
-  };
+    return allItems
+      .map(item => ({
+        ...item,
+        visits: visitCount[item.id] || 0,
+      }))
+      .filter((item): item is FunkoItemWithVisits => item.visits > 0);
+  }, [allItems, visitCountVersion]);
+
+  const sortedItems = useMemo(() => {
+    return [...mostVisitedItems].sort((a, b) => {
+      switch (sortBy) {
+        case "visits": return b.visits - a.visits;
+        case "title": return a.title.localeCompare(b.title);
+        case "category": return a.category.localeCompare(b.category);
+        default: return 0;
+      }
+    });
+  }, [mostVisitedItems, sortBy]);
 
   const getPopularityBadge = (visits: number) => {
     if (visits >= 20) return { text: "🔥 Very Popular", color: "bg-red-500" };
     if (visits >= 10) return { text: "⭐ Popular", color: "bg-orange-500" };
     if (visits >= 5) return { text: "📈 Trending", color: "bg-blue-500" };
     return { text: "👀 Getting views", color: "bg-green-500" };
+  };
+
+  // Track item clicks on this page too
+  const handleItemClick = (id: string) => {
+    const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
+    visitCount[id] = (visitCount[id] || 0) + 1;
+    localStorage.setItem("funkoVisitCount", JSON.stringify(visitCount));
+    
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new CustomEvent('funkoVisitUpdated'));
   };
 
   if (isLoading) {
@@ -112,7 +134,6 @@ const MostVisitedSite: React.FC = () => {
 
   return (
     <div className={`min-h-screen ${isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"}`}>
-      {/* Header */}
       <header className="py-4 px-4 md:px-8 flex justify-between items-center">
         <Link to="/" className="no-underline">
           <h1 className={`text-2xl font-bold font-[Special_Gothic_Expanded_One] ${
@@ -121,21 +142,17 @@ const MostVisitedSite: React.FC = () => {
             Pop&Go!
           </h1>
         </Link>
-        
-        <div className="flex gap-4">
-          <Link 
-            to="/"
-            className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"
-            }`}
-          >
-            {t.backToHome || "Back to Home"}
-          </Link>
-        </div>
+        <Link 
+          to="/"
+          className={`px-4 py-2 rounded ${
+            isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"
+          }`}
+        >
+          {t.backToHome || "Back to Home"}
+        </Link>
       </header>
 
       <main className="p-4 md:p-8 max-w-6xl mx-auto">
-        {/* Page Title */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-4">{t.mostVisited || "Most Visited Items"}</h1>
           <p className="text-lg opacity-80">
@@ -146,7 +163,6 @@ const MostVisitedSite: React.FC = () => {
           </p>
         </div>
 
-        {/* Stats */}
         {mostVisitedItems.length > 0 && (
           <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 p-4 rounded-lg ${
             isDarkMode ? "bg-gray-700" : "bg-white"
@@ -170,7 +186,6 @@ const MostVisitedSite: React.FC = () => {
           </div>
         )}
 
-        {/* Sort Controls */}
         {mostVisitedItems.length > 0 && (
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-4">
@@ -189,14 +204,12 @@ const MostVisitedSite: React.FC = () => {
                 <option value="category">{t.category || "Category"}</option>
               </select>
             </div>
-            
             <div className="text-sm opacity-75">
               {t.showing || "Showing"} {mostVisitedItems.length} {t.items || "items"}
             </div>
           </div>
         )}
 
-        {/* Items Grid */}
         {mostVisitedItems.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🔍</div>
@@ -228,7 +241,6 @@ const MostVisitedSite: React.FC = () => {
                     isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-white hover:bg-gray-100"
                   } shadow-lg transition-all hover:scale-105 hover:shadow-xl`}
                 >
-                  {/* Rank Badge */}
                   {sortBy === "visits" && index < 3 && (
                     <div className={`absolute -top-2 -left-2 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
                       index === 0 ? "bg-yellow-500" : 
@@ -238,48 +250,40 @@ const MostVisitedSite: React.FC = () => {
                       #{index + 1}
                     </div>
                   )}
-                  
-                  {/* Popularity Badge */}
                   <div className={`absolute -top-2 -right-2 px-2 py-1 rounded text-xs text-white ${popularity.color}`}>
                     {popularity.text}
                   </div>
                   
                   <img
-                    src={item.imageName || "/src/assets/placeholder.png"}
+                    src={item.imageName || "/assets/placeholder.png"}
                     alt={item.title}
                     className="w-full h-48 object-contain rounded-md mb-3"
                     onError={(e) => {
-                      e.currentTarget.src = "/src/assets/placeholder.png";
+                      e.currentTarget.src = "/assets/placeholder.png";
                     }}
                   />
                   
                   <h3 className="font-bold text-lg mb-2 text-center">{item.title}</h3>
-                  
                   <div className="text-center mb-2">
                     <span className="text-sm opacity-75">#{item.number}</span>
                     <span className="mx-2">•</span>
                     <span className="text-sm opacity-75">{item.category}</span>
                   </div>
-                  
                   {item.series.length > 0 && (
                     <p className="text-sm text-center mb-2 opacity-75">
                       {item.series.join(", ")}
                     </p>
                   )}
-                  
                   <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-600">
                     <div className="flex items-center gap-1">
                       <span className="text-lg">👁️</span>
                       <span className="font-bold">{item.visits}</span>
                       <span className="text-xs opacity-75">{t.views || "views"}</span>
                     </div>
-                    
                     {item.exclusive && (
-                      <span
-                        className={`px-2 py-1 rounded text-xs ${
-                          isDarkMode ? "bg-yellow-600" : "bg-green-600"
-                        } text-white`}
-                      >
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        isDarkMode ? "bg-yellow-600" : "bg-green-600"
+                      } text-white`}>
                         {t.exclusive || "Exclusive"}
                       </span>
                     )}
@@ -290,7 +294,6 @@ const MostVisitedSite: React.FC = () => {
           </div>
         )}
 
-        {/* All Items Link */}
         {mostVisitedItems.length > 0 && (
           <div className="text-center mt-8">
             <Link
@@ -307,7 +310,6 @@ const MostVisitedSite: React.FC = () => {
         )}
       </main>
 
-      {/* Footer */}
       <footer className={`text-center py-4 ${
         isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-300 text-gray-700"
       }`}>

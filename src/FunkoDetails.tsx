@@ -115,6 +115,15 @@ const FunkoDetails: React.FC = () => {
     }
     return null;
   });
+  
+    useEffect(() => {
+    if (id) {
+      const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
+      visitCount[id] = (visitCount[id] || 0) + 1;
+      localStorage.setItem("funkoVisitCount", JSON.stringify(visitCount));
+    }
+  }, [id]);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const t = translations[language] || translations["EN"];

@@ -11,12 +11,13 @@ export default defineConfig({
     svgr(),
   ],
   server: {
+    port: 5173,
     proxy: {
       "/api": {
         target: "http://localhost:5000", // Backend
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/api/, '') // Usuwa "/api" z żądania
+        //rewrite: (path) => path.replace(/^\/api/, '') // Usuwa "/api" z żądania
       }
     }
   }

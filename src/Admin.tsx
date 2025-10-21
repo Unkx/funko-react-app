@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { translations } from "./Translations/TranslationAdmin";
 import ItemList from "./ItemList.tsx";
+import { motion, AnimatePresence } from "framer-motion";
+
 // SVG Icons
 import MoonIcon from "./assets/moon.svg?react";
 import SunIcon from "./assets/sun.svg?react";
@@ -12,6 +14,12 @@ import UsersIcon from "/src/assets/users.svg?react";
 import EyeIcon from "/src/assets/eye.svg?react";
 import ChartIcon from "/src/assets/chart.svg?react";
 import CalendarIcon from "/src/assets/calendar.svg?react";
+import HeartIcon from "./assets/heart.svg?react";
+import ShoppingCartIcon from "./assets/shopping-cart.svg?react";
+import FilterIcon from "./assets/filter.svg?react";
+import StarIcon from "./assets/star.svg?react";
+import PlusIcon from "./assets/plus.svg?react";
+
 // Flag SVGs
 import UKFlag from "/src/assets/flags/uk.svg?react";
 import USAFlag from "/src/assets/flags/usa.svg?react";
@@ -23,13 +31,15 @@ import SpainFlag from "/src/assets/flags/spain.svg?react";
 
 interface User {
   id: number;
-  login: string;
-  email: string;
   name: string;
   surname: string;
+  email: string;
+  login: string;
+  gender: string;
+  date_of_birth: string;
   role: string;
   created_at: string;
-  last_login: string | null;
+  last_login: string;
   is_active?: boolean;
 }
 
@@ -54,6 +64,32 @@ interface SiteStats {
   mostActiveUser: string;
   itemsAddedLast7Days: number;
   itemsAddedLast30Days: number;
+}
+
+interface FunkoItem {
+  id: string;
+  title: string;
+  number: string;
+  image_name?: string;
+  condition?: string;
+  added_date?: string;
+  purchase_date?: string;
+  purchase_price?: number;
+  notes?: string;
+  series?: string;
+}
+
+interface WishlistItem {
+  id: string;
+  title: string;
+  number: string;
+  image_name?: string;
+  added_date?: string;
+  priority?: "low" | "medium" | "high";
+  notes?: string;
+  series?: string;
+  max_price?: number;
+  target_condition?: string;
 }
 
 // 🌍 Centralized country configuration
@@ -125,27 +161,25 @@ const Admin = () => {
   // Constants
   const SUPER_ADMIN_ID = 1;
   const SUPER_ADMIN_USERNAME = "admin";
-  
+
   // Hooks
   const navigate = useNavigate();
 
   // State
+  const [activeView, setActiveView] = useState<"users" | "items" | "analytics" | "social">("users");
   const [isDarkMode, setIsDarkMode] = useState(() =>
     localStorage.getItem("preferredTheme") === "dark"
   );
   const [selectedCountry, setSelectedCountry] = useState<string>(() => 
     localStorage.getItem("preferredCountry") || "USA"
   );
-
   const [language, setLanguage] = useState<string>(() => {
     const savedLanguage = localStorage.getItem("preferredLanguage");
     return savedLanguage || "EN";
   });
-
   const [region, setRegion] = useState<string>("North America");
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
-
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -168,10 +202,59 @@ const Admin = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredItems, setFilteredItems] = useState<Item[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
-  const [isTyping, setIsTyping] = useState(false); // Track typing state
+  const [isTyping, setIsTyping] = useState(false);
 
   // Request state
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+
+  // User management state
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [newUser, setNewUser] = useState({
+    email: "",
+    login: "",
+    name: "",
+    surname: "",
+    password: "",
+    gender: "male",
+    date_of_birth: "",
+    role: "user" as "user" | "admin"
+  });
+
+  // 🔹 Analytics state
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [adminAnalytics, setAdminAnalytics] = useState<any>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
+  // 🔹 Dashboard Analytics State
+  const [userStats, setUserStats] = useState<any>(null);
+  const [loyaltyData, setLoyaltyData] = useState<any>(null);
+  const [friends, setFriends] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [dashboardAnalyticsLoading, setDashboardAnalyticsLoading] = useState(false);
+
+  // Collection states
+  const [collection, setCollection] = useState<FunkoItem[]>([]);
+  const [filteredCollection, setFilteredCollection] = useState<FunkoItem[]>([]);
+  const [collectionLoading, setCollectionLoading] = useState(true);
+  const [editingCollectionItem, setEditingCollectionItem] = useState<string | null>(null);
+  const [editCollectionForm, setEditCollectionForm] = useState<Partial<FunkoItem>>({});
+  const [filterCondition, setFilterCondition] = useState<string>("all");
+  const [collectionSortBy, setCollectionSortBy] = useState<string>("title");
+  const [collectionSortOrder, setCollectionSortOrder] = useState<"asc" | "desc">("asc");
+  const [collectionSearch, setCollectionSearch] = useState("");
+  const [showCollectionFilters, setShowCollectionFilters] = useState(false);
+
+  // Wishlist states
+  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
+  const [filteredWishlist, setFilteredWishlist] = useState<WishlistItem[]>([]);
+  const [wishlistLoading, setWishlistLoading] = useState(true);
+  const [editingWishlistItem, setEditingWishlistItem] = useState<string | null>(null);
+  const [editWishlistForm, setEditWishlistForm] = useState<Partial<WishlistItem>>({});
+  const [filterPriority, setFilterPriority] = useState<string>("all");
+  const [wishlistSortBy, setWishlistSortBy] = useState<string>("added_date");
+  const [wishlistSortOrder, setWishlistSortOrder] = useState<"asc" | "desc">("desc");
+  const [wishlistSearch, setWishlistSearch] = useState("");
+  const [showWishlistFilters, setShowWishlistFilters] = useState(false);
 
   // Refs
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -182,6 +265,13 @@ const Admin = () => {
   const t = translations[language] || translations["EN"];
   const currentUser: User | null = JSON.parse(localStorage.getItem("user") || "null");
   const token: string | null = localStorage.getItem("token");
+
+  // Animation variants
+  const pageVariants = {
+    initial: { opacity: 0, x: 50 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -50 },
+  };
 
   // Helper functions
   const isSuperAdmin = (user: User | null): boolean => {
@@ -194,31 +284,71 @@ const Admin = () => {
     if (isSuperAdmin(currentUser)) return true;
     return targetUser.role !== "admin";
   };
-  
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem("preferredLanguage");
-    if (savedLanguage && savedLanguage !== language) {
-      setLanguage(savedLanguage);
-    }
-  }, [language]);
 
-  // 🌐 Detect country from browser language
-  const detectCountryFromLocale = (locale: string): string | null => {
-    const map: Record<string, string> = {
-      "en-US": "USA",
-      "en-GB": "UK",
-      pl: "PL",
-      "pl-PL": "PL",
-      ru: "RU",
-      "ru-RU": "RU",
-      fr: "FR",
-      "fr-FR": "FR",
-      de: "DE",
-      "de-DE": "DE",
-      es: "ES",
-      "es-ES": "ES",
-    };
-    return map[locale] || map[locale.split("-")[0]] || null;
+  // 🔹 Log activity function
+  const logActivity = async (actionType: string, details?: any) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      await fetch("http://localhost:5000/api/activity/log", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          action_type: actionType,
+          action_details: details || {},
+          session_duration: Math.floor(Date.now() / 1000)
+        })
+      });
+    } catch (err) {
+      console.error("Failed to log activity:", err);
+    }
+  };
+
+  // 🔹 Fetch user analytics
+  const fetchUserAnalytics = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    setDashboardAnalyticsLoading(true);
+    try {
+      const [statsRes, loyaltyRes, friendsRes, leaderboardRes] = await Promise.all([
+        fetch("http://localhost:5000/api/activity/stats", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("http://localhost:5000/api/loyalty/calculate", { method: "POST", headers: { Authorization: `Bearer ${token}` } }),
+        fetch("http://localhost:5000/api/friends", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("http://localhost:5000/api/loyalty/leaderboard", { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      if (statsRes.ok) setUserStats(await statsRes.json());
+      if (loyaltyRes.ok) setLoyaltyData(await loyaltyRes.json());
+      if (friendsRes.ok) setFriends(await friendsRes.json());
+      if (leaderboardRes.ok) setLeaderboard(await leaderboardRes.json());
+    } catch (err) {
+      console.error("Failed to fetch user analytics:", err);
+    } finally {
+      setDashboardAnalyticsLoading(false);
+    }
+  };
+
+  // 🔹 Fetch admin analytics data
+  const fetchAdminAnalytics = async () => {
+    if (!token) return;
+    
+    setAnalyticsLoading(true);
+    try {
+      const response = await fetch("http://localhost:5000/api/admin/analytics", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setAdminAnalytics(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch analytics:", err);
+    } finally {
+      setAnalyticsLoading(false);
+    }
   };
 
   // Effects
@@ -264,7 +394,6 @@ const Admin = () => {
   // Fetch pending requests count
   useEffect(() => {
     if (!token || currentUser?.role !== "admin") return;
-
     const fetchCount = async () => {
       try {
         const res = await fetch("http://localhost:5000/api/admin/requests/count", {
@@ -278,7 +407,6 @@ const Admin = () => {
         console.warn("Failed to fetch request count");
       }
     };
-
     fetchCount();
     const interval = setInterval(fetchCount, 30000); // every 30s
     return () => clearInterval(interval);
@@ -357,7 +485,7 @@ const Admin = () => {
         const statsData = await response.json();
         setSiteStats(statsData);
       } catch (err: any) {
-        console.error( t.failedToLoadStatictics ||"Failed to load site statistics:", err);
+        console.error(t.failedToLoadStatictics || "Failed to load site statistics:", err);
       } finally {
         setStatsLoading(false);
       }
@@ -365,36 +493,39 @@ const Admin = () => {
     fetchSiteStats();
   }, [token, currentUser?.role]);
 
+  // 🔹 Fetch analytics only when panel is opened
+  useEffect(() => {
+    if (showAnalytics) {
+      fetchAdminAnalytics();
+    }
+  }, [showAnalytics]);
+
+  // 🔹 Fetch dashboard analytics when active view changes
+  useEffect(() => {
+    if (activeView === "analytics") {
+      fetchUserAnalytics();
+    }
+  }, [activeView]);
+
   // Optimized search - only search when user has stopped typing and entered at least 2 characters
   useEffect(() => {
-    // Clear any existing timeout
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
-    
-    // Reset filtered items if search term is empty
     if (searchTerm.trim().length === 0) {
       setFilteredItems([]);
       setIsTyping(false);
       return;
     }
-    
-    // Don't search if less than 2 characters
     if (searchTerm.trim().length < 2) {
       setIsTyping(false);
       return;
     }
-    
-    // Set typing state
     setIsTyping(true);
-    
-    // Set a new timeout to perform search after user stops typing
     searchTimeoutRef.current = setTimeout(() => {
       handleSearchItems();
       setIsTyping(false);
-    }, 700); // Wait 700ms after user stops typing
-    
-    // Cleanup function
+    }, 700);
     return () => {
       if (searchTimeoutRef.current) {
         clearTimeout(searchTimeoutRef.current);
@@ -402,14 +533,31 @@ const Admin = () => {
     };
   }, [searchTerm]);
 
-  // Handlers
+  // Helper functions
+  const detectCountryFromLocale = (locale: string): string | null => {
+    const map: Record<string, string> = {
+      "en-US": "USA",
+      "en-GB": "UK",
+      pl: "PL",
+      "pl-PL": "PL",
+      ru: "RU",
+      "ru-RU": "RU",
+      fr: "FR",
+      "fr-FR": "FR",
+      de: "DE",
+      "de-DE": "DE",
+      es: "ES",
+      "es-ES": "ES",
+    };
+    return map[locale] || map[locale.split("-")[0]] || null;
+  };
+
   const toggleTheme = () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
     localStorage.setItem("preferredTheme", newMode ? "dark" : "light");
   };
 
-  // 🌍 Handle country selection
   const handleCountryChange = (countryCode: string) => {
     const countryData = countries[countryCode as keyof typeof countries];
     if (countryData) {
@@ -423,7 +571,6 @@ const Admin = () => {
   };
 
   const toggleCountryDropdown = () => setShowCountryDropdown((prev) => !prev);
-
   const toggleLanguageDropdown = () => setShowLanguageDropdown((prev) => !prev);
 
   const selectLanguage = (langCode: string) => {
@@ -513,7 +660,6 @@ const Admin = () => {
         exclusive: false,
         imageName: "",
       });
-      // Clear search if we're adding a new item
       setSearchTerm("");
       setFilteredItems([]);
     } catch (err: any) {
@@ -522,11 +668,57 @@ const Admin = () => {
     }
   };
 
-  // ✅ Optimized: Search only when user has finished typing
+  const handleAddUser = async () => {
+    const { email, login, name, surname, password, gender, date_of_birth, role } = newUser;
+    if (!email || !login || !name || !surname || !password || !date_of_birth) {
+      alert("Please fill all required fields.");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:5000/api/admin/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(newUser),
+      });
+
+      if (response.ok) {
+        const createdUser = await response.json();
+        alert(`User created: ${createdUser.login}`);
+        setShowAddUserModal(false);
+        setNewUser({
+          email: "",
+          login: "",
+          name: "",
+          surname: "",
+          password: "",
+          gender: "male",
+          date_of_birth: "",
+          role: "user"
+        });
+        // Refresh user list
+        const usersRes = await fetch("http://localhost:5000/api/admin/users", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (usersRes.ok) {
+          const usersData = await usersRes.json();
+          setUsers(usersData);
+        }
+      } else {
+        const err = await response.json();
+        alert(err.error || "Failed to create user");
+      }
+    } catch (err) {
+      console.error("Add user error:", err);
+      alert("Network error");
+    }
+  };
+
   const handleSearchItems = async () => {
-    // Don't search if less than 2 characters or no token
     if (searchTerm.trim().length < 2 || !token) return;
-    
     setSearchLoading(true);
     try {
       const response = await fetch(`http://localhost:5000/api/admin/items/search?q=${encodeURIComponent(searchTerm)}`, {
@@ -534,12 +726,9 @@ const Admin = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      
-      // Uncommented error checking - this is crucial!
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${await response.text()}`);
       }
-      
       const searchResults = await response.json();
       setFilteredItems(searchResults);
     } catch (err: any) {
@@ -557,38 +746,330 @@ const Admin = () => {
     setIsTyping(false);
   };
 
-  // Add this helper function at the top of your Admin component, after the interfaces
   const generateFunkoId = (title: string, number: string): string => {
     return `${title}-${number}`
-      .replace(/[^\w\s-]/g, '') // Remove special characters except spaces and hyphens
-      .replace(/\s+/g, '-')      // Replace spaces with hyphens
-      .toLowerCase()             // Convert to lowercase
-      .replace(/-+/g, '-')       // Replace multiple hyphens with single hyphen
-      .replace(/^-|-$/g, '');    // Remove leading/trailing hyphens
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .toLowerCase()
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
   };
 
-  // Add this function to handle item navigation
   const handleItemNavigation = (item: Item) => {
-    // Use the item's existing ID if it's already in the correct format
     let funkoId = String(item.id);
-    
-    console.log('Admin - Navigating to item:', item);
-    console.log('Admin - Original ID:', funkoId);
-    
-    // Check if the ID is already in the correct format (contains hyphens and looks like title-number)
     const isCorrectFormat = /^[a-z0-9]+-\d+.*$/.test(funkoId.toLowerCase());
-    
     if (!isCorrectFormat && item.title && item.number) {
-      // Generate the ID using the same logic as the backend
       funkoId = generateFunkoId(item.title, item.number);
-      console.log('Admin - Generated new ID:', funkoId);
     }
-    
-    console.log('Admin - Final ID for navigation:', funkoId);
-    
-    // Navigate to the item detail page
     navigate(`/item/${encodeURIComponent(funkoId)}`);
   };
+
+  // 🔹 Render Analytics View
+  const renderAnalyticsView = () => (
+    <div className="max-w-7xl mx-auto w-full">
+      <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+        {t.yourStats || "Your Statistics"}
+      </h2>
+      {dashboardAnalyticsLoading ? (
+        <div className="text-center py-8">Loading your stats...</div>
+      ) : (
+        <div className="space-y-6">
+          <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold">{t.loyaltyScore || "Loyalty Score"}</h3>
+              <div className="flex items-center gap-2">
+                <StarIcon className="w-6 h-6 text-yellow-500" />
+                <span className="text-3xl font-bold text-yellow-500">
+                  {loyaltyData?.loyaltyScore || 0}
+                </span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-gray-500">{t.activeDays || "Active Days"}</p>
+                <p className="text-xl font-bold">{loyaltyData?.activeDays || 0}</p>
+              </div>
+              <div>
+                <p className="text-gray-500">{t.accountAge || "Account Age"}</p>
+                <p className="text-xl font-bold">{loyaltyData?.accountAge || 0} days</p>
+              </div>
+            </div>
+          </div>
+          <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+            <h3 className="text-xl font-semibold mb-4">{t.yourActivity || "Your Activity"}</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="text-center">
+                <p className="text-2xl font-bold">{userStats?.overall?.total_actions || 0}</p>
+                <p className="text-sm text-gray-500">{t.totalActions || "Total Actions"}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold">{userStats?.overall?.active_days || 0}</p>
+                <p className="text-sm text-gray-500">{t.activeDays || "Active Days"}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold">
+                  {Math.round((userStats?.overall?.avg_session_duration || 0) / 60)}
+                </p>
+                <p className="text-sm text-gray-500">{t.avgSession || "Avg Session (min)"}</p>
+              </div>
+            </div>
+          </div>
+          {userStats?.breakdown && userStats.breakdown.length > 0 && (
+            <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+              <h3 className="text-xl font-semibold mb-4">{t.activityBreakdown || "Activity Breakdown"}</h3>
+              <div className="space-y-2">
+                {userStats.breakdown.map((action: any, idx: number) => (
+                  <div key={idx} className="flex justify-between items-center">
+                    <span className="capitalize">{action.action_type.replace('_', ' ')}</span>
+                    <span className="font-bold">{action.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {leaderboard.length > 0 && (
+            <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+              <h3 className="text-xl font-semibold mb-4">{t.leaderboard || "Leaderboard"}</h3>
+              <div className="space-y-2">
+                {leaderboard.slice(0, 10).map((entry: any, idx: number) => {
+                  const isCurrentUser = entry.login === currentUser?.login;
+                  return (
+                    <div 
+                      key={idx} 
+                      className={`flex justify-between items-center p-2 rounded ${
+                        isCurrentUser ? (isDarkMode ? "bg-yellow-900" : "bg-green-100") : ""
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg font-bold w-8">
+                          {idx < 3 ? ['🥇', '🥈', '🥉'][idx] : `#${idx + 1}`}
+                        </span>
+                        <span className={isCurrentUser ? "font-bold" : ""}>
+                          {entry.login} {isCurrentUser && "(You)"}
+                        </span>
+                      </div>
+                      <span className="font-bold">{entry.loyalty_score}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  // 🔹 Render Social View
+  const renderSocialView = () => (
+    <div className="max-w-7xl mx-auto w-full">
+      <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+        {t.social || "Social"}
+      </h2>
+      <div className={`p-6 rounded-lg shadow-lg mb-6 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+        <h3 className="text-xl font-semibold mb-4">{t.addFriend || "Add Friend"}</h3>
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.currentTarget);
+          const friendLogin = formData.get("friendLogin") as string;
+          const token = localStorage.getItem("token");
+          if (!token) return;
+          try {
+            const response = await fetch("http://localhost:5000/api/friends/request", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ friendLogin })
+            });
+            if (response.ok) {
+              alert("Friend request sent!");
+              e.currentTarget.reset();
+              fetchUserAnalytics();
+            } else {
+              const error = await response.json();
+              alert(error.error || "Failed to send friend request");
+            }
+          } catch (err) {
+            console.error("Error sending friend request:", err);
+            alert("Failed to send friend request");
+          }
+        }}>
+          <div className="flex gap-2">
+            <input
+              name="friendLogin"
+              type="text"
+              placeholder="Enter username..."
+              required
+              className={`flex-1 px-4 py-2 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+            />
+            <button
+              type="submit"
+              className={`px-6 py-2 rounded ${
+                isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"
+              } text-white`}
+            >
+              {t.sendRequest || "Send Request"}
+            </button>
+          </div>
+        </form>
+      </div>
+      <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+        <h3 className="text-xl font-semibold mb-4">{t.yourFriends || "Your Friends"}</h3>
+        {friends.length === 0 ? (
+          <p className="text-center text-gray-500 py-8">
+            {t.noFriends || "You don't have any friends yet. Start connecting!"}
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {friends.map(friend => (
+              <div 
+                key={friend.id}
+                className={`p-4 rounded-lg border ${
+                  isDarkMode ? "border-gray-600" : "border-gray-200"
+                }`}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <h4 className="font-semibold">{friend.login}</h4>
+                    <p className="text-sm text-gray-500">
+                      {friend.name} {friend.surname}
+                    </p>
+                  </div>
+                  <span className={`px-2 py-1 text-xs rounded ${
+                    friend.status === "accepted"
+                      ? "bg-green-100 text-green-800"
+                      : "bg-yellow-100 text-yellow-800"
+                  }`}>
+                    {friend.status}
+                  </span>
+                </div>
+                <p className="text-sm">
+                  {t.collectionSize || "Collection"}: {friend.collection_size} items
+                </p>
+                {friend.status === "pending" && (
+                  <button
+                    onClick={async () => {
+                      const token = localStorage.getItem("token");
+                      if (!token) return;
+                      try {
+                        const response = await fetch(
+                          `http://localhost:5000/api/friends/accept/${friend.id}`,
+                          { method: "PATCH", headers: { Authorization: `Bearer ${token}` } }
+                        );
+                        if (response.ok) {
+                          alert("Friend request accepted!");
+                          fetchUserAnalytics();
+                        }
+                      } catch (err) {
+                        console.error("Error accepting friend:", err);
+                      }
+                    }}
+                    className="mt-2 w-full px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded"
+                  >
+                    {t.acceptRequest || "Accept"}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // 🔹 Render Add User Modal
+  const renderAddUserModal = () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" onClick={() => setShowAddUserModal(false)}>
+      <div className="w-full max-w-md p-6 rounded-lg shadow-xl bg-white dark:bg-gray-800" onClick={(e) => e.stopPropagation()}>
+        <h3 className="text-xl font-semibold mb-4">{t.addUser || "Add New User"}</h3>
+        <form onSubmit={(e) => { e.preventDefault(); handleAddUser(); }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+            <input
+              type="text"
+              placeholder="First Name"
+              value={newUser.name}
+              onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+              className="p-2 border rounded dark:bg-gray-700"
+              required
+            />
+            <input
+              type="text"
+              placeholder="Last Name"
+              value={newUser.surname}
+              onChange={(e) => setNewUser({ ...newUser, surname: e.target.value })}
+              className="p-2 border rounded dark:bg-gray-700"
+              required
+            />
+          </div>
+          <input
+            type="email"
+            placeholder="Email"
+            value={newUser.email}
+            onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+            className="w-full p-2 mb-3 border rounded dark:bg-gray-700"
+            required
+          />
+          <input
+            type="text"
+            placeholder="Username (login)"
+            value={newUser.login}
+            onChange={(e) => setNewUser({ ...newUser, login: e.target.value })}
+            className="w-full p-2 mb-3 border rounded dark:bg-gray-700"
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={newUser.password}
+            onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+            className="w-full p-2 mb-3 border rounded dark:bg-gray-700"
+            required
+          />
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <select
+              value={newUser.gender}
+              onChange={(e) => setNewUser({ ...newUser, gender: e.target.value as any })}
+              className="p-2 border rounded dark:bg-gray-700"
+            >
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+              <option value="prefer_not_to_say">Prefer not to say</option>
+            </select>
+            <input
+              type="date"
+              value={newUser.date_of_birth}
+              onChange={(e) => setNewUser({ ...newUser, date_of_birth: e.target.value })}
+              className="p-2 border rounded dark:bg-gray-700"
+              required
+            />
+          </div>
+          <select
+            value={newUser.role}
+            onChange={(e) => setNewUser({ ...newUser, role: e.target.value as any })}
+            className="w-full p-2 mb-4 border rounded dark:bg-gray-700"
+          >
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setShowAddUserModal(false)}
+              className="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded"
+            >
+              Create User
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
 
   // Early return if not authorized
   if (!token || !currentUser || currentUser.role !== "admin") {
@@ -607,7 +1088,6 @@ const Admin = () => {
     );
   }
 
-  // Main render
   return (
     <div className={`min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-100 text-black"}`}>
       {/* Header */}
@@ -617,7 +1097,6 @@ const Admin = () => {
             Pop&Go!
           </h1>
         </Link>
-
         {/* Country, Theme, and Logout */}
         <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0 items-center">
           {/* Language Dropdown */}
@@ -641,7 +1120,6 @@ const Admin = () => {
                 }`}
               />
             </button>
-
             {showLanguageDropdown && (
               <div
                 ref={dropdownRef}
@@ -671,7 +1149,6 @@ const Admin = () => {
               </div>
             )}
           </div>
-
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
@@ -680,7 +1157,6 @@ const Admin = () => {
           >
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
-
           {/* Bell Icon for Requests - ONLY SHOW WHEN THERE ARE REQUESTS */}
           {pendingRequestsCount > 0 && (
             <div className="relative">
@@ -691,7 +1167,6 @@ const Admin = () => {
                 }`}
                 aria-label="Pending Requests"
               >
-                {/* Bell SVG */}
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
@@ -701,7 +1176,20 @@ const Admin = () => {
               </button>
             </div>
           )}
-
+          {/* 🔹 Analytics Button */}
+          <button
+            onClick={() => setShowAnalytics(!showAnalytics)}
+            className={`p-2 rounded-full relative ${
+              isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"
+            }`}
+            aria-label="Analytics Dashboard"
+            title="View Analytics"
+          >
+            <ChartIcon className="w-6 h-6" />
+            {showAnalytics && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full"></span>
+            )}
+          </button>
           {/* Logout Button */}
           <button
             onClick={handleLogout}
@@ -716,467 +1204,611 @@ const Admin = () => {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex-grow px-4 sm:px-8 py-6 flex flex-col items-center">
-        {/* 📍 Current language & region */}
-        <div className={`mb-6 text-center ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
-          <p className="text-sm">
-            {languageNames[language]} • {region}
-          </p>
+      {/* 🔹 Updated Navigation */}
+      <nav className={`px-8 py-2 ${isDarkMode ? "bg-gray-700" : "bg-gray-300"}`}>
+        <div className="flex gap-4 flex-wrap">
+          <button onClick={() => setActiveView("users")} className={`px-3 py-1 rounded ${activeView === "users" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}>
+            {t.listOfUsers || "Users"}
+          </button>
+          <button onClick={() => setActiveView("items")} className={`px-3 py-1 rounded ${activeView === "items" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}>
+            {t.listOfItems || "Items"}
+          </button>
+          {/* 🔹 NEW TABS */}
+          <button onClick={() => setActiveView("analytics")} className={`px-3 py-1 rounded flex items-center gap-2 ${activeView === "analytics" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}>
+            <ChartIcon className="w-4 h-4" /> {t.analytics || "Analytics"}
+          </button>
+          <button onClick={() => setActiveView("social")} className={`px-3 py-1 rounded flex items-center gap-2 ${activeView === "social" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}>
+            <UsersIcon className="w-4 h-4" /> {t.social || "Social"}
+          </button>
         </div>
+      </nav>
 
-        {/* Site Statistics Section */}
-        <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
-          <h3 className="text-xl sm:text-2xl font-semibold mb-6 text-center flex items-center justify-center gap-2">
-            <ChartIcon className="w-6 h-6" />
-            {t.siteStatistics || "Site Statistics"}
-          </h3>
-
-          {statsLoading ? (
-            <p className="text-center text-lg">{t.loadingStatistics || "Loading statistics..."}</p>
-          ) : siteStats ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Total Users */}
-              <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-blue-50"}`}>
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 text-blue-600 mb-2">
-                  <UsersIcon className="w-6 h-6" />
-                </div>
-                <h4 className="font-semibold text-lg mb-1">{t.totalUsers || "Total Users"}</h4>
-                <p className="text-2xl font-bold">{siteStats.totalUsers}</p>
+      <main className="flex-grow flex items-center justify-center px-8 py-8 relative overflow-hidden">
+        <AnimatePresence mode="wait">
+          {activeView === "users" && (
+            <motion.div key="users" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.5, ease: "easeInOut" }} className="w-full max-w-7xl">
+              {/* 📍 Current language & region */}
+              <div className={`mb-6 text-center ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
+                <p className="text-sm">
+                  {languageNames[language]} • {region}
+                </p>
               </div>
 
-              {/* Total Items */}
-              <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-green-50"}`}>
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-green-100 text-green-600 mb-2">
-                  <EyeIcon className="w-6 h-6" />
-                </div>
-                <h4 className="font-semibold text-lg mb-1">{t.totalItems || "Total Items"}</h4>
-                <p className="text-2xl font-bold">{siteStats.totalItems}</p>
-              </div>
+              {/* 🔹 Advanced Analytics Section */}
+              {showAnalytics && (
+                <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl sm:text-2xl font-semibold flex items-center gap-2">
+                      <ChartIcon className="w-6 h-6" />
+                      {t.advancedAnalytics || "Advanced Analytics"}
+                    </h3>
+                    <button
+                      onClick={() => setShowAnalytics(false)}
+                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                    >
+                      ✕
+                    </button>
+                  </div>
 
-              {/* New Users (Last 7 Days) */}
-              <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-purple-50"}`}>
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 text-purple-600 mb-2">
-                  <CalendarIcon className="w-6 h-6" />
-                </div>
-                <h4 className="font-semibold text-lg mb-1">{t.newUsers || "New Users (7 Days)"}</h4>
-                <p className="text-2xl font-bold">{siteStats.newUsersLast7Days}</p>
-              </div>
+                  {analyticsLoading ? (
+                    <div className="text-center py-8">
+                      <p>{t.loadingAnalytics || "Loading analytics..."}</p>
+                    </div>
+                  ) : adminAnalytics ? (
+                    <div className="space-y-6">
+                      {/* User Engagement Metrics */}
+                      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-600" : "bg-blue-50"}`}>
+                        <h4 className="font-semibold text-lg mb-4">
+                          {t.userEngagement || "User Engagement (Last 30 Days)"}
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Active Users</p>
+                            <p className="text-2xl font-bold">{adminAnalytics.engagement?.active_users || 0}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Avg Session (min)</p>
+                            <p className="text-2xl font-bold">
+                              {Math.round((adminAnalytics.engagement?.avg_session || 0) / 60)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Total Actions</p>
+                            <p className="text-2xl font-bold">{adminAnalytics.engagement?.total_actions || 0}</p>
+                          </div>
+                        </div>
+                      </div>
 
-              {/* Active Users (Last 24h) */}
-              <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-orange-50"}`}>
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 text-orange-600 mb-2">
-                  <EyeIcon className="w-6 h-6" />
-                </div>
-                <h4 className="font-semibold text-lg mb-1">{t.activeUsers24h || "Active Users (24h)"}</h4>
-                <p className="text-2xl font-bold">{siteStats.activeUsersLast24Hours}</p>
-              </div>
+                      {/* Top Actions */}
+                      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-600" : "bg-green-50"}`}>
+                        <h4 className="font-semibold text-lg mb-4">
+                          {t.topActions || "Top User Actions"}
+                        </h4>
+                        <div className="space-y-2">
+                          {adminAnalytics.topActions?.slice(0, 5).map((action: any, idx: number) => (
+                            <div key={idx} className="flex justify-between items-center">
+                              <span className="capitalize">{action.action_type.replace('_', ' ')}</span>
+                              <span className="font-bold">{action.count}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
 
-              {/* Total Visits */}
-              <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-red-50"}`}>
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 text-red-600 mb-2">
-                  <EyeIcon className="w-6 h-6" />
-                </div>
-                <h4 className="font-semibold text-lg mb-1">{t.totalVisits || "Total Visits"}</h4>
-                <p className="text-2xl font-bold">{siteStats.totalVisits}</p>
-              </div>
+                      {/* Retention Rate */}
+                      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-600" : "bg-purple-50"}`}>
+                        <h4 className="font-semibold text-lg mb-4">
+                          {t.retentionRate || "User Retention (7-Day)"}
+                        </h4>
+                        <div className="text-center">
+                          <p className="text-4xl font-bold text-purple-600">
+                            {adminAnalytics.retention?.retention_rate || 0}%
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                            {adminAnalytics.retention?.returned_users || 0} of {adminAnalytics.retention?.total_users || 0} users returned
+                          </p>
+                        </div>
+                      </div>
 
-              {/* Average Users Per Day */}
-              <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-indigo-50"}`}>
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 mb-2">
-                  <ChartIcon className="w-6 h-6" />
-                </div>
-                <h4 className="font-semibold text-lg mb-1">{t.avgUsersPerDay || "Avg. Users/Day"}</h4>
-                <p className="text-2xl font-bold">{siteStats.averageUsersPerDay}</p>
-              </div>
+                      {/* Social Engagement */}
+                      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-600" : "bg-orange-50"}`}>
+                        <h4 className="font-semibold text-lg mb-4">
+                          {t.socialEngagement || "Social Engagement"}
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Friendships</p>
+                            <p className="text-2xl font-bold">{adminAnalytics.social?.total_friendships || 0}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Comments</p>
+                            <p className="text-2xl font-bold">{adminAnalytics.social?.total_comments || 0}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">Public Collections</p>
+                            <p className="text-2xl font-bold">{adminAnalytics.social?.public_collections || 0}</p>
+                          </div>
+                        </div>
+                      </div>
 
-              {/* Most Active User */}
-              <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-pink-50"}`}>
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-pink-100 text-pink-600 mb-2">
-                  <UsersIcon className="w-6 h-6" />
-                </div>
-                <h4 className="font-semibold text-lg mb-1">{t.mostActiveUser || "Most Active User"}</h4>
-                <p className="text-xl font-bold truncate max-w-full">{siteStats.mostActiveUser || "N/A"}</p>
-              </div>
-
-              {/* Items Added (Last 30 Days) */}
-              <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-teal-50"}`}>
-                <div className="flex items-center justify-center w-12 h-12 rounded-full bg-teal-100 text-teal-600 mb-2">
-                  <CalendarIcon className="w-6 h-6" />
-                </div>
-                <h4 className="font-semibold text-lg mb-1">{t.itemsAdded || "Items Added (30 Days)"}</h4>
-                <p className="text-2xl font-bold">{siteStats.itemsAddedLast30Days}</p>
-              </div>
-            </div>
-          ) : (
-            <p className="text-center text-red-500">{t.failedToLoadStatictics || "Failed to load statistics."}</p>
-          )}
-        </section>
-
-        {/* Notes section */}
-        <div className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
-            <h3 className="text-xl sm:text-2xl font-semibold mb-4 text-center">{t.notes || "Notes"}:</h3>
-            <ul className="list-disc list-inside space-y-2">
-                <li>{t.note1 || "Create two subpages for the user list and item list"}</li>
-                <li>{t.note2 || "Organize the item list and refactor it (so the page uses less memory)"}</li>
-            </ul>
-        </div>
-
-        {/* Users Section */}
-        <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} mb-8`}>
-          <h3 className="text-xl sm:text-2xl font-semibold mb-4">{t.listOfUsers}</h3>
-
-          {loading ? (
-            <p className="text-lg">{t.loading}</p>
-          ) : error ? (
-            <p className="text-red-500 text-lg">{error}</p>
-          ) : (
-            <div className="overflow-x-auto w-full">
-              <table className={`min-w-full border-collapse text-sm sm:text-base ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
-                <thead className={`${isDarkMode ? "bg-gray-700" : "bg-gray-200"} text-left`}>
-                  <tr>
-                    <th className="w-16 px-2 sm:px-3 py-2 text-center font-semibold">ID</th>
-                    <th className="px-2 sm:px-3 py-2 font-semibold">Login</th>
-                    <th className="px-2 sm:px-3 py-2 font-semibold hidden md:table-cell">Email</th>
-                    <th className="px-2 sm:px-3 py-2 text-center font-semibold">Role</th>
-                    <th className="px-2 sm:px-3 py-2 text-center font-semibold hidden lg:table-cell">Date of Registration</th>
-                    <th className="px-2 sm:px-3 py-2 text-center font-semibold hidden lg:table-cell">Last Activity</th>
-                    <th className="px-2 sm:px-3 py-2 text-center font-semibold">Status</th>
-                    <th className="px-2 sm:px-3 py-2 text-center font-semibold">Actions</th>
-                    <th className="px-2 sm:px-3 py-2 text-center font-semibold">Delete</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <tr key={user.id} className={`transition-colors ${isDarkMode ? "even:bg-gray-700 odd:bg-gray-600 hover:bg-gray-500" : "even:bg-gray-100 odd:bg-white hover:bg-gray-200"}`}>
-                      <td className="w-16 px-2 sm:px-3 py-2 text-center">
-                        {user.id}
-                        {isSuperAdmin(user) && (
-                          <span className="block text-xs text-purple-600">★</span>
-                        )}
-                      </td>
-                      <td className="px-2 sm:px-3 py-2 truncate max-w-[100px]" title={user.login}>{user.login}</td>
-                      <td className="px-2 sm:px-3 py-2 truncate hidden md:table-cell" title={user.email}>{user.email}</td>
-                      <td className="px-2 sm:px-3 py-2 capitalize text-center">
-                        {user.role}
-                        {isSuperAdmin(user) && (
-                          <span className="block text-xs text-purple-600">super</span>
-                        )}
-                      </td>
-                      <td className="px-2 sm:px-3 py-2 text-center hidden lg:table-cell">{new Date(user.created_at).toLocaleDateString()}</td>
-                      <td className="px-2 sm:px-3 py-2 text-center text-xs hidden lg:table-cell">
-                        {user.last_login ? new Date(user.last_login).toLocaleString() : t.never}
-                      </td>
-                      <td className="px-2 sm:px-3 py-2 text-center">
-                        {user.is_active ? (
-                          <span className="text-green-500 font-semibold text-xs sm:text-sm">{t.online}</span>
-                        ) : (
-                          <span className="text-red-500 font-semibold text-xs sm:text-sm">{t.offline}</span>
-                        )}
-                      </td>
-                      <td className="px-2 sm:px-3 py-2 text-center">
-                        {user.role !== "admin" && (
-                          <button
-                            onClick={() => handleMakeAdmin(user.id, user.login)}
-                            className={`px-2 py-1 rounded text-xs sm:text-sm ${
-                              isDarkMode ? "bg-yellow-600 hover:bg-yellow-700" : "bg-yellow-500 hover:bg-yellow-600"
-                            } text-black font-medium transition whitespace-nowrap`}
-                            title={t.makeAdmin || "Make Admin"}
-                          >
-                            {t.makeAdmin || "Admin"}
-                          </button>
-                        )}
-                      </td>
-                      <td className="px-2 sm:px-3 py-2 text-center">
-                        {canDeleteUser(user) && (
-                          <button
-                            onClick={() => handleDeleteUser(user.id, user.login)}
-                            className={`px-2 py-1 rounded text-xs sm:text-sm ${
-                              isDarkMode ? "bg-red-600 hover:bg-red-700" : "bg-red-500 hover:bg-red-600"
-                            } text-white font-medium transition whitespace-nowrap`}
-                            title={t.deleteUser || "Delete User"}
-                          >
-                            {t.deleteUser || "Delete"}
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                  {users.length === 0 && (
-                    <tr>
-                      <td colSpan={9} className="text-center py-4 text-lg">
-                        {t.noUsersFound}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-
-        {/* Items Section */}
-        <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mt-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4 sm:gap-0">
-            <h3 className="text-xl sm:text-2xl font-semibold">{t.listOfItems || "List of Items"}</h3>
-            <button
-              onClick={() => setShowAddItemModal(true)}
-              className={`px-4 py-2 rounded font-medium flex items-center gap-1 ${
-                isDarkMode
-                  ? "bg-blue-600 hover:bg-blue-700 text-white"
-                  : "bg-blue-500 hover:bg-blue-600 text-white"
-              } transition`}
-            >
-              + {t.addItem || "Add Item"}
-            </button>
-          </div>
-          
-          {/* Search Input */}
-          <div className="mb-6">
-            <div className="relative">
-              <SearchIcon className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`} />
-              <input
-                type="text"
-                placeholder={t.searchItems || "Search items..."}
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  // Set typing state when user types
-                  setIsTyping(true);
-                }}
-                className={`w-full pl-10 pr-10 py-2 border rounded-lg ${
-                  isDarkMode
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                    : "bg-white border-gray-300 text-black placeholder-gray-500"
-                } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-              />
-              {searchTerm && (
-                <button
-                  onClick={clearSearch}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-red-500 hover:text-red-700"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-            {searchTerm && !searchLoading && (
-              <p className={`text-sm mt-2 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
-                {searchTerm.trim().length < 2 ? 
-                  t.minimumCharacters || "Enter at least 2 characters to search" : 
-                  isTyping ? 
-                    t.searching || "Searching..." : 
-                    `${filteredItems.length} ${t.resultsFound || "results found"}`
-                }
-              </p>
-            )}
-            {searchLoading && (
-              <p className={`text-sm mt-2 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
-                {t.searching || "Searching..."}
-              </p>
-            )}
-          </div>
-
-          {/* Conditionally render ItemList or search results */}
-          {searchTerm ? (
-            <div className="overflow-x-auto">
-              <table className={`min-w-full border-collapse text-sm sm:text-base ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
-                <thead className={`${isDarkMode ? "bg-gray-700" : "bg-gray-200"} text-left`}>
-                  <tr>
-                    <th className="px-2 sm:px-3 py-2 font-semibold">ID</th>
-                    <th className="px-2 sm:px-3 py-2 font-semibold">Title</th>
-                    <th className="px-2 sm:px-3 py-2 font-semibold">Number</th>
-                    <th className="px-2 sm:px-3 py-2 font-semibold">Category</th>
-                    <th className="px-2 sm:px-3 py-2 font-semibold">Series</th>
-                    <th className="px-2 sm:px-3 py-2 font-semibold text-center">Exclusive</th>
-                    <th className="px-2 sm:px-3 py-2 font-semibold">Image</th>
-                    <th className="px-2 sm:px-3 py-2 font-semibold text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredItems.map((item) => (
-                    <tr key={item.id} className={`transition-colors ${isDarkMode ? "even:bg-gray-700 odd:bg-gray-600 hover:bg-gray-500" : "even:bg-gray-100 odd:bg-white hover:bg-gray-200"}`}>
-                      <td className="px-2 sm:px-3 py-2">{item.id}</td>
-                      <td className="px-2 sm:px-3 py-2">{item.title}</td>
-                      <td className="px-2 sm:px-3 py-2">{item.number}</td>
-                      <td className="px-2 sm:px-3 py-2">{item.category}</td>
-                      <td className="px-2 sm:px-3 py-2">
-                        {item.series && item.series.length > 0 ? item.series.join(", ") : "-"}
-                      </td>
-                      <td className="px-2 sm:px-3 py-2 text-center">
-                        {item.exclusive ? (
-                          <span className="text-green-500 font-semibold">✓</span>
-                        ) : (
-                          <span className="text-red-500 font-semibold">✗</span>
-                        )}
-                      </td>
-                      <td className="px-2 sm:px-3 py-2">
-                        {item.imageName ? item.imageName : "-"}
-                      </td>
-                      <td className="px-2 sm:px-3 py-2 text-center">
+                      {/* Refresh Button */}
+                      <div className="text-center">
                         <button
-                          onClick={() => {
-                            // Handle edit item if needed
-                            console.log("Edit item:", item.id);
-                          }}
-                          className={`px-2 py-1 rounded text-xs sm:text-sm ${
-                            isDarkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
-                          } text-white font-medium transition mx-1`}
+                          onClick={fetchAdminAnalytics}
+                          className={`px-6 py-3 rounded-lg ${
+                            isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"
+                          } text-white font-medium`}
                         >
-                          {t.edit || "Edit"}
+                          {t.refreshAnalytics || "Refresh Analytics"}
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredItems.length === 0 && searchTerm.trim().length >= 2 && !searchLoading && !isTyping && (
-                    <tr>
-                      <td colSpan={8} className="text-center py-4 text-lg">
-                        {t.noItemsFound || "No items found matching your search"}
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      {t.noAnalyticsData || "No analytics data available"}
+                    </div>
                   )}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <ItemList
-              token={token}
-              currentUserRole={currentUser?.role}
-              isDarkMode={isDarkMode}
-              t={(key: string) => (translations[language] as any)[key]}
-            />
+                </section>
+              )}
+
+              {/* Site Statistics Section */}
+              <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+                <h3 className="text-xl sm:text-2xl font-semibold mb-6 text-center flex items-center justify-center gap-2">
+                  <ChartIcon className="w-6 h-6" />
+                  {t.siteStatistics || "Site Statistics"}
+                </h3>
+                {statsLoading ? (
+                  <p className="text-center text-lg">{t.loadingStatistics || "Loading statistics..."}</p>
+                ) : siteStats ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Total Users */}
+                    <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-blue-50"}`}>
+                      <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 text-blue-600 mb-2">
+                        <UsersIcon className="w-6 h-6" />
+                      </div>
+                      <h4 className="font-semibold text-lg mb-1">{t.totalUsers || "Total Users"}</h4>
+                      <p className="text-2xl font-bold">{siteStats.totalUsers}</p>
+                    </div>
+                    {/* Total Items */}
+                    <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-green-50"}`}>
+                      <div className="flex items-center justify-center w-12 h-12 rounded-full bg-green-100 text-green-600 mb-2">
+                        <EyeIcon className="w-6 h-6" />
+                      </div>
+                      <h4 className="font-semibold text-lg mb-1">{t.totalItems || "Total Items"}</h4>
+                      <p className="text-2xl font-bold">{siteStats.totalItems}</p>
+                    </div>
+                    {/* New Users (Last 7 Days) */}
+                    <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-purple-50"}`}>
+                      <div className="flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 text-purple-600 mb-2">
+                        <CalendarIcon className="w-6 h-6" />
+                      </div>
+                      <h4 className="font-semibold text-lg mb-1">{t.newUsers || "New Users (7 Days)"}</h4>
+                      <p className="text-2xl font-bold">{siteStats.newUsersLast7Days}</p>
+                    </div>
+                    {/* Active Users (Last 24h) */}
+                    <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-orange-50"}`}>
+                      <div className="flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 text-orange-600 mb-2">
+                        <EyeIcon className="w-6 h-6" />
+                      </div>
+                      <h4 className="font-semibold text-lg mb-1">{t.activeUsers24h || "Active Users (24h)"}</h4>
+                      <p className="text-2xl font-bold">{siteStats.activeUsersLast24Hours}</p>
+                    </div>
+                    {/* Total Visits */}
+                    <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-red-50"}`}>
+                      <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 text-red-600 mb-2">
+                        <EyeIcon className="w-6 h-6" />
+                      </div>
+                      <h4 className="font-semibold text-lg mb-1">{t.totalVisits || "Total Visits"}</h4>
+                      <p className="text-2xl font-bold">{siteStats.totalVisits}</p>
+                    </div>
+                    {/* Average Users Per Day */}
+                    <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-indigo-50"}`}>
+                      <div className="flex items-center justify-center w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 mb-2">
+                        <ChartIcon className="w-6 h-6" />
+                      </div>
+                      <h4 className="font-semibold text-lg mb-1">{t.avgUsersPerDay || "Avg. Users/Day"}</h4>
+                      <p className="text-2xl font-bold">{siteStats.averageUsersPerDay}</p>
+                    </div>
+                    {/* Most Active User */}
+                    <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-pink-50"}`}>
+                      <div className="flex items-center justify-center w-12 h-12 rounded-full bg-pink-100 text-pink-600 mb-2">
+                        <UsersIcon className="w-6 h-6" />
+                      </div>
+                      <h4 className="font-semibold text-lg mb-1">{t.mostActiveUser || "Most Active User"}</h4>
+                      <p className="text-xl font-bold truncate max-w-full">{siteStats.mostActiveUser || "N/A"}</p>
+                    </div>
+                    {/* Items Added (Last 30 Days) */}
+                    <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-teal-50"}`}>
+                      <div className="flex items-center justify-center w-12 h-12 rounded-full bg-teal-100 text-teal-600 mb-2">
+                        <CalendarIcon className="w-6 h-6" />
+                      </div>
+                      <h4 className="font-semibold text-lg mb-1">{t.itemsAdded || "Items Added (30 Days)"}</h4>
+                      <p className="text-2xl font-bold">{siteStats.itemsAddedLast30Days}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-center text-red-500">{t.failedToLoadStatictics || "Failed to load statistics."}</p>
+                )}
+              </section>
+
+              {/* Notes section */}
+              <div className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+                  <h3 className="text-xl sm:text-2xl font-semibold mb-4 text-center">{t.notes || "Notes"}:</h3>
+                  <ul className="list-disc list-inside space-y-2">
+                      <li>{t.note1 || "Create two subpages for the user list and item list"}</li>
+                      <li>{t.note2 || "Organize the item list and refactor it (so the page uses less memory)"}</li>
+                  </ul>
+              </div>
+
+
+
+              {/* Users Section */}
+              <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} mb-8`}>
+                <h3 className="text-xl sm:text-2xl font-semibold mb-4">{t.listOfUsers}</h3>
+                {loading ? (
+                  <p className="text-lg">{t.loading}</p>
+                ) : error ? (
+                  <p className="text-red-500 text-lg">{error}</p>
+                ) : (
+                  <div className="overflow-x-auto w-full">
+                    <table className={`min-w-full border-collapse text-sm sm:text-base ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
+                      <thead className={`${isDarkMode ? "bg-gray-700" : "bg-gray-200"} text-left`}>
+                        <tr>
+                          <th className="w-16 px-2 sm:px-3 py-2 text-center font-semibold">ID</th>
+                          <th className="px-2 sm:px-3 py-2 font-semibold">Login</th>
+                          <th className="px-2 sm:px-3 py-2 font-semibold hidden md:table-cell">Email</th>
+                          <th className="px-2 sm:px-3 py-2 text-center font-semibold">Role</th>
+                          <th className="px-2 sm:px-3 py-2 text-center font-semibold hidden lg:table-cell">Date of Registration</th>
+                          <th className="px-2 sm:px-3 py-2 text-center font-semibold hidden lg:table-cell">Last Activity</th>
+                          <th className="px-2 sm:px-3 py-2 text-center font-semibold">Status</th>
+                          <th className="px-2 sm:px-3 py-2 text-center font-semibold">Actions</th>
+                          <th className="px-2 sm:px-3 py-2 text-center font-semibold">Delete</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {users.map((user) => (
+                          <tr key={user.id} className={`transition-colors ${isDarkMode ? "even:bg-gray-700 odd:bg-gray-600 hover:bg-gray-500" : "even:bg-gray-100 odd:bg-white hover:bg-gray-200"}`}>
+                            <td className="w-16 px-2 sm:px-3 py-2 text-center">
+                              {user.id}
+                              {isSuperAdmin(user) && (
+                                <span className="block text-xs text-purple-600">★</span>
+                              )}
+                            </td>
+                            <td className="px-2 sm:px-3 py-2 truncate max-w-[100px]" title={user.login}>{user.login}</td>
+                            <td className="px-2 sm:px-3 py-2 truncate hidden md:table-cell" title={user.email}>{user.email}</td>
+                            <td className="px-2 sm:px-3 py-2 capitalize text-center">
+                              {user.role}
+                              {isSuperAdmin(user) && (
+                                <span className="block text-xs text-purple-600">super</span>
+                              )}
+                            </td>
+                            <td className="px-2 sm:px-3 py-2 text-center hidden lg:table-cell">{new Date(user.created_at).toLocaleDateString()}</td>
+                            <td className="px-2 sm:px-3 py-2 text-center text-xs hidden lg:table-cell">
+                              {user.last_login ? new Date(user.last_login).toLocaleString() : t.never}
+                            </td>
+                            <td className="px-2 sm:px-3 py-2 text-center">
+                              {user.is_active ? (
+                                <span className="text-green-500 font-semibold text-xs sm:text-sm">{t.online}</span>
+                              ) : (
+                                <span className="text-red-500 font-semibold text-xs sm:text-sm">{t.offline}</span>
+                              )}
+                            </td>
+                            <td className="px-2 sm:px-3 py-2 text-center">
+                              {user.role !== "admin" && (
+                                <button
+                                  onClick={() => handleMakeAdmin(user.id, user.login)}
+                                  className={`px-2 py-1 rounded text-xs sm:text-sm ${
+                                    isDarkMode ? "bg-yellow-600 hover:bg-yellow-700" : "bg-yellow-500 hover:bg-yellow-600"
+                                  } text-black font-medium transition whitespace-nowrap`}
+                                  title={t.makeAdmin || "Make Admin"}
+                                >
+                                  {t.makeAdmin || "Admin"}
+                                </button>
+                              )}
+                            </td>
+                            <td className="px-2 sm:px-3 py-2 text-center">
+                              {canDeleteUser(user) && (
+                                <button
+                                  onClick={() => handleDeleteUser(user.id, user.login)}
+                                  className={`px-2 py-1 rounded text-xs sm:text-sm ${
+                                    isDarkMode ? "bg-red-600 hover:bg-red-700" : "bg-red-500 hover:bg-red-600"
+                                  } text-white font-medium transition whitespace-nowrap`}
+                                  title={t.deleteUser || "Delete User"}
+                                >
+                                  {t.deleteUser || "Delete"}
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                        {users.length === 0 && (
+                          <tr>
+                            <td colSpan={9} className="text-center py-4 text-lg">
+                              {t.noUsersFound}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                      
+                    </table>
+
+                    <button
+                      onClick={() => setShowAddUserModal(true)}
+                      className={`px-4 py-2 rounded font-medium ${
+                        isDarkMode ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-blue-500 hover:bg-blue-600 text-white"
+                      }`}
+                    >
+                      + {t.addUser || "Add User"}
+                    </button>
+                  </div>
+                )}
+              </section>
+            </motion.div>
           )}
-        </section>
 
-        {/* Add Item Modal */}
-        {showAddItemModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" onClick={() => setShowAddItemModal(false)}>
-            <div
-              className={`w-full max-w-md p-6 rounded-lg shadow-xl ${isDarkMode ? "bg-gray-800" : "bg-white"}`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-xl font-semibold mb-4">{t.addItem || "Add New Item"}</h3>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleAddItem();
-                }}
-              >
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-1">{t.itemTitle || "Title"}</label>
-                  <input
-                    type="text"
-                    value={newItem.title}
-                    onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
-                    className={`w-full p-2 border rounded ${
-                      isDarkMode
-                        ? "bg-gray-700 border-gray-600 text-white"
-                        : "bg-white border-gray-300 text-black"
-                    }`}
-                    required
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-1">{t.itemNumber || "Number"}</label>
-                  <input
-                    type="text"
-                    value={newItem.number}
-                    onChange={(e) => setNewItem({ ...newItem, number: e.target.value })}
-                    className={`w-full p-2 border rounded ${
-                      isDarkMode
-                        ? "bg-gray-700 border-gray-600 text-white"
-                        : "bg-white border-gray-300 text-black"
-                    }`}
-                    required
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-1">{t.category || "Category"}</label>
-                  <input
-                    type="text"
-                    value={newItem.category}
-                    onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-                    className={`w-full p-2 border rounded ${
-                      isDarkMode
-                        ? "bg-gray-700 border-gray-600 text-white"
-                        : "bg-white border-gray-300 text-black"
-                    }`}
-                    required
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-1">{t.series || "Series (comma-separated)"}</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Marvel, Avengers"
-                    value={newItem.series.join(", ")}
-                    onChange={(e) =>
-                      setNewItem({
-                        ...newItem,
-                        series: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
-                      })
-                    }
-                    className={`w-full p-2 border rounded ${
-                      isDarkMode
-                        ? "bg-gray-700 border-gray-600 text-white"
-                        : "bg-white border-gray-300 text-black"
-                    }`}
-                  />
-                </div>
-
-                <div className="mb-4 flex items-center">
-                  <input
-                    type="checkbox"
-                    id="exclusive"
-                    checked={newItem.exclusive}
-                    onChange={(e) => setNewItem({ ...newItem, exclusive: e.target.checked })}
-                    className="mr-2 h-5 w-5"
-                  />
-                  <label htmlFor="exclusive" className="text-sm font-medium">
-                    {t.exclusive || "Exclusive"}
-                  </label>
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-1">{t.imageName || "Image Name"}</label>
-                  <input
-                    type="text"
-                    value={newItem.imageName}
-                    onChange={(e) => setNewItem({ ...newItem, imageName: e.target.value })}
-                    className={`w-full p-2 border rounded ${
-                      isDarkMode
-                        ? "bg-gray-700 border-gray-600 text-white"
-                        : "bg-white border-gray-300 text-black"
-                    }`}
-                  />
-                </div>
-
-                <div className="flex justify-end gap-3 mt-6">
+          {activeView === "items" && (
+            <motion.div key="items" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.5, ease: "easeInOut" }} className="w-full max-w-7xl">
+              {/* Items Section */}
+              <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mt-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+                <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4 sm:gap-0">
+                  <h3 className="text-xl sm:text-2xl font-semibold">{t.listOfItems || "List of Items"}</h3>
                   <button
-                    type="button"
-                    onClick={() => setShowAddItemModal(false)}
-                    className={`px-4 py-2 rounded ${
-                      isDarkMode ? "bg-gray-600 hover:bg-gray-500" : "bg-gray-300 hover:bg-gray-400"
+                    onClick={() => setShowAddItemModal(true)}
+                    className={`px-4 py-2 rounded font-medium flex items-center gap-1 ${
+                      isDarkMode
+                        ? "bg-blue-600 hover:bg-blue-700 text-white"
+                        : "bg-blue-500 hover:bg-blue-600 text-white"
                     } transition`}
                   >
-                    {t.cancel || "Cancel"}
-                  </button>
-                  <button
-                    type="submit"
-                    className={`px-4 py-2 rounded ${
-                      isDarkMode ? "bg-green-600 hover:bg-green-700" : "bg-green-500 hover:bg-green-600"
-                    } text-white transition`}
-                  >
-                    {t.addItem || "Add Item"}
+                    + {t.addItem || "Add Item"}
                   </button>
                 </div>
-              </form>
-            </div>
-          </div>
-        )}
+                {/* Search Input */}
+                <div className="mb-6">
+                  <div className="relative">
+                    <SearchIcon className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`} />
+                    <input
+                      type="text"
+                      placeholder={t.searchItems || "Search items..."}
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setIsTyping(true);
+                      }}
+                      className={`w-full pl-10 pr-10 py-2 border rounded-lg ${
+                        isDarkMode
+                          ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                          : "bg-white border-gray-300 text-black placeholder-gray-500"
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                    />
+                    {searchTerm && (
+                      <button
+                        onClick={clearSearch}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-red-500 hover:text-red-700"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                  {searchTerm && !searchLoading && (
+                    <p className={`text-sm mt-2 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+                      {searchTerm.trim().length < 2 ? 
+                        t.minimumCharacters || "Enter at least 2 characters to search" : 
+                        isTyping ? 
+                          t.searching || "Searching..." : 
+                          `${filteredItems.length} ${t.resultsFound || "results found"}`
+                      }
+                    </p>
+                  )}
+                  {searchLoading && (
+                    <p className={`text-sm mt-2 ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+                      {t.searching || "Searching..."}
+                    </p>
+                  )}
+                </div>
+                {/* Conditionally render ItemList or search results */}
+                {searchTerm ? (
+                  <div className="overflow-x-auto">
+                    <table className={`min-w-full border-collapse text-sm sm:text-base ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
+                      <thead className={`${isDarkMode ? "bg-gray-700" : "bg-gray-200"} text-left`}>
+                        <tr>
+                          <th className="px-2 sm:px-3 py-2 font-semibold">ID</th>
+                          <th className="px-2 sm:px-3 py-2 font-semibold">Title</th>
+                          <th className="px-2 sm:px-3 py-2 font-semibold">Number</th>
+                          <th className="px-2 sm:px-3 py-2 font-semibold">Category</th>
+                          <th className="px-2 sm:px-3 py-2 font-semibold">Series</th>
+                          <th className="px-2 sm:px-3 py-2 font-semibold text-center">Exclusive</th>
+                          <th className="px-2 sm:px-3 py-2 font-semibold">Image</th>
+                          <th className="px-2 sm:px-3 py-2 font-semibold text-center">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredItems.map((item) => (
+                          <tr key={item.id} className={`transition-colors ${isDarkMode ? "even:bg-gray-700 odd:bg-gray-600 hover:bg-gray-500" : "even:bg-gray-100 odd:bg-white hover:bg-gray-200"}`}>
+                            <td className="px-2 sm:px-3 py-2">{item.id}</td>
+                            <td className="px-2 sm:px-3 py-2">{item.title}</td>
+                            <td className="px-2 sm:px-3 py-2">{item.number}</td>
+                            <td className="px-2 sm:px-3 py-2">{item.category}</td>
+                            <td className="px-2 sm:px-3 py-2">
+                              {item.series && item.series.length > 0 ? item.series.join(", ") : "-"}
+                            </td>
+                            <td className="px-2 sm:px-3 py-2 text-center">
+                              {item.exclusive ? (
+                                <span className="text-green-500 font-semibold">✓</span>
+                              ) : (
+                                <span className="text-red-500 font-semibold">✗</span>
+                              )}
+                            </td>
+                            <td className="px-2 sm:px-3 py-2">
+                              {item.imageName ? item.imageName : "-"}
+                            </td>
+                            <td className="px-2 sm:px-3 py-2 text-center">
+                              <button
+                                onClick={() => {
+                                  console.log("Edit item:", item.id);
+                                }}
+                                className={`px-2 py-1 rounded text-xs sm:text-sm ${
+                                  isDarkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
+                                } text-white font-medium transition mx-1`}
+                              >
+                                {t.edit || "Edit"}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                        {filteredItems.length === 0 && searchTerm.trim().length >= 2 && !searchLoading && !isTyping && (
+                          <tr>
+                            <td colSpan={8} className="text-center py-4 text-lg">
+                              {t.noItemsFound || "No items found matching your search"}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <ItemList
+                    token={token}
+                    currentUserRole={currentUser?.role}
+                    isDarkMode={isDarkMode}
+                    t={(key: string) => (translations[language] as any)[key]}
+                  />
+                )}
+              </section>
+
+              {/* Add Item Modal */}
+              {showAddItemModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" onClick={() => setShowAddItemModal(false)}>
+                  <div
+                    className={`w-full max-w-md p-6 rounded-lg shadow-xl ${isDarkMode ? "bg-gray-800" : "bg-white"}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <h3 className="text-xl font-semibold mb-4">{t.addItem || "Add New Item"}</h3>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleAddItem();
+                      }}
+                    >
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium mb-1">{t.itemTitle || "Title"}</label>
+                        <input
+                          type="text"
+                          value={newItem.title}
+                          onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
+                          className={`w-full p-2 border rounded ${
+                            isDarkMode
+                              ? "bg-gray-700 border-gray-600 text-white"
+                              : "bg-white border-gray-300 text-black"
+                          }`}
+                          required
+                        />
+                      </div>
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium mb-1">{t.itemNumber || "Number"}</label>
+                        <input
+                          type="text"
+                          value={newItem.number}
+                          onChange={(e) => setNewItem({ ...newItem, number: e.target.value })}
+                          className={`w-full p-2 border rounded ${
+                            isDarkMode
+                              ? "bg-gray-700 border-gray-600 text-white"
+                              : "bg-white border-gray-300 text-black"
+                          }`}
+                          required
+                        />
+                      </div>
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium mb-1">{t.category || "Category"}</label>
+                        <input
+                          type="text"
+                          value={newItem.category}
+                          onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
+                          className={`w-full p-2 border rounded ${
+                            isDarkMode
+                              ? "bg-gray-700 border-gray-600 text-white"
+                              : "bg-white border-gray-300 text-black"
+                          }`}
+                          required
+                        />
+                      </div>
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium mb-1">{t.series || "Series (comma-separated)"}</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Marvel, Avengers"
+                          value={newItem.series.join(", ")}
+                          onChange={(e) =>
+                            setNewItem({
+                              ...newItem,
+                              series: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+                            })
+                          }
+                          className={`w-full p-2 border rounded ${
+                            isDarkMode
+                              ? "bg-gray-700 border-gray-600 text-white"
+                              : "bg-white border-gray-300 text-black"
+                          }`}
+                        />
+                      </div>
+                      <div className="mb-4 flex items-center">
+                        <input
+                          type="checkbox"
+                          id="exclusive"
+                          checked={newItem.exclusive}
+                          onChange={(e) => setNewItem({ ...newItem, exclusive: e.target.checked })}
+                          className="mr-2 h-5 w-5"
+                        />
+                        <label htmlFor="exclusive" className="text-sm font-medium">
+                          {t.exclusive || "Exclusive"}
+                        </label>
+                      </div>
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium mb-1">{t.imageName || "Image Name"}</label>
+                        <input
+                          type="text"
+                          value={newItem.imageName}
+                          onChange={(e) => setNewItem({ ...newItem, imageName: e.target.value })}
+                          className={`w-full p-2 border rounded ${
+                            isDarkMode
+                              ? "bg-gray-700 border-gray-600 text-white"
+                              : "bg-white border-gray-300 text-black"
+                          }`}
+                        />
+                      </div>
+                      <div className="flex justify-end gap-3 mt-6">
+                        <button
+                          type="button"
+                          onClick={() => setShowAddItemModal(false)}
+                          className={`px-4 py-2 rounded ${
+                            isDarkMode ? "bg-gray-600 hover:bg-gray-500" : "bg-gray-300 hover:bg-gray-400"
+                          } transition`}
+                        >
+                          {t.cancel || "Cancel"}
+                        </button>
+                        <button
+                          type="submit"
+                          className={`px-4 py-2 rounded ${
+                            isDarkMode ? "bg-green-600 hover:bg-green-700" : "bg-green-500 hover:bg-green-600"
+                          } text-white transition`}
+                        >
+                          {t.addItem || "Add Item"}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* 🔹 NEW VIEWS */}
+          {activeView === "analytics" && <motion.div key="analytics" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.5, ease: "easeInOut" }} className="w-full max-w-7xl">{renderAnalyticsView()}</motion.div>}
+          {activeView === "social" && <motion.div key="social" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.5, ease: "easeInOut" }} className="w-full max-w-7xl">{renderSocialView()}</motion.div>}
+        </AnimatePresence>
       </main>
+
+      {/* Add User Modal */}
+      {showAddUserModal && renderAddUserModal()}
 
       {/* Footer */}
       <footer className={`py-4 text-center text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>

@@ -117,8 +117,8 @@ root.render(
     <NetworkProvider>
       <LanguageProvider>
         <Router>
+          
           <Routes>
-            
             <Route path="/" element={<WelcomeSite />} />
             <Route path="/SearchSite" element={<SearchSite />} />
             <Route path="/funko/:id" element={<FunkoDetails />} />
@@ -127,13 +127,11 @@ root.render(
             <Route path="/RegisterSite" element={<RegisterSite />} />
             <Route path="/DashboardSite" element={<DashboardSite />} />
             <Route path="/AdminSite" element={<AdminSite />} />
-            <Route path="/404" element={<NotFound />} />
-            <Route path="*" element={<NotFound />} />
-            <Route path="/collection" element={<CollectionPage />} />
-            <Route path="/wishlist" element={<WishlistPage />} />
             <Route path="/requests" element={<Requests />} />
             <Route path="/categories" element={<CategoriesSite />} />
             <Route path="/mostVisited" element={<MostVisitedSite />} />
+            <Route path="/404" element={<NotFound />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Router>
       </LanguageProvider>

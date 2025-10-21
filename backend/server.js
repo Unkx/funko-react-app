@@ -143,6 +143,38 @@ const registerUser = async (req, res) => {
   }
 };
 
+// Add this controller
+const createUserAsAdmin = async (req, res) => {
+  const { email, login, name, surname, password, gender, date_of_birth, role = 'user' } = req.body;
+  
+  // Only allow 'user' or 'admin' roles
+  if (!['user', 'admin'].includes(role)) {
+    return res.status(400).json({ error: 'Invalid role' });
+  }
+
+  if (!email || !login || !name || !surname || !password || !gender || !date_of_birth) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    const hashedPassword = await hashPassword(password);
+    const newUser = await pool.query(
+      `INSERT INTO users (email, login, name, surname, password_hash, gender, date_of_birth, role)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id, email, login, name, surname, gender, date_of_birth, role`,
+      [email, login, name, surname, hashedPassword, gender, date_of_birth, role]
+    );
+    res.status(201).json(newUser.rows[0]);
+  } catch (err) {
+    if (err.code === '23505') {
+      if (err.detail?.includes('email')) return res.status(409).json({ error: 'Email already registered' });
+      if (err.detail?.includes('login')) return res.status(409).json({ error: 'Login already taken' });
+    }
+    console.error('Admin user creation error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
 const loginUser = async (req, res) => {
   const { login, password } = req.body;
 
@@ -481,6 +513,123 @@ const getCollection = async (req, res) => {
     res.status(500).json({ error: "Failed to load collection" });
   }
 };
+
+
+// Get or create conversation between two users
+const getOrCreateConversation = async (req, res) => {
+  const { friendId } = req.params;
+  const userId = req.user.id;
+
+  if (userId == friendId) {
+    return res.status(400).json({ error: "Cannot chat with yourself" });
+  }
+
+  try {
+    // Ensure both users exist
+    const users = await pool.query(
+      'SELECT id FROM users WHERE id = $1 OR id = $2',
+      [userId, friendId]
+    );
+    if (users.rows.length < 2) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Get conversation
+    let conv = await pool.query(
+      `SELECT id FROM conversations 
+       WHERE (user1_id = $1 AND user2_id = $2) OR (user1_id = $2 AND user2_id = $1)`,
+      [userId, friendId]
+    );
+
+    if (conv.rows.length === 0) {
+      // Create new conversation
+      const result = await pool.query(
+        `INSERT INTO conversations (user1_id, user2_id) 
+         VALUES ($1, $2) RETURNING id`,
+        [userId, friendId]
+      );
+      conv = result;
+    }
+
+    res.json({ conversation_id: conv.rows[0].id });
+  } catch (err) {
+    console.error("Create conversation error:", err);
+    res.status(500).json({ error: "Failed to create conversation" });
+  }
+};
+
+// Send message
+const sendMessage = async (req, res) => {
+  const { conversation_id } = req.params;
+  const { content } = req.body;
+  const sender_id = req.user.id;
+
+  if (!content?.trim()) {
+    return res.status(400).json({ error: "Message cannot be empty" });
+  }
+
+  try {
+    // Verify user is part of this conversation
+    const conv = await pool.query(
+      `SELECT user1_id, user2_id FROM conversations WHERE id = $1`,
+      [conversation_id]
+    );
+    if (conv.rows.length === 0) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+    const { user1_id, user2_id } = conv.rows[0];
+    if (sender_id !== user1_id && sender_id !== user2_id) {
+      return res.status(403).json({ error: "Not authorized to send message" });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO messages (conversation_id, sender_id, content)
+       VALUES ($1, $2, $3) RETURNING *`,
+      [conversation_id, sender_id, content.trim()]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error("Send message error:", err);
+    res.status(500).json({ error: "Failed to send message" });
+  }
+};
+
+// Get messages in conversation
+const getMessages = async (req, res) => {
+  const { conversation_id } = req.params;
+  const userId = req.user.id;
+
+  try {
+    // Verify user is in conversation
+    const conv = await pool.query(
+      `SELECT user1_id, user2_id FROM conversations WHERE id = $1`,
+      [conversation_id]
+    );
+    if (conv.rows.length === 0) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+    const { user1_id, user2_id } = conv.rows[0];
+    if (userId !== user1_id && userId !== user2_id) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    const messages = await pool.query(
+      `SELECT m.*, u.login as sender_login
+       FROM messages m
+       JOIN users u ON m.sender_id = u.id
+       WHERE m.conversation_id = $1
+       ORDER BY m.created_at ASC`,
+      [conversation_id]
+    );
+
+    res.json(messages.rows);
+  } catch (err) {
+    console.error("Get messages error:", err);
+    res.status(500).json({ error: "Failed to load messages" });
+  }
+};
+
 
 const checkCollectionItem = async (req, res) => {
   const { funkoId } = req.params;
@@ -1956,6 +2105,14 @@ app.get('/api/admin/items/search', authenticateToken, isAdmin, searchItems);
 app.post('/api/admin/items', authenticateToken, isAdmin, addItem);
 app.delete('/api/admin/users/:id', authenticateToken, isAdmin, deleteUser);
 
+// Add this route
+app.post('/api/admin/users', authenticateToken, isAdmin, createUserAsAdmin);
+
+// Chat routes
+app.get('/api/chat/conversation/:friendId', authenticateToken, getOrCreateConversation);
+app.post('/api/chat/conversation/:conversation_id/messages', authenticateToken, sendMessage);
+app.get('/api/chat/conversation/:conversation_id/messages', authenticateToken, getMessages);
+
 // PATCH: Change user role (admin only)
 app.patch('/api/admin/users/:id/role', authenticateToken, isAdmin, async (req, res) => {
   console.log('Role change request received:', {
@@ -2150,6 +2307,418 @@ app.get('/api/test/items', authenticateToken, isAdmin, async (req, res) => {
       error: 'Failed to query items',
       details: err.message
     });
+  }
+});
+
+// ==========================================
+// ANALYTICS & ACTIVITY TRACKING
+// ==========================================
+
+// Log user activity
+app.post('/api/activity/log', authenticateToken, async (req, res) => {
+  const { action_type, action_details, session_duration } = req.body;
+  const userId = req.user.id;
+
+  try {
+    await pool.query(
+      `INSERT INTO user_activity_log (user_id, action_type, action_details, session_duration)
+       VALUES ($1, $2, $3, $4)`,
+      [userId, action_type, JSON.stringify(action_details || {}), session_duration]
+    );
+
+    // Update last_activity_date
+    await pool.query(
+      `UPDATE users SET last_activity_date = CURRENT_DATE WHERE id = $1`,
+      [userId]
+    );
+
+    res.json({ message: 'Activity logged' });
+  } catch (err) {
+    console.error('Error logging activity:', err);
+    res.status(500).json({ error: 'Failed to log activity' });
+  }
+});
+
+// Get user activity stats
+app.get('/api/activity/stats', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const stats = await pool.query(`
+      SELECT 
+        COUNT(*) as total_actions,
+        COUNT(DISTINCT DATE(created_at)) as active_days,
+        AVG(session_duration) as avg_session_duration,
+        MAX(created_at) as last_activity
+      FROM user_activity_log
+      WHERE user_id = $1
+    `, [userId]);
+
+    const actionBreakdown = await pool.query(`
+      SELECT action_type, COUNT(*) as count
+      FROM user_activity_log
+      WHERE user_id = $1
+      GROUP BY action_type
+      ORDER BY count DESC
+    `, [userId]);
+
+    res.json({
+      overall: stats.rows[0],
+      breakdown: actionBreakdown.rows
+    });
+  } catch (err) {
+    console.error('Error fetching activity stats:', err);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+// ==========================================
+// LOYALTY METRICS
+// ==========================================
+
+// Calculate and update loyalty score
+app.post('/api/loyalty/calculate', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    // Get user data
+    const userData = await pool.query(`
+      SELECT 
+        created_at,
+        (SELECT COUNT(*) FROM wishlist WHERE user_id = $1) as wishlist_count,
+        (SELECT COUNT(*) FROM collection WHERE user_id = $1) as collection_count,
+        (SELECT COUNT(DISTINCT DATE(created_at)) FROM user_activity_log WHERE user_id = $1) as active_days,
+        (SELECT COUNT(*) FROM user_activity_log WHERE user_id = $1) as total_actions
+      FROM users WHERE id = $1
+    `, [userId]);
+
+    const data = userData.rows[0];
+    
+    // Calculate loyalty score (0-100)
+    const accountAge = Math.floor((Date.now() - new Date(data.created_at)) / (1000 * 60 * 60 * 24));
+    const loyaltyScore = Math.min(100, 
+      (data.active_days * 2) + 
+      (data.wishlist_count * 0.5) + 
+      (data.collection_count * 1) + 
+      (Math.min(accountAge, 365) * 0.1) +
+      (data.total_actions * 0.1)
+    );
+
+    // Update loyalty score
+    await pool.query(
+      `UPDATE users 
+       SET loyalty_score = $1, days_active = $2 
+       WHERE id = $3`,
+      [Math.round(loyaltyScore), data.active_days, userId]
+    );
+
+    res.json({ 
+      loyaltyScore: Math.round(loyaltyScore),
+      activeDays: data.active_days,
+      accountAge
+    });
+  } catch (err) {
+    console.error('Error calculating loyalty:', err);
+    res.status(500).json({ error: 'Failed to calculate loyalty' });
+  }
+});
+
+// Get loyalty leaderboard
+app.get('/api/loyalty/leaderboard', authenticateToken, async (req, res) => {
+  try {
+    const leaderboard = await pool.query(`
+      SELECT 
+        login,
+        loyalty_score,
+        days_active,
+        (SELECT COUNT(*) FROM collection WHERE user_id = users.id) as collection_size
+      FROM users
+      WHERE loyalty_score > 0
+      ORDER BY loyalty_score DESC
+      LIMIT 50
+    `);
+
+    res.json(leaderboard.rows);
+  } catch (err) {
+    console.error('Error fetching leaderboard:', err);
+    res.status(500).json({ error: 'Failed to fetch leaderboard' });
+  }
+});
+
+// ==========================================
+// SOCIAL FEATURES
+// ==========================================
+
+// Send friend request
+app.post('/api/friends/request', authenticateToken, async (req, res) => {
+  const { friendLogin } = req.body;
+  const userId = req.user.id;
+
+  try {
+    // Find friend by login
+    const friend = await pool.query(
+      'SELECT id FROM users WHERE login = $1',
+      [friendLogin]
+    );
+
+    if (friend.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const friendId = friend.rows[0].id;
+
+    if (friendId === userId) {
+      return res.status(400).json({ error: 'Cannot add yourself as friend' });
+    }
+
+    // Insert friendship request
+    await pool.query(
+      `INSERT INTO friendships (user_id, friend_id, status)
+       VALUES ($1, $2, 'pending')
+       ON CONFLICT (user_id, friend_id) DO NOTHING`,
+      [userId, friendId]
+    );
+
+    res.json({ message: 'Friend request sent' });
+  } catch (err) {
+    console.error('Error sending friend request:', err);
+    res.status(500).json({ error: 'Failed to send request' });
+  }
+});
+
+// Accept friend request
+app.patch('/api/friends/accept/:friendId', authenticateToken, async (req, res) => {
+  const { friendId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    await pool.query(
+      `UPDATE friendships 
+       SET status = 'accepted' 
+       WHERE user_id = $1 AND friend_id = $2`,
+      [friendId, userId]
+    );
+
+    // Create reciprocal friendship
+    await pool.query(
+      `INSERT INTO friendships (user_id, friend_id, status)
+       VALUES ($1, $2, 'accepted')
+       ON CONFLICT (user_id, friend_id) DO UPDATE SET status = 'accepted'`,
+      [userId, friendId]
+    );
+
+    res.json({ message: 'Friend request accepted' });
+  } catch (err) {
+    console.error('Error accepting friend:', err);
+    res.status(500).json({ error: 'Failed to accept request' });
+  }
+});
+
+// Get friends list
+app.get('/api/friends', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const friends = await pool.query(`
+      SELECT 
+        u.id, u.login, u.name, u.surname,
+        f.status, f.created_at,
+        (SELECT COUNT(*) FROM collection WHERE user_id = u.id) as collection_size
+      FROM friendships f
+      JOIN users u ON f.friend_id = u.id
+      WHERE f.user_id = $1
+      ORDER BY f.created_at DESC
+    `, [userId]);
+
+    res.json(friends.rows);
+  } catch (err) {
+    console.error('Error fetching friends:', err);
+    res.status(500).json({ error: 'Failed to fetch friends' });
+  }
+});
+
+// Add comment to item
+app.post('/api/items/:funkoId/comments', authenticateToken, async (req, res) => {
+  const { funkoId } = req.params;
+  const { comment_text, rating } = req.body;
+  const userId = req.user.id;
+
+  if (!comment_text || !rating) {
+    return res.status(400).json({ error: 'Comment and rating required' });
+  }
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO item_comments (user_id, funko_id, comment_text, rating)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [userId, funkoId, comment_text, rating]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('Error adding comment:', err);
+    res.status(500).json({ error: 'Failed to add comment' });
+  }
+});
+
+// Get comments for item
+app.get('/api/items/:funkoId/comments', async (req, res) => {
+  const { funkoId } = req.params;
+
+  try {
+    const comments = await pool.query(`
+      SELECT 
+        c.*,
+        u.login as user_login,
+        u.name as user_name
+      FROM item_comments c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.funko_id = $1
+      ORDER BY c.created_at DESC
+    `, [funkoId]);
+
+    res.json(comments.rows);
+  } catch (err) {
+    console.error('Error fetching comments:', err);
+    res.status(500).json({ error: 'Failed to fetch comments' });
+  }
+});
+
+// Share collection publicly
+app.post('/api/collection/share', authenticateToken, async (req, res) => {
+  const { is_public } = req.body;
+  const userId = req.user.id;
+
+  try {
+    // Generate unique share token
+    const shareToken = require('crypto').randomBytes(16).toString('hex');
+
+    await pool.query(
+      `INSERT INTO shared_collections (user_id, is_public, share_token)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (user_id) DO UPDATE 
+       SET is_public = $2, share_token = $3`,
+      [userId, is_public, shareToken]
+    );
+
+    res.json({ 
+      message: 'Collection sharing updated',
+      shareToken: is_public ? shareToken : null
+    });
+  } catch (err) {
+    console.error('Error sharing collection:', err);
+    res.status(500).json({ error: 'Failed to share collection' });
+  }
+});
+
+// View public collection by token
+app.get('/api/collection/public/:token', async (req, res) => {
+  const { token } = req.params;
+
+  try {
+    const shared = await pool.query(
+      `SELECT user_id, is_public FROM shared_collections 
+       WHERE share_token = $1 AND is_public = true`,
+      [token]
+    );
+
+    if (shared.rows.length === 0) {
+      return res.status(404).json({ error: 'Collection not found or not public' });
+    }
+
+    const userId = shared.rows[0].user_id;
+
+    // Get user info
+    const userInfo = await pool.query(
+      'SELECT login, name FROM users WHERE id = $1',
+      [userId]
+    );
+
+    // Get collection
+    const collection = await pool.query(`
+      SELECT fi.*, c.condition, c.purchase_date 
+      FROM collection c
+      JOIN funko_items fi ON c.funko_id = fi.id
+      WHERE c.user_id = $1
+      ORDER BY c.purchase_date DESC
+    `, [userId]);
+
+    res.json({
+      user: userInfo.rows[0],
+      collection: collection.rows
+    });
+  } catch (err) {
+    console.error('Error fetching public collection:', err);
+    res.status(500).json({ error: 'Failed to fetch collection' });
+  }
+});
+
+// ==========================================
+// ADMIN ANALYTICS DASHBOARD
+// ==========================================
+
+// Get comprehensive analytics for admin
+app.get('/api/admin/analytics', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    // User engagement metrics
+    const engagement = await pool.query(`
+      SELECT 
+        COUNT(DISTINCT user_id) as active_users,
+        AVG(session_duration) as avg_session,
+        COUNT(*) as total_actions
+      FROM user_activity_log
+      WHERE created_at >= NOW() - INTERVAL '30 days'
+    `);
+
+    // Top actions
+    const topActions = await pool.query(`
+      SELECT action_type, COUNT(*) as count
+      FROM user_activity_log
+      WHERE created_at >= NOW() - INTERVAL '30 days'
+      GROUP BY action_type
+      ORDER BY count DESC
+      LIMIT 10
+    `);
+
+    // Retention rate (users who came back after 7 days)
+    const retention = await pool.query(`
+      WITH first_login AS (
+        SELECT user_id, MIN(created_at) as first_date
+        FROM user_activity_log
+        GROUP BY user_id
+      ),
+      returned_users AS (
+        SELECT DISTINCT al.user_id
+        FROM user_activity_log al
+        JOIN first_login fl ON al.user_id = fl.user_id
+        WHERE al.created_at > fl.first_date + INTERVAL '7 days'
+      )
+      SELECT 
+        COUNT(DISTINCT fl.user_id) as total_users,
+        COUNT(DISTINCT ru.user_id) as returned_users,
+        ROUND(COUNT(DISTINCT ru.user_id)::numeric / NULLIF(COUNT(DISTINCT fl.user_id), 0) * 100, 2) as retention_rate
+      FROM first_login fl
+      LEFT JOIN returned_users ru ON fl.user_id = ru.user_id
+    `);
+
+    // Social engagement
+    const social = await pool.query(`
+      SELECT 
+        (SELECT COUNT(*) FROM friendships WHERE status = 'accepted') as total_friendships,
+        (SELECT COUNT(*) FROM item_comments) as total_comments,
+        (SELECT COUNT(*) FROM shared_collections WHERE is_public = true) as public_collections
+    `);
+
+    res.json({
+      engagement: engagement.rows[0],
+      topActions: topActions.rows,
+      retention: retention.rows[0],
+      social: social.rows[0]
+    });
+  } catch (err) {
+    console.error('Error fetching analytics:', err);
+    res.status(500).json({ error: 'Failed to fetch analytics' });
   }
 });
 

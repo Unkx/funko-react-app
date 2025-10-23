@@ -1,75 +1,38 @@
--- Dodaj nową tabelę do śledzenia aktywności
-CREATE TABLE user_activity_log (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  action_type VARCHAR(50) NOT NULL, -- 'login', 'wishlist_add', 'collection_add', 'search', 'view_item'
-  action_details JSONB,
-  session_duration INTEGER, -- w sekundach
-  created_at TIMESTAMP DEFAULT NOW()
-);
+-- Run these SQL commands to update your database for the chat system
 
--- Dodaj indeksy dla wydajności
-CREATE INDEX idx_user_activity_user_id ON user_activity_log(user_id);
-CREATE INDEX idx_user_activity_created_at ON user_activity_log(created_at);
-CREATE INDEX idx_user_activity_action_type ON user_activity_log(action_type);
+-- 1. Add is_read column to messages table (if it doesn't exist)
+ALTER TABLE messages 
+ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT FALSE;
 
-//
+-- 2. Create index for faster message queries
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_created 
+ON messages(conversation_id, created_at DESC);
 
--- Dodaj kolumny do tabeli users
-ALTER TABLE users ADD COLUMN loyalty_score INTEGER DEFAULT 0;
-ALTER TABLE users ADD COLUMN days_active INTEGER DEFAULT 0;
-ALTER TABLE users ADD COLUMN streak_days INTEGER DEFAULT 0; -- dni z rzędu
-ALTER TABLE users ADD COLUMN last_activity_date DATE;
+-- 3. Create index for unread messages
+CREATE INDEX IF NOT EXISTS idx_messages_read_status 
+ON messages(conversation_id, sender_id, is_read) 
+WHERE is_read = FALSE;
 
-//
+-- 4. Add index to friendships for faster lookups
+CREATE INDEX IF NOT EXISTS idx_friendships_user_status 
+ON friendships(user_id, status);
 
--- Tabela znajomych
-CREATE TABLE friendships (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  friend_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'accepted', 'blocked'
-  created_at TIMESTAMP DEFAULT NOW(),
-  UNIQUE(user_id, friend_id)
-);
+CREATE INDEX IF NOT EXISTS idx_friendships_friend_status 
+ON friendships(friend_id, status);
 
--- Tabela komentarzy do itemów
-CREATE TABLE item_comments (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  funko_id VARCHAR(255) REFERENCES funko_items(id),
-  comment_text TEXT NOT NULL,
-  rating INTEGER CHECK (rating >= 1 AND rating <= 5),
-  created_at TIMESTAMP DEFAULT NOW()
-);
+-- 5. Add timestamp to conversations
+ALTER TABLE conversations 
+ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 
--- Tabela udostępnionych kolekcji
-CREATE TABLE shared_collections (
-  id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  is_public BOOLEAN DEFAULT false,
-  share_token VARCHAR(255) UNIQUE,
-  created_at TIMESTAMP DEFAULT NOW()
-);
+-- 6. Update existing messages to be marked as read (optional - for existing data)
+-- UPDATE messages SET is_read = TRUE WHERE created_at < NOW() - INTERVAL '1 day';
 
--- Conversations (one per pair of users)
-CREATE TABLE IF NOT EXISTS conversations (
-  id SERIAL PRIMARY KEY,
-  user1_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  user2_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  created_at TIMESTAMP DEFAULT NOW(),
-  UNIQUE(user1_id, user2_id)
-);
-
--- Messages
-CREATE TABLE IF NOT EXISTS messages (
-  id SERIAL PRIMARY KEY,
-  conversation_id INTEGER REFERENCES conversations(id) ON DELETE CASCADE,
-  sender_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  content TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Index for performance
-CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
-CREATE INDEX IF NOT EXISTS idx_conversations_users ON conversations(user1_id, user2_id);
+-- 7. Verify the structure
+SELECT 
+    table_name, 
+    column_name, 
+    data_type, 
+    is_nullable
+FROM information_schema.columns
+WHERE table_name IN ('messages', 'conversations', 'friendships')
+ORDER BY table_name, ordinal_position;

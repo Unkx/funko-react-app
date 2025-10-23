@@ -307,6 +307,11 @@ const Admin = () => {
     }
   };
 
+  // 🔹 Social state
+  const [incomingRequests, setIncomingRequests] = useState<any[]>([]);
+  const [outgoingRequests, setOutgoingRequests] = useState<any[]>([]);
+  const [showChat, setShowChat] = useState(false);
+  const [selectedFriend, setSelectedFriend] = useState<any>(null);
   // 🔹 Fetch user analytics
   const fetchUserAnalytics = async () => {
     const token = localStorage.getItem("token");
@@ -329,6 +334,111 @@ const Admin = () => {
       setDashboardAnalyticsLoading(false);
     }
   };
+
+  // 🔹 Social functions
+  // Add these functions (identical to DashboardSite)
+const fetchIncomingRequests = async () => {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+  try {
+    const response = await fetch("http://localhost:5000/api/friends/requests/incoming", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      setIncomingRequests(data);
+    }
+  } catch (err) {
+    console.error("Error fetching incoming requests:", err);
+  }
+};
+
+const fetchOutgoingRequests = async () => {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+  try {
+    const response = await fetch("http://localhost:5000/api/friends/requests/outgoing", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      setOutgoingRequests(data);
+    }
+  } catch (err) {
+    console.error("Error fetching outgoing requests:", err);
+  }
+};
+
+const handleAcceptRequest = async (senderId: string, friendshipId: string) => {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+  try {
+    const response = await fetch(`http://localhost:5000/api/friends/accept/${senderId}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (response.ok) {
+      alert("Friend request accepted!");
+      fetchIncomingRequests();
+      fetchUserAnalytics(); // refresh friends list
+    }
+  } catch (err) {
+    console.error("Error accepting request:", err);
+  }
+};
+
+const handleRejectRequest = async (friendshipId: string) => {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+  try {
+    const response = await fetch(`http://localhost:5000/api/friends/request/${friendshipId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (response.ok) {
+      alert("Friend request removed");
+      fetchIncomingRequests();
+      fetchOutgoingRequests();
+    }
+  } catch (err) {
+    console.error("Error rejecting request:", err);
+  }
+};
+
+const handleRemoveFriend = async (friendId: string) => {
+  if (!confirm("Are you sure you want to remove this friend?")) return;
+  const token = localStorage.getItem("token");
+  if (!token) return;
+  try {
+    const response = await fetch(`http://localhost:5000/api/friends/${friendId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (response.ok) {
+      alert("Friend removed");
+      fetchUserAnalytics();
+    }
+  } catch (err) {
+    console.error("Error removing friend:", err);
+  }
+};
+
+const handleStartChat = async (friend: any) => {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+  try {
+    const response = await fetch(`http://localhost:5000/api/chat/conversation/${friend.id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (response.ok) {
+      const data = await response.json();
+      setSelectedFriend({ ...friend, conversation_id: data.conversation_id });
+      setShowChat(true);
+    }
+  } catch (err) {
+    console.error("Error starting chat:", err);
+  }
+};
 
   // 🔹 Fetch admin analytics data
   const fetchAdminAnalytics = async () => {
@@ -504,6 +614,15 @@ const Admin = () => {
   useEffect(() => {
     if (activeView === "analytics") {
       fetchUserAnalytics();
+    }
+  }, [activeView]);
+
+  // Update the useEffect that loads social data
+  useEffect(() => {
+    if (activeView === "social") {
+      fetchIncomingRequests();
+      fetchOutgoingRequests();
+      fetchUserAnalytics(); // also load friends
     }
   }, [activeView]);
 
@@ -866,61 +985,147 @@ const Admin = () => {
       <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
         {t.social || "Social"}
       </h2>
+      {/* Add Friend Form */}
       <div className={`p-6 rounded-lg shadow-lg mb-6 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
         <h3 className="text-xl font-semibold mb-4">{t.addFriend || "Add Friend"}</h3>
-        <form onSubmit={async (e) => {
-          e.preventDefault();
-          const formData = new FormData(e.currentTarget);
-          const friendLogin = formData.get("friendLogin") as string;
-          const token = localStorage.getItem("token");
-          if (!token) return;
-          try {
-            const response = await fetch("http://localhost:5000/api/friends/request", {
-              method: "POST",
-              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-              body: JSON.stringify({ friendLogin })
-            });
-            if (response.ok) {
-              alert("Friend request sent!");
-              e.currentTarget.reset();
-              fetchUserAnalytics();
-            } else {
-              const error = await response.json();
-              alert(error.error || "Failed to send friend request");
-            }
-          } catch (err) {
-            console.error("Error sending friend request:", err);
-            alert("Failed to send friend request");
-          }
-        }}>
-          <div className="flex gap-2">
-            <input
-              name="friendLogin"
-              type="text"
-              placeholder="Enter username..."
-              required
-              className={`flex-1 px-4 py-2 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
-            />
-            <button
-              type="submit"
-              className={`px-6 py-2 rounded ${
-                isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"
-              } text-white`}
-            >
-              {t.sendRequest || "Send Request"}
-            </button>
-          </div>
-        </form>
+        <div className="flex gap-2">
+          <input
+            id="friendLoginInput"
+            type="text"
+            placeholder="Enter username..."
+            className={`flex-1 px-4 py-2 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+          />
+          <button
+            onClick={async () => {
+              const input = document.getElementById("friendLoginInput") as HTMLInputElement;
+              const friendLogin = input.value.trim();
+              if (!friendLogin) {
+                alert("Please enter a username");
+                return;
+              }
+              const token = localStorage.getItem("token");
+              if (!token) return;
+              try {
+                const response = await fetch("http://localhost:5000/api/friends/request", {
+                  method: "POST",
+                  headers: { 
+                    "Content-Type": "application/json", 
+                    Authorization: `Bearer ${token}` 
+                  },
+                  body: JSON.stringify({ friendLogin })
+                });
+                if (response.ok) {
+                  alert("Friend request sent!");
+                  input.value = "";
+                  fetchOutgoingRequests(); // ✅ Immediate update
+                } else {
+                  const error = await response.json();
+                  alert(error.error || "Failed to send friend request");
+                }
+              } catch (err) {
+                console.error("Error sending friend request:", err);
+                alert("Failed to send friend request");
+              }
+            }}
+            className={`px-6 py-2 rounded ${
+              isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"
+            } text-white`}
+          >
+            {t.sendRequest || "Send Request"}
+          </button>
+        </div>
       </div>
+
+      {/* Incoming Requests */}
+      {incomingRequests.length > 0 && (
+        <div className={`p-6 rounded-lg shadow-lg mb-6 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+          <h3 className="text-xl font-semibold mb-4">
+            {t.incomingRequests || "Friend Requests"} ({incomingRequests.length})
+          </h3>
+          <div className="space-y-3">
+            {incomingRequests.map((request: any) => (
+              <div 
+                key={request.id}
+                className={`flex justify-between items-center p-4 rounded border ${
+                  isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-gray-50"
+                }`}
+              >
+                <div>
+                  <h4 className="font-semibold">{request.login}</h4>
+                  <p className="text-sm text-gray-500">
+                    {request.name} {request.surname}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Collection: {request.collection_size} items
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleAcceptRequest(request.sender_id, request.id)}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded"
+                  >
+                    {t.accept || "Accept"}
+                  </button>
+                  <button
+                    onClick={() => handleRejectRequest(request.id)}
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded"
+                  >
+                    {t.reject || "Reject"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Outgoing Requests */}
+      {outgoingRequests.length > 0 && (
+        <div className={`p-6 rounded-lg shadow-lg mb-6 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+          <h3 className="text-xl font-semibold mb-4">
+            {t.sentRequests || "Sent Requests"} ({outgoingRequests.length})
+          </h3>
+          <div className="space-y-3">
+            {outgoingRequests.map((request: any) => (
+              <div 
+                key={request.id}
+                className={`flex justify-between items-center p-4 rounded border ${
+                  isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-gray-50"
+                }`}
+              >
+                <div>
+                  <h4 className="font-semibold">{request.login}</h4>
+                  <p className="text-sm text-gray-500">
+                    {request.name} {request.surname}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Sent: {new Date(request.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleRejectRequest(request.id)}
+                  className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded"
+                >
+                  {t.cancel || "Cancel"}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Friends List */}
       <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
-        <h3 className="text-xl font-semibold mb-4">{t.yourFriends || "Your Friends"}</h3>
-        {friends.length === 0 ? (
+        <h3 className="text-xl font-semibold mb-4">
+          {t.yourFriends || "Your Friends"} ({friends.filter((f: any) => f.status === "accepted").length})
+        </h3>
+        {friends.filter((f: any) => f.status === "accepted").length === 0 ? (
           <p className="text-center text-gray-500 py-8">
             {t.noFriends || "You don't have any friends yet. Start connecting!"}
           </p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {friends.map(friend => (
+            {friends.filter((f: any) => f.status === "accepted").map((friend: any) => (
               <div 
                 key={friend.id}
                 className={`p-4 rounded-lg border ${
@@ -934,45 +1139,41 @@ const Admin = () => {
                       {friend.name} {friend.surname}
                     </p>
                   </div>
-                  <span className={`px-2 py-1 text-xs rounded ${
-                    friend.status === "accepted"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-yellow-100 text-yellow-800"
-                  }`}>
-                    {friend.status}
-                  </span>
                 </div>
-                <p className="text-sm">
+                <p className="text-sm mb-3">
                   {t.collectionSize || "Collection"}: {friend.collection_size} items
                 </p>
-                {friend.status === "pending" && (
+                <div className="flex gap-2">
                   <button
-                    onClick={async () => {
-                      const token = localStorage.getItem("token");
-                      if (!token) return;
-                      try {
-                        const response = await fetch(
-                          `http://localhost:5000/api/friends/accept/${friend.id}`,
-                          { method: "PATCH", headers: { Authorization: `Bearer ${token}` } }
-                        );
-                        if (response.ok) {
-                          alert("Friend request accepted!");
-                          fetchUserAnalytics();
-                        }
-                      } catch (err) {
-                        console.error("Error accepting friend:", err);
-                      }
-                    }}
-                    className="mt-2 w-full px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded"
+                    onClick={() => handleStartChat(friend)}
+                    className={`flex-1 px-3 py-2 rounded ${
+                      isDarkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
+                    } text-white text-sm`}
                   >
-                    {t.acceptRequest || "Accept"}
+                    {t.chat || "Chat"}
                   </button>
-                )}
+                  <button
+                    onClick={() => handleRemoveFriend(friend.id)}
+                    className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
+                  >
+                    {t.remove || "Remove"}
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Chat Modal */}
+      {showChat && selectedFriend && (
+        <ChatComponent 
+          isDarkMode={isDarkMode}
+          user={currentUser}
+          friend={selectedFriend}
+          onClose={() => setShowChat(false)}
+        />
+      )}
     </div>
   );
 

@@ -534,7 +534,19 @@ const getOrCreateConversation = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Get conversation
+    // Check if they are friends
+    const friendship = await pool.query(
+      `SELECT * FROM friendships 
+       WHERE ((user_id = $1 AND friend_id = $2) OR (user_id = $2 AND friend_id = $1))
+       AND status = 'accepted'`,
+      [userId, friendId]
+    );
+
+    if (friendship.rows.length === 0) {
+      return res.status(403).json({ error: "You must be friends to chat" });
+    }
+
+    // Get or create conversation
     let conv = await pool.query(
       `SELECT id FROM conversations 
        WHERE (user1_id = $1 AND user2_id = $2) OR (user1_id = $2 AND user2_id = $1)`,
@@ -546,7 +558,7 @@ const getOrCreateConversation = async (req, res) => {
       const result = await pool.query(
         `INSERT INTO conversations (user1_id, user2_id) 
          VALUES ($1, $2) RETURNING id`,
-        [userId, friendId]
+        [Math.min(userId, friendId), Math.max(userId, friendId)]
       );
       conv = result;
     }
@@ -2485,7 +2497,233 @@ app.post('/api/friends/request', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Failed to send request' });
   }
 });
+// Add these new endpoints to your server.js file
 
+// ==========================================
+// IMPROVED FRIEND SYSTEM ENDPOINTS
+// ==========================================
+
+// Get incoming friend requests (pending requests where user is the recipient)
+app.get('/api/friends/requests/incoming', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const requests = await pool.query(`
+      SELECT 
+        f.id,
+        u.id as sender_id,
+        u.login,
+        u.name,
+        u.surname,
+        f.created_at,
+        (SELECT COUNT(*) FROM collection WHERE user_id = u.id) as collection_size
+      FROM friendships f
+      JOIN users u ON f.user_id = u.id
+      WHERE f.friend_id = $1 AND f.status = 'pending'
+      ORDER BY f.created_at DESC
+    `, [userId]);
+
+    res.json(requests.rows);
+  } catch (err) {
+    console.error('Error fetching incoming requests:', err);
+    res.status(500).json({ error: 'Failed to fetch requests' });
+  }
+});
+
+// Get outgoing friend requests (pending requests sent by user)
+app.get('/api/friends/requests/outgoing', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const requests = await pool.query(`
+      SELECT 
+        f.id,
+        u.id as recipient_id,
+        u.login,
+        u.name,
+        u.surname,
+        f.created_at
+      FROM friendships f
+      JOIN users u ON f.friend_id = u.id
+      WHERE f.user_id = $1 AND f.status = 'pending'
+      ORDER BY f.created_at DESC
+    `, [userId]);
+
+    res.json(requests.rows);
+  } catch (err) {
+    console.error('Error fetching outgoing requests:', err);
+    res.status(500).json({ error: 'Failed to fetch requests' });
+  }
+});
+
+// Reject/Cancel friend request
+app.delete('/api/friends/request/:friendshipId', authenticateToken, async (req, res) => {
+  const { friendshipId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    // Verify user is part of this friendship request
+    const friendship = await pool.query(
+      'SELECT user_id, friend_id FROM friendships WHERE id = $1',
+      [friendshipId]
+    );
+
+    if (friendship.rows.length === 0) {
+      return res.status(404).json({ error: 'Request not found' });
+    }
+
+    const { user_id, friend_id } = friendship.rows[0];
+    
+    // User can delete if they are sender or recipient
+    if (user_id !== userId && friend_id !== userId) {
+      return res.status(403).json({ error: 'Not authorized' });
+    }
+
+    await pool.query('DELETE FROM friendships WHERE id = $1', [friendshipId]);
+
+    res.json({ message: 'Friend request removed' });
+  } catch (err) {
+    console.error('Error removing friend request:', err);
+    res.status(500).json({ error: 'Failed to remove request' });
+  }
+});
+
+// Remove friend (delete accepted friendship)
+app.delete('/api/friends/:friendId', authenticateToken, async (req, res) => {
+  const { friendId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    // Delete both directions of friendship
+    await pool.query(
+      `DELETE FROM friendships 
+       WHERE (user_id = $1 AND friend_id = $2) 
+          OR (user_id = $2 AND friend_id = $1)`,
+      [userId, friendId]
+    );
+
+    res.json({ message: 'Friend removed' });
+  } catch (err) {
+    console.error('Error removing friend:', err);
+    res.status(500).json({ error: 'Failed to remove friend' });
+  }
+});
+
+// ==========================================
+// IMPROVED CHAT ENDPOINTS
+// ==========================================
+
+// Get all conversations for user
+app.get('/api/chat/conversations', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const conversations = await pool.query(`
+      SELECT 
+        c.id as conversation_id,
+        CASE 
+          WHEN c.user1_id = $1 THEN u2.id
+          ELSE u1.id
+        END as friend_id,
+        CASE 
+          WHEN c.user1_id = $1 THEN u2.login
+          ELSE u1.login
+        END as friend_login,
+        CASE 
+          WHEN c.user1_id = $1 THEN u2.name
+          ELSE u1.name
+        END as friend_name,
+        (
+          SELECT m.content 
+          FROM messages m 
+          WHERE m.conversation_id = c.id 
+          ORDER BY m.created_at DESC 
+          LIMIT 1
+        ) as last_message,
+        (
+          SELECT m.created_at 
+          FROM messages m 
+          WHERE m.conversation_id = c.id 
+          ORDER BY m.created_at DESC 
+          LIMIT 1
+        ) as last_message_time,
+        (
+          SELECT COUNT(*) 
+          FROM messages m 
+          WHERE m.conversation_id = c.id 
+            AND m.sender_id != $1 
+            AND m.is_read = false
+        ) as unread_count
+      FROM conversations c
+      JOIN users u1 ON c.user1_id = u1.id
+      JOIN users u2 ON c.user2_id = u2.id
+      WHERE c.user1_id = $1 OR c.user2_id = $1
+      ORDER BY last_message_time DESC NULLS LAST
+    `, [userId]);
+
+    res.json(conversations.rows);
+  } catch (err) {
+    console.error('Error fetching conversations:', err);
+    res.status(500).json({ error: 'Failed to fetch conversations' });
+  }
+});
+
+// Mark messages as read
+app.patch('/api/chat/conversation/:conversation_id/read', authenticateToken, async (req, res) => {
+  const { conversation_id } = req.params;
+  const userId = req.user.id;
+
+  try {
+    // Verify user is part of conversation
+    const conv = await pool.query(
+      'SELECT user1_id, user2_id FROM conversations WHERE id = $1',
+      [conversation_id]
+    );
+
+    if (conv.rows.length === 0) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+
+    const { user1_id, user2_id } = conv.rows[0];
+    if (userId !== user1_id && userId !== user2_id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Mark all messages in conversation as read for this user
+    await pool.query(
+      `UPDATE messages 
+       SET is_read = true 
+       WHERE conversation_id = $1 AND sender_id != $2`,
+      [conversation_id, userId]
+    );
+
+    res.json({ message: 'Messages marked as read' });
+  } catch (err) {
+    console.error('Error marking messages as read:', err);
+    res.status(500).json({ error: 'Failed to mark messages as read' });
+  }
+});
+
+// Get unread message count
+app.get('/api/chat/unread-count', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const result = await pool.query(`
+      SELECT COUNT(*) as count
+      FROM messages m
+      JOIN conversations c ON m.conversation_id = c.id
+      WHERE (c.user1_id = $1 OR c.user2_id = $1)
+        AND m.sender_id != $1
+        AND m.is_read = false
+    `, [userId]);
+
+    res.json({ count: parseInt(result.rows[0].count) });
+  } catch (err) {
+    console.error('Error getting unread count:', err);
+    res.status(500).json({ error: 'Failed to get unread count' });
+  }
+});
 // Accept friend request
 app.patch('/api/friends/accept/:friendId', authenticateToken, async (req, res) => {
   const { friendId } = req.params;

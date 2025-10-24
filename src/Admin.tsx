@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { translations } from "./Translations/TranslationAdmin";
 import ItemList from "./ItemList.tsx";
 import { motion, AnimatePresence } from "framer-motion";
+import ChatComponent from './ChatComponent';
 
 // SVG Icons
 import MoonIcon from "./assets/moon.svg?react";
@@ -423,22 +424,23 @@ const handleRemoveFriend = async (friendId: string) => {
   }
 };
 
-const handleStartChat = async (friend: any) => {
-  const token = localStorage.getItem("token");
-  if (!token) return;
-  try {
-    const response = await fetch(`http://localhost:5000/api/chat/conversation/${friend.id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (response.ok) {
-      const data = await response.json();
-      setSelectedFriend({ ...friend, conversation_id: data.conversation_id });
-      setShowChat(true);
+  // Chat states
+  const handleStartChat = async (friend: any) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const response = await fetch(`http://localhost:5000/api/chat/conversation/${friend.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setSelectedFriend({ ...friend, conversation_id: data.conversation_id });
+        setShowChat(true);
+      }
+    } catch (err) {
+      console.error("Error starting chat:", err);
     }
-  } catch (err) {
-    console.error("Error starting chat:", err);
-  }
-};
+  };
 
   // 🔹 Fetch admin analytics data
   const fetchAdminAnalytics = async () => {
@@ -1169,7 +1171,7 @@ const handleStartChat = async (friend: any) => {
       {showChat && selectedFriend && (
         <ChatComponent 
           isDarkMode={isDarkMode}
-          user={currentUser}
+          user={user}
           friend={selectedFriend}
           onClose={() => setShowChat(false)}
         />

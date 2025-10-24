@@ -1,14 +1,49 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageCircle, Send, X, Users } from 'lucide-react';
 
-const ChatComponent = ({ isDarkMode, user, onClose }) => {
-  const [conversations, setConversations] = useState([]);
-  const [selectedConversation, setSelectedConversation] = useState(null);
-  const [messages, setMessages] = useState([]);
+interface ChatComponentProps {
+  isDarkMode: boolean;
+  user: {
+    id: number;
+    login: string;
+    name: string;
+  } | null;
+  friend?: {
+    id: number;
+    login: string;
+    name: string;
+    conversation_id?: string;
+  };
+  onClose: () => void;
+}
+
+interface Conversation {
+  conversation_id: string;
+  friend_id: number;
+  friend_login: string;
+  friend_name: string;
+  last_message: string | null;
+  last_message_time: string | null;
+  unread_count: number;
+}
+
+interface Message {
+  id: number;
+  conversation_id: string;
+  sender_id: number;
+  content: string;
+  created_at: string;
+  is_read: boolean;
+}
+
+const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend, onClose }) => {
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const messagesEndRef = useRef(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const fetchConversations = async () => {
     const token = localStorage.getItem('token');
@@ -19,7 +54,7 @@ const ChatComponent = ({ isDarkMode, user, onClose }) => {
       if (response.ok) {
         const data = await response.json();
         setConversations(data);
-        const total = data.reduce((sum, conv) => sum + (conv.unread_count || 0), 0);
+        const total = data.reduce((sum: number, conv: Conversation) => sum + (conv.unread_count || 0), 0);
         setUnreadCount(total);
       }
     } catch (err) {
@@ -27,7 +62,7 @@ const ChatComponent = ({ isDarkMode, user, onClose }) => {
     }
   };
 
-  const fetchMessages = async (conversationId) => {
+  const fetchMessages = async (conversationId: string) => {
     const token = localStorage.getItem('token');
     setLoading(true);
     try {
@@ -80,7 +115,7 @@ const ChatComponent = ({ isDarkMode, user, onClose }) => {
     }
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -98,6 +133,19 @@ const ChatComponent = ({ isDarkMode, user, onClose }) => {
   }, []);
 
   useEffect(() => {
+    if (messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      const isAutoScrollNeeded = lastMsg.sender_id !== user?.id;
+      if (isAutoScrollNeeded) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        // Own message: scroll instantly (no animation)
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+      }
+    }
+  }, [messages, user?.id]);
+
+  useEffect(() => {
     if (selectedConversation) {
       fetchMessages(selectedConversation.conversation_id);
       const interval = setInterval(() => {
@@ -107,10 +155,45 @@ const ChatComponent = ({ isDarkMode, user, onClose }) => {
     }
   }, [selectedConversation]);
 
-  const formatTime = (timestamp) => {
+    // Replace the current friend-handling useEffect with this one:
+  useEffect(() => {
+    if (!friend || !user) return;
+
+    const openFriendChat = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        // Ensure conversation exists (backend should return or create one)
+        const convResponse = await fetch(`http://localhost:5000/api/chat/conversation/${friend.id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (convResponse.ok) {
+          const convData = await convResponse.json(); // { conversation_id, ... }
+          const conv: Conversation = {
+            conversation_id: convData.conversation_id,
+            friend_id: friend.id,
+            friend_login: friend.login,
+            friend_name: friend.name,
+            last_message: null,
+            last_message_time: null,
+            unread_count: 0
+          };
+          setSelectedConversation(conv);
+        }
+      } catch (err) {
+        console.error('Failed to open chat with friend:', err);
+      }
+    };
+
+    openFriendChat();
+  }, [friend, user]); // Only depends on friend and user
+
+  const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
-    const diff = now - date;
+    const diff = now.getTime() - date.getTime();
     
     if (diff < 60000) return 'Just now';
     if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
@@ -119,7 +202,7 @@ const ChatComponent = ({ isDarkMode, user, onClose }) => {
   };
 
   return (
-    <div className={`fixed bottom-4 right-4 w-96 h-[600px] rounded-lg shadow-2xl flex flex-col ${
+    <div className={`fixed bottom-4 right-4 w-96 h-[600px] rounded-lg shadow-2xl flex flex-col z-50 ${
       isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
     }`}>
       <div className={`flex items-center justify-between p-4 border-b ${
@@ -154,7 +237,7 @@ const ChatComponent = ({ isDarkMode, user, onClose }) => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden flex flex-col"> {/* 👈 Changed: Added 'flex flex-col' */}
         {!selectedConversation ? (
           <div className="h-full overflow-y-auto">
             {conversations.length === 0 ? (
@@ -196,7 +279,8 @@ const ChatComponent = ({ isDarkMode, user, onClose }) => {
           </div>
         ) : (
           <>
-            <div className="h-full overflow-y-auto p-4 space-y-3">
+            {/* 👇 Changed: Added 'flex-1' to make this div take available space */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {loading ? (
                 <div className="text-center text-gray-500">Loading messages...</div>
               ) : messages.length === 0 ? (
@@ -216,10 +300,10 @@ const ChatComponent = ({ isDarkMode, user, onClose }) => {
                           isOwn
                             ? isDarkMode
                               ? 'bg-yellow-600 text-white'
-                              : 'bg-green-600 text-white'
+                              : 'bg-blue-100 text-gray-900' // 👈 Changed: Use a lighter blue for light theme
                             : isDarkMode
-                            ? 'bg-gray-700'
-                            : 'bg-gray-200'
+                              ? 'bg-gray-700'
+                              : 'bg-gray-200'
                         }`}
                       >
                         <p className="text-sm break-words">{msg.content}</p>
@@ -234,6 +318,7 @@ const ChatComponent = ({ isDarkMode, user, onClose }) => {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Input area remains unchanged */}
             <div className={`p-4 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <div className="flex gap-2">
                 <input

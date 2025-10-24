@@ -21,6 +21,7 @@ import StarIcon from "./assets/star.svg?react";
 import PlusIcon from "./assets/plus.svg?react";
 import ChartIcon from "./assets/chart.svg?react";
 import UsersIcon from "./assets/users.svg?react";
+import ChatComponent from './ChatComponent';
 
 // Flags
 import UKFlag from "./assets/flags/UK.svg?react";
@@ -1046,6 +1047,7 @@ const handleRemoveFriend = async (friendId: string) => {
                       isDarkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
                     } text-white text-sm`}
                   >
+
                     {t.chat || "Chat"}
                   </button>
                   <button
@@ -1065,7 +1067,7 @@ const handleRemoveFriend = async (friendId: string) => {
       {showChat && selectedFriend && (
         <ChatComponent 
           isDarkMode={isDarkMode}
-          user={currentUser}
+          user={user}
           friend={selectedFriend}
           onClose={() => setShowChat(false)}
         />

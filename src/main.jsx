@@ -95,6 +95,7 @@ import NotFound from './NotFound';
 import CollectionPage from "./CollectionPage";
 import WishlistPage from "./WishlistPage";
 import Requests from "./Requests";
+import ChatComponent from "./ChatComponent";
 
 import CategoriesSite from './CategoriesSite';
 import MostVisitedSite from './MostVisitedSite';
@@ -130,6 +131,7 @@ root.render(
             <Route path="/requests" element={<Requests />} />
             <Route path="/categories" element={<CategoriesSite />} />
             <Route path="/mostVisited" element={<MostVisitedSite />} />
+            {/* <Route path="/chat" element={<ChatComponent />} /> */}
             <Route path="/404" element={<NotFound />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

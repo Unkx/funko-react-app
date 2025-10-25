@@ -4,6 +4,7 @@ import { translations } from "./Translations/TranslationAdmin";
 import ItemList from "./ItemList.tsx";
 import { motion, AnimatePresence } from "framer-motion";
 import ChatComponent from './ChatComponent';
+import FriendProfileModal from './FriendProfileModal';
 
 // SVG Icons
 import MoonIcon from "./assets/moon.svg?react";
@@ -187,6 +188,18 @@ const Admin = () => {
   const [siteStats, setSiteStats] = useState<SiteStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
+  // Social state
+  const [showFriendProfile, setShowFriendProfile] = useState(false);
+  const [selectedFriendForProfile, setSelectedFriendForProfile] = useState<any>(null);  
+  const handleViewFriendProfile = (friend: any) => {
+  setSelectedFriendForProfile(friend);
+  setShowFriendProfile(true);
+  };
+  // const profileResponse = await fetch(`http://localhost:5000/api/users/${friendId}`, ...);
+  // const collectionResponse = await fetch(`http://localhost:5000/api/collection/user/${friendId}`, ...);
+  // const wishlistResponse = await fetch(`http://localhost:5000/api/wishlist/user/${friendId}`, ...); 
+
+
   // Item related state
   const [showAddItemModal, setShowAddItemModal] = useState(false);
   const [newItem, setNewItem] = useState<Item>({
@@ -337,7 +350,6 @@ const Admin = () => {
   };
 
   // 🔹 Social functions
-  // Add these functions (identical to DashboardSite)
 const fetchIncomingRequests = async () => {
   const token = localStorage.getItem("token");
   if (!token) return;
@@ -423,6 +435,7 @@ const handleRemoveFriend = async (friendId: string) => {
     console.error("Error removing friend:", err);
   }
 };
+
 
   // Chat states
   const handleStartChat = async (friend: any) => {
@@ -1145,22 +1158,30 @@ const handleRemoveFriend = async (friendId: string) => {
                 <p className="text-sm mb-3">
                   {t.collectionSize || "Collection"}: {friend.collection_size} items
                 </p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleStartChat(friend)}
-                    className={`flex-1 px-3 py-2 rounded ${
-                      isDarkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
-                    } text-white text-sm`}
-                  >
-                    {t.chat || "Chat"}
-                  </button>
-                  <button
-                    onClick={() => handleRemoveFriend(friend.id)}
-                    className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
-                  >
-                    {t.remove || "Remove"}
-                  </button>
-                </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleViewFriendProfile(friend)}
+                      className={`flex-1 px-3 py-2 rounded ${
+                        isDarkMode ? "bg-purple-600 hover:bg-purple-700" : "bg-purple-500 hover:bg-purple-600"
+                      } text-white text-sm`}
+                    >
+                      {t.viewProfile || "View Profile"}
+                    </button>
+                    <button
+                      onClick={() => handleStartChat(friend)}
+                      className={`flex-1 px-3 py-2 rounded ${
+                        isDarkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
+                      } text-white text-sm`}
+                    >
+                      {t.chat || "Chat"}
+                    </button>
+                    <button
+                      onClick={() => handleRemoveFriend(friend.id)}
+                      className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded text-sm"
+                    >
+                      {t.remove || "Remove"}
+                    </button>
+                  </div>
               </div>
             ))}
           </div>
@@ -1171,9 +1192,21 @@ const handleRemoveFriend = async (friendId: string) => {
       {showChat && selectedFriend && (
         <ChatComponent 
           isDarkMode={isDarkMode}
-          user={user}
+          user={currentUser}
           friend={selectedFriend}
           onClose={() => setShowChat(false)}
+        />
+      )}
+      {/* Friend Profile Modal */}
+      {showFriendProfile && selectedFriendForProfile && (
+        <FriendProfileModal
+          friendId={selectedFriendForProfile.id}
+          isDarkMode={isDarkMode}
+          onClose={() => {
+            setShowFriendProfile(false);
+            setSelectedFriendForProfile(null);
+          }}
+          t={t}
         />
       )}
     </div>

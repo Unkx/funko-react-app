@@ -36,3 +36,156 @@ SELECT
 FROM information_schema.columns
 WHERE table_name IN ('messages', 'conversations', 'friendships')
 ORDER BY table_name, ordinal_position;
+
+//Friend 
+-- ==========================================
+-- DATABASE SCHEMA UPDATES FOR FRIEND PROFILES
+-- Run these SQL commands in your PostgreSQL database
+-- ==========================================
+
+-- 1. Add missing columns to wishlist table (if they don't exist)
+ALTER TABLE wishlist 
+ADD COLUMN IF NOT EXISTS priority VARCHAR(10) DEFAULT 'medium',
+ADD COLUMN IF NOT EXISTS max_price DECIMAL(10,2),
+ADD COLUMN IF NOT EXISTS target_condition VARCHAR(50),
+ADD COLUMN IF NOT EXISTS notes TEXT;
+
+-- 2. Add missing columns to collection table (if they don't exist)
+ALTER TABLE collection
+ADD COLUMN IF NOT EXISTS notes TEXT,
+ADD COLUMN IF NOT EXISTS purchase_price DECIMAL(10,2),
+ADD COLUMN IF NOT EXISTS series VARCHAR(255),
+ADD COLUMN IF NOT EXISTS added_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+-- 3. Ensure loyalty_score column exists in users table
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS loyalty_score INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS days_active INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS last_activity_date DATE;
+
+-- 4. Create index for better performance on friend queries
+CREATE INDEX IF NOT EXISTS idx_friendships_user_friend 
+ON friendships(user_id, friend_id, status);
+
+CREATE INDEX IF NOT EXISTS idx_friendships_friend_user 
+ON friendships(friend_id, user_id, status);
+
+-- 5. Create index for collection queries
+CREATE INDEX IF NOT EXISTS idx_collection_user_id 
+ON collection(user_id);
+
+-- 6. Create index for wishlist queries
+CREATE INDEX IF NOT EXISTS idx_wishlist_user_id 
+ON wishlist(user_id);
+
+-- 7. Ensure conversations table has proper structure
+CREATE TABLE IF NOT EXISTS conversations (
+    id SERIAL PRIMARY KEY,
+    user1_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user2_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT conversations_users_unique UNIQUE (user1_id, user2_id),
+    CONSTRAINT conversations_different_users CHECK (user1_id < user2_id)
+);
+
+-- 8. Ensure messages table has proper structure
+CREATE TABLE IF NOT EXISTS messages (
+    id SERIAL PRIMARY KEY,
+    conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 9. Add indexes for messages
+CREATE INDEX IF NOT EXISTS idx_messages_conversation 
+ON messages(conversation_id, created_at);
+
+CREATE INDEX IF NOT EXISTS idx_messages_unread 
+ON messages(conversation_id, is_read) WHERE is_read = FALSE;
+
+-- 10. Verify data integrity
+-- Check if any existing wishlist items need default priority
+UPDATE wishlist 
+SET priority = 'medium' 
+WHERE priority IS NULL;
+
+-- 11. Optional: Add CHECK constraint for priority values
+ALTER TABLE wishlist
+ADD CONSTRAINT wishlist_priority_check 
+CHECK (priority IN ('low', 'medium', 'high'));
+
+-- 12. Optional: Add CHECK constraint for condition values
+ALTER TABLE collection
+ADD CONSTRAINT collection_condition_check 
+CHECK (condition IN ('mint', 'near_mint', 'good', 'fair', 'poor'));
+
+-- 13. View to easily see friend connections (optional, for debugging)
+CREATE OR REPLACE VIEW v_friend_connections AS
+SELECT 
+    u1.id as user_id,
+    u1.login as user_login,
+    u2.id as friend_id,
+    u2.login as friend_login,
+    f.status,
+    f.created_at
+FROM friendships f
+JOIN users u1 ON f.user_id = u1.id
+JOIN users u2 ON f.friend_id = u2.id;
+
+-- 14. Function to get mutual friends count (optional)
+CREATE OR REPLACE FUNCTION get_mutual_friends_count(user1 INT, user2 INT)
+RETURNS INTEGER AS $$
+    SELECT COUNT(*)::INTEGER
+    FROM (
+        SELECT friend_id FROM friendships WHERE user_id = user1 AND status = 'accepted'
+        INTERSECT
+        SELECT friend_id FROM friendships WHERE user_id = user2 AND status = 'accepted'
+    ) mutual;
+$$ LANGUAGE SQL;
+
+-- ==========================================
+-- VERIFICATION QUERIES
+-- Run these to verify the updates worked
+-- ==========================================
+
+-- Check wishlist table structure
+SELECT column_name, data_type, is_nullable
+FROM information_schema.columns
+WHERE table_name = 'wishlist'
+ORDER BY ordinal_position;
+
+-- Check collection table structure
+SELECT column_name, data_type, is_nullable
+FROM information_schema.columns
+WHERE table_name = 'collection'
+ORDER BY ordinal_position;
+
+-- Check indexes
+SELECT 
+    tablename,
+    indexname,
+    indexdef
+FROM pg_indexes
+WHERE tablename IN ('wishlist', 'collection', 'friendships', 'messages')
+ORDER BY tablename, indexname;
+
+-- Check for any existing friend connections
+SELECT 
+    COUNT(*) as total_friendships,
+    COUNT(*) FILTER (WHERE status = 'accepted') as accepted,
+    COUNT(*) FILTER (WHERE status = 'pending') as pending
+FROM friendships;
+
+-- Example wishlist table definition
+CREATE TABLE wishlist (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  funko_id TEXT REFERENCES funko_items(id) ON DELETE CASCADE,
+  added_at TIMESTAMP DEFAULT NOW(),
+  priority TEXT CHECK (priority IN ('low', 'medium', 'high')),
+  max_price NUMERIC(10, 2),
+  target_condition TEXT,
+  UNIQUE(user_id, funko_id)
+);

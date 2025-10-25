@@ -2979,5 +2979,235 @@ const startServer = async () => {
     process.exit(1);
   }
 };
+// ==========================================
+// FRIEND PROFILE ENDPOINTS
+// Add these to your server.js file
+// ==========================================
+
+// Get public user profile (only for friends)
+app.get('/api/users/public/:userId', authenticateToken, async (req, res) => {
+  const { userId } = req.params;
+  const currentUserId = req.user.id;
+
+  try {
+    // Check if they are friends
+    const friendship = await pool.query(
+      `SELECT * FROM friendships 
+       WHERE ((user_id = $1 AND friend_id = $2) OR (user_id = $2 AND friend_id = $1))
+       AND status = 'accepted'`,
+      [currentUserId, userId]
+    );
+
+    if (friendship.rows.length === 0) {
+      return res.status(403).json({ error: 'You can only view profiles of your friends' });
+    }
+
+    // Get user data
+    const user = await pool.query(
+      `SELECT id, login, name, surname, created_at, loyalty_score
+       FROM users WHERE id = $1`,
+      [userId]
+    );
+
+    if (user.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(user.rows[0]);
+  } catch (err) {
+    console.error('Error fetching public profile:', err);
+    res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
+
+// Get public collection of a user (only for friends)
+app.get('/api/collection/public/:userId', authenticateToken, async (req, res) => {
+  const { userId } = req.params;
+  const currentUserId = req.user.id;
+
+  try {
+    // Check if they are friends
+    const friendship = await pool.query(
+      `SELECT * FROM friendships 
+       WHERE ((user_id = $1 AND friend_id = $2) OR (user_id = $2 AND friend_id = $1))
+       AND status = 'accepted'`,
+      [currentUserId, userId]
+    );
+
+    if (friendship.rows.length === 0) {
+      return res.status(403).json({ error: 'You can only view collections of your friends' });
+    }
+
+    // Get collection items
+    const collection = await pool.query(
+      `SELECT 
+        fi.id,
+        fi.title,
+        fi.number,
+        fi.image_name,
+        fi.series,
+        c.condition,
+        c.purchase_date as added_date
+       FROM collection c
+       JOIN funko_items fi ON c.funko_id = fi.id
+       WHERE c.user_id = $1
+       ORDER BY c.purchase_date DESC`,
+      [userId]
+    );
+
+    // Parse series from JSONB to array
+    const items = collection.rows.map(item => ({
+      ...item,
+      series: item.series ? (typeof item.series === 'string' ? JSON.parse(item.series) : item.series) : []
+    }));
+
+    res.json(items);
+  } catch (err) {
+    console.error('Error fetching public collection:', err);
+    res.status(500).json({ error: 'Failed to fetch collection' });
+  }
+});
+
+// GET /api/collection/user/:userId
+app.get('/api/collection/user/:userId', authenticateToken, async (req, res) => {
+  const { userId } = req.params;
+  // Optional: check if user allows public collection, or if requester is a friend
+  try {
+    const items = await db.query(
+      'SELECT * FROM collection WHERE user_id = $1 AND is_public = true',
+      [userId]
+    );
+    res.json(items.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GET /api/wishlist/user/:userId
+app.get('/api/wishlist/user/:userId', authenticateToken, async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const items = await db.query(
+      'SELECT * FROM wishlist WHERE user_id = $1 AND is_public = true',
+      [userId]
+    );
+    res.json(items.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Get public wishlist of a user (only for friends)
+app.get('/api/wishlist/public/:userId', authenticateToken, async (req, res) => {
+  const { userId } = req.params;
+  const currentUserId = req.user.id;
+
+  try {
+    // Check if they are friends
+    const friendship = await pool.query(
+      `SELECT * FROM friendships 
+       WHERE ((user_id = $1 AND friend_id = $2) OR (user_id = $2 AND friend_id = $1))
+       AND status = 'accepted'`,
+      [currentUserId, userId]
+    );
+
+    if (friendship.rows.length === 0) {
+      return res.status(403).json({ error: 'You can only view wishlists of your friends' });
+    }
+
+    // Get wishlist items
+    const wishlist = await pool.query(
+      `SELECT 
+        fi.id,
+        fi.title,
+        fi.number,
+        fi.image_name,
+        fi.series,
+        w.added_at as added_date,
+        w.priority,
+        w.max_price,
+        w.target_condition
+       FROM wishlist w
+       JOIN funko_items fi ON w.funko_id = fi.id
+       WHERE w.user_id = $1
+       ORDER BY w.added_at DESC`,
+      [userId]
+    );
+
+    // Parse series from JSONB to array
+    const items = wishlist.rows.map(item => ({
+      ...item,
+      series: item.series ? (typeof item.series === 'string' ? JSON.parse(item.series) : item.series) : []
+    }));
+
+    res.json(items);
+  } catch (err) {
+    console.error('Error fetching public wishlist:', err);
+    res.status(500).json({ error: 'Failed to fetch wishlist' });
+  }
+});
+
+// Optional: Get detailed friend statistics
+app.get('/api/friends/:friendId/stats', authenticateToken, async (req, res) => {
+  const { friendId } = req.params;
+  const currentUserId = req.user.id;
+
+  try {
+    // Check if they are friends
+    const friendship = await pool.query(
+      `SELECT * FROM friendships 
+       WHERE ((user_id = $1 AND friend_id = $2) OR (user_id = $2 AND friend_id = $1))
+       AND status = 'accepted'`,
+      [currentUserId, friendId]
+    );
+
+    if (friendship.rows.length === 0) {
+      return res.status(403).json({ error: 'You can only view stats of your friends' });
+    }
+
+    // Get collection stats
+    const collectionCount = await pool.query(
+      'SELECT COUNT(*) as count FROM collection WHERE user_id = $1',
+      [friendId]
+    );
+
+    const wishlistCount = await pool.query(
+      'SELECT COUNT(*) as count FROM wishlist WHERE user_id = $1',
+      [friendId]
+    );
+
+    // Get unique series
+    const uniqueSeries = await pool.query(
+      `SELECT COUNT(DISTINCT series) as count 
+       FROM collection c
+       JOIN funko_items fi ON c.funko_id = fi.id
+       WHERE c.user_id = $1`,
+      [friendId]
+    );
+
+    // Get most recent additions
+    const recentItems = await pool.query(
+      `SELECT fi.title, fi.number, c.purchase_date as added_date
+       FROM collection c
+       JOIN funko_items fi ON c.funko_id = fi.id
+       WHERE c.user_id = $1
+       ORDER BY c.purchase_date DESC
+       LIMIT 5`,
+      [friendId]
+    );
+
+    res.json({
+      collection_count: parseInt(collectionCount.rows[0].count),
+      wishlist_count: parseInt(wishlistCount.rows[0].count),
+      unique_series: parseInt(uniqueSeries.rows[0].count),
+      recent_additions: recentItems.rows
+    });
+  } catch (err) {
+    console.error('Error fetching friend stats:', err);
+    res.status(500).json({ error: 'Failed to fetch statistics' });
+  }
+});
 
 startServer();

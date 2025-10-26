@@ -182,7 +182,6 @@ FROM friendships;
 CREATE TABLE wishlist (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  funko_id TEXT REFERENCES funko_items(id) ON DELETE CASCADE,
   added_at TIMESTAMP DEFAULT NOW(),
   priority TEXT CHECK (priority IN ('low', 'medium', 'high')),
   max_price NUMERIC(10, 2),

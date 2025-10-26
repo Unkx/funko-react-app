@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { translations } from "./Translations/TranslationsWelcomeSite";
 import "./WelcomeSite.css";
+import { FunkoItems } from "./FunkoItems";
 
 interface FunkoItem {
   id: string;
@@ -105,65 +106,11 @@ const CategoriesSite: React.FC = () => {
   const t = translations[language] || translations["EN"];
 
   // Fetch items from API
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        setError("");
-        
-        // Try multiple sources
-        let data: FunkoItem[] = [];
-        
-        try {
-          // First try your backend
-          const response = await fetch("http://localhost:5000/api/items");
-          if (response.ok) {
-            data = await response.json();
-          }
-        } catch (backendError) {
-          console.log("Backend not available, trying GitHub...");
-        }
-        
-        // If backend fails, try GitHub
-        if (data.length === 0) {
-          const response = await fetch(
-            "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
-          );
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          const rawData = await response.json();
-          
-          // Generate IDs for items
-          data = rawData.map((item: any) => ({
-            ...item,
-            id: `${item.title?.trim() || ""}-${item.number?.trim() || ""}`.replace(/\s+/g, "-")
-          }));
-        }
-
-        console.log("📦 Total items loaded:", data.length);
-        setItems(data);
-
-        // Debug category distribution
-        console.log("📊 Category distribution:");
-        FUNKO_CATEGORIES.forEach(cat => {
-          const matches = data.filter(item => matchesCategory(item, cat.id));
-          console.log(`   ${cat.name}: ${matches.length} items`);
-          if (matches.length > 0) {
-            console.log(`      Sample: ${matches.slice(0, 3).map(i => i.category).join(", ")}`);
-          }
-        });
-
-      } catch (err) {
-        console.error("Error loading data:", err);
-        setError("Failed to load items. Please try again later.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, []);
+ // Remove the entire useEffect and replace it with this:
+useEffect(() => {
+  setIsLoading(false);
+  setItems(FunkoItems); // <-- Use your hardcoded array with real images!
+}, []);
 
   // Enhanced category matching logic
   const CATEGORY_KEYWORDS: Record<string, string[]> = {
@@ -384,12 +331,9 @@ const matchesCategory = (item: FunkoItem, categoryId: string): boolean => {
                             className="block"
                           >
                             <img
-                              src={item.imageName || "/src/assets/placeholder.png"}
+                              src={item.imageName}
                               alt={item.title}
                               className="w-full h-20 object-contain rounded bg-gray-100 dark:bg-gray-600"
-                              onError={(e) => {
-                                e.currentTarget.src = "/src/assets/placeholder.png";
-                              }}
                             />
                           </Link>
                         ))}

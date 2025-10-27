@@ -313,35 +313,56 @@ const SearchSite = () => {
   };
 
   // Combine funkoData and adminItems for processing
-  const allItems = useMemo(() => {
-    const transformedAdminItems = adminItems.map((item: any) => ({
-      ...item,
-      title: item.title || "",
-      number: item.number || "",
-      series: Array.isArray(item.series) 
-        ? item.series 
-        : item.category 
-          ? [item.category] 
-          : ["Unknown"],
-      exclusive: item.exclusive || false,
-      id: `admin-${item.id}`,
-    }));
+const allItems = useMemo(() => {
+  const transformedAdminItems = adminItems.map((item: any) => ({
+    ...item,
+    title: item.title || "",
+    number: item.number || "",
+    series: Array.isArray(item.series)
+      ? item.series
+      : item.category
+      ? [item.category]
+      : ["Unknown"],
+    exclusive: item.exclusive || false,
+    id: `admin-${item.id}`,
+    isAdmin: true,
+  }));
 
-    const transformedFunkoData = funkoData.map((item: any) => ({
-      ...item,
-      title: item.title || "",
-      number: item.number || "",
-      series: Array.isArray(item.series) 
-        ? item.series 
-        : item.series 
-          ? [item.series] 
-          : ["Unknown"],
-      exclusive: item.exclusive || false,
-      id: item.id || generateId(item.title, item.number),
-    }));
+  const transformedFunkoData = funkoData.map((item: any) => ({
+    ...item,
+    title: item.title || "",
+    number: item.number || "",
+    series: Array.isArray(item.series)
+      ? item.series
+      : item.series
+      ? [item.series]
+      : ["Unknown"],
+    exclusive: item.exclusive || false,
+    id: item.id || generateId(item.title, item.number),
+    isAdmin: false,
+  }));
 
-    return [...transformedFunkoData, ...transformedAdminItems];
-  }, [funkoData, adminItems]);
+  // Merge both lists
+  const merged = [...transformedFunkoData, ...transformedAdminItems];
+
+    // ✅ Remove admin duplicates if a matching non-admin exists
+  const funkoKeySet = new Set(
+    transformedFunkoData.map(
+      (i) => `${i.title.toLowerCase()}|${(i.number || "").toLowerCase()}`
+    )
+  );
+
+  const unique = merged.filter((item) => {
+    if (item.isAdmin) {
+      const key = `${item.title.toLowerCase()}|${(item.number || "").toLowerCase()}`;
+      return !funkoKeySet.has(key); // remove only admin duplicates
+    }
+    return true;
+  });
+
+
+  return unique;
+}, [funkoData, adminItems]);
 
   const totalPages = Math.ceil(filteredAndSortedResults.length / itemsPerPage);
 

@@ -912,41 +912,7 @@ useEffect(() => {
       </header>
       {/* Main */}
       <main className="flex-grow container mx-auto px-4 py-8 max-w-5xl">
-        <button
-          onClick={() => navigate(-1)}
-          className={`mb-6 px-4 py-2 rounded ${
-            isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"
-          }`}
-        >
-          {t.backButton}
-        </button>
-        {/* Marketplace */}
-        <div className="mb-6 flex flex-wrap gap-3">
-          <a
-            href={`https://vinylcave.pl/pl/searchquery/${encodeURIComponent(`${funkoItem.title} ${funkoItem.number} funko pop`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`${isDarkMode ? "text-yellow-400" : "text-green-600"}`}
-          >
-            {t.searchOnVinylCave || "VinylCave"}
-          </a>
-          <a
-            href={`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(`${funkoItem.title} ${funkoItem.number} funko pop`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`${isDarkMode ? "text-yellow-400" : "text-green-600"}`}
-          >
-            eBay
-          </a>
-          <a
-            href={`https://www.amazon.com/s?k=${encodeURIComponent(`${funkoItem.title} ${funkoItem.number} funko pop`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`${isDarkMode ? "text-yellow-400" : "text-green-600"}`}
-          >
-            Amazon
-          </a>
-        </div>
+
         {/* Main details */}
         <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
           <h1 className="text-3xl font-bold mb-2">{funkoItem.title}</h1>
@@ -1023,29 +989,6 @@ useEffect(() => {
                 </button>
               ))}
             </div>
-          </div>
-          {/* Price Scraping Button */}
-          <div className="mb-6">
-            <button
-              onClick={scrapePrices}
-              disabled={isScrapingPrices}
-              className={`px-4 py-2 rounded flex items-center gap-2 ${
-                isScrapingPrices 
-                  ? "bg-gray-400 cursor-not-allowed" 
-                  : isDarkMode 
-                    ? "bg-yellow-500 text-black" 
-                    : "bg-green-600 text-white"
-              }`}
-            >
-              {isScrapingPrices ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Scraping Prices... {scrapingProgress}%</span>
-                </>
-              ) : (
-                <span>Check Current Prices</span>
-              )}
-            </button>
           </div>
           {/* Scraping Results */}
           {scrapingResults.length > 0 && (

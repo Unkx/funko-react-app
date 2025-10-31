@@ -30,6 +30,7 @@ import RussiaFlag from "/src/assets/flags/russia.svg?react";
 import FranceFlag from "/src/assets/flags/france.svg?react";
 import GermanyFlag from "/src/assets/flags/germany.svg?react";
 import SpainFlag from "/src/assets/flags/spain.svg?react";
+import CanadaFlag from "/src/assets/flags/canada.svg?react";
 
 interface User {
   id: number;
@@ -43,6 +44,7 @@ interface User {
   created_at: string;
   last_login: string;
   is_active?: boolean;
+  nationality?: string;
 }
 
 interface Item {
@@ -101,6 +103,12 @@ const countries = {
     flag: <USAFlag className="w-5 h-5" />,
     region: "North America",
     language: "EN",
+  },
+  CA : {
+    name: "Canada",
+    flag: <CanadaFlag className="w-5 h-5" />,
+    region: "North America",
+    language : "EN",
   },
   UK: {
     name: "United Kingdom",
@@ -188,6 +196,10 @@ const Admin = () => {
   const [siteStats, setSiteStats] = useState<SiteStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
+  // Account Details state
+  const [showAccountDetails, setShowAccountDetails] = useState(false);
+  const [selectedUserDetails, setSelectedUserDetails] = useState<User | null>(null);
+
   // Social state
   const [showFriendProfile, setShowFriendProfile] = useState(false);
   const [selectedFriendForProfile, setSelectedFriendForProfile] = useState<any>(null);  
@@ -195,10 +207,6 @@ const Admin = () => {
   setSelectedFriendForProfile(friend);
   setShowFriendProfile(true);
   };
-  // const profileResponse = await fetch(`http://localhost:5000/api/users/${friendId}`, ...);
-  // const collectionResponse = await fetch(`http://localhost:5000/api/collection/user/${friendId}`, ...);
-  // const wishlistResponse = await fetch(`http://localhost:5000/api/wishlist/user/${friendId}`, ...); 
-
 
   // Item related state
   const [showAddItemModal, setShowAddItemModal] = useState(false);
@@ -297,6 +305,22 @@ const Admin = () => {
     if (currentUser.id === targetUser.id) return false;
     if (isSuperAdmin(currentUser)) return true;
     return targetUser.role !== "admin";
+  };
+
+  // Helper function for date formatting
+  const formatDate = (dateString: string): string => {
+    if (!dateString) return "N/A";
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return "Invalid date";
+    }
+  };
+
+  // Handle viewing account details
+  const handleViewAccountDetails = (user: User) => {
+    setSelectedUserDetails(user);
+    setShowAccountDetails(true);
   };
 
   // 🔹 Log activity function
@@ -447,7 +471,11 @@ const handleRemoveFriend = async (friendId: string) => {
       });
       if (response.ok) {
         const data = await response.json();
-        setSelectedFriend({ ...friend, conversation_id: data.conversation_id });
+        setSelectedFriend({ 
+          ...friend, 
+          conversation_id: data.conversation_id,
+          nationality: friend.nationality || data.friend_nationality 
+        });
         setShowChat(true);
       }
     } catch (err) {
@@ -1212,6 +1240,122 @@ const handleRemoveFriend = async (friendId: string) => {
     </div>
   );
 
+  // 🔹 Render Account Details Modal
+  const renderAccountDetailsModal = () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" onClick={() => setShowAccountDetails(false)}>
+      <div className={`w-full max-w-md p-6 rounded-lg shadow-xl ${isDarkMode ? "bg-gray-800" : "bg-white"}`} onClick={(e) => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-semibold">{t.accountDetails || "Account Details"}</h3>
+          <button
+            onClick={() => setShowAccountDetails(false)}
+            className={`p-1 rounded-full ${isDarkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"}`}
+          >
+            ✕
+          </button>
+        </div>
+        
+        {selectedUserDetails && (
+          <div className="space-y-4">
+            <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-gray-50"}`}>
+              <h4 className="font-semibold mb-3 text-lg">{t.personalInformation || "Personal Information"}</h4>
+              <ul className="space-y-2 text-sm">
+                <li className="flex justify-between">
+                  <strong className="text-gray-700 dark:text-gray-300">{t.name || "Name"}:</strong> 
+                  <span>{selectedUserDetails.name || "N/A"}</span>
+                </li>
+                <li className="flex justify-between">
+                  <strong className="text-gray-700 dark:text-gray-300">{t.surname || "Surname"}:</strong> 
+                  <span>{selectedUserDetails.surname || "N/A"}</span>
+                </li>
+                <li className="flex justify-between">
+                  <strong className="text-gray-700 dark:text-gray-300">{t.email || "Email"}:</strong> 
+                  <span>{selectedUserDetails.email || "N/A"}</span>
+                </li>
+                <li className="flex justify-between">
+                  <strong className="text-gray-700 dark:text-gray-300">{t.login || "Username"}:</strong> 
+                  <span>{selectedUserDetails.login || "N/A"}</span>
+                </li>
+                <li className="flex justify-between">
+                  <strong className="text-gray-700 dark:text-gray-300">{t.gender || "Gender"}:</strong> 
+                  <span>{selectedUserDetails.gender ? (t[selectedUserDetails.gender] || selectedUserDetails.gender) : "N/A"}</span>
+                </li>
+                <li className="flex justify-between">
+                  <strong className="text-gray-700 dark:text-gray-300">{t.dateOfBirth || "Date of Birth"}:</strong> 
+                  <span>{formatDate(selectedUserDetails.date_of_birth)}</span>
+                </li>
+                <li className="flex justify-between">
+                  <strong className="text-gray-700 dark:text-gray-300">{t.nationality || "Nationality"}:</strong> 
+                  <span>{selectedUserDetails.nationality || "N/A"}</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-gray-50"}`}>
+              <h4 className="font-semibold mb-3 text-lg">{t.accountInformation || "Account Information"}</h4>
+              <ul className="space-y-2 text-sm">
+                <li className="flex justify-between">
+                  <strong className="text-gray-700 dark:text-gray-300">{t.userId || "User ID"}:</strong> 
+                  <span>{selectedUserDetails.id}</span>
+                </li>
+                <li className="flex justify-between">
+                  <strong className="text-gray-700 dark:text-gray-300">{t.role || "Role"}:</strong> 
+                  <span className={`capitalize ${selectedUserDetails.role === 'admin' ? 'text-yellow-600' : 'text-blue-600'}`}>
+                    {selectedUserDetails.role}
+                    {isSuperAdmin(selectedUserDetails) && " ★"}
+                  </span>
+                </li>
+                <li className="flex justify-between">
+                  <strong className="text-gray-700 dark:text-gray-300">{t.userSince || "User Since"}:</strong> 
+                  <span>{formatDate(selectedUserDetails.created_at)}</span>
+                </li>
+                <li className="flex justify-between">
+                  <strong className="text-gray-700 dark:text-gray-300">{t.lastLogin || "Last Login"}:</strong> 
+                  <span>{selectedUserDetails.last_login ? formatDate(selectedUserDetails.last_login) : t.never || "Never"}</span>
+                </li>
+                <li className="flex justify-between">
+                  <strong className="text-gray-700 dark:text-gray-300">{t.status || "Status"}:</strong> 
+                  <span className={selectedUserDetails.is_active ? "text-green-600" : "text-red-600"}>
+                    {selectedUserDetails.is_active ? (t.online || "Online") : (t.offline || "Offline")}
+                  </span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-2 pt-4 border-t border-gray-300 dark:border-gray-600">
+              {selectedUserDetails.role !== "admin" && (
+                <button
+                  onClick={() => {
+                    handleMakeAdmin(selectedUserDetails.id, selectedUserDetails.login);
+                    setShowAccountDetails(false);
+                  }}
+                  className={`flex-1 px-4 py-2 rounded ${
+                    isDarkMode ? "bg-yellow-600 hover:bg-yellow-700" : "bg-yellow-500 hover:bg-yellow-600"
+                  } text-black font-medium transition`}
+                >
+                  {t.makeAdmin || "Make Admin"}
+                </button>
+              )}
+              {canDeleteUser(selectedUserDetails) && (
+                <button
+                  onClick={() => {
+                    handleDeleteUser(selectedUserDetails.id, selectedUserDetails.login);
+                    setShowAccountDetails(false);
+                  }}
+                  className={`flex-1 px-4 py-2 rounded ${
+                    isDarkMode ? "bg-red-600 hover:bg-red-700" : "bg-red-500 hover:bg-red-600"
+                  } text-white font-medium transition`}
+                >
+                  {t.deleteUser || "Delete User"}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   // 🔹 Render Add User Modal
   const renderAddUserModal = () => (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" onClick={() => setShowAddUserModal(false)}>
@@ -1666,17 +1810,6 @@ const handleRemoveFriend = async (friendId: string) => {
                 )}
               </section>
 
-              {/* Notes section */}
-              <div className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
-                  <h3 className="text-xl sm:text-2xl font-semibold mb-4 text-center">{t.notes || "Notes"}:</h3>
-                  <ul className="list-disc list-inside space-y-2">
-                      <li>{t.note1 || "Create two subpages for the user list and item list"}</li>
-                      <li>{t.note2 || "Organize the item list and refactor it (so the page uses less memory)"}</li>
-                  </ul>
-              </div>
-
-
-
               {/* Users Section */}
               <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} mb-8`}>
                 <h3 className="text-xl sm:text-2xl font-semibold mb-4">{t.listOfUsers}</h3>
@@ -1698,6 +1831,7 @@ const handleRemoveFriend = async (friendId: string) => {
                           <th className="px-2 sm:px-3 py-2 text-center font-semibold">Status</th>
                           <th className="px-2 sm:px-3 py-2 text-center font-semibold">Actions</th>
                           <th className="px-2 sm:px-3 py-2 text-center font-semibold">Delete</th>
+                          <th className="px-2 sm:px-3 py-2 text-center font-semibold">Details</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1754,11 +1888,22 @@ const handleRemoveFriend = async (friendId: string) => {
                                 </button>
                               )}
                             </td>
+                            <td className="px-2 sm:px-3 py-2 text-center">
+                              <button
+                                onClick={() => handleViewAccountDetails(user)}
+                                className={`px-2 py-1 rounded text-xs sm:text-sm ${
+                                  isDarkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
+                                } text-white font-medium transition whitespace-nowrap`}
+                                title={t.viewDetails || "View Details"}
+                              >
+                                {t.viewDetails || "Details"}
+                              </button>
+                            </td>
                           </tr>
                         ))}
                         {users.length === 0 && (
                           <tr>
-                            <td colSpan={9} className="text-center py-4 text-lg">
+                            <td colSpan={10} className="text-center py-4 text-lg">
                               {t.noUsersFound}
                             </td>
                           </tr>
@@ -2045,6 +2190,9 @@ const handleRemoveFriend = async (friendId: string) => {
 
       {/* Add User Modal */}
       {showAddUserModal && renderAddUserModal()}
+
+      {/* Account Details Modal */}
+      {showAccountDetails && renderAccountDetailsModal()}
 
       {/* Footer */}
       <footer className={`py-4 text-center text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>

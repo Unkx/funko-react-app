@@ -64,6 +64,7 @@ interface User {
   role: string;
   created_at: string;
   last_login: string;
+  nationality?: string;
 }
 
 interface FunkoItem {
@@ -116,10 +117,20 @@ const DashboardSite: React.FC = () => {
     name: "",
     surname: "",
     gender: "",
-    date_of_birth: ""
+    date_of_birth: "",
+    nationality: "",
   });
+  
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const { name, value } = e.target;
+  setEditForm(prev => ({
+    ...prev,
+    [name]: value
+  }));
+};
 
   // Collection states
   const [collection, setCollection] = useState<FunkoItem[]>([]);
@@ -265,6 +276,7 @@ const handleRemoveFriend = async (friendId: string) => {
     console.error("Error removing friend:", err);
   }
 };
+
   // Chat states
   const handleStartChat = async (friend: any) => {
     const token = localStorage.getItem("token");
@@ -275,7 +287,11 @@ const handleRemoveFriend = async (friendId: string) => {
       });
       if (response.ok) {
         const data = await response.json();
-        setSelectedFriend({ ...friend, conversation_id: data.conversation_id });
+        setSelectedFriend({
+          ...friend,
+          conversation_id: data.conversation_id,
+          nationality: friend.nationality || data.friend_nationality
+        });
         setShowChat(true);
       }
     } catch (err) {
@@ -302,42 +318,68 @@ const handleRemoveFriend = async (friendId: string) => {
     }
   }, [activeView]);
 
-  // User data and language popup effect
-  useEffect(() => {
-    const fetchUserData = async () => {
+  // Przenieś tę funkcję na zewnątrz useEffect, aby była dostępna w całym komponencie
+  const fetchUserData = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/LoginSite");
+      return;
+    }
+
+    try {
       const userData = localStorage.getItem("user");
-      const token = localStorage.getItem("token");
-      if (!userData || !token) {
+      let userId;
+      
+      if (userData) {
+        const parsedUser = JSON.parse(userData);
+        userId = parsedUser.id;
+      } else {
         navigate("/LoginSite");
         return;
       }
-      try {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
+
+      console.log("🔄 Fetching fresh user data from backend...");
+      
+      const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const freshUserData = await response.json();
+        console.log("✅ Fresh user data received:", freshUserData);
+        
+        setUser(freshUserData);
         setEditForm({
-          name: parsedUser.name,
-          surname: parsedUser.surname,
-          gender: parsedUser.gender,
-          date_of_birth: parsedUser.date_of_birth
+          name: freshUserData.name,
+          surname: freshUserData.surname,
+          gender: freshUserData.gender,
+          date_of_birth: freshUserData.date_of_birth,
+          nationality: freshUserData.nationality || ""
         });
-        const response = await fetch(`http://localhost:5000/api/users/${parsedUser.id}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (response.ok) {
-          const freshUserData = await response.json();
-          setUser(freshUserData);
-          localStorage.setItem("user", JSON.stringify(freshUserData));
-        }
-      } catch (err) {
-        console.error("Failed to fetch user data:", err);
+        
+        localStorage.setItem("user", JSON.stringify(freshUserData));
+      } else {
+        console.error("❌ Failed to fetch user data");
       }
+    } catch (err) {
+      console.error("❌ Failed to fetch user data:", err);
+    }
+  };
+
+  // W useEffect pozostaw tylko wywołanie funkcji:
+  useEffect(() => {
+    const initializeUserData = async () => {
+      await fetchUserData();
     };
-    fetchUserData();
+    
+    initializeUserData();
+    
     const hasSeenPopup = localStorage.getItem("hasSeenLanguagePopup");
     if (!hasSeenPopup) {
       setShouldShowPopup(true);
       localStorage.setItem("hasSeenLanguagePopup", "true");
     }
+    
     const handleClickOutside = (event: MouseEvent) => {
       if (
         showLanguageDropdown &&
@@ -474,6 +516,15 @@ const handleRemoveFriend = async (friendId: string) => {
     setFilteredWishlist(filtered);
   }, [wishlist, wishlistSearch, filterPriority, wishlistSortBy, wishlistSortOrder]);
 
+  // Dodaj ten useEffect na początku komponentu, zaraz po stanach
+useEffect(() => {
+  const initializeUserData = async () => {
+    await fetchUserData();
+  };
+  
+  initializeUserData();
+}, []); // Puste dependencies - uruchamia się tylko przy montowaniu komponentu
+
   // Activity logging function
   const logActivity = async (actionType: string, details?: any) => {
     const token = localStorage.getItem("token");
@@ -557,6 +608,7 @@ const handleRemoveFriend = async (friendId: string) => {
 
   const handleEditClick = () => setIsEditing(true);
 
+  
   const handleCancelEdit = () => {
     setIsEditing(false);
     if (user) {
@@ -564,44 +616,54 @@ const handleRemoveFriend = async (friendId: string) => {
         name: user.name,
         surname: user.surname,
         gender: user.gender,
-        date_of_birth: user.date_of_birth
+        date_of_birth: user.date_of_birth,
+        nationality: user.nationality || "" // Dodaj tę linię
       });
     }
     setError("");
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setEditForm(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSaveChanges = async () => {
     if (!user) return;
     setIsLoading(true);
     setError("");
+
+    console.log("💾 Saving user data:", editForm);
+
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(`http://localhost:5000/api/users/${user.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify(editForm)
       });
+
+      console.log("📡 Response status:", response.status);
+      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to update profile");
       }
+
       const updatedUser = await response.json();
-      setUser(updatedUser);
-      localStorage.setItem("user", JSON.stringify(updatedUser));
+      console.log("✅ User updated in database:", updatedUser);
+      
+      // Wywołaj fetchUserData bez await (lub z await, ale już nie ma błędu)
+      fetchUserData(); // ← TO JEST TERAZ POPRAWNE
+      
       setIsEditing(false);
+      console.log("🎉 Profile updated successfully!");
+      
     } catch (err) {
-      console.error("Update error:", err);
+      console.error("❌ Update error:", err);
       setError(err instanceof Error ? err.message : "An unknown error occurred");
     } finally {
       setIsLoading(false);
     }
   };
-
   // Collection item handlers
   const handleEditCollectionItem = (item: FunkoItem) => {
     setEditingCollectionItem(item.id);
@@ -1068,6 +1130,7 @@ const handleRemoveFriend = async (friendId: string) => {
                         isDarkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
                       } text-white text-sm`}
                     >
+                      
                       {t.chat || "Chat"}
                     </button>
                     <button
@@ -1214,6 +1277,19 @@ const handleRemoveFriend = async (friendId: string) => {
                   }`}
                 />
               </li>
+              <li className="flex flex-col md:flex-row md:items-center gap-2">
+                <strong className="w-full md:w-1/3 text-gray-700 dark:text-gray-300">{t.nationality || "Nationality"}:</strong>
+                <input
+                  type="text"
+                  name="nationality"
+                  value={editForm.nationality || ""}
+                  onChange={handleInputChange}
+                  placeholder="Enter your country"
+                  className={`flex-grow px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none ${
+                    isDarkMode ? "bg-gray-700 text-white border-gray-600" : "bg-gray-50 text-gray-900 border-gray-300"
+                  }`}
+                />
+              </li>
             </>
           ) : (
             <>
@@ -1225,6 +1301,7 @@ const handleRemoveFriend = async (friendId: string) => {
               <li><strong className="text-gray-700 dark:text-gray-300">{t.dateOfBirth}:</strong> {formatDate(user?.date_of_birth || "")}</li>
               <li><strong className="text-gray-700 dark:text-gray-300">{t.userSince}:</strong> {formatDate(user?.created_at || "")}</li>
               <li><strong className="text-gray-700 dark:text-gray-300">{t.lastLogin}:</strong> {formatDate(user?.last_login || "")}</li>
+              <li><strong className="text-gray-700 dark:text-gray-300">{t.nationality || "Nationality"}:</strong> {user?.nationality}</li>
             </>
           )}
         </ul>

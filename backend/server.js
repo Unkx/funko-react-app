@@ -231,7 +231,7 @@ const getUserProfile = async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT id, email, login, name, surname, gender, date_of_birth, role, created_at, last_login
+      `SELECT id, email, login, name, surname, gender, date_of_birth, nationality, role, created_at, last_login
        FROM users WHERE id = $1`,
       [userId]
     );
@@ -240,6 +240,7 @@ const getUserProfile = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    console.log('✅ GET User profile with nationality:', result.rows[0].nationality); // Debug
     res.json(result.rows[0]);
   } catch (err) {
     console.error('Get user error:', err);
@@ -249,7 +250,9 @@ const getUserProfile = async (req, res) => {
 
 const updateUserProfile = async (req, res) => {
   const userId = req.params.id;
-  const { name, surname, gender, date_of_birth } = req.body;
+  const { name, surname, gender, date_of_birth, nationality } = req.body;
+
+  console.log('📝 Update user profile request:', { userId, name, surname, gender, date_of_birth, nationality });
 
   if (req.user.id !== parseInt(userId) && req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Forbidden: You can only update your own profile' });
@@ -263,21 +266,25 @@ const updateUserProfile = async (req, res) => {
         surname = COALESCE($2, surname),
         gender = COALESCE($3, gender),
         date_of_birth = COALESCE($4, date_of_birth),
+        nationality = COALESCE($5, nationality),
         updated_at = NOW()
-      WHERE id = $5
-      RETURNING id, name, surname, email, login, gender, date_of_birth, role, created_at, last_login
+      WHERE id = $6
+      RETURNING id, email, login, name, surname, gender, date_of_birth, nationality, role, created_at, last_login
     `;
-    const values = [name, surname, gender, date_of_birth, userId];
-
+    const values = [name, surname, gender, date_of_birth, nationality, userId];
+    
+    console.log('🔄 Executing query with values:', values);
+    
     const result = await pool.query(query, values);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    console.log('✅ User updated successfully:', result.rows[0]);
     res.json(result.rows[0]);
   } catch (err) {
-    console.error('Update user error:', err);
+    console.error('❌ Update user error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 };
@@ -317,7 +324,110 @@ const updateUserSettings = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+ 
+const fetchUserData = async () => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    navigate("/LoginSite");
+    return;
+  }
 
+  try {
+    const userData = localStorage.getItem("user");
+    let userId;
+    
+    if (userData) {
+      const parsedUser = JSON.parse(userData);
+      userId = parsedUser.id;
+    } else {
+      navigate("/LoginSite");
+      return;
+    }
+
+    console.log("🔄 Fetching fresh user data from backend...");
+    
+    const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (response.ok) {
+      const freshUserData = await response.json();
+      console.log("✅ Fresh user data received:", freshUserData);
+      
+      // TYMCZASOWE ROZWIĄZANIE: Jeśli backend nie zwraca nationality, zachowaj istniejące
+      const currentUserData = JSON.parse(localStorage.getItem("user") || "{}");
+      const userWithNationality = {
+        ...freshUserData,
+        nationality: freshUserData.nationality || currentUserData.nationality || ""
+      };
+      
+      setUser(userWithNationality);
+      setEditForm({
+        name: userWithNationality.name,
+        surname: userWithNationality.surname,
+        gender: userWithNationality.gender,
+        date_of_birth: userWithNationality.date_of_birth,
+        nationality: userWithNationality.nationality || ""
+      });
+      
+      localStorage.setItem("user", JSON.stringify(userWithNationality));
+    } else {
+      console.error("❌ Failed to fetch user data");
+    }
+  } catch (err) {
+    console.error("❌ Failed to fetch user data:", err);
+  }
+};
+
+const handleSaveChanges = async () => {
+  if (!user) return;
+  setIsLoading(true);
+  setError("");
+
+  console.log("💾 Saving user data:", editForm);
+
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`http://localhost:5000/api/users/${user.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(editForm)
+    });
+
+    console.log("📡 Response status:", response.status);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to update profile");
+    }
+
+    const updatedUser = await response.json();
+    console.log("✅ User updated in database:", updatedUser);
+    
+    // TYMCZASOWE ROZWIĄZANIE: Zapisz nationality w localStorage
+    const currentUserData = JSON.parse(localStorage.getItem("user") || "{}");
+    const userWithNationality = {
+      ...currentUserData,
+      nationality: editForm.nationality // Użyj wartości z formularza
+    };
+    localStorage.setItem("user", JSON.stringify(userWithNationality));
+    
+    // Aktualizuj stan
+    setUser(userWithNationality);
+    
+    setIsEditing(false);
+    console.log("🎉 Profile updated successfully!");
+    
+  } catch (err) {
+    console.error("❌ Update error:", err);
+    setError(err instanceof Error ? err.message : "An unknown error occurred");
+  } finally {
+    setIsLoading(false);
+  }
+};
 // ======================
 // WISHLIST CONTROLLERS
 // ======================
@@ -525,9 +635,9 @@ const getOrCreateConversation = async (req, res) => {
   }
 
   try {
-    // Ensure both users exist
+    // Ensure both users exist and get their nationality
     const users = await pool.query(
-      'SELECT id FROM users WHERE id = $1 OR id = $2',
+      'SELECT id, nationality FROM users WHERE id = $1 OR id = $2',
       [userId, friendId]
     );
     if (users.rows.length < 2) {
@@ -554,7 +664,6 @@ const getOrCreateConversation = async (req, res) => {
     );
 
     if (conv.rows.length === 0) {
-      // Create new conversation
       const result = await pool.query(
         `INSERT INTO conversations (user1_id, user2_id) 
          VALUES ($1, $2) RETURNING id`,
@@ -563,7 +672,13 @@ const getOrCreateConversation = async (req, res) => {
       conv = result;
     }
 
-    res.json({ conversation_id: conv.rows[0].id });
+    // Get friend's nationality
+    const friendData = users.rows.find(u => u.id == friendId);
+
+    res.json({ 
+      conversation_id: conv.rows[0].id,
+      friend_nationality: friendData?.nationality || null
+    });
   } catch (err) {
     console.error("Create conversation error:", err);
     res.status(500).json({ error: "Failed to create conversation" });
@@ -607,6 +722,7 @@ const sendMessage = async (req, res) => {
   }
 };
 
+
 // Get messages in conversation
 const getMessages = async (req, res) => {
   const { conversation_id } = req.params;
@@ -627,7 +743,7 @@ const getMessages = async (req, res) => {
     }
 
     const messages = await pool.query(
-      `SELECT m.*, u.login as sender_login
+      `SELECT m.*, u.login as sender_login, u.nationality as sender_nationality
        FROM messages m
        JOIN users u ON m.sender_id = u.id
        WHERE m.conversation_id = $1
@@ -641,7 +757,6 @@ const getMessages = async (req, res) => {
     res.status(500).json({ error: "Failed to load messages" });
   }
 };
-
 
 const checkCollectionItem = async (req, res) => {
   const { funkoId } = req.params;
@@ -1008,6 +1123,32 @@ app.get('/api/items', async (req, res) => {
   } catch (err) {
     console.error("❌ Error fetching items:", err);
     res.status(500).json({ error: "Failed to load items" });
+  }
+});
+
+// Add this endpoint
+// W backendzie dodaj:
+app.get('/api/users/:id/nationality', authenticateToken, async (req, res) => {
+  const userId = req.params.id;
+  
+  if (req.user.id !== parseInt(userId) && req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  try {
+    const result = await pool.query(
+      'SELECT nationality FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ nationality: result.rows[0].nationality });
+  } catch (err) {
+    console.error('Error fetching nationality:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -1838,7 +1979,7 @@ app.get('/api/friends', authenticateToken, async (req, res) => {
   try {
     const friends = await pool.query(`
       SELECT 
-        u.id, u.login, u.name, u.surname,
+        u.id, u.login, u.name, u.surname, u.nationality,
         f.status, f.created_at,
         (SELECT COUNT(*) FROM collection WHERE user_id = u.id) as collection_size
       FROM friendships f
@@ -2083,7 +2224,7 @@ app.get('/api/users/public/:userId', authenticateToken, async (req, res) => {
 
     // Get user data
     const user = await pool.query(
-      `SELECT id, login, name, surname, created_at, loyalty_score
+      `SELECT id, login, name, surname, created_at, loyalty_score, nationality
        FROM users WHERE id = $1`,
       [userId]
     );

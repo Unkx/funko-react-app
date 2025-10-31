@@ -9,6 +9,8 @@ import SunIcon from "/src/assets/sun.svg?react";
 import SearchIcon from "/src/assets/search.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
+
+//Flag imports
 import UKFlag from "/src/assets/flags/uk.svg?react";
 import USAFlag from "/src/assets/flags/usa.svg?react";
 import PolandFlag from "/src/assets/flags/poland.svg?react";
@@ -16,6 +18,9 @@ import RussiaFlag from "/src/assets/flags/russia.svg?react";
 import FranceFlag from "/src/assets/flags/france.svg?react";
 import GermanyFlag from "/src/assets/flags/germany.svg?react";
 import SpainFlag from "/src/assets/flags/spain.svg?react";
+import CanadaFlag from "/src/assets/flags/canada.svg?react";
+
+// Map import
 import WorldMap from "./Maps/WorldMap"; // ✅ Import map
 
 interface FunkoItem {
@@ -251,6 +256,12 @@ const WelcomeSite: React.FC = () => {
       region: "North America",
       language: "EN",
     },
+    CA: {
+      name: "Canada",
+      flag: <CanadaFlag className="w-5 h-5" />,
+      region: "North America",
+      language : "EN",
+    },
     UK: {
       name: "UK",
       flag: <UKFlag className="w-5 h-5" />,
@@ -293,6 +304,7 @@ const WelcomeSite: React.FC = () => {
   const languages = {
     US: { name: "USA", flag: <USAFlag className="w-5 h-5" /> },
     EN: { name: "UK", flag: <UKFlag className="w-5 h-5" /> },
+    CA: { name: "Canada", flag: <CanadaFlag className="w-5 h-5" /> },
     PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
     RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
     FR: { name: "Français", flag: <FranceFlag className="w-5 h-5" /> },

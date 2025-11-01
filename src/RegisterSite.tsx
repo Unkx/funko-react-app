@@ -442,7 +442,7 @@ const RegisterSite: React.FC = () => {
             {t.alreadyHaveAccount || "Already have an account?"}
           </span>
        <Link
-          to={localStorage.getItem("user") ? "/dashboardSite" : "/LoginSite"}
+          to={localStorage.getItem("user") ? "/dashboardSite" : "/loginregistersite"}
           className={`px-4 py-2 rounded ${
             isDarkMode
               ? "bg-yellow-500 text-black hover:bg-yellow-600"

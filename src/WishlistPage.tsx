@@ -119,7 +119,7 @@ const WishlistPage: React.FC = () => {
     const fetchWishlist = async () => {
       const token = localStorage.getItem("token");
       if (!token) {
-        navigate("/LoginSite");
+        navigate("/loginregistersite");
         return;
       }
 

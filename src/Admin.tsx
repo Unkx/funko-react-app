@@ -159,7 +159,9 @@ const languageNames = {
 };
 
 const languages = {
-  EN: { name: "English", flag: <USAFlag className="w-5 h-5" /> },
+  US: { name: "USA", flag: <USAFlag className="w-5 h-5" /> },
+  EN: { name: "UK", flag: <UKFlag className="w-5 h-5" /> },
+  CA: { name: "Canada", flag: <CanadaFlag className="w-5 h-5" /> },
   PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
   RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
   FR: { name: "Français", flag: <FranceFlag className="w-5 h-5" /> },
@@ -204,8 +206,12 @@ const Admin = () => {
   const [showFriendProfile, setShowFriendProfile] = useState(false);
   const [selectedFriendForProfile, setSelectedFriendForProfile] = useState<any>(null);  
   const handleViewFriendProfile = (friend: any) => {
-  setSelectedFriendForProfile(friend);
-  setShowFriendProfile(true);
+    // Use friend.user_id or friend.friend_user_id instead of friend.id
+    setSelectedFriendForProfile({
+      ...friend,
+      userId: friend.user_id || friend.friend_user_id // adjust based on your API structure
+    });
+    setShowFriendProfile(true);
   };
 
   // Item related state
@@ -508,41 +514,58 @@ const handleRemoveFriend = async (friendId: string) => {
   useEffect(() => {
     if (!token || !currentUser || currentUser.role !== "admin") {
       const timer = setTimeout(() => {
-        navigate("/loginSite", { replace: true });
+        navigate("/LoginRegisterSite", { replace: true });
       }, 500);
       return () => clearTimeout(timer);
     }
   }, [currentUser, token, navigate]);
 
-  // 🧩 Initial setup: load preferences or detect locale
-  useEffect(() => {
-    const savedCountry = localStorage.getItem("preferredCountry");
-    const savedLanguage = localStorage.getItem("preferredLanguage");
-    const countryData = savedCountry && countries[savedCountry as keyof typeof countries]
-      ? countries[savedCountry as keyof typeof countries]
-      : null;
-    if (countryData && savedCountry) {
-      setSelectedCountry(savedCountry);
-      setLanguage(
-        savedLanguage && languageNames[savedLanguage as keyof typeof languageNames]
-          ? savedLanguage
-          : countryData.language
-      );
-      setRegion(countryData.region);
-    } else {
-      const detected = detectCountryFromLocale(navigator.language);
-      const detectedData = detected ? countries[detected as keyof typeof countries] : null;
-      if (detectedData && detected) {
-        setSelectedCountry(detected);
-        setLanguage(
-          savedLanguage && language[savedLanguage as keyof typeof language]
-            ? savedLanguage
-            : detectedData.language
-        );
-        setRegion(detectedData.region);
-      }
+useEffect(() => {
+  const savedLang = localStorage.getItem("preferredLanguage");
+  const savedCountry = localStorage.getItem("preferredCountry");
+
+  // Jeśli użytkownik ma zapisany język → użyj go
+  if (savedLang) {
+    setLanguage(savedLang);
+  }
+
+  // Jeśli ma zapisany kraj → ustaw region i kraj
+  const countryData = savedCountry && countries[savedCountry as keyof typeof countries]
+    ? countries[savedCountry as keyof typeof countries]
+    : null;
+
+  if (countryData && savedCountry) {
+    setSelectedCountry(savedCountry);
+    if (!savedLang) setLanguage(countryData.language); // tylko jeśli język nie był ustawiony wcześniej
+    setRegion(countryData.region);
+  } else {
+    // Automatyczne wykrycie z przeglądarki
+    const detected = detectCountryFromLocale(navigator.language);
+    const detectedData = detected ? countries[detected as keyof typeof countries] : null;
+    if (detectedData && detected) {
+      setSelectedCountry(detected);
+      if (!savedLang) setLanguage(detectedData.language);
+      setRegion(detectedData.region);
     }
-  }, []);
+  }
+
+  // Reszta logiki (popup, mapa, motyw)
+  const hasSeenPopup = localStorage.getItem("hasSeenLanguagePopup");
+  if (!hasSeenPopup) {
+    setShouldShowPopup(true);
+    localStorage.setItem("hasSeenLanguagePopup", "true");
+  }
+
+  if (isDarkMode) document.documentElement.classList.add("dark");
+  else document.documentElement.classList.remove("dark");
+
+  const hasSeenMap = localStorage.getItem("hasSeenWorldMap");
+  if (!hasSeenMap) {
+    setShowWorldMapFirstTime(true);
+    localStorage.setItem("hasSeenWorldMap", "true");
+  }
+}, [isDarkMode]);
+
 
   // Fetch pending requests count
   useEffect(() => {
@@ -606,7 +629,7 @@ const handleRemoveFriend = async (friendId: string) => {
           if (response.status === 401 || response.status === 403) {
             localStorage.removeItem("user");
             localStorage.removeItem("token");
-            navigate("/loginSite");
+            navigate("/loginregistersite");
             setError(t.sessionExpired || "Session expired.");
             return;
           }
@@ -744,7 +767,7 @@ const handleRemoveFriend = async (friendId: string) => {
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
-    navigate("/loginSite");
+    navigate("/loginregistersite");
   };
 
   const handleMakeAdmin = async (userId: number, userLogin: string) => {
@@ -1470,15 +1493,59 @@ const handleRemoveFriend = async (friendId: string) => {
 
   return (
     <div className={`min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-100 text-black"}`}>
-      {/* Header */}
-      <header className="py-4 px-4 sm:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <Link to="/" className="no-underline flex-shrink-0">
-          <h1 className={`text-3xl sm:text-4xl font-bold font-[Special_Gothic_Expanded_One] ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
-            Pop&Go!
-          </h1>
-        </Link>
-        {/* Country, Theme, and Logout */}
-        <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0 items-center">
+      {/* 🔝 Header */}
+      <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
+        <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
+          <Link to="/" className="no-underline">
+            <h1
+              className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
+                isDarkMode ? "text-yellow-400" : "text-green-600"
+              }`}
+            >
+              Pop&Go!
+            </h1>
+          </Link>
+        </div>
+
+        {/* 🔍 Search */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (searchTerm.trim()) {
+              navigate(`/searchsite?q=${encodeURIComponent(searchTerm.trim())}`);
+            }
+          }}
+          className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden ${
+            isDarkMode ? "bg-gray-700" : "bg-gray-100"
+          }`}
+        >
+          <input
+            type="text"
+            placeholder={t.searchPlaceholder || "Search for Funko Pops..."}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className={`flex-grow px-4 py-2 outline-none ${
+              isDarkMode
+                ? "bg-gray-700 text-white placeholder-gray-400"
+                : "bg-white text-black placeholder-gray-500"
+            }`}
+            aria-label="Search for Funko Pops"
+          />
+          <button
+            type="submit"
+            className={`px-4 py-2 ${
+              isDarkMode
+                ? "bg-yellow-500 hover:bg-yellow-600"
+                : "bg-green-600 hover:bg-green-700"
+            } text-white`}
+            aria-label="Search"
+          >
+            <SearchIcon className="w-5 h-5" />
+          </button>
+        </form>
+
+        {/* 🌐 Language, 🌙 Theme, 🔐 Dashboard */}
+        <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0">
           {/* Language Dropdown */}
           <div className="relative">
             <button
@@ -1487,7 +1554,7 @@ const handleRemoveFriend = async (friendId: string) => {
               className={`p-2 rounded-full flex items-center gap-1 ${
                 isDarkMode
                   ? "bg-gray-700 hover:bg-gray-600"
-                  : "bg-gray-200 hover:bg-gray-300"
+                  : "bg-gray-200 hover:bg-neutral-600"
               }`}
               aria-label="Select language"
               aria-expanded={showLanguageDropdown}
@@ -1500,6 +1567,7 @@ const handleRemoveFriend = async (friendId: string) => {
                 }`}
               />
             </button>
+
             {showLanguageDropdown && (
               <div
                 ref={dropdownRef}
@@ -1519,7 +1587,7 @@ const handleRemoveFriend = async (friendId: string) => {
                           : "bg-green-600 text-white"
                         : isDarkMode
                         ? "hover:bg-gray-600"
-                        : "hover:bg-gray-200"
+                        : "hover:bg-neutral-500"
                     }`}
                   >
                     <span className="w-5 h-5">{flag}</span>
@@ -1529,55 +1597,27 @@ const handleRemoveFriend = async (friendId: string) => {
               </div>
             )}
           </div>
-          {/* Theme Toggle */}
+
+          {/* 🌙 Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className={`p-2 rounded-full ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-600"}`}
-            aria-label="Toggle theme"
+            className={`p-2 rounded-full ${
+              isDarkMode
+                ? "bg-gray-700 hover:bg-gray-600"
+                : "bg-gray-200 hover:bg-gray-600"
+            }`}
+            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
-          {/* Bell Icon for Requests - ONLY SHOW WHEN THERE ARE REQUESTS */}
-          {pendingRequestsCount > 0 && (
-            <div className="relative">
-              <button
-                onClick={() => navigate("/requests")}
-                className={`p-2 rounded-full relative ${
-                  isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"
-                }`}
-                aria-label="Pending Requests"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                  {pendingRequestsCount}
-                </span>
-              </button>
-            </div>
-          )}
-          {/* 🔹 Analytics Button */}
-          <button
-            onClick={() => setShowAnalytics(!showAnalytics)}
-            className={`p-2 rounded-full relative ${
-              isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"
-            }`}
-            aria-label="Analytics Dashboard"
-            title="View Analytics"
-          >
-            <ChartIcon className="w-6 h-6" />
-            {showAnalytics && (
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full"></span>
-            )}
-          </button>
-          {/* Logout Button */}
-          <button
+
+          {/* 🔐 Dashboard/Login */}
+
+           <button
             onClick={handleLogout}
-            className={`px-4 py-2 rounded ${
-              isDarkMode
-                ? "bg-red-600 hover:bg-red-700"
-                : "bg-red-500 hover:bg-red-600"
-            } text-white`}
+            className={`flex items-center gap-2 px-4 py-2 rounded ${
+              isDarkMode ? "bg-red-600 hover:bg-red-800 " : "bg-red-500 hover:bg-red-800"
+            } text-white shadow-md`}
           >
             {t.logout}
           </button>

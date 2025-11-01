@@ -8,7 +8,7 @@
 // import WelcomeSite from "./WelcomeSite";
 // import SearchSite from "./SearchSite";
 // import FunkoDetails from "./FunkoDetails";
-// import LoginSite from "./LoginSite";
+// import LoginSite from "./loginregistersite";
 // import LoginRegisterSite from "./LoginRegisterSite";
 // import RegisterSite from "./RegisterSite";
 // import DashboardSite from "./DashboardSite";
@@ -46,7 +46,7 @@
 //         <Route path="/" element={<PageWrapper><WelcomeSite /></PageWrapper>} />
 //         <Route path="/SearchSite" element={<PageWrapper><SearchSite /></PageWrapper>} />
 //         <Route path="/funko/:id" element={<PageWrapper><FunkoDetails /></PageWrapper>} />
-//         <Route path="/LoginSite" element={<PageWrapper><LoginSite /></PageWrapper>} />
+//         <Route path="/loginregistersite" element={<PageWrapper><LoginSite /></PageWrapper>} />
 //         <Route path="/LoginRegisterSite" element={<PageWrapper><LoginRegisterSite /></PageWrapper>} />
 //         <Route path="/RegisterSite" element={<PageWrapper><RegisterSite /></PageWrapper>} />
 //         <Route path="/DashboardSite" element={<PageWrapper><DashboardSite /></PageWrapper>} />
@@ -86,7 +86,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import WelcomeSite from "./WelcomeSite";
 import SearchSite from "./SearchSite";
 import FunkoDetails from "./FunkoDetails";
-import LoginSite from "./LoginSite"
+import LoginSite from "./loginregistersite"
 import LoginRegisterSite from "./LoginRegisterSite"
 import RegisterSite from "./RegisterSite"
 import DashboardSite from "./DashboardSite"
@@ -123,7 +123,7 @@ root.render(
             <Route path="/" element={<WelcomeSite />} />
             <Route path="/SearchSite" element={<SearchSite />} />
             <Route path="/funko/:id" element={<FunkoDetails />} />
-            <Route path="/LoginSite" element={<LoginSite />} />
+            <Route path="/loginregistersite" element={<LoginSite />} />
             <Route path="/LoginRegisterSite" element={<LoginRegisterSite />} />
             <Route path="/RegisterSite" element={<RegisterSite />} />
             <Route path="/DashboardSite" element={<DashboardSite />} />

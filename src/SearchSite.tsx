@@ -625,7 +625,7 @@ const allItems = useMemo(() => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     if (user?.role === "admin") return "/adminSite";
     if (user?.role === "user") return "/dashboardSite";
-    return "/loginSite";
+    return "/loginregistersite";
   }, []);
 
   const loginButtonText = useMemo(() => {

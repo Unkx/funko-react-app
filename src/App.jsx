@@ -43,7 +43,7 @@ function App() {
         <Route path="/" element={<Layout />} />
         <Route path="/welcome" element={<WelcomeSite />} />
         <Route path="/searchsite" element={<SearchSite />} />
-        <Route path="/loginSite" element={<LoginSite/>} />
+        <Route path="/loginregistersite" element={<LoginSite/>} />
       </Routes>
     </BrowserRouter>
   );

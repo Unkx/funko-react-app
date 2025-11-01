@@ -10,6 +10,7 @@ import SearchIcon from "/src/assets/search.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 
+
 //Flag imports
 import UKFlag from "/src/assets/flags/uk.svg?react";
 import USAFlag from "/src/assets/flags/usa.svg?react";
@@ -63,11 +64,11 @@ const WelcomeSite: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCountry, setSelectedCountry] = useState<string>("USA");
 
-  const [language, setLanguage] = useState<string>(() => {
-    const saved = localStorage.getItem("preferredLanguage");
-    return saved || "EN";
+  const [language, setLanguage] = useState(() => {
+    return localStorage.getItem("preferredLanguage") || "EN";
   });
 
+  
   const [region, setRegion] = useState<string>("North America");
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -77,7 +78,12 @@ const WelcomeSite: React.FC = () => {
   const [showWorldMapFirstTime, setShowWorldMapFirstTime] = useState(false);
 
   const navigate = useNavigate();
-  const t = useMemo(() => translations[language] || translations["EN"], [language]);  
+
+  useEffect(() => {
+    localStorage.setItem("preferredLanguage", language);
+  }, [language]);
+
+  const t = translations[language] || translations["EN"];
 
   // Refs for dropdowns
   const countryDropdownRef = useRef<HTMLDivElement>(null);
@@ -335,41 +341,51 @@ const WelcomeSite: React.FC = () => {
 
   // 🧩 Initial setup: load preferences or detect locale
   useEffect(() => {
-    const savedCountry = localStorage.getItem("preferredCountry");
-    const countryData = savedCountry && countries[savedCountry as keyof typeof countries]
-      ? countries[savedCountry as keyof typeof countries]
-      : null;
+  const savedLang = localStorage.getItem("preferredLanguage");
+  const savedCountry = localStorage.getItem("preferredCountry");
 
-    if (countryData && savedCountry) {
-      setSelectedCountry(savedCountry);
-      setLanguage(countryData.language);
-      setRegion(countryData.region);
-    } else {
-      const detected = detectCountryFromLocale(navigator.language);
-      const detectedData = detected ? countries[detected as keyof typeof countries] : null;
-      if (detectedData && detected) {
-        setSelectedCountry(detected);
-        setLanguage(detectedData.language);
-        setRegion(detectedData.region);
-      }
+  // Jeśli użytkownik ma zapisany język → użyj go
+  if (savedLang) {
+    setLanguage(savedLang);
+  }
+
+  // Jeśli ma zapisany kraj → ustaw region i kraj
+  const countryData = savedCountry && countries[savedCountry as keyof typeof countries]
+    ? countries[savedCountry as keyof typeof countries]
+    : null;
+
+  if (countryData && savedCountry) {
+    setSelectedCountry(savedCountry);
+    if (!savedLang) setLanguage(countryData.language); // tylko jeśli język nie był ustawiony wcześniej
+    setRegion(countryData.region);
+  } else {
+    // Automatyczne wykrycie z przeglądarki
+    const detected = detectCountryFromLocale(navigator.language);
+    const detectedData = detected ? countries[detected as keyof typeof countries] : null;
+    if (detectedData && detected) {
+      setSelectedCountry(detected);
+      if (!savedLang) setLanguage(detectedData.language);
+      setRegion(detectedData.region);
     }
+  }
 
-    const hasSeenPopup = localStorage.getItem("hasSeenLanguagePopup");
-    if (!hasSeenPopup) {
-      setShouldShowPopup(true);
-      localStorage.setItem("hasSeenLanguagePopup", "true");
-    }
+  // Reszta logiki (popup, mapa, motyw)
+  const hasSeenPopup = localStorage.getItem("hasSeenLanguagePopup");
+  if (!hasSeenPopup) {
+    setShouldShowPopup(true);
+    localStorage.setItem("hasSeenLanguagePopup", "true");
+  }
 
-    if (isDarkMode) document.documentElement.classList.add("dark");
-    else document.documentElement.classList.remove("dark");
+  if (isDarkMode) document.documentElement.classList.add("dark");
+  else document.documentElement.classList.remove("dark");
 
-    // Check if user has seen world map
-    const hasSeenMap = localStorage.getItem("hasSeenWorldMap");
-    if (!hasSeenMap) {
-      setShowWorldMapFirstTime(true);
-      localStorage.setItem("hasSeenWorldMap", "true");
-    }
-  }, [isDarkMode]);
+  const hasSeenMap = localStorage.getItem("hasSeenWorldMap");
+  if (!hasSeenMap) {
+    setShowWorldMapFirstTime(true);
+    localStorage.setItem("hasSeenWorldMap", "true");
+  }
+}, [isDarkMode]);
+
 
   // 🌙 Theme sync
   useEffect(() => {
@@ -381,41 +397,6 @@ const WelcomeSite: React.FC = () => {
       }
   }, [isDarkMode]);
 
-  // 🧩 Initial setup: load preferences or detect locale
-  useEffect(() => {
-      const savedCountry = localStorage.getItem("preferredCountry");
-      const savedLanguage = localStorage.getItem("preferredLanguage");
-      const hasSeenMap = localStorage.getItem("hasSeenWorldMap");
-
-      // Load saved language first
-      if (savedLanguage) {
-        setLanguage(savedLanguage);
-      }
-
-      // Then load country data if available
-      if (savedCountry) {
-          const countryData = countries[savedCountry as keyof typeof countries];
-          if (countryData) {
-              setSelectedCountry(savedCountry);
-              setRegion(countryData.region);
-          }
-      } else {
-        // Detect from browser if no country saved
-        const detected = detectCountryFromLocale(navigator.language);
-        const detectedData = detected ? countries[detected as keyof typeof countries] : null;
-        if (detectedData && detected) {
-          setSelectedCountry(detected);
-          setLanguage(detectedData.language);
-          setRegion(detectedData.region);
-        }
-      }
-
-      // Check if user has seen world map
-      if (!hasSeenMap) {
-        setShowWorldMapFirstTime(true);
-        localStorage.setItem("hasSeenWorldMap", "true");
-      }
-  }, []); // <-- Empty dependency array. This ensures it runs only once.
   // 📥 Fetch Funko data
   useEffect(() => {
     const fetchData = async () => {

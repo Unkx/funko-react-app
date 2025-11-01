@@ -13,6 +13,7 @@ export const translations = {
     exclusive: "Exclusive",
     goToCategories:"Go To Catergories",
     goToMostVisited: "Go To Most Visited Items",
+    goToDashboard: "Dashboard",
 
     //chat commands 
     chatGreeting: "Hi there! 😊 I'm PopBot! Ask me to search for Pops, show categories, or find popular items!",
@@ -48,6 +49,7 @@ export const translations = {
     exclusive: "Ekskluzywny",
     goToCategories: "Przejdź do kategorii",
     goToMostVisited: "Przejdź do najczęściej odwiedzanych elementów",
+    goToDashboard: "Panel sterowania",
 
     //chat commands
     chatGreeting: "Cześć! 😊 Jestem PopBot! Poproś mnie o wyszukanie Popów, pokazanie kategorii lub znalezienie popularnych przedmiotów!",
@@ -83,6 +85,7 @@ export const translations = {
     exclusive: "Эксклюзивные",
     goToCategories: "Перейти к категориям",
     goToMostVisited: "Перейти к наиболее посещаемым элементам",
+    goToDashboard: "Панель управления",
 
     //chat commands
     chatGreeting: "Привет! 😊 Я PopBot! Попросите меня найти Попов, показать категории или найти популярные предметы!" ,
@@ -117,6 +120,7 @@ export const translations = {
     exclusive: "Exclusivo",
     goToCategories: "Ir a categorías",
     goToMostVisited: "Ir a los elementos más visitados",
+    goToDashboard: "Panel de control",
 
     //chat commands
     chatGreeting: "¡Hola! 😊 ¡Soy PopBot! ¡Pídeme que busque Pops, muestre categorías o encuentre artículos populares!",
@@ -151,6 +155,7 @@ export const translations = {
     exclusive : "Exclusif ",
     goToCategories : "Aller aux catégories ",
     goToMostVisited : "Aller aux ",
+    goToDashboard: "Tableau de bord",
 
     //chat commands
     chatGreeting: "Salut! 😊 Je suis PopBot! Demandez-moi de rechercher des Pops, d'afficher des catégories ou de trouver des articles populaires!",
@@ -185,6 +190,7 @@ export const translations = {
     exclusive: "Exklusiv",
     goToCategories: "Zu den Kategorien",
     goToMostVisited: "Zu den meistbesuchten Artikeln",
+    goToDashboard: "Dashboard",
 
     //chat commands
     chatGreeting: "Hallo! 😊 Ich bin PopBot! Bitte mich, Pops zu suchen, Kategorien anzuzeigen oder beliebte Artikel zu finden!" ,

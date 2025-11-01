@@ -108,6 +108,7 @@ const DashboardSite: React.FC = () => {
     return savedLanguage || "EN";
   });
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const languageButtonRef = useRef<HTMLButtonElement>(null);
   const [selectedCountry, setSelectedCountry] = useState("GB");
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [shouldShowPopup, setShouldShowPopup] = useState(false);
@@ -172,8 +173,12 @@ const DashboardSite: React.FC = () => {
   const [showFriendProfile, setShowFriendProfile] = useState(false);
   const [selectedFriendForProfile, setSelectedFriendForProfile] = useState<any>(null);  
   const handleViewFriendProfile = (friend: any) => {
-  setSelectedFriendForProfile(friend);
-  setShowFriendProfile(true);
+    // Use friend.user_id or friend.friend_user_id instead of friend.id
+    setSelectedFriendForProfile({
+      ...friend,
+      userId: friend.user_id || friend.friend_user_id // adjust based on your API structure
+    });
+    setShowFriendProfile(true);
   };
   //const profileResponse = await fetch(`http://localhost:5000/api/users/${friendId}`, ...);
   // const collectionResponse = await fetch(`http://localhost:5000/api/collection/user/${friendId}`, ...);
@@ -322,7 +327,7 @@ const handleRemoveFriend = async (friendId: string) => {
   const fetchUserData = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      navigate("/LoginSite");
+      navigate("/loginregistersite");
       return;
     }
 
@@ -334,7 +339,7 @@ const handleRemoveFriend = async (friendId: string) => {
         const parsedUser = JSON.parse(userData);
         userId = parsedUser.id;
       } else {
-        navigate("/LoginSite");
+        navigate("/loginregistersite");
         return;
       }
 
@@ -407,7 +412,7 @@ const handleRemoveFriend = async (friendId: string) => {
     const fetchCollection = async () => {
       const token = localStorage.getItem("token");
       if (!token) {
-        navigate("/LoginSite");
+        navigate("/loginregistersite");
         return;
       }
       try {
@@ -462,7 +467,7 @@ const handleRemoveFriend = async (friendId: string) => {
     const fetchWishlist = async () => {
       const token = localStorage.getItem("token");
       if (!token) {
-        navigate("/LoginSite");
+        navigate("/loginregistersite");
         return;
       }
       try {
@@ -603,7 +608,7 @@ useEffect(() => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     setUser(null);
-    navigate("/LoginSite");
+    navigate("/loginregistersite");
   };
 
   const handleEditClick = () => setIsEditing(true);
@@ -1837,46 +1842,62 @@ useEffect(() => {
   return (
     <div className={`welcome-site min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"}`}>
       {/* Header */}
-      <header className="py-4 px-8 flex flex-wrap md:flex-nowrap justify-between items-center gap-4 relative">
-        <div className="flex-shrink-0">
+           <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
+        <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
           <Link to="/" className="no-underline">
-            <h1 className={`text-3xl font-bold font-[Special_Gothic_Expanded_One] tracking-wide ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+            <h1
+              className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
+                isDarkMode ? "text-yellow-400" : "text-green-600"
+              }`}
+            >
               Pop&Go!
             </h1>
           </Link>
-          {shouldShowPopup && (
-            <LanguageSelectorPopup onClose={() => setShouldShowPopup(false)} />
-          )}
         </div>
-        {/* Search Form */}
-        <form onSubmit={handleSearch} className={`flex-grow max-w-lg mx-auto flex rounded-lg overflow-hidden ${isDarkMode ? "bg-gray-700" : "bg-gray-100"}`}>
+
+        {/* 🔍 Search */}
+        <form
+          onSubmit={handleSearch}
+          className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden ${
+            isDarkMode ? "bg-gray-700" : "bg-gray-100"
+          }`}
+        >
           <input
             type="text"
             placeholder={t.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={`flex-grow px-4 py-2 outline-none ${isDarkMode ? "bg-gray-700 text-white placeholder-gray-400" : "bg-white text-black"}`}
-            aria-label="Search input"
+            className={`flex-grow px-4 py-2 outline-none ${
+              isDarkMode
+                ? "bg-gray-700 text-white placeholder-gray-400"
+                : "bg-white text-black placeholder-gray-500"
+            }`}
+            aria-label="Search for Funko Pops"
           />
           <button
             type="submit"
-            className={`px-4 py-2 ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"}`}
+            className={`px-4 py-2 ${
+              isDarkMode
+                ? "bg-yellow-500 hover:bg-yellow-600"
+                : "bg-green-600 hover:bg-green-700"
+            } text-white`}
             aria-label="Search"
           >
             <SearchIcon className="w-5 h-5" />
           </button>
         </form>
-        {/* Language, Theme, and Logout */}
+
+        {/* 🌐 Language, 🌙 Theme, 🔐 Logout */}
         <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0">
           {/* Language Dropdown */}
           <div className="relative">
             <button
-              ref={buttonRef}
+              ref={languageButtonRef}
               onClick={toggleLanguageDropdown}
               className={`p-2 rounded-full flex items-center gap-1 ${
                 isDarkMode
                   ? "bg-gray-700 hover:bg-gray-600"
-                  : "bg-gray-200 hover:bg-gray-300"
+                  : "bg-gray-200 hover:bg-neutral-600"
               }`}
               aria-label="Select language"
               aria-expanded={showLanguageDropdown}
@@ -1889,15 +1910,16 @@ useEffect(() => {
                 }`}
               />
             </button>
+
             {showLanguageDropdown && (
               <div
-                ref={dropdownRef}
+                ref={languageDropdownRef}
                 className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
                   isDarkMode ? "bg-gray-700" : "bg-white"
                 }`}
                 onClick={(e) => e.stopPropagation()}
               >
-                {Object.entries(languages).map(([code, { name, flag }]) => (
+                {Object.entries(headerLanguages).map(([code, { name, flag }]) => (
                   <button
                     key={code}
                     onClick={() => selectLanguage(code)}
@@ -1908,7 +1930,7 @@ useEffect(() => {
                           : "bg-green-600 text-white"
                         : isDarkMode
                         ? "hover:bg-gray-600"
-                        : "hover:bg-gray-200"
+                        : "hover:bg-neutral-500"
                     }`}
                   >
                     <span className="w-5 h-5">{flag}</span>
@@ -1918,21 +1940,28 @@ useEffect(() => {
               </div>
             )}
           </div>
-          {/* Theme Toggle */}
+
+          {/* 🌙 Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className={`p-2 rounded-full ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}
-            aria-label="Toggle theme"
+            className={`p-2 rounded-full ${
+              isDarkMode
+                ? "bg-gray-700 hover:bg-gray-600"
+                : "bg-gray-200 hover:bg-gray-600"
+            }`}
+            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
-        </div>
-        <div>
+
+          {/* 🔐 Logout */}
           <button
             onClick={handleLogout}
             className={`flex items-center gap-2 px-4 py-2 rounded ${
-              isDarkMode ? "bg-red-600 hover:bg-red-800 " : "bg-red-500 hover:bg-red-800"
-            } text-white shadow-md`}
+              isDarkMode
+                ? "bg-red-600 hover:bg-red-700"
+                : "bg-red-500 hover:bg-red-600"
+            } text-white`}
           >
             {t.logout}
           </button>

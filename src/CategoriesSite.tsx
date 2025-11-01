@@ -1,8 +1,25 @@
-import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { translations } from "./Translations/TranslationsWelcomeSite";
 import "./WelcomeSite.css";
 import { FunkoItems } from "./FunkoItems";
+
+// Icon imports
+import MoonIcon from "/src/assets/moon.svg?react";
+import SunIcon from "/src/assets/sun.svg?react";
+import SearchIcon from "/src/assets/search.svg?react";
+import GlobeIcon from "/src/assets/globe.svg?react";
+import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
+
+// Flag imports
+import UKFlag from "/src/assets/flags/uk.svg?react";
+import USAFlag from "/src/assets/flags/usa.svg?react";
+import PolandFlag from "/src/assets/flags/poland.svg?react";
+import RussiaFlag from "/src/assets/flags/russia.svg?react";
+import FranceFlag from "/src/assets/flags/france.svg?react";
+import GermanyFlag from "/src/assets/flags/germany.svg?react";
+import SpainFlag from "/src/assets/flags/spain.svg?react";
+import CanadaFlag from "/src/assets/flags/canada.svg?react";
 
 interface FunkoItem {
   id: string;
@@ -88,29 +105,87 @@ const FUNKO_CATEGORIES = [
   }
 ];
 
+// 📚 Language display names
+const languageNames = {
+  EN: "English",
+  PL: "Polski",
+  RU: "Русский",
+  FR: "Français",
+  DE: "Deutsch",
+  ES: "Español",
+};
+
 const CategoriesSite: React.FC = () => {
-  const [isDarkMode] = useState(() => {
+  const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem("preferredTheme") === "dark";
   });
   
-  const [language] = useState(() => {
+  const [language, setLanguage] = useState(() => {
     return localStorage.getItem("preferredLanguage") || "EN";
   });
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [items, setItems] = useState<FunkoItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState("");
 
+  const navigate = useNavigate();
   const t = translations[language] || translations["EN"];
 
+  // Refs for dropdowns
+  const languageDropdownRef = useRef<HTMLDivElement>(null);
+  const languageButtonRef = useRef<HTMLButtonElement>(null);
+
+  // 🌍 Languages for dropdown (with flag)
+  const languages = {
+    US: { name: "USA", flag: <USAFlag className="w-5 h-5" /> },
+    EN: { name: "UK", flag: <UKFlag className="w-5 h-5" /> },
+    CA: { name: "Canada", flag: <CanadaFlag className="w-5 h-5" /> },
+    PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
+    RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
+    FR: { name: "Français", flag: <FranceFlag className="w-5 h-5" /> },
+    DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
+    ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
+  };
+
+  // Toggle language dropdown
+  const toggleLanguageDropdown = () => {
+    setShowLanguageDropdown((prev) => !prev);
+  };
+
+  // Select language
+  const selectLanguage = (lang: string) => {
+    setLanguage(lang);
+    localStorage.setItem("preferredLanguage", lang);
+    setShowLanguageDropdown(false);
+  };
+
+  // 🌙 Toggle theme
+  const toggleTheme = () => {
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    localStorage.setItem("preferredTheme", newDarkMode ? "dark" : "light");
+    if (newDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
+
+  // 🔍 Handle search
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    navigate(`/searchsite?q=${encodeURIComponent(searchQuery.trim())}`);
+  };
+
   // Fetch items from API
- // Remove the entire useEffect and replace it with this:
-useEffect(() => {
-  setIsLoading(false);
-  setItems(FunkoItems); // <-- Use your hardcoded array with real images!
-}, []);
+  useEffect(() => {
+    setIsLoading(false);
+    setItems(FunkoItems);
+  }, []);
 
   // Enhanced category matching logic
   const CATEGORY_KEYWORDS: Record<string, string[]> = {
@@ -126,33 +201,31 @@ useEffect(() => {
     holiday: ["holiday", "christmas", "halloween", "easter", "valentine"]
   };
 
-  // More flexible matching function
-// Updated category matching - simpler and more direct
-const matchesCategory = (item: FunkoItem, categoryId: string): boolean => {
-  if (!item.category) return false;
-  
-  const categoryLower = item.category.toLowerCase();
-  
-  // Direct mapping based on exact category names from backend
-  const categoryMap: Record<string, string[]> = {
-    tv: ["funko tv"],
-    movies: ["funko movies"],
-    wwe: ["funko wwe"],
-    games: ["funko games"],
-    anime: ["funko anime"],
-    music: ["funko music"],
-    sports: ["funko sports"],
-    comics: ["funko comics"],
-    disney: ["funko disney"],
-    holiday: ["funko holiday"]
+  // Updated category matching - simpler and more direct
+  const matchesCategory = (item: FunkoItem, categoryId: string): boolean => {
+    if (!item.category) return false;
+    
+    const categoryLower = item.category.toLowerCase();
+    
+    // Direct mapping based on exact category names from backend
+    const categoryMap: Record<string, string[]> = {
+      tv: ["funko tv"],
+      movies: ["funko movies"],
+      wwe: ["funko wwe"],
+      games: ["funko games"],
+      anime: ["funko anime"],
+      music: ["funko music"],
+      sports: ["funko sports"],
+      comics: ["funko comics"],
+      disney: ["funko disney"],
+      holiday: ["funko holiday"]
+    };
+    
+    const targetCategories = categoryMap[categoryId] || [];
+    
+    // Check if the item's category matches any of the target categories
+    return targetCategories.some(target => categoryLower.includes(target));
   };
-  
-  const targetCategories = categoryMap[categoryId] || [];
-  
-  // Check if the item's category matches any of the target categories
-  return targetCategories.some(target => categoryLower.includes(target));
-};
-
 
   // Get items for the selected category
   const getCategoryItems = () => {
@@ -174,10 +247,6 @@ const matchesCategory = (item: FunkoItem, categoryId: string): boolean => {
     
     // Dispatch custom event
     window.dispatchEvent(new CustomEvent('funkoVisitUpdated'));
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
   };
 
   const clearFilters = () => {
@@ -233,25 +302,133 @@ const matchesCategory = (item: FunkoItem, categoryId: string): boolean => {
 
   return (
     <div className={`min-h-screen ${isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"}`}>
-      {/* Header */}
-      <header className="py-4 px-4 md:px-8 flex justify-between items-center">
-        <Link to="/" className="no-underline">
-          <h1 className={`text-2xl font-bold font-[Special_Gothic_Expanded_One] ${
-            isDarkMode ? "text-yellow-400" : "text-green-600"
-          }`}>
-            Pop&Go!
-          </h1>
-        </Link>
-        
-        <div className="flex gap-4">
-          <Link 
-            to="/"
-            className={`px-4 py-2 rounded transition-colors ${
-              isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"
+      {/* 🔝 Header */}
+      <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
+        <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
+          <Link to="/" className="no-underline">
+            <h1
+              className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
+                isDarkMode ? "text-yellow-400" : "text-green-600"
+              }`}
+            >
+              Pop&Go!
+            </h1>
+          </Link>
+        </div>
+
+        {/* 🔍 Search */}
+        <form
+          onSubmit={handleSearch}
+          className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden ${
+            isDarkMode ? "bg-gray-700" : "bg-gray-100"
+          }`}
+        >
+          <input
+            type="text"
+            placeholder={t.searchPlaceholder}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={`flex-grow px-4 py-2 outline-none ${
+              isDarkMode
+                ? "bg-gray-700 text-white placeholder-gray-400"
+                : "bg-white text-black placeholder-gray-500"
+            }`}
+            aria-label="Search for Funko Pops"
+          />
+          <button
+            type="submit"
+            className={`px-4 py-2 ${
+              isDarkMode
+                ? "bg-yellow-500 hover:bg-yellow-600"
+                : "bg-green-600 hover:bg-green-700"
+            } text-white`}
+            aria-label="Search"
+          >
+            <SearchIcon className="w-5 h-5" />
+          </button>
+        </form>
+
+        {/* 🌐 Language, 🌙 Theme, 🔐 Login */}
+        <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0">
+          {/* Language Dropdown */}
+          <div className="relative">
+            <button
+              ref={languageButtonRef}
+              onClick={toggleLanguageDropdown}
+              className={`p-2 rounded-full flex items-center gap-1 ${
+                isDarkMode
+                  ? "bg-gray-700 hover:bg-gray-600"
+                  : "bg-gray-200 hover:bg-neutral-600"
+              }`}
+              aria-label="Select language"
+              aria-expanded={showLanguageDropdown}
+            >
+              <GlobeIcon className="w-5 h-5" />
+              <span className="text-sm font-medium">{language}</span>
+              <ChevronDownIcon
+                className={`w-4 h-4 transition-transform ${
+                  showLanguageDropdown ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {showLanguageDropdown && (
+              <div
+                ref={languageDropdownRef}
+                className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
+                  isDarkMode ? "bg-gray-700" : "bg-white"
+                }`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {Object.entries(languages).map(([code, { name, flag }]) => (
+                  <button
+                    key={code}
+                    onClick={() => selectLanguage(code)}
+                    className={`w-full text-left px-4 py-2 flex items-center gap-2 ${
+                      language === code
+                        ? isDarkMode
+                          ? "bg-yellow-500 text-black"
+                          : "bg-green-600 text-white"
+                        : isDarkMode
+                        ? "hover:bg-gray-600"
+                        : "hover:bg-neutral-500"
+                    }`}
+                  >
+                    <span className="w-5 h-5">{flag}</span>
+                    <span>{name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 🌙 Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className={`p-2 rounded-full ${
+              isDarkMode
+                ? "bg-gray-700 hover:bg-gray-600"
+                : "bg-gray-200 hover:bg-gray-600"
+            }`}
+            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
+          </button>
+
+          {/* 🔐 Dashboard/Login */}
+          <button
+            onClick={() => {
+              const user = JSON.parse(localStorage.getItem("user") || "{}");
+              navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginRegisterSite");
+            }}
+            className={`flex items-center gap-2 px-4 py-2 rounded ${
+              isDarkMode
+                ? "bg-yellow-500 text-black hover:bg-yellow-600"
+                : "bg-green-600 text-white hover:bg-green-700"
             }`}
           >
-            {t.backToHome || "Back to Home"}
-          </Link>
+            {t.goToDashboard || "Dashboard"}
+          </button>
         </div>
       </header>
 

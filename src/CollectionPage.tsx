@@ -117,7 +117,7 @@ const CollectionPage: React.FC = () => {
     const fetchCollection = async () => {
       const token = localStorage.getItem("token");
       if (!token) {
-        navigate("/LoginSite");
+        navigate("/loginregistersite");
         return;
       }
 

@@ -5,19 +5,23 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { translations } from "./Translations/TranslationsFunkoDetails";
 import axios from "axios";
+
 // Icons
 import MoonIcon from "/src/assets/moon.svg?react";
 import SunIcon from "/src/assets/sun.svg?react";
 import SearchIcon from "/src/assets/search.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
+
 // Flags
 import UKFlag from "/src/assets/flags/uk.svg?react";
+import USAFlag from "/src/assets/flags/usa.svg?react";
 import PolandFlag from "/src/assets/flags/poland.svg?react";
 import RussiaFlag from "/src/assets/flags/russia.svg?react";
 import FranceFlag from "/src/assets/flags/france.svg?react";
 import GermanyFlag from "/src/assets/flags/germany.svg?react";
 import SpainFlag from "/src/assets/flags/spain.svg?react";
+import CanadaFlag from "/src/assets/flags/canada.svg?react";
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
 if (!baseURL) {
@@ -101,6 +105,7 @@ const FunkoDetails: React.FC = () => {
   const [selectedCountries, setSelectedCountries] = useState(['poland', 'germany', 'france']);
   const [relatedItems, setRelatedItems] = useState<FunkoItemWithId[]>([]);
   const [priceHistory, setPriceHistory] = useState<PricePoint[]>([]);
+  
   const [user] = useState(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -115,18 +120,77 @@ const FunkoDetails: React.FC = () => {
     }
     return null;
   });
-  
-    useEffect(() => {
-    if (id) {
-      const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
-      visitCount[id] = (visitCount[id] || 0) + 1;
-      localStorage.setItem("funkoVisitCount", JSON.stringify(visitCount));
-    }
-  }, [id]);
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  // 🌐 Centralized country configuration (from WelcomeSite)
+  const countries = {
+    USA: {
+      name: "USA",
+      flag: <USAFlag className="w-5 h-5" />,
+      region: "North America",
+      language: "EN",
+    },
+    CA: {
+      name: "Canada",
+      flag: <CanadaFlag className="w-5 h-5" />,
+      region: "North America",
+      language : "EN",
+    },
+    UK: {
+      name: "UK",
+      flag: <UKFlag className="w-5 h-5" />,
+      region: "Europe",
+      language: "EN",
+    },
+    PL: {
+      name: "Poland",
+      flag: <PolandFlag className="w-5 h-5" />,
+      region: "Europe",
+      language: "PL",
+    },
+    RU: {
+      name: "Russia",
+      flag: <RussiaFlag className="w-5 h-5" />,
+      region: "Europe",
+      language: "RU",
+    },
+    FR: {
+      name: "France",
+      flag: <FranceFlag className="w-5 h-5" />,
+      region: "Europe",
+      language: "FR",
+    },
+    DE: {
+      name: "Germany",
+      flag: <GermanyFlag className="w-5 h-5" />,
+      region: "Europe",
+      language: "DE",
+    },
+    ES: {
+      name: "Spain",
+      flag: <SpainFlag className="w-5 h-5" />,
+      region: "Europe",
+      language: "ES",
+    },
+  };
+
+  // 🌍 Languages for dropdown (with flag) - from WelcomeSite
+  const languages = {
+    US: { name: "USA", flag: <USAFlag className="w-5 h-5" /> },
+    EN: { name: "UK", flag: <UKFlag className="w-5 h-5" /> },
+    CA: { name: "Canada", flag: <CanadaFlag className="w-5 h-5" /> },
+    PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
+    RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
+    FR: { name: "Français", flag: <FranceFlag className="w-5 h-5" /> },
+    DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
+    ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
+  };
+
+  // Refs for dropdowns (from WelcomeSite)
+  const languageDropdownRef = useRef<HTMLDivElement>(null);
+  const languageButtonRef = useRef<HTMLButtonElement>(null);
+
   const t = translations[language] || translations["EN"];
+
   // Shop configurations by country with price selectors
   const shops: Record<string, Shop[]> = {
     poland: [
@@ -352,7 +416,8 @@ const FunkoDetails: React.FC = () => {
       }
     ]
   };
-  const countries = {
+
+  const shoppingCountries = {
     poland: { name: 'Poland', flag: '🇵🇱' },
     uk: { name: 'United Kingdom', flag: '🇬🇧' },
     usa: { name: 'United States', flag: '🇺🇸' },
@@ -360,16 +425,18 @@ const FunkoDetails: React.FC = () => {
     france: { name: 'France', flag: '🇫🇷' },
     russia: { name: 'Russia', flag: '🇷🇺' }
   };
+
   const generateId = (title: string, number: string): string => {
     const safeTitle = title ? title.trim() : "";
     const safeNumber = number ? number.trim() : "";
     return `${safeTitle}-${safeNumber}`
-      .replace(/[^\w\s-]/g, '') // Remove special characters
-      .replace(/\s+/g, '-')     // Replace spaces with hyphens
-      .toLowerCase()            // Convert to lowercase
-      .replace(/-+/g, '-')      // Replace multiple hyphens with single
-      .replace(/^-|-$/g, '');   // Remove leading/trailing hyphens
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .toLowerCase()
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
   };
+
   const handleCountryToggle = (countryCode: string) => {
     setSelectedCountries(prev => {
       if (prev.includes(countryCode)) {
@@ -379,177 +446,160 @@ const FunkoDetails: React.FC = () => {
       }
     });
   };
-  // Improved function to find related items based on series and category
-// Improved function to find related items based on series and category
-const findRelatedItems = (currentItem: FunkoItemWithId, allItems: FunkoItemWithId[]) => {
-  if (!currentItem || !allItems || allItems.length === 0) return [];
-  
-  const related = allItems.filter(item => {
-    // Don't include the current item
-    if (item.id === currentItem.id) return false;
-    
-    // Check if they share the same series (case insensitive)
-    const currentSeries = currentItem.series?.map(s => s.toLowerCase()) || [];
-    const itemSeries = item.series?.map(s => s.toLowerCase()) || [];
-    const sharedSeries = currentSeries.some(series => itemSeries.includes(series));
-    
-    // Check if they share the same category
-    const sameCategory = currentItem.category?.toLowerCase() === item.category?.toLowerCase();
-    
-    // Check if they're from the same franchise (based on title similarity)
-    const titleWords = currentItem.title?.toLowerCase().split(/\s+/) || [];
-    const hasCommonWords = titleWords.some(word => 
-      word.length > 3 && item.title?.toLowerCase().includes(word)
-    );
-    
-    // Prioritize items from the same series, then same category, then similar titles
-    if (sharedSeries) return true;
-    if (sameCategory && hasCommonWords) return true;
-    if (hasCommonWords) return true;
-    return false;
-  });
-  
-  // Sort by relevance (items with shared series first, then same category)
-  related.sort((a, b) => {
-    const currentSeries = currentItem.series?.map(s => s.toLowerCase()) || [];
-    
-    const aSeries = a.series?.map(s => s.toLowerCase()) || [];
-    const aHasSharedSeries = currentSeries.some(series => aSeries.includes(series));
-    
-    const bSeries = b.series?.map(s => s.toLowerCase()) || [];
-    const bHasSharedSeries = currentSeries.some(series => bSeries.includes(series));
-    
-    if (aHasSharedSeries && !bHasSharedSeries) return -1;
-    if (!aHasSharedSeries && bHasSharedSeries) return 1;
-    
-    const aSameCategory = currentItem.category?.toLowerCase() === a.category?.toLowerCase();
-    const bSameCategory = currentItem.category?.toLowerCase() === b.category?.toLowerCase();
-    
-    if (aSameCategory && !bSameCategory) return -1;
-    if (!aSameCategory && bSameCategory) return 1;
-    
-    return 0;
-  });
-  
-  return related.slice(0, 6); // Return top 6 related items
-};
-  const normalizeId = (id: string): string => {
-  return id
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .toLowerCase()
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-};
- // Fetch Funko data
-// Replace the fetchData function in your useEffect with this simplified version:
-const fetchData = async () => {
-  try {
-    setIsLoading(true);
-    setError(null);
-    if (!id) {
-      throw new Error("No ID provided");
-    }
-    
-    console.log("🔍 Searching for ID:", id);
-    
-    // Try direct API call first
-    try {
-      const response = await api.get(`/api/items/${encodeURIComponent(id)}`);
-      console.log("✅ Found item via API:", response.data);
-      setFunkoItem(response.data);
-      
-      // Load related items - with better error handling
-      try {
-        // Try to get all items from the API
-        const allItemsResponse = await api.get('/api/items');
-        if (allItemsResponse.data && Array.isArray(allItemsResponse.data)) {
-          const related = findRelatedItems(response.data, allItemsResponse.data);
-          setRelatedItems(related);
-        }
-      } catch (relatedError) {
-        console.warn("Could not load related items from API:", relatedError);
-        // Try alternative approach - fetch from a different endpoint
-        try {
-          const categoryResponse = await api.get(`/api/items/category/${response.data.category}`);
-          if (categoryResponse.data && Array.isArray(categoryResponse.data)) {
-            const related = findRelatedItems(response.data, categoryResponse.data);
-            setRelatedItems(related.filter(item => item.id !== response.data.id).slice(0, 6));
-          }
-        } catch (categoryError) {
-          console.warn("Could not load items by category:", categoryError);
-        }
-      }
-      return;
-    } catch (apiError: any) {
-      console.warn("Direct API call failed:", apiError.response?.status, apiError.response?.data);
-      // If it's a 404, the item doesn't exist in the database
-      if (apiError.response?.status === 404) {
-        console.log("Item not found in database, trying fallback methods...");
-      } else {
-        // For other errors (500, network), throw immediately
-        throw apiError;
-      }
-    }
-    
-    // Fallback: Try GitHub data (external API)
-    console.log("🔍 Trying GitHub data as fallback...");
-    try {
-      const response = await fetch(
-        "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
-      );
-      if (!response.ok) throw new Error(`GitHub API failed: ${response.status}`);
-      const data: FunkoItem[] = await response.json();
-      const dataWithIds: FunkoItemWithId[] = data.map((item) => ({
-        ...item,
-        id: generateId(item.title, item.number),
-      }));
-      
-      let foundItem = dataWithIds.find((item) => item.id === id);
-      if (!foundItem) {
-        const searchParams = extractSearchParamsFromId(id);
-        foundItem = dataWithIds.find((item) => 
-          item.title.toLowerCase().includes(searchParams.title.toLowerCase())
-        );
-      }
-      
-      if (!foundItem) throw new Error("Item not found in any source");
-      setFunkoItem(foundItem);
-      
-      // Find related items from GitHub data
-      const related = findRelatedItems(foundItem, dataWithIds);
-      setRelatedItems(related);
-    } catch (githubError) {
-      console.error("GitHub fallback failed:", githubError);
-      throw new Error("Item not found in database or external sources");
-    }
-  } catch (err: any) {
-    console.error("❌ All fetch methods failed:", err);
-    setError(err.message || "Failed to load item");
-  } finally {
-    setIsLoading(false);
-  }
-};
-// Helper function to extract search parameters from ID
-const extractSearchParamsFromId = (id: string) => {
-  const parts = id.replace(/[^a-zA-Z0-9\s-]/g, '').split('-');
-  const numberPart = parts.find(part => /^\d+$/.test(part)) || '';
-  const titleParts = parts.filter(part => !/^\d+$/.test(part) && part.length > 0);
-  return {
-    title: titleParts.join(' ') || id.replace(/-/g, ' '),
-    number: numberPart
-  };
-};
-// In FunkoDetails.tsx, add this debug effect
-useEffect(() => {
-  console.log("Current ID from URL:", id);
-  console.log("Looking for item with ID:", id);
-}, [id]);
 
-// Fetch data on component mount and when id changes
-useEffect(() => {
-  fetchData();
-}, [id]);
+  // Improved function to find related items based on series and category
+  const findRelatedItems = (currentItem: FunkoItemWithId, allItems: FunkoItemWithId[]) => {
+    if (!currentItem || !allItems || allItems.length === 0) return [];
+    
+    const related = allItems.filter(item => {
+      if (item.id === currentItem.id) return false;
+      
+      const currentSeries = currentItem.series?.map(s => s.toLowerCase()) || [];
+      const itemSeries = item.series?.map(s => s.toLowerCase()) || [];
+      const sharedSeries = currentSeries.some(series => itemSeries.includes(series));
+      
+      const sameCategory = currentItem.category?.toLowerCase() === item.category?.toLowerCase();
+      
+      const titleWords = currentItem.title?.toLowerCase().split(/\s+/) || [];
+      const hasCommonWords = titleWords.some(word => 
+        word.length > 3 && item.title?.toLowerCase().includes(word)
+      );
+      
+      if (sharedSeries) return true;
+      if (sameCategory && hasCommonWords) return true;
+      if (hasCommonWords) return true;
+      return false;
+    });
+    
+    related.sort((a, b) => {
+      const currentSeries = currentItem.series?.map(s => s.toLowerCase()) || [];
+      
+      const aSeries = a.series?.map(s => s.toLowerCase()) || [];
+      const aHasSharedSeries = currentSeries.some(series => aSeries.includes(series));
+      
+      const bSeries = b.series?.map(s => s.toLowerCase()) || [];
+      const bHasSharedSeries = currentSeries.some(series => bSeries.includes(series));
+      
+      if (aHasSharedSeries && !bHasSharedSeries) return -1;
+      if (!aHasSharedSeries && bHasSharedSeries) return 1;
+      
+      const aSameCategory = currentItem.category?.toLowerCase() === a.category?.toLowerCase();
+      const bSameCategory = currentItem.category?.toLowerCase() === b.category?.toLowerCase();
+      
+      if (aSameCategory && !bSameCategory) return -1;
+      if (!aSameCategory && bSameCategory) return 1;
+      
+      return 0;
+    });
+    
+    return related.slice(0, 6);
+  };
+
+  // Fetch Funko data
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      if (!id) {
+        throw new Error("No ID provided");
+      }
+      
+      console.log("🔍 Searching for ID:", id);
+      
+      try {
+        const response = await api.get(`/api/items/${encodeURIComponent(id)}`);
+        console.log("✅ Found item via API:", response.data);
+        setFunkoItem(response.data);
+        
+        try {
+          const allItemsResponse = await api.get('/api/items');
+          if (allItemsResponse.data && Array.isArray(allItemsResponse.data)) {
+            const related = findRelatedItems(response.data, allItemsResponse.data);
+            setRelatedItems(related);
+          }
+        } catch (relatedError) {
+          console.warn("Could not load related items from API:", relatedError);
+          try {
+            const categoryResponse = await api.get(`/api/items/category/${response.data.category}`);
+            if (categoryResponse.data && Array.isArray(categoryResponse.data)) {
+              const related = findRelatedItems(response.data, categoryResponse.data);
+              setRelatedItems(related.filter(item => item.id !== response.data.id).slice(0, 6));
+            }
+          } catch (categoryError) {
+            console.warn("Could not load items by category:", categoryError);
+          }
+        }
+        return;
+      } catch (apiError: any) {
+        console.warn("Direct API call failed:", apiError.response?.status, apiError.response?.data);
+        if (apiError.response?.status === 404) {
+          console.log("Item not found in database, trying fallback methods...");
+        } else {
+          throw apiError;
+        }
+      }
+      
+      console.log("🔍 Trying GitHub data as fallback...");
+      try {
+        const response = await fetch(
+          "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
+        );
+        if (!response.ok) throw new Error(`GitHub API failed: ${response.status}`);
+        const data: FunkoItem[] = await response.json();
+        const dataWithIds: FunkoItemWithId[] = data.map((item) => ({
+          ...item,
+          id: generateId(item.title, item.number),
+        }));
+        
+        let foundItem = dataWithIds.find((item) => item.id === id);
+        if (!foundItem) {
+          const searchParams = extractSearchParamsFromId(id);
+          foundItem = dataWithIds.find((item) => 
+            item.title.toLowerCase().includes(searchParams.title.toLowerCase())
+          );
+        }
+        
+        if (!foundItem) throw new Error("Item not found in any source");
+        setFunkoItem(foundItem);
+        
+        const related = findRelatedItems(foundItem, dataWithIds);
+        setRelatedItems(related);
+      } catch (githubError) {
+        console.error("GitHub fallback failed:", githubError);
+        throw new Error("Item not found in database or external sources");
+      }
+    } catch (err: any) {
+      console.error("❌ All fetch methods failed:", err);
+      setError(err.message || "Failed to load item");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const extractSearchParamsFromId = (id: string) => {
+    const parts = id.replace(/[^a-zA-Z0-9\s-]/g, '').split('-');
+    const numberPart = parts.find(part => /^\d+$/.test(part)) || '';
+    const titleParts = parts.filter(part => !/^\d+$/.test(part) && part.length > 0);
+    return {
+      title: titleParts.join(' ') || id.replace(/-/g, ' '),
+      number: numberPart
+    };
+  };
+
+  // Track visits
+  useEffect(() => {
+    if (id) {
+      const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
+      visitCount[id] = (visitCount[id] || 0) + 1;
+      localStorage.setItem("funkoVisitCount", JSON.stringify(visitCount));
+    }
+  }, [id]);
+
+  // Fetch data on component mount and when id changes
+  useEffect(() => {
+    fetchData();
+  }, [id]);
+
   // Check item in wishlist/collection
   useEffect(() => {
     const checkItemStatus = async () => {
@@ -568,12 +618,13 @@ useEffect(() => {
         ) {
           localStorage.removeItem("user");
           localStorage.removeItem("token");
-          navigate("/loginSite");
+          navigate("/loginregistersite");
         }
       }
     };
     checkItemStatus();
   }, [funkoItem, user]);
+
   // Theme
   useEffect(() => {
     localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
@@ -583,19 +634,21 @@ useEffect(() => {
       document.documentElement.classList.remove("dark");
     }
   }, [isDarkMode]);
+
   // Language
   useEffect(() => {
     localStorage.setItem("preferredLanguage", language);
   }, [language]);
+
   // Close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         showLanguageDropdown &&
-        dropdownRef.current &&
-        buttonRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        !buttonRef.current.contains(event.target as Node)
+        languageDropdownRef.current &&
+        languageButtonRef.current &&
+        !languageDropdownRef.current.contains(event.target as Node) &&
+        !languageButtonRef.current.contains(event.target as Node)
       ) {
         setShowLanguageDropdown(false);
       }
@@ -603,26 +656,20 @@ useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showLanguageDropdown]);
-  const languages = useMemo(
-    () => ({
-      EN: { name: "English", flag: <UKFlag className="w-5 h-5" /> },
-      PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
-      RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
-      ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
-      FR: { name: "Français", flag: <FranceFlag className="w-5 h-5" /> },
-      DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
-    }),
-    []
-  );
+
+  // Header functions (from WelcomeSite)
   const selectLanguage = (lang: string) => {
     setLanguage(lang);
     setShowLanguageDropdown(false);
   };
+
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
   };
+
   const toggleLanguageDropdown = () =>
     setShowLanguageDropdown((prev) => !prev);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -631,10 +678,11 @@ useEffect(() => {
       navigate("/searchsite");
     }
   };
+
   const toggleWishlist = async () => {
     if (!user) {
       alert(t.loginRequiredMessage || "Please log in");
-      navigate("/loginSite");
+      navigate("/loginregistersite");
       return;
     }
     if (!funkoItem || isUpdatingWishlist) return;
@@ -657,10 +705,11 @@ useEffect(() => {
       setIsUpdatingWishlist(false);
     }
   };
+
   const toggleCollection = async () => {
     if (!user) {
       alert(t.loginRequiredMessage || "Please log in");
-      navigate("/loginSite");
+      navigate("/loginregistersite");
       return;
     }
     if (!funkoItem || isUpdatingCollection) return;
@@ -683,6 +732,7 @@ useEffect(() => {
       setIsUpdatingCollection(false);
     }
   };
+
   // Function to scrape prices from shopping sites
   const scrapePrices = async () => {
     if (!funkoItem) return;
@@ -698,7 +748,6 @@ useEffect(() => {
       const shop = selectedShops[i];
       try {
         setScrapingProgress(Math.round((i / selectedShops.length) * 100));
-        // Call backend API to scrape prices
         const response = await api.post('/scrape/price', {
           url: shop.searchUrl + encodeURIComponent(searchQuery),
           shop: shop.name,
@@ -722,14 +771,12 @@ useEffect(() => {
     setScrapingResults(results);
     setIsScrapingPrices(false);
     setScrapingProgress(100);
-    // Save scraped prices to database
     if (results.length > 0) {
       try {
         await api.post('/prices', {
           funkoId: funkoItem.id,
           prices: results
         });
-        // Update price history with new data
         const updatedPriceHistory = [...priceHistory, ...results];
         setPriceHistory(updatedPriceHistory);
       } catch (error) {
@@ -737,14 +784,17 @@ useEffect(() => {
       }
     }
   };
+
   const loginButtonTo = useMemo(() => {
     if (user?.role === "admin") return "/adminSite";
     if (user?.role === "user") return "/dashboardSite";
-    return "/loginSite";
+    return "/loginregistersite";
   }, [user]);
+
   const loginButtonText = useMemo(() => {
     return user ? t.goToDashboard || "Dashboard" : t.goToLoginSite || "Log In";
   }, [t, user]);
+
   if (isLoading) {
     return (
       <div
@@ -760,6 +810,7 @@ useEffect(() => {
       </div>
     );
   }
+
   if (error) {
     return (
       <div
@@ -783,6 +834,7 @@ useEffect(() => {
       </div>
     );
   }
+
   if (!funkoItem) {
     return (
       <div
@@ -804,18 +856,19 @@ useEffect(() => {
       </div>
     );
   }
+
   return (
     <div
       className={`min-h-screen flex flex-col ${
         isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
       }`}
     >
-      {/* Header */}
-      <header className="py-4 px-4 sm:px-8 flex flex-wrap md:flex-nowrap justify-between items-center gap-4 relative">
-        <div className="flex-shrink-0">
+      {/* 🔝 Header - IDENTYCZNY jak w WelcomeSite */}
+      <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
+        <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
           <Link to="/" className="no-underline">
             <h1
-              className={`text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
+              className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
                 isDarkMode ? "text-yellow-400" : "text-green-600"
               }`}
             >
@@ -823,10 +876,11 @@ useEffect(() => {
             </h1>
           </Link>
         </div>
-        {/* Search */}
+
+        {/* 🔍 Search */}
         <form
           onSubmit={handleSearch}
-          className={`flex-grow max-w-lg w-full md:w-auto mx-auto flex rounded-lg overflow-hidden ${
+          className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden ${
             isDarkMode ? "bg-gray-700" : "bg-gray-100"
           }`}
         >
@@ -838,27 +892,37 @@ useEffect(() => {
             className={`flex-grow px-4 py-2 outline-none ${
               isDarkMode
                 ? "bg-gray-700 text-white placeholder-gray-400"
-                : "bg-white text-black"
+                : "bg-white text-black placeholder-gray-500"
             }`}
+            aria-label="Search for Funko Pops"
           />
           <button
             type="submit"
             className={`px-4 py-2 ${
-              isDarkMode ? "bg-yellow-500" : "bg-green-600"
-            }`}
+              isDarkMode
+                ? "bg-yellow-500 hover:bg-yellow-600"
+                : "bg-green-600 hover:bg-green-700"
+            } text-white`}
+            aria-label="Search"
           >
             <SearchIcon className="w-5 h-5" />
           </button>
         </form>
-        {/* Theme & Lang */}
+
+        {/* 🌐 Language, 🌙 Theme, 🔐 Login */}
         <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0">
+          {/* Language Dropdown */}
           <div className="relative">
             <button
-              ref={buttonRef}
+              ref={languageButtonRef}
               onClick={toggleLanguageDropdown}
               className={`p-2 rounded-full flex items-center gap-1 ${
-                isDarkMode ? "bg-gray-700" : "bg-gray-200"
+                isDarkMode
+                  ? "bg-gray-700 hover:bg-gray-600"
+                  : "bg-gray-200 hover:bg-neutral-600"
               }`}
+              aria-label="Select language"
+              aria-expanded={showLanguageDropdown}
             >
               <GlobeIcon className="w-5 h-5" />
               <span className="text-sm font-medium">{language}</span>
@@ -868,51 +932,69 @@ useEffect(() => {
                 }`}
               />
             </button>
+
             {showLanguageDropdown && (
-              <div className={`absolute right-0 mt-2 w-48 max-w-full rounded-md shadow-lg py-1 z-10 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
-                {Object.entries(translations).map(([code]) => (
+              <div
+                ref={languageDropdownRef}
+                className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
+                  isDarkMode ? "bg-gray-700" : "bg-white"
+                }`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {Object.entries(languages).map(([code, { name, flag }]) => (
                   <button
                     key={code}
                     onClick={() => selectLanguage(code)}
-                    className={`w-full text-left px-4 py-2 flex items-center gap-2 text-base ${language === code ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : "hover:bg-gray-100 dark:hover:bg-gray-600"}`}
+                    className={`w-full text-left px-4 py-2 flex items-center gap-2 ${
+                      language === code
+                        ? isDarkMode
+                          ? "bg-yellow-500 text-black"
+                          : "bg-green-600 text-white"
+                        : isDarkMode
+                        ? "hover:bg-gray-600"
+                        : "hover:bg-neutral-500"
+                    }`}
                   >
-                    {code === "EN" && <UKFlag className="w-5 h-5" />}
-                    {code === "PL" && <PolandFlag className="w-5 h-5" />}
-                    {code === "RU" && <RussiaFlag className="w-5 h-5" />}
-                    {code === "FR" && <FranceFlag className="w-5 h-5" />}
-                    {code === "DE" && <GermanyFlag className="w-5 h-5" />}
-                    {code === "ES" && <SpainFlag className="w-5 h-5" />}
-                    <span>{code}</span>
+                    <span className="w-5 h-5">{flag}</span>
+                    <span>{name}</span>
                   </button>
                 ))}
               </div>
             )}
           </div>
+
+          {/* 🌙 Theme Toggle */}
           <button
             onClick={toggleTheme}
             className={`p-2 rounded-full ${
-              isDarkMode ? "bg-gray-700" : "bg-gray-200"
+              isDarkMode
+                ? "bg-gray-700 hover:bg-gray-600"
+                : "bg-gray-200 hover:bg-gray-600"
             }`}
+            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
-        </div>
-        <div>
-          <Link
-            to={loginButtonTo}
-            className={`px-4 py-2 rounded ${
+
+          {/* 🔐 Dashboard/Login */}
+          <button
+            onClick={() => {
+              const user = JSON.parse(localStorage.getItem("user") || "{}");
+              navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginRegisterSite");
+            }}
+            className={`flex items-center gap-2 px-4 py-2 rounded ${
               isDarkMode
-                ? "bg-yellow-500 text-black"
-                : "bg-green-600 text-white"
+                ? "bg-yellow-500 text-black hover:bg-yellow-600"
+                : "bg-green-600 text-white hover:bg-green-700"
             }`}
           >
-            {loginButtonText}
-          </Link>
+            {t.goToDashboard || "Dashboard"}
+          </button>
         </div>
       </header>
-      {/* Main */}
-      <main className="flex-grow container mx-auto px-4 py-8 max-w-5xl">
 
+      {/* Main Content */}
+      <main className="flex-grow container mx-auto px-4 py-8 max-w-5xl">
         {/* Main details */}
         <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
           <h1 className="text-3xl font-bold mb-2">{funkoItem.title}</h1>
@@ -968,6 +1050,7 @@ useEffect(() => {
             </div>
           </div>
         </div>
+
         {/* Shopping Links Section */}
         <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
           <h2 className="text-xl font-semibold mb-4">Search on Shopping Sites</h2>
@@ -975,7 +1058,7 @@ useEffect(() => {
           <div className="mb-4">
             <p className="text-sm font-medium mb-2">Search in countries:</p>
             <div className="flex flex-wrap gap-2">
-              {Object.entries(countries).map(([code, country]) => (
+              {Object.entries(shoppingCountries).map(([code, country]) => (
                 <button
                   key={code}
                   onClick={() => handleCountryToggle(code)}
@@ -990,6 +1073,7 @@ useEffect(() => {
               ))}
             </div>
           </div>
+
           {/* Scraping Results */}
           {scrapingResults.length > 0 && (
             <div className="mb-6">
@@ -1006,7 +1090,7 @@ useEffect(() => {
                       <div>
                         <h3 className="font-semibold">{result.shop}</h3>
                         <p className="text-xs text-gray-500">
-                          {countries[result.country as keyof typeof countries]?.name}
+                          {shoppingCountries[result.country as keyof typeof shoppingCountries]?.name}
                         </p>
                       </div>
                       <div className="text-right">
@@ -1023,6 +1107,7 @@ useEffect(() => {
               </div>
             </div>
           )}
+
           {/* Direct Links to Shopping Sites */}
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {selectedCountries.flatMap(countryCode => {
@@ -1044,8 +1129,8 @@ useEffect(() => {
                           {shop.name}
                         </h3>
                         <p className="text-xs text-gray-500 flex items-center gap-1">
-                          {countries[countryCode as keyof typeof countries].flag} 
-                          {countries[countryCode as keyof typeof countries].name}
+                          {shoppingCountries[countryCode as keyof typeof shoppingCountries].flag} 
+                          {shoppingCountries[countryCode as keyof typeof shoppingCountries].name}
                         </p>
                       </div>
                       <div className="text-right">
@@ -1076,59 +1161,67 @@ useEffect(() => {
               });
             })}
           </div>
+
           {selectedCountries.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               <p>Select countries to see shopping links</p>
             </div>
           )}
         </div>
+
         {/* Related items */}
         <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
           <h2 className="text-xl font-semibold mb-4">{t.relatedItems || "Related Items"}</h2>
           {relatedItems.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {relatedItems.map((item) => (
-              <Link
-                key={item.id}
-                to={`/funko/${item.id}`}
-                className="block rounded-lg p-3 border dark:border-gray-600 hover:shadow-lg transition"
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {relatedItems.map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/funko/${item.id}`}
+                  className="block rounded-lg p-3 border dark:border-gray-600 hover:shadow-lg transition"
+                >
+                  {item.imageName ? (
+                    <img
+                      src={item.imageName}
+                      alt={item.title}
+                      className="w-full h-32 object-contain mb-2"
+                    />
+                  ) : (
+                    <div className="w-full h-32 bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                      {t.noImageAvailable}
+                    </div>
+                  )}
+                  <h3 className="text-sm font-medium">{item.title}</h3>
+                  <p className="text-xs text-gray-500">{item.number}</p>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">{t.noRelatedItems || "No related items found."}</p>
+              <Link 
+                to="/searchsite" 
+                className={`mt-4 inline-block px-4 py-2 rounded ${
+                  isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"
+                }`}
               >
-                {item.imageName ? (
-                  <img
-                    src={item.imageName}
-                    alt={item.title}
-                    className="w-full h-32 object-contain mb-2"
-                  />
-                ) : (
-                  <div className="w-full h-32 bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-                    {t.noImageAvailable}
-                  </div>
-                )}
-                <h3 className="text-sm font-medium">{item.title}</h3>
-                <p className="text-xs text-gray-500">{item.number}</p>
+                Browse All Items
               </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-500">{t.noRelatedItems || "No related items found."}</p>
-            <Link 
-              to="/searchsite" 
-              className={`mt-4 inline-block px-4 py-2 rounded ${
-                isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"
-              }`}
-            >
-              Browse All Items
-            </Link>
-          </div>
-        )}
+            </div>
+          )}
         </div>
       </main>
-      {/* Footer */}
-      <footer className={`text-center py-4 ${isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-200 text-gray-700"}`}>
+
+      {/* 📝 Footer */}
+      <footer
+        className={`text-center py-4 ${
+          isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-300 text-gray-700"
+        }`}
+      >
         {t.copyright}
       </footer>
     </div>
   );
 };
+
 export default FunkoDetails;

@@ -49,9 +49,18 @@ const languageNames = {
 const generateId = (title: string, number: string): string => {
   const safeTitle = title?.trim() || "";
   const safeNumber = number?.trim() || "";
-  return `${safeTitle}-${safeNumber}`.replace(/\s+/g, "-");
+  
+  // Combine title and number
+  const combined = `${safeTitle}-${safeNumber}`;
+  
+  // Clean and normalize
+  return combined
+    .replace(/[^\w\s-]/g, '')  // Remove special characters except word chars, spaces, hyphens
+    .replace(/\s+/g, '-')       // Replace spaces with hyphens
+    .toLowerCase()              // Convert to lowercase
+    .replace(/-+/g, '-')        // Replace multiple hyphens with single hyphen
+    .replace(/^-|-$/g, '');     // Remove leading/trailing hyphens
 };
-
 const WelcomeSite: React.FC = () => {
   // ✅ MOVED: All state declarations inside the component
   const [searchQuery, setSearchQuery] = useState("");
@@ -391,20 +400,64 @@ const WelcomeSite: React.FC = () => {
   }, [isDarkMode]);
 
   // 📥 Fetch Funko data
+
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
+        
+        // Try to fetch from backend first
+        const token = localStorage.getItem("token");
+        
+        if (token) {
+          try {
+            const backendResponse = await fetch("http://localhost:5000/api/items", {
+              headers: {
+                "Authorization": `Bearer ${token}`
+              }
+            });
+            
+            if (backendResponse.ok) {
+              const backendData = await backendResponse.json();
+              
+              // Only use backend data if it has items
+              if (backendData && backendData.length > 0) {
+                const dataWithIds = backendData.map((item: any) => ({
+                  ...item,
+                  // Use the ID from database, but ensure consistency
+                  id: item.id || generateId(item.title, item.number),
+                  series: Array.isArray(item.series) ? item.series : 
+                        (typeof item.series === 'string' ? JSON.parse(item.series) : [])
+                }));
+                
+                console.log("✅ Loaded items from database:", dataWithIds.length);
+                setFunkoData(dataWithIds);
+                setIsLoading(false);
+                return; // Success! Exit here
+              }
+            }
+          } catch (backendErr) {
+            console.warn("⚠️ Backend unavailable, using external data");
+          }
+        }
+        
+        // Fallback: Fetch from external JSON
+        console.log("📡 Fetching from external JSON...");
         const response = await fetch(
           "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
         );
         if (!response.ok) throw new Error("Failed to fetch data");
         const rawData: FunkoItem[] = await response.json();
+        
         const dataWithIds = rawData.map((item) => ({
           ...item,
           id: generateId(item.title, item.number),
         }));
+        
+        console.log("✅ Loaded items from external JSON:", dataWithIds.length);
         setFunkoData(dataWithIds);
+        
       } catch (err) {
         console.error("Error loading Funko data:", err);
       } finally {

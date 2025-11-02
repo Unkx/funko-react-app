@@ -191,13 +191,50 @@ const FunkoDetails: React.FC = () => {
 
   const t = translations[language] || translations["EN"];
 
-  // Shop configurations by country with price selectors
+  // Updated shop configurations with verified Canadian retailers
   const shops: Record<string, Shop[]> = {
+    canada: [
+      { 
+        name: 'EB Games / GameStop CA', 
+        url: 'ebgames.ca', 
+        searchUrl: 'https://www.ebgames.ca/SearchResult/Quicksearch?q=', 
+        currency: 'CAD',
+        priceSelector: '.price'
+      },
+      { 
+        name: 'Amazon Canada', 
+        url: 'amazon.ca', 
+        searchUrl: 'https://www.amazon.ca/s?k=', 
+        currency: 'CAD',
+        priceSelector: '.a-price-whole'
+      },
+      { 
+        name: 'Pop In A Box CA', 
+        url: 'popinabox.ca', 
+        searchUrl: 'https://www.popinabox.ca/search?q=', 
+        currency: 'CAD',
+        priceSelector: '.price'
+      },
+      { 
+        name: 'MyPops.ca', 
+        url: 'mypops.ca', 
+        searchUrl: 'https://www.mypops.ca/search?q=', 
+        currency: 'CAD',
+        priceSelector: '.price'
+      },
+      { 
+        name: 'Funko Official CA', 
+        url: 'funko.com/ca', 
+        searchUrl: 'https://funko.com/ca/search?q=', 
+        currency: 'CAD',
+        priceSelector: '.price'
+      }
+    ],
     poland: [
       { 
         name: 'Empik', 
         url: 'empik.com', 
-        searchUrl: `https://www.empik.com/szukaj/produkty?q=`, 
+        searchUrl: 'https://www.empik.com/szukaj/produkty?q=', 
         currency: 'PLN',
         priceSelector: '.price'
       },
@@ -216,13 +253,6 @@ const FunkoDetails: React.FC = () => {
         priceSelector: '.whole'
       },
       { 
-        name: 'Komputronik', 
-        url: 'komputronik.pl', 
-        searchUrl: 'https://www.komputronik.pl/search/', 
-        currency: 'PLN',
-        priceSelector: '.price'
-      },
-      { 
         name: 'Merlin.pl', 
         url: 'merlin.pl', 
         searchUrl: 'https://merlin.pl/szukaj/?q=', 
@@ -239,18 +269,11 @@ const FunkoDetails: React.FC = () => {
         priceSelector: '.price'
       },
       { 
-        name: 'Game', 
+        name: 'Game UK', 
         url: 'game.co.uk', 
         searchUrl: 'https://www.game.co.uk/en/search/?q=', 
         currency: 'GBP',
         priceSelector: '.productPrice'
-      },
-      { 
-        name: 'Argos', 
-        url: 'argos.co.uk', 
-        searchUrl: 'https://www.argos.co.uk/search/', 
-        currency: 'GBP',
-        priceSelector: '[data-test="product-price"]'
       },
       { 
         name: 'Amazon UK', 
@@ -260,7 +283,7 @@ const FunkoDetails: React.FC = () => {
         priceSelector: '.a-price-whole'
       },
       { 
-        name: 'Smyths Toys', 
+        name: 'Smyths Toys UK', 
         url: 'smythstoys.com', 
         searchUrl: 'https://www.smythstoys.com/uk/en-gb/search/?text=', 
         currency: 'GBP',
@@ -276,7 +299,7 @@ const FunkoDetails: React.FC = () => {
         priceSelector: '.price'
       },
       { 
-        name: 'GameStop', 
+        name: 'GameStop US', 
         url: 'gamestop.com', 
         searchUrl: 'https://www.gamestop.com/search/?q=', 
         currency: 'USD',
@@ -297,21 +320,14 @@ const FunkoDetails: React.FC = () => {
         priceSelector: '.a-price-whole'
       },
       { 
-        name: 'Entertainment Earth', 
-        url: 'entertainmentearth.com', 
-        searchUrl: 'https://www.entertainmentearth.com/s/?query1=', 
+        name: 'Funko Official', 
+        url: 'funko.com', 
+        searchUrl: 'https://funko.com/search?q=', 
         currency: 'USD',
         priceSelector: '.price'
       }
     ],
     germany: [
-      { 
-        name: 'Elbenwald', 
-        url: 'elbenwald.de', 
-        searchUrl: 'https://www.elbenwald.de/search?sSearch=', 
-        currency: 'EUR',
-        priceSelector: '.price'
-      },
       { 
         name: 'Amazon DE', 
         url: 'amazon.de', 
@@ -327,9 +343,9 @@ const FunkoDetails: React.FC = () => {
         priceSelector: '.whole'
       },
       { 
-        name: 'GameStop DE', 
-        url: 'gamestop.de', 
-        searchUrl: 'https://www.gamestop.de/SearchResult/QuickSearch?q=', 
+        name: 'Saturn', 
+        url: 'saturn.de', 
+        searchUrl: 'https://www.saturn.de/de/search.html?query=', 
         currency: 'EUR',
         priceSelector: '.price'
       },
@@ -357,13 +373,6 @@ const FunkoDetails: React.FC = () => {
         priceSelector: '.a-price-whole'
       },
       { 
-        name: 'Cultura', 
-        url: 'cultura.com', 
-        searchUrl: 'https://www.cultura.com/catalogsearch/result/?q=', 
-        currency: 'EUR',
-        priceSelector: '.price'
-      },
-      { 
         name: 'Micromania', 
         url: 'micromania.fr', 
         searchUrl: 'https://www.micromania.fr/search?text=', 
@@ -371,9 +380,9 @@ const FunkoDetails: React.FC = () => {
         priceSelector: '.price'
       },
       { 
-        name: 'Leclerc', 
-        url: 'e.leclerc', 
-        searchUrl: 'https://www.e.leclerc/search?text=', 
+        name: 'Cultura', 
+        url: 'cultura.com', 
+        searchUrl: 'https://www.cultura.com/catalogsearch/result/?q=', 
         currency: 'EUR',
         priceSelector: '.price'
       }
@@ -394,23 +403,9 @@ const FunkoDetails: React.FC = () => {
         priceSelector: '.price'
       },
       { 
-        name: 'M.Video', 
-        url: 'mvideo.ru', 
-        searchUrl: 'https://www.mvideo.ru/search?text=', 
-        currency: 'RUB',
-        priceSelector: '.price'
-      },
-      { 
-        name: 'Citilink', 
-        url: 'citilink.ru', 
-        searchUrl: 'https://www.citilink.ru/search/?text=', 
-        currency: 'RUB',
-        priceSelector: '.price'
-      },
-      { 
-        name: 'DNS Shop', 
-        url: 'dns-shop.ru', 
-        searchUrl: 'https://www.dns-shop.ru/search/?q=', 
+        name: 'Yandex Market', 
+        url: 'market.yandex.ru', 
+        searchUrl: 'https://market.yandex.ru/search?text=', 
         currency: 'RUB',
         priceSelector: '.price'
       }
@@ -418,6 +413,7 @@ const FunkoDetails: React.FC = () => {
   };
 
   const shoppingCountries = {
+    canada: { name: 'Canada', flag: '🇨🇦' },
     poland: { name: 'Poland', flag: '🇵🇱' },
     uk: { name: 'United Kingdom', flag: '🇬🇧' },
     usa: { name: 'United States', flag: '🇺🇸' },
@@ -495,22 +491,28 @@ const FunkoDetails: React.FC = () => {
     return related.slice(0, 6);
   };
 
-  // Fetch Funko data
+   // Consolidated fetch function with fallback logic
   const fetchData = async () => {
     try {
       setIsLoading(true);
       setError(null);
+      
       if (!id) {
         throw new Error("No ID provided");
       }
       
-      console.log("🔍 Searching for ID:", id);
+      // Clean the ID (remove trailing hyphens and special chars)
+      const cleanId = id.replace(/[^\w\s-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
+      console.log("🔍 Original ID:", id);
+      console.log("🔍 Clean ID:", cleanId);
       
+      // STEP 1: Try backend database first
       try {
-        const response = await api.get(`/api/items/${encodeURIComponent(id)}`);
-        console.log("✅ Found item via API:", response.data);
+        const response = await api.get(`/api/items/${encodeURIComponent(cleanId)}`);
+        console.log("✅ Found item in database:", response.data);
         setFunkoItem(response.data);
         
+        // Load related items from database
         try {
           const allItemsResponse = await api.get('/api/items');
           if (allItemsResponse.data && Array.isArray(allItemsResponse.data)) {
@@ -518,56 +520,92 @@ const FunkoDetails: React.FC = () => {
             setRelatedItems(related);
           }
         } catch (relatedError) {
-          console.warn("Could not load related items from API:", relatedError);
-          try {
-            const categoryResponse = await api.get(`/api/items/category/${response.data.category}`);
-            if (categoryResponse.data && Array.isArray(categoryResponse.data)) {
-              const related = findRelatedItems(response.data, categoryResponse.data);
-              setRelatedItems(related.filter(item => item.id !== response.data.id).slice(0, 6));
-            }
-          } catch (categoryError) {
-            console.warn("Could not load items by category:", categoryError);
-          }
+          console.warn("Could not load related items:", relatedError);
         }
-        return;
+        
+        return; // Success! Exit here
       } catch (apiError: any) {
-        console.warn("Direct API call failed:", apiError.response?.status, apiError.response?.data);
-        if (apiError.response?.status === 404) {
-          console.log("Item not found in database, trying fallback methods...");
-        } else {
-          throw apiError;
-        }
+        console.warn("❌ Database lookup failed:", apiError.response?.status);
+        // Continue to fallback
       }
       
-      console.log("🔍 Trying GitHub data as fallback...");
-      try {
-        const response = await fetch(
-          "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
-        );
-        if (!response.ok) throw new Error(`GitHub API failed: ${response.status}`);
-        const data: FunkoItem[] = await response.json();
-        const dataWithIds: FunkoItemWithId[] = data.map((item) => ({
-          ...item,
-          id: generateId(item.title, item.number),
-        }));
-        
-        let foundItem = dataWithIds.find((item) => item.id === id);
-        if (!foundItem) {
-          const searchParams = extractSearchParamsFromId(id);
-          foundItem = dataWithIds.find((item) => 
-            item.title.toLowerCase().includes(searchParams.title.toLowerCase())
-          );
-        }
-        
-        if (!foundItem) throw new Error("Item not found in any source");
-        setFunkoItem(foundItem);
-        
-        const related = findRelatedItems(foundItem, dataWithIds);
-        setRelatedItems(related);
-      } catch (githubError) {
-        console.error("GitHub fallback failed:", githubError);
-        throw new Error("Item not found in database or external sources");
+      // STEP 2: Fallback to external JSON
+      console.log("⚠️ Item not in database, fetching from GitHub...");
+      const externalResponse = await fetch(
+        "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
+      );
+      
+      if (!externalResponse.ok) {
+        throw new Error(`GitHub API failed: ${externalResponse.status}`);
       }
+      
+      const allItems: FunkoItem[] = await externalResponse.json();
+      const dataWithIds: FunkoItemWithId[] = allItems.map((item) => ({
+        ...item,
+        id: generateId(item.title, item.number),
+      }));
+      
+      // Try multiple matching strategies
+      let foundItem: FunkoItemWithId | undefined;
+      
+      // 1. Exact ID match
+      foundItem = dataWithIds.find((item) => item.id === cleanId);
+      
+      // 2. Case-insensitive ID match
+      if (!foundItem) {
+        foundItem = dataWithIds.find((item) => 
+          item.id.toLowerCase() === cleanId.toLowerCase()
+        );
+      }
+      
+      // 3. Extract title/number from ID and search
+      if (!foundItem) {
+        const searchParams = extractSearchParamsFromId(cleanId);
+        console.log("🔍 Searching with params:", searchParams);
+        
+        foundItem = dataWithIds.find((item) => {
+          const titleMatch = item.title.toLowerCase().includes(searchParams.title.toLowerCase());
+          const numberMatch = !searchParams.number || item.number === searchParams.number;
+          return titleMatch && numberMatch;
+        });
+      }
+      
+      // 4. Fuzzy title-only search
+      if (!foundItem) {
+        const searchParams = extractSearchParamsFromId(cleanId);
+        const titleWords = searchParams.title.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+        
+        foundItem = dataWithIds.find((item) => {
+          const itemTitleLower = item.title.toLowerCase();
+          return titleWords.every(word => itemTitleLower.includes(word));
+        });
+      }
+      
+      if (!foundItem) {
+        throw new Error("Item not found in any source");
+      }
+      
+      console.log("✅ Found item in external JSON:", foundItem.title);
+      setFunkoItem(foundItem);
+      
+      // Find related items from external data
+      const related = findRelatedItems(foundItem, dataWithIds);
+      setRelatedItems(related);
+      
+      // OPTIONAL: Auto-sync this item to database for future use
+      try {
+        const token = localStorage.getItem("token");
+        if (token) {
+          await api.post('/api/items/sync-single', {
+            item: foundItem
+          });
+          console.log("✅ Item synced to database");
+        }
+      } catch (syncError) {
+        console.warn("⚠️ Could not sync item to database:", syncError);
+        // Non-critical, continue anyway
+      }
+      
     } catch (err: any) {
       console.error("❌ All fetch methods failed:", err);
       setError(err.message || "Failed to load item");
@@ -577,7 +615,7 @@ const FunkoDetails: React.FC = () => {
   };
 
   const extractSearchParamsFromId = (id: string) => {
-    const parts = id.replace(/[^a-zA-Z0-9\s-]/g, '').split('-');
+    const parts = id.replace(/[^a-zA-Z0-9\s-]/g, '').split('-').filter(p => p.length > 0);
     const numberPart = parts.find(part => /^\d+$/.test(part)) || '';
     const titleParts = parts.filter(part => !/^\d+$/.test(part) && part.length > 0);
     return {
@@ -585,6 +623,45 @@ const FunkoDetails: React.FC = () => {
       number: numberPart
     };
   };
+
+    // Track visits
+  useEffect(() => {
+    if (id) {
+      const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
+      visitCount[id] = (visitCount[id] || 0) + 1;
+      localStorage.setItem("funkoVisitCount", JSON.stringify(visitCount));
+    }
+  }, [id]);
+
+  // Fetch data on component mount and when id changes
+  useEffect(() => {
+    fetchData();
+  }, [id]); // Re-fetch when ID changes
+
+  // Check item in wishlist/collection AFTER item is loaded
+  useEffect(() => {
+    const checkItemStatus = async () => {
+      if (!funkoItem || !user) return;
+      try {
+        const [wishlistRes, collectionRes] = await Promise.all([
+          api.get(`/wishlist/check/${funkoItem.id}`),
+          api.get(`/collection/check/${funkoItem.id}`),
+        ]);
+        setInWishlist(wishlistRes.data.exists);
+        setInCollection(collectionRes.data.exists);
+      } catch (err) {
+        if (
+          axios.isAxiosError(err) &&
+          (err.response?.status === 401 || err.response?.status === 403)
+        ) {
+          localStorage.removeItem("user");
+          localStorage.removeItem("token");
+          navigate("/loginregistersite");
+        }
+      }
+    };
+    checkItemStatus();
+  }, [funkoItem, user]);
 
   // Track visits
   useEffect(() => {
@@ -632,6 +709,55 @@ const FunkoDetails: React.FC = () => {
   // Fetch data on component mount and when id changes
   useEffect(() => {
     fetchData();
+  }, [id]);
+
+    // Example for your FunkoDetailPage.tsx or similar
+
+  useEffect(() => {
+    const fetchFunkoItem = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Try backend first
+        const backendResponse = await fetch(`http://localhost:5000/api/items/${id}`);
+        
+        if (backendResponse.ok) {
+          const data = await backendResponse.json();
+          setFunkoItem(data);
+          return;
+        }
+        
+        // 🔥 Fallback: Fetch from external JSON
+        console.warn("Item not in backend, fetching from external source...");
+        const externalResponse = await fetch(
+          "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
+        );
+        
+        if (!externalResponse.ok) throw new Error("Failed to load external data");
+        
+        const allItems = await externalResponse.json();
+        const matchedItem = allItems.find(
+          (item: any) => 
+            `${item.title}-${item.number}`.replace(/\s+/g, '-').toLowerCase() === id.toLowerCase()
+        );
+        
+        if (matchedItem) {
+          setFunkoItem({
+            ...matchedItem,
+            id: `${matchedItem.title}-${matchedItem.number}`.replace(/\s+/g, '-').toLowerCase()
+          });
+        } else {
+          setError("Item not found");
+        }
+      } catch (err) {
+        console.error("Error fetching item:", err);
+        setError("Failed to load item");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFunkoItem();
   }, [id]);
 
   // Check item in wishlist/collection

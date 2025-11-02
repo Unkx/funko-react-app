@@ -365,48 +365,109 @@ app.get('/api/items', async (req, res) => {
   }
 });
 
+
+// Replace your existing /api/items/:id route with this improved version:
+
 app.get('/api/items/:id', async (req, res) => {
-  const { id } = req.params;
+  let { id } = req.params;
+  
+  // Clean the ID: remove special chars, trailing hyphens, normalize
+  id = id
+    .replace(/[^\w\s-]/g, '')  // Remove special characters
+    .replace(/-+/g, '-')       // Replace multiple hyphens with single
+    .replace(/^-|-$/g, '')     // Remove leading/trailing hyphens
+    .toLowerCase();
   
   try {
+    console.log('🔍 Looking for item with cleaned ID:', id);
+    
+    // STEP 1: Try exact ID match
     let result = await pool.query(
       `SELECT id, title, number, category, 
               series,
               exclusive, image_name as "imageName"
        FROM funko_items 
-       WHERE id = $1`,
+       WHERE LOWER(TRIM(id)) = $1`,
       [id]
     );
     
+    // STEP 2: Try ID with various hyphen variations
     if (result.rows.length === 0) {
+      console.log('⚠️ Exact match failed, trying variations...');
+      
+      // Remove all hyphens and try
+      const idNoHyphens = id.replace(/-/g, '');
       result = await pool.query(
         `SELECT id, title, number, category, 
                 series,
                 exclusive, image_name as "imageName"
          FROM funko_items 
-         WHERE LOWER(id) = LOWER($1)`,
-        [id]
+         WHERE LOWER(REPLACE(id, '-', '')) = $1`,
+        [idNoHyphens]
       );
     }
     
+    // STEP 3: Parse ID and try title + number match (FIXED - treat number as text)
     if (result.rows.length === 0) {
-      const idParts = id.split('-');
-      const numberPart = idParts.pop();
-      const titlePart = idParts.join(' ');
+      console.log('⚠️ Variation match failed, trying title+number...');
+      const idParts = id.split('-').filter(p => p.length > 0);
+      const numberPart = idParts.find(part => /^\d+$/.test(part));
+      const titleParts = idParts.filter(part => !/^\d+$/.test(part) && part.length > 0);
+      const titlePart = titleParts.join(' ');
+      console.log('🔍 Extracted - Title:', titlePart, 'Number:', numberPart);
+
+      if (titlePart) {
+        if (numberPart) {
+          // Compare number as text, not integer
+          result = await pool.query(
+            `SELECT id, title, number, category, 
+                    series,
+                    exclusive, image_name as "imageName"
+            FROM funko_items 
+            WHERE LOWER(title) LIKE $1 AND number = $2
+            LIMIT 1`,
+            [`%${titlePart}%`, numberPart]
+          );
+        } else {
+          // Search by title only
+          result = await pool.query(
+            `SELECT id, title, number, category, 
+                    series,
+                    exclusive, image_name as "imageName"
+            FROM funko_items 
+            WHERE LOWER(title) LIKE $1
+            LIMIT 1`,
+            [`%${titlePart}%`]
+          );
+        }
+      }
+    }
+    
+    // STEP 4: Try word-based fuzzy match
+    if (result.rows.length === 0 && id.length > 5) {
+      console.log('⚠️ Title+number failed, trying fuzzy word match...');
       
-      if (numberPart && titlePart) {
+      const searchWords = id.split('-').filter(w => w.length > 2 && !/^\d+$/.test(w));
+      
+      if (searchWords.length > 0) {
+        // Build a query that matches all words
+        const likeConditions = searchWords.map((_, idx) => `LOWER(title) LIKE $${idx + 1}`).join(' AND ');
+        const likeParams = searchWords.map(word => `%${word}%`);
+        
         result = await pool.query(
           `SELECT id, title, number, category, 
                   series,
                   exclusive, image_name as "imageName"
            FROM funko_items 
-           WHERE LOWER(title) = LOWER($1) AND number = $2`,
-          [titlePart, numberPart]
+           WHERE ${likeConditions}
+           LIMIT 1`,
+          likeParams
         );
       }
     }
 
     if (result.rows.length === 0) {
+      console.log('❌ Item not found in database with ID:', id);
       return res.status(404).json({ error: 'Funko Pop not found' });
     }
 
@@ -414,7 +475,8 @@ app.get('/api/items/:id', async (req, res) => {
       ...result.rows[0],
       series: result.rows[0].series || []
     };
-
+    
+    console.log('✅ Found item:', item.title, '#' + item.number);
     res.json(item);
   } catch (err) {
     console.error('Error fetching item:', err);
@@ -422,6 +484,139 @@ app.get('/api/items/:id', async (req, res) => {
   }
 });
 
+// Batch sync endpoint (for syncing multiple items)
+// Add this route to your server.js (around line 300, after other item routes)
+
+// Batch sync endpoint (for syncing multiple items)
+app.post('/api/items/batch-sync', async (req, res) => {
+  const { items } = req.body;
+  
+  if (!Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: 'Items array required' });
+  }
+
+  try {
+    // Use UPSERT to avoid duplicates
+    const values = items.map((item, idx) => {
+      const id = `${item.title}-${item.number}`.replace(/\s+/g, '-').toLowerCase();
+      const offset = idx * 6;
+      return `(${offset + 1}, ${offset + 2}, ${offset + 3}, ${offset + 4}, ${offset + 5}, ${offset + 6})`;
+    }).join(', ');
+
+    const params = items.flatMap(item => [
+      `${item.title}-${item.number}`.replace(/\s+/g, '-').toLowerCase(),
+      item.title,
+      item.number,
+      item.series?.[0] || 'Unknown', // Use first series as category
+      JSON.stringify(item.series || []),
+      item.exclusive || false
+    ]);
+
+    await pool.query(
+      `INSERT INTO funko_items (id, title, number, category, series, exclusive)
+       VALUES ${values}
+       ON CONFLICT (id) DO UPDATE SET
+         title = EXCLUDED.title,
+         number = EXCLUDED.number,
+         category = EXCLUDED.category,
+         series = EXCLUDED.series,
+         exclusive = EXCLUDED.exclusive`,
+      params
+    );
+
+    res.json({ 
+      message: 'Batch sync successful', 
+      count: items.length 
+    });
+  } catch (err) {
+    console.error('Batch sync error:', err);
+    res.status(500).json({ error: 'Failed to sync items' });
+  }
+});
+
+// Single item sync endpoint (for on-demand syncing)
+  app.post('/api/items/sync-single', async (req, res) => {
+    const { item } = req.body;
+    
+    if (!item || !item.title || !item.number) {
+      return res.status(400).json({ error: 'Valid item with title and number required' });
+    }
+
+    try {
+      const id = `${item.title}-${item.number}`.replace(/\s+/g, '-').toLowerCase();
+      
+      await pool.query(
+        `INSERT INTO funko_items (id, title, number, category, series, exclusive, image_name)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ON CONFLICT (id) DO UPDATE SET
+          title = EXCLUDED.title,
+          number = EXCLUDED.number,
+          category = EXCLUDED.category,
+          series = EXCLUDED.series,
+          exclusive = EXCLUDED.exclusive,
+          image_name = EXCLUDED.image_name`,
+        [
+          id,
+          item.title,
+          item.number,
+          item.category || item.series?.[0] || 'Unknown',
+          JSON.stringify(item.series || []),
+          item.exclusive || false,
+          item.imageName || null
+        ]
+      );
+
+      res.json({ 
+        message: 'Item synced successfully',
+        id: id
+      });
+    } catch (err) {
+      console.error('Single sync error:', err);
+      res.status(500).json({ error: 'Failed to sync item' });
+    }
+  });
+
+// Single item sync endpoint (for on-demand syncing)
+app.post('/api/items/sync-single', async (req, res) => {
+  const { item } = req.body;
+  
+  if (!item || !item.title || !item.number) {
+    return res.status(400).json({ error: 'Valid item with title and number required' });
+  }
+
+  try {
+    const id = `${item.title}-${item.number}`.replace(/\s+/g, '-').toLowerCase();
+    
+    await pool.query(
+      `INSERT INTO funko_items (id, title, number, category, series, exclusive, image_name)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (id) DO UPDATE SET
+         title = EXCLUDED.title,
+         number = EXCLUDED.number,
+         category = EXCLUDED.category,
+         series = EXCLUDED.series,
+         exclusive = EXCLUDED.exclusive,
+         image_name = EXCLUDED.image_name`,
+      [
+        id,
+        item.title,
+        item.number,
+        item.category || item.series?.[0] || 'Unknown',
+        JSON.stringify(item.series || []),
+        item.exclusive || false,
+        item.imageName || null
+      ]
+    );
+
+    res.json({ 
+      message: 'Item synced successfully',
+      id: id
+    });
+  } catch (err) {
+    console.error('Single sync error:', err);
+    res.status(500).json({ error: 'Failed to sync item' });
+  }
+});
 app.get('/api/items/search', async (req, res) => {
   const { q } = req.query;
   

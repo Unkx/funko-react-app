@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
 interface FriendProfileModalProps {
   friendId: string;
@@ -279,6 +280,101 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
     </div>
   );
 
+  const CollectionItemCard = ({ item }: { item: CollectionItem }) => (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className={`rounded-lg overflow-hidden border ${
+        isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"
+      } hover:shadow-lg transition-shadow`}
+    >
+      <Link 
+        to={`/funko/${item.id}`}
+        className="block hover:no-underline"
+        onClick={onClose} // Close modal when navigating to item
+      >
+        {item.image_name ? (
+          <img 
+            src={item.image_name} 
+            alt={item.title} 
+            className="w-full h-32 object-contain bg-gray-100 cursor-pointer"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/placeholder-image.png';
+            }}
+          />
+        ) : (
+          <div className="w-full h-32 bg-gray-200 flex items-center justify-center cursor-pointer">
+            <span className="text-gray-500">No Image</span>
+          </div>
+        )}
+        <div className="p-3">
+          <h4 className="font-semibold text-sm truncate hover:text-blue-500 transition-colors" title={item.title}>
+            {item.title}
+          </h4>
+          <p className="text-xs text-gray-500">#{item.number}</p>
+          {item.condition && (
+            <p className="text-xs mt-1">
+              <span className="font-medium">Condition:</span> {item.condition}
+            </p>
+          )}
+          <div className="mt-2 text-xs text-blue-500 font-medium">
+            View Details →
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  );
+
+  const WishlistItemCard = ({ item }: { item: WishlistItem }) => (
+    <motion.div
+      key={item.id}
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className={`rounded-lg overflow-hidden border ${
+        isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"
+      } hover:shadow-lg transition-shadow`}
+    >
+      <Link 
+        to={`/item/${item.id}`}
+        className="block hover:no-underline"
+        onClick={onClose} // Close modal when navigating to item
+      >
+        {item.image_name ? (
+          <img 
+            src={item.image_name} 
+            alt={item.title} 
+            className="w-full h-32 object-contain bg-gray-100 cursor-pointer"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/placeholder-image.png';
+            }}
+          />
+        ) : (
+          <div className="w-full h-32 bg-gray-200 flex items-center justify-center cursor-pointer">
+            <span className="text-gray-500">No Image</span>
+          </div>
+        )}
+        <div className="p-3">
+          <h4 className="font-semibold text-sm truncate hover:text-blue-500 transition-colors" title={item.title}>
+            {item.title}
+          </h4>
+          <p className="text-xs text-gray-500">#{item.number}</p>
+          {item.priority && (
+            <p className={`text-xs mt-1 ${
+              item.priority === 'high' ? 'text-red-500' : 
+              item.priority === 'medium' ? 'text-yellow-500' : 
+              'text-green-500'
+            }`}>
+              <span className="font-medium">Priority:</span> {item.priority}
+            </p>
+          )}
+          <div className="mt-2 text-xs text-blue-500 font-medium">
+            View Details →
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  );
+
   const renderCollectionTab = () => (
     <div className="space-y-6">
       <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow`}>
@@ -296,40 +392,7 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {collection.map((item) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className={`rounded-lg overflow-hidden border ${
-                  isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"
-                } hover:shadow-lg transition-shadow`}
-              >
-                {item.image_name ? (
-                  <img 
-                    src={item.image_name} 
-                    alt={item.title} 
-                    className="w-full h-32 object-contain bg-gray-100"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/placeholder-image.png';
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-32 bg-gray-200 flex items-center justify-center">
-                    <span className="text-gray-500">No Image</span>
-                  </div>
-                )}
-                <div className="p-3">
-                  <h4 className="font-semibold text-sm truncate" title={item.title}>
-                    {item.title}
-                  </h4>
-                  <p className="text-xs text-gray-500">#{item.number}</p>
-                  {item.condition && (
-                    <p className="text-xs mt-1">
-                      <span className="font-medium">Condition:</span> {item.condition}
-                    </p>
-                  )}
-                </div>
-              </motion.div>
+              <CollectionItemCard key={item.id} item={item} />
             ))}
           </div>
         )}
@@ -354,44 +417,7 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {wishlist.map((item) => (
-              <motion.div
-                key={item.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className={`rounded-lg overflow-hidden border ${
-                  isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"
-                } hover:shadow-lg transition-shadow`}
-              >
-                {item.image_name ? (
-                  <img 
-                    src={item.image_name} 
-                    alt={item.title} 
-                    className="w-full h-32 object-contain bg-gray-100"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/placeholder-image.png';
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-32 bg-gray-200 flex items-center justify-center">
-                    <span className="text-gray-500">No Image</span>
-                  </div>
-                )}
-                <div className="p-3">
-                  <h4 className="font-semibold text-sm truncate" title={item.title}>
-                    {item.title}
-                  </h4>
-                  <p className="text-xs text-gray-500">#{item.number}</p>
-                  {item.priority && (
-                    <p className={`text-xs mt-1 ${
-                      item.priority === 'high' ? 'text-red-500' : 
-                      item.priority === 'medium' ? 'text-yellow-500' : 
-                      'text-green-500'
-                    }`}>
-                      <span className="font-medium">Priority:</span> {item.priority}
-                    </p>
-                  )}
-                </div>
-              </motion.div>
+              <WishlistItemCard key={item.id} item={item} />
             ))}
           </div>
         )}

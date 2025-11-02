@@ -3,6 +3,21 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate} from "react-router-dom";
 import { translations } from "./Translations/TranslationsWelcomeSite";
 import "./WelcomeSite.css";
+import MoonIcon from "/src/assets/moon.svg?react";
+import SunIcon from "/src/assets/sun.svg?react";
+import SearchIcon from "/src/assets/search.svg?react";
+import GlobeIcon from "/src/assets/globe.svg?react";
+import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
+
+// Flags
+import UKFlag from "/src/assets/flags/uk.svg?react";
+import USAFlag from "/src/assets/flags/usa.svg?react";
+import PolandFlag from "/src/assets/flags/poland.svg?react";
+import RussiaFlag from "/src/assets/flags/russia.svg?react";
+import FranceFlag from "/src/assets/flags/france.svg?react";
+import GermanyFlag from "/src/assets/flags/germany.svg?react";
+import SpainFlag from "/src/assets/flags/spain.svg?react";
+import CanadaFlag from "/src/assets/flags/canada.svg?react";
 
 // Match your backend item shape (without visits)
 interface FunkoItem {
@@ -20,15 +35,30 @@ interface FunkoItemWithVisits extends FunkoItem {
   visits: number;
 }
 
+// 🌐 Languages for dropdown (with flag)
+const languages = {
+  US: { name: "USA", flag: <USAFlag className="w-5 h-5" /> },
+  EN: { name: "UK", flag: <UKFlag className="w-5 h-5" /> },
+  CA: { name: "Canada", flag: <CanadaFlag className="w-5 h-5" /> },
+  PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
+  RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
+  FR: { name: "Français", flag: <FranceFlag className="w-5 h-5" /> },
+  DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
+  ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
+};
+
 const MostVisitedSite: React.FC = () => {
-  const [isDarkMode] = useState(() => {
-    return localStorage.getItem("preferredTheme") === "dark";
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem("preferredTheme");
+    return saved ? saved === "dark" : true;
   });
   
-  const [language] = useState(() => {
+  const [language, setLanguage] = useState(() => {
     return localStorage.getItem("preferredLanguage") || "EN";
   });
   
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [allItems, setAllItems] = useState<FunkoItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<"visits" | "title" | "category">("visits");
@@ -69,7 +99,6 @@ const MostVisitedSite: React.FC = () => {
       setVisitCountVersion(prev => prev + 1);
     };
   
-
     // Listen for storage events from other tabs/windows
     window.addEventListener('storage', handleStorageChange);
 
@@ -87,38 +116,48 @@ const MostVisitedSite: React.FC = () => {
   }, []);
   
   // Auto-logout after 10 minutes of inactivity — only if user is logged in
-useEffect(() => {
-  const token = localStorage.getItem("token");
-  const user = localStorage.getItem("user");
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
 
-  // Only activate auto-logout if user is authenticated
-  if (!token || !user) return;
+    // Only activate auto-logout if user is authenticated
+    if (!token || !user) return;
 
-  let timer: NodeJS.Timeout;
+    let timer: NodeJS.Timeout;
 
-  const resetTimer = () => {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(() => {
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
-      navigate("/loginregistersite");
-    }, 10 * 60 * 1000); // 10 minutes
-  };
+    const resetTimer = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        navigate("/loginregistersite");
+      }, 10 * 60 * 1000); // 10 minutes
+    };
 
-  resetTimer();
+    resetTimer();
 
-  const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click", "wheel"];
-  events.forEach((event) => {
-    window.addEventListener(event, resetTimer, true);
-  });
-
-  return () => {
-    clearTimeout(timer);
+    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click", "wheel"];
     events.forEach((event) => {
-      window.removeEventListener(event, resetTimer, true);
+      window.addEventListener(event, resetTimer, true);
     });
-  };
-}, [navigate]);
+
+    return () => {
+      clearTimeout(timer);
+      events.forEach((event) => {
+        window.removeEventListener(event, resetTimer, true);
+      });
+    };
+  }, [navigate]);
+
+  // Theme sync
+  useEffect(() => {
+    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDarkMode]);
   
   // ✅ Compute visited items from localStorage
   const mostVisitedItems = useMemo(() => {
@@ -159,6 +198,31 @@ useEffect(() => {
     window.dispatchEvent(new CustomEvent('funkoVisitUpdated'));
   };
 
+  // 🌙 Toggle theme
+  const toggleTheme = () => {
+    const newTheme = !isDarkMode;
+    setIsDarkMode(newTheme);
+    localStorage.setItem("preferredTheme", newTheme ? "dark" : "light");
+    if (newTheme) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
+
+  // Select language
+  const selectLanguage = (lang: string) => {
+    setLanguage(lang);
+    localStorage.setItem("preferredLanguage", lang);
+    setShowLanguageDropdown(false);
+  };
+
+  // 🔍 Handle search
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    navigate(`/searchsite?q=${encodeURIComponent(searchQuery.trim())}`);
+  };
+
   if (isLoading) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${
@@ -169,25 +233,131 @@ useEffect(() => {
     );
   }
 
-  
   return (
     <div className={`min-h-screen ${isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"}`}>
-      <header className="py-4 px-4 md:px-8 flex justify-between items-center">
-        <Link to="/" className="no-underline">
-          <h1 className={`text-2xl font-bold font-[Special_Gothic_Expanded_One] ${
-            isDarkMode ? "text-yellow-400" : "text-green-600"
-          }`}>
-            Pop&Go!
-          </h1>
-        </Link>
-        <Link 
-          to="/"
-          className={`px-4 py-2 rounded ${
-            isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"
+      <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
+        <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
+          <Link to="/" className="no-underline">
+            <h1 className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
+              isDarkMode ? "text-yellow-400" : "text-green-600"
+            }`}>
+              Pop&Go!
+            </h1>
+          </Link>
+        </div>
+
+        {/* 🔍 Search */}
+        <form
+          onSubmit={handleSearch}
+          className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden ${
+            isDarkMode ? "bg-gray-700" : "bg-gray-100"
           }`}
         >
-          {t.backToHome || "Back to Home"}
-        </Link>
+          <input
+            type="text"
+            placeholder={t.searchPlaceholder}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={`flex-grow px-4 py-2 outline-none ${
+              isDarkMode
+                ? "bg-gray-700 text-white placeholder-gray-400"
+                : "bg-white text-black placeholder-gray-500"
+            }`}
+            aria-label="Search for Funko Pops"
+          />
+          <button
+            type="submit"
+            className={`px-4 py-2 ${
+              isDarkMode
+                ? "bg-yellow-500 hover:bg-yellow-600"
+                : "bg-green-600 hover:bg-green-700"
+            } text-white`}
+            aria-label="Search"
+          >
+            <SearchIcon className="w-5 h-5" />
+          </button>
+        </form>
+
+        {/* 🌐 Language, 🌙 Theme, 🔐 Dashboard */}
+        <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0">
+          {/* Language Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+              className={`p-2 rounded-full flex items-center gap-1 ${
+                isDarkMode
+                  ? "bg-gray-700 hover:bg-gray-600"
+                  : "bg-gray-200 hover:bg-neutral-600"
+              }`}
+              aria-label="Select language"
+              aria-expanded={showLanguageDropdown}
+            >
+              <GlobeIcon className="w-5 h-5" />
+              <span className="text-sm font-medium">{language}</span>
+              <ChevronDownIcon
+                className={`w-4 h-4 transition-transform ${
+                  showLanguageDropdown ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {showLanguageDropdown && (
+              <div
+                className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
+                  isDarkMode ? "bg-gray-700" : "bg-white"
+                }`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {Object.entries(languages).map(([code, { name, flag }]) => (
+                  <button
+                    key={code}
+                    onClick={() => selectLanguage(code)}
+                    className={`w-full text-left px-4 py-2 flex items-center gap-2 ${
+                      language === code
+                        ? isDarkMode
+                          ? "bg-yellow-500 text-black"
+                          : "bg-green-600 text-white"
+                        : isDarkMode
+                        ? "hover:bg-gray-600"
+                        : "hover:bg-neutral-500"
+                    }`}
+                  >
+                    <span className="w-5 h-5">{flag}</span>
+                    <span>{name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 🌙 Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className={`p-2 rounded-full ${
+              isDarkMode
+                ? "bg-gray-700 hover:bg-gray-600"
+                : "bg-gray-200 hover:bg-gray-600"
+            }`}
+            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
+          </button>
+
+          {/* 🔐 Dashboard/Login */}
+          <button
+            onClick={() => {
+              const user = JSON.parse(localStorage.getItem("user") || "{}");
+              navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginRegisterSite");
+            }}
+            className={`flex items-center gap-2 px-4 py-2 rounded ${
+              isDarkMode
+                ? "bg-yellow-500 text-black hover:bg-yellow-600"
+                : "bg-green-600 text-white hover:bg-green-700"
+            }`}
+          >
+            {t.goToDashboard || "Dashboard"}
+          </button>
+        </div>
       </header>
 
       <main className="p-4 md:p-8 max-w-6xl mx-auto">

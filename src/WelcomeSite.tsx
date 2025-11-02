@@ -10,8 +10,7 @@ import SearchIcon from "/src/assets/search.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 
-
-//Flag imports
+// Flags
 import UKFlag from "/src/assets/flags/uk.svg?react";
 import USAFlag from "/src/assets/flags/usa.svg?react";
 import PolandFlag from "/src/assets/flags/poland.svg?react";
@@ -31,7 +30,6 @@ interface FunkoItem {
   exclusive: boolean;
   imageName: string;
 }
-
 
 interface FunkoItemWithId extends FunkoItem {
   id: string;
@@ -54,25 +52,21 @@ const generateId = (title: string, number: string): string => {
   return `${safeTitle}-${safeNumber}`.replace(/\s+/g, "-");
 };
 
-
 const WelcomeSite: React.FC = () => {
+  // ✅ MOVED: All state declarations inside the component
+  const [searchQuery, setSearchQuery] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem("preferredTheme");
     return saved ? saved === "dark" : true;
   });
-
-  const [searchQuery, setSearchQuery] = useState("");
   const [selectedCountry, setSelectedCountry] = useState<string>("USA");
-
   const [language, setLanguage] = useState(() => {
     return localStorage.getItem("preferredLanguage") || "EN";
   });
-
-  
   const [region, setRegion] = useState<string>("North America");
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
-  const [shouldShowPopup, setShouldShowPopup] = useState(false); // Optional: remove if unused
+  const [shouldShowPopup, setShouldShowPopup] = useState(false);
   const [funkoData, setFunkoData] = useState<FunkoItemWithId[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showWorldMapFirstTime, setShowWorldMapFirstTime] = useState(false);
@@ -101,8 +95,6 @@ const WelcomeSite: React.FC = () => {
   const [messages, setMessages] = useState<{ text: string; sender: 'user' | 'bot' }[]>([]);
   const [inputValue, setInputValue] = useState("");
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  //  
-
 
   // 💬 Smart bot response logic (enhanced)
   const getBotResponse = (userInput: string): { text: string; buttons?: Array<{ label: string; action: () => void }> } => {

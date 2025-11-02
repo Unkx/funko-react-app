@@ -549,6 +549,43 @@ const allItems = useMemo(() => {
     localStorage.setItem("preferredLanguage", language);
   }, [language]);
 
+  
+  
+
+  // Auto-logout after 10 minutes of inactivity
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        // Perform logout
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        navigate("/loginregistersite");
+      }, 10 * 60 * 1000); // 10 minutes = 600,000 ms
+    };
+
+    // Initial setup
+    resetTimer();
+
+    // List of events to consider as "user activity"
+    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click", "wheel"];
+
+    // Attach event listeners
+    events.forEach((event) => {
+      window.addEventListener(event, resetTimer, true);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      clearTimeout(timer);
+      events.forEach((event) => {
+        window.removeEventListener(event, resetTimer, true);
+      });
+    };
+  }, [navigate]);
+
   const t = translations[language] || translations["EN"];
 
   const selectLanguage = (lang: string) => {

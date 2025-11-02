@@ -74,6 +74,40 @@ const ItemList: React.FC<ItemListProps> = ({ token, currentUserRole, isDarkMode,
     fetchItems();
   }, [fetchItems]);
 
+  // Auto-logout after 10 minutes of inactivity
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        // Perform logout
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        navigate("/loginregistersite");
+      }, 10 * 60 * 1000); // 10 minutes = 600,000 ms
+    };
+
+    // Initial setup
+    resetTimer();
+
+    // List of events to consider as "user activity"
+    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click", "wheel"];
+
+    // Attach event listeners
+    events.forEach((event) => {
+      window.addEventListener(event, resetTimer, true);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      clearTimeout(timer);
+      events.forEach((event) => {
+        window.removeEventListener(event, resetTimer, true);
+      });
+    };
+  }, [navigate]);
+
   // Helper to generate Funko ID
   const generateFunkoId = (title: string, number: string): string => {
     return `${title}-${number}`

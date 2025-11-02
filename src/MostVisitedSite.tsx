@@ -1,6 +1,6 @@
 // src/pages/MostVisitedSite.tsx
 import React, { useState, useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate} from "react-router-dom";
 import { translations } from "./Translations/TranslationsWelcomeSite";
 import "./WelcomeSite.css";
 
@@ -36,6 +36,8 @@ const MostVisitedSite: React.FC = () => {
 
   const t = translations[language] || translations["EN"];
 
+  const navigate = useNavigate();
+  
   // Fetch all items from your backend
   useEffect(() => {
     const fetchItems = async () => {
@@ -66,6 +68,7 @@ const MostVisitedSite: React.FC = () => {
     const handleStorageChange = () => {
       setVisitCountVersion(prev => prev + 1);
     };
+  
 
     // Listen for storage events from other tabs/windows
     window.addEventListener('storage', handleStorageChange);
@@ -82,7 +85,41 @@ const MostVisitedSite: React.FC = () => {
       window.removeEventListener('focus', handleStorageChange);
     };
   }, []);
+  
+  // Auto-logout after 10 minutes of inactivity — only if user is logged in
+useEffect(() => {
+  const token = localStorage.getItem("token");
+  const user = localStorage.getItem("user");
 
+  // Only activate auto-logout if user is authenticated
+  if (!token || !user) return;
+
+  let timer: NodeJS.Timeout;
+
+  const resetTimer = () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      navigate("/loginregistersite");
+    }, 10 * 60 * 1000); // 10 minutes
+  };
+
+  resetTimer();
+
+  const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click", "wheel"];
+  events.forEach((event) => {
+    window.addEventListener(event, resetTimer, true);
+  });
+
+  return () => {
+    clearTimeout(timer);
+    events.forEach((event) => {
+      window.removeEventListener(event, resetTimer, true);
+    });
+  };
+}, [navigate]);
+  
   // ✅ Compute visited items from localStorage
   const mostVisitedItems = useMemo(() => {
     const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
@@ -132,6 +169,7 @@ const MostVisitedSite: React.FC = () => {
     );
   }
 
+  
   return (
     <div className={`min-h-screen ${isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"}`}>
       <header className="py-4 px-4 md:px-8 flex justify-between items-center">

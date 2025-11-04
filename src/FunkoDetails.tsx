@@ -83,6 +83,8 @@ interface ScrapedPrice {
 const FunkoDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  
+  // ✅ WSZYSTKIE useState na początku (przed useRef i useEffect)
   const [funkoItem, setFunkoItem] = useState<FunkoItemWithId | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -105,6 +107,8 @@ const FunkoDetails: React.FC = () => {
   const [selectedCountries, setSelectedCountries] = useState(['poland', 'germany', 'france']);
   const [relatedItems, setRelatedItems] = useState<FunkoItemWithId[]>([]);
   const [priceHistory, setPriceHistory] = useState<PricePoint[]>([]);
+  const [aiDescription, setAiDescription] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   
   const [user] = useState(() => {
     const storedUser = localStorage.getItem("user");
@@ -121,7 +125,13 @@ const FunkoDetails: React.FC = () => {
     return null;
   });
 
-  // 🌐 Centralized country configuration (from WelcomeSite)
+  // ✅ useRef po wszystkich useState
+  const languageDropdownRef = useRef<HTMLDivElement>(null);
+  const languageButtonRef = useRef<HTMLButtonElement>(null);
+
+  const t = translations[language] || translations["EN"];
+
+  // 🌐 Centralized country configuration
   const countries = {
     USA: {
       name: "USA",
@@ -173,7 +183,7 @@ const FunkoDetails: React.FC = () => {
     },
   };
 
-  // 🌍 Languages for dropdown (with flag) - from WelcomeSite
+  // 🌍 Languages for dropdown
   const languages = {
     US: { name: "USA", flag: <USAFlag className="w-5 h-5" /> },
     EN: { name: "UK", flag: <UKFlag className="w-5 h-5" /> },
@@ -185,13 +195,6 @@ const FunkoDetails: React.FC = () => {
     ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
   };
 
-  // Refs for dropdowns (from WelcomeSite)
-  const languageDropdownRef = useRef<HTMLDivElement>(null);
-  const languageButtonRef = useRef<HTMLButtonElement>(null);
-
-  const t = translations[language] || translations["EN"];
-
-  // Updated shop configurations with verified Canadian retailers
   const shops: Record<string, Shop[]> = {
     canada: [
       { 
@@ -443,7 +446,6 @@ const FunkoDetails: React.FC = () => {
     });
   };
 
-  // Improved function to find related items based on series and category
   const findRelatedItems = (currentItem: FunkoItemWithId, allItems: FunkoItemWithId[]) => {
     if (!currentItem || !allItems || allItems.length === 0) return [];
     
@@ -491,7 +493,16 @@ const FunkoDetails: React.FC = () => {
     return related.slice(0, 6);
   };
 
-   // Consolidated fetch function with fallback logic
+  const extractSearchParamsFromId = (id: string) => {
+    const parts = id.replace(/[^a-zA-Z0-9\s-]/g, '').split('-').filter(p => p.length > 0);
+    const numberPart = parts.find(part => /^\d+$/.test(part)) || '';
+    const titleParts = parts.filter(part => !/^\d+$/.test(part) && part.length > 0);
+    return {
+      title: titleParts.join(' ') || id.replace(/-/g, ' '),
+      number: numberPart
+    };
+  };
+
   const fetchData = async () => {
     try {
       setIsLoading(true);
@@ -501,18 +512,15 @@ const FunkoDetails: React.FC = () => {
         throw new Error("No ID provided");
       }
       
-      // Clean the ID (remove trailing hyphens and special chars)
       const cleanId = id.replace(/[^\w\s-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
       console.log("🔍 Original ID:", id);
       console.log("🔍 Clean ID:", cleanId);
       
-      // STEP 1: Try backend database first
       try {
         const response = await api.get(`/api/items/${encodeURIComponent(cleanId)}`);
         console.log("✅ Found item in database:", response.data);
         setFunkoItem(response.data);
         
-        // Load related items from database
         try {
           const allItemsResponse = await api.get('/api/items');
           if (allItemsResponse.data && Array.isArray(allItemsResponse.data)) {
@@ -523,13 +531,11 @@ const FunkoDetails: React.FC = () => {
           console.warn("Could not load related items:", relatedError);
         }
         
-        return; // Success! Exit here
+        return;
       } catch (apiError: any) {
         console.warn("❌ Database lookup failed:", apiError.response?.status);
-        // Continue to fallback
       }
       
-      // STEP 2: Fallback to external JSON
       console.log("⚠️ Item not in database, fetching from GitHub...");
       const externalResponse = await fetch(
         "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
@@ -545,20 +551,16 @@ const FunkoDetails: React.FC = () => {
         id: generateId(item.title, item.number),
       }));
       
-      // Try multiple matching strategies
       let foundItem: FunkoItemWithId | undefined;
       
-      // 1. Exact ID match
       foundItem = dataWithIds.find((item) => item.id === cleanId);
       
-      // 2. Case-insensitive ID match
       if (!foundItem) {
         foundItem = dataWithIds.find((item) => 
           item.id.toLowerCase() === cleanId.toLowerCase()
         );
       }
       
-      // 3. Extract title/number from ID and search
       if (!foundItem) {
         const searchParams = extractSearchParamsFromId(cleanId);
         console.log("🔍 Searching with params:", searchParams);
@@ -570,7 +572,6 @@ const FunkoDetails: React.FC = () => {
         });
       }
       
-      // 4. Fuzzy title-only search
       if (!foundItem) {
         const searchParams = extractSearchParamsFromId(cleanId);
         const titleWords = searchParams.title.toLowerCase().split(/\s+/).filter(w => w.length > 2);
@@ -588,11 +589,9 @@ const FunkoDetails: React.FC = () => {
       console.log("✅ Found item in external JSON:", foundItem.title);
       setFunkoItem(foundItem);
       
-      // Find related items from external data
       const related = findRelatedItems(foundItem, dataWithIds);
       setRelatedItems(related);
       
-      // OPTIONAL: Auto-sync this item to database for future use
       try {
         const token = localStorage.getItem("token");
         if (token) {
@@ -603,7 +602,6 @@ const FunkoDetails: React.FC = () => {
         }
       } catch (syncError) {
         console.warn("⚠️ Could not sync item to database:", syncError);
-        // Non-critical, continue anyway
       }
       
     } catch (err: any) {
@@ -614,210 +612,99 @@ const FunkoDetails: React.FC = () => {
     }
   };
 
-  const extractSearchParamsFromId = (id: string) => {
-    const parts = id.replace(/[^a-zA-Z0-9\s-]/g, '').split('-').filter(p => p.length > 0);
-    const numberPart = parts.find(part => /^\d+$/.test(part)) || '';
-    const titleParts = parts.filter(part => !/^\d+$/.test(part) && part.length > 0);
-    return {
-      title: titleParts.join(' ') || id.replace(/-/g, ' '),
-      number: numberPart
-    };
-  };
 
-    // Track visits
-  useEffect(() => {
-    if (id) {
-      const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
-      visitCount[id] = (visitCount[id] || 0) + 1;
-      localStorage.setItem("funkoVisitCount", JSON.stringify(visitCount));
-    }
-  }, [id]);
+  const generateDescription = async (title: string, number: string, targetLang: string): Promise<string> => {
+    const apiKey = import.meta.env.VITE_AI_API_KEY;
+    if (!apiKey) throw new Error("Brak klucza API (VITE_AI_API_KEY w .env)");
 
-  // Fetch data on component mount and when id changes
-  useEffect(() => {
-    fetchData();
-  }, [id]); // Re-fetch when ID changes
-
-  // Check item in wishlist/collection AFTER item is loaded
-  useEffect(() => {
-    const checkItemStatus = async () => {
-      if (!funkoItem || !user) return;
-      try {
-        const [wishlistRes, collectionRes] = await Promise.all([
-          api.get(`/wishlist/check/${funkoItem.id}`),
-          api.get(`/collection/check/${funkoItem.id}`),
-        ]);
-        setInWishlist(wishlistRes.data.exists);
-        setInCollection(collectionRes.data.exists);
-      } catch (err) {
-        if (
-          axios.isAxiosError(err) &&
-          (err.response?.status === 401 || err.response?.status === 403)
-        ) {
-          localStorage.removeItem("user");
-          localStorage.removeItem("token");
-          navigate("/loginregistersite");
-        }
-      }
-    };
-    checkItemStatus();
-  }, [funkoItem, user]);
-
-  // Track visits
-  useEffect(() => {
-    if (id) {
-      const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
-      visitCount[id] = (visitCount[id] || 0) + 1;
-      localStorage.setItem("funkoVisitCount", JSON.stringify(visitCount));
-    }
-  }, [id]);
-
-  // Auto-logout after 10 minutes of inactivity
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-
-    const resetTimer = () => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        // Perform logout
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-        navigate("/loginregistersite");
-      }, 10 * 60 * 1000); // 10 minutes = 600,000 ms
+    const langNames: Record<string, string> = {
+      PL: "polish",
+      EN: "english",
+      US: "english",
+      CA: "english",
+      FR: "french",
+      DE: "german",
+      ES: "spanish",
+      RU: "russian",
     };
 
-    // Initial setup
-    resetTimer();
+    const prompt = `Write a short, engaging product description in ${langNames[targetLang] || targetLang.toLowerCase()} for a Funko Pop! titled "${title}" with number ${number}. Focus on collectibility, design, and pop culture relevance. Max 2-3 sentences.`;
 
-    // List of events to consider as "user activity"
-    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click", "wheel"];
-
-    // Attach event listeners
-    events.forEach((event) => {
-      window.addEventListener(event, resetTimer, true);
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile", // "mixtral-8x7b-32768" lub "llama3-8b-8192" – oba darmowe i dobre
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 100,
+        temperature: 0.7,
+      }),
     });
 
-    // Cleanup on unmount
-    return () => {
-      clearTimeout(timer);
-      events.forEach((event) => {
-        window.removeEventListener(event, resetTimer, true);
-      });
-    };
-  }, [navigate]);
-
-  // Fetch data on component mount and when id changes
-  useEffect(() => {
-    fetchData();
-  }, [id]);
-
-    // Example for your FunkoDetailPage.tsx or similar
-
-  useEffect(() => {
-    const fetchFunkoItem = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Try backend first
-        const backendResponse = await fetch(`http://localhost:5000/api/items/${id}`);
-        
-        if (backendResponse.ok) {
-          const data = await backendResponse.json();
-          setFunkoItem(data);
-          return;
-        }
-        
-        // 🔥 Fallback: Fetch from external JSON
-        console.warn("Item not in backend, fetching from external source...");
-        const externalResponse = await fetch(
-          "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
-        );
-        
-        if (!externalResponse.ok) throw new Error("Failed to load external data");
-        
-        const allItems = await externalResponse.json();
-        const matchedItem = allItems.find(
-          (item: any) => 
-            `${item.title}-${item.number}`.replace(/\s+/g, '-').toLowerCase() === id.toLowerCase()
-        );
-        
-        if (matchedItem) {
-          setFunkoItem({
-            ...matchedItem,
-            id: `${matchedItem.title}-${matchedItem.number}`.replace(/\s+/g, '-').toLowerCase()
-          });
-        } else {
-          setError("Item not found");
-        }
-      } catch (err) {
-        console.error("Error fetching item:", err);
-        setError("Failed to load item");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchFunkoItem();
-  }, [id]);
-
-  // Check item in wishlist/collection
-  useEffect(() => {
-    const checkItemStatus = async () => {
-      if (!funkoItem || !user) return;
-      try {
-        const [wishlistRes, collectionRes] = await Promise.all([
-          api.get(`/wishlist/check/${funkoItem.id}`),
-          api.get(`/collection/check/${funkoItem.id}`),
-        ]);
-        setInWishlist(wishlistRes.data.exists);
-        setInCollection(collectionRes.data.exists);
-      } catch (err) {
-        if (
-          axios.isAxiosError(err) &&
-          (err.response?.status === 401 || err.response?.status === 403)
-        ) {
-          localStorage.removeItem("user");
-          localStorage.removeItem("token");
-          navigate("/loginregistersite");
-        }
-      }
-    };
-    checkItemStatus();
-  }, [funkoItem, user]);
-
-  // Theme
-  useEffect(() => {
-    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Groq API error:", errorText);
+      throw new Error("AI opis nie mógł zostać wygenerowany");
     }
-  }, [isDarkMode]);
 
-  // Language
-  useEffect(() => {
-    localStorage.setItem("preferredLanguage", language);
-  }, [language]);
+    const data = await response.json();
+    return data.choices[0].message.content.trim();
+  };
 
-  // Close dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        showLanguageDropdown &&
-        languageDropdownRef.current &&
-        languageButtonRef.current &&
-        !languageDropdownRef.current.contains(event.target as Node) &&
-        !languageButtonRef.current.contains(event.target as Node)
-      ) {
-        setShowLanguageDropdown(false);
+  const scrapePrices = async () => {
+    if (!funkoItem) return;
+    setIsScrapingPrices(true);
+    setScrapingProgress(0);
+    setScrapingResults([]);
+    const searchQuery = `${funkoItem.title || ""} ${funkoItem.number || ""} funko pop`.trim();
+    const selectedShops = selectedCountries.flatMap(countryCode => 
+      shops[countryCode]?.map(shop => ({ ...shop, country: countryCode })) || []
+    );
+    const results: ScrapedPrice[] = [];
+    for (let i = 0; i < selectedShops.length; i++) {
+      const shop = selectedShops[i];
+      try {
+        setScrapingProgress(Math.round((i / selectedShops.length) * 100));
+        const response = await api.post('/scrape/price', {
+          url: shop.searchUrl + encodeURIComponent(searchQuery),
+          shop: shop.name,
+          country: shop.country,
+          currency: shop.currency,
+          priceSelector: shop.priceSelector
+        });
+        if (response.data && response.data.price) {
+          results.push({
+            price: response.data.price,
+            currency: response.data.currency || shop.currency,
+            shop: shop.name,
+            country: shop.country,
+            date: new Date().toISOString().split('T')[0]
+          });
+        }
+      } catch (error) {
+        console.error(`Failed to scrape ${shop.name}:`, error);
       }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showLanguageDropdown]);
+    }
+    setScrapingResults(results);
+    setIsScrapingPrices(false);
+    setScrapingProgress(100);
+    if (results.length > 0) {
+      try {
+        await api.post('/prices', {
+          funkoId: funkoItem.id,
+          prices: results
+        });
+        const updatedPriceHistory = [...priceHistory, ...results];
+        setPriceHistory(updatedPriceHistory);
+      } catch (error) {
+        console.error("Failed to save prices:", error);
+      }
+    }
+  };
 
-  // Header functions (from WelcomeSite)
   const selectLanguage = (lang: string) => {
     setLanguage(lang);
     setShowLanguageDropdown(false);
@@ -893,58 +780,6 @@ const FunkoDetails: React.FC = () => {
     }
   };
 
-  // Function to scrape prices from shopping sites
-  const scrapePrices = async () => {
-    if (!funkoItem) return;
-    setIsScrapingPrices(true);
-    setScrapingProgress(0);
-    setScrapingResults([]);
-    const searchQuery = `${funkoItem.title || ""} ${funkoItem.number || ""} funko pop`.trim();
-    const selectedShops = selectedCountries.flatMap(countryCode => 
-      shops[countryCode]?.map(shop => ({ ...shop, country: countryCode })) || []
-    );
-    const results: ScrapedPrice[] = [];
-    for (let i = 0; i < selectedShops.length; i++) {
-      const shop = selectedShops[i];
-      try {
-        setScrapingProgress(Math.round((i / selectedShops.length) * 100));
-        const response = await api.post('/scrape/price', {
-          url: shop.searchUrl + encodeURIComponent(searchQuery),
-          shop: shop.name,
-          country: shop.country,
-          currency: shop.currency,
-          priceSelector: shop.priceSelector
-        });
-        if (response.data && response.data.price) {
-          results.push({
-            price: response.data.price,
-            currency: response.data.currency || shop.currency,
-            shop: shop.name,
-            country: shop.country,
-            date: new Date().toISOString().split('T')[0]
-          });
-        }
-      } catch (error) {
-        console.error(`Failed to scrape ${shop.name}:`, error);
-      }
-    }
-    setScrapingResults(results);
-    setIsScrapingPrices(false);
-    setScrapingProgress(100);
-    if (results.length > 0) {
-      try {
-        await api.post('/prices', {
-          funkoId: funkoItem.id,
-          prices: results
-        });
-        const updatedPriceHistory = [...priceHistory, ...results];
-        setPriceHistory(updatedPriceHistory);
-      } catch (error) {
-        console.error("Failed to save prices:", error);
-      }
-    }
-  };
-
   const loginButtonTo = useMemo(() => {
     if (user?.role === "admin") return "/adminSite";
     if (user?.role === "user") return "/dashboardSite";
@@ -954,6 +789,127 @@ const FunkoDetails: React.FC = () => {
   const loginButtonText = useMemo(() => {
     return user ? t.goToDashboard || "Dashboard" : t.goToLoginSite || "Log In";
   }, [t, user]);
+
+  // ✅ WSZYSTKIE useEffect razem, bez duplikatów
+  useEffect(() => {
+    if (id) {
+      const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
+      visitCount[id] = (visitCount[id] || 0) + 1;
+      localStorage.setItem("funkoVisitCount", JSON.stringify(visitCount));
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchData();
+  }, [id]);
+
+  useEffect(() => {
+    const checkItemStatus = async () => {
+      if (!funkoItem || !user) return;
+      try {
+        const [wishlistRes, collectionRes] = await Promise.all([
+          api.get(`/wishlist/check/${funkoItem.id}`),
+          api.get(`/collection/check/${funkoItem.id}`),
+        ]);
+        setInWishlist(wishlistRes.data.exists);
+        setInCollection(collectionRes.data.exists);
+      } catch (err) {
+        if (
+          axios.isAxiosError(err) &&
+          (err.response?.status === 401 || err.response?.status === 403)
+        ) {
+          localStorage.removeItem("user");
+          localStorage.removeItem("token");
+          navigate("/loginregistersite");
+        }
+      }
+    };
+    checkItemStatus();
+  }, [funkoItem, user, navigate]);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        navigate("/loginregistersite");
+      }, 10 * 60 * 1000);
+    };
+
+    resetTimer();
+
+    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click", "wheel"];
+
+    events.forEach((event) => {
+      window.addEventListener(event, resetTimer, true);
+    });
+
+    return () => {
+      clearTimeout(timer);
+      events.forEach((event) => {
+        window.removeEventListener(event, resetTimer, true);
+      });
+    };
+  }, [navigate]);
+
+  useEffect(() => {
+    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDarkMode]);
+
+  useEffect(() => {
+    localStorage.setItem("preferredLanguage", language);
+  }, [language]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        showLanguageDropdown &&
+        languageDropdownRef.current &&
+        languageButtonRef.current &&
+        !languageDropdownRef.current.contains(event.target as Node) &&
+        !languageButtonRef.current.contains(event.target as Node)
+      ) {
+        setShowLanguageDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showLanguageDropdown]);
+
+  // ✅ AI Description - na końcu
+  useEffect(() => {
+    const generateIfNeeded = async () => {
+      if (!funkoItem || !language) return;
+      const cacheKey = `ai_desc_${funkoItem.id}_${language}`;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        setAiDescription(cached);
+        return;
+      }
+
+      setIsGenerating(true);
+      try {
+        const desc = await generateDescription(funkoItem.title, funkoItem.number, language);
+        setAiDescription(desc);
+        localStorage.setItem(cacheKey, desc);
+      } catch (err) {
+        console.error("Nie udało się wygenerować opisu:", err);
+        setAiDescription(null);
+      } finally {
+        setIsGenerating(false);
+      }
+    };
+
+    generateIfNeeded();
+  }, [funkoItem, language]);
 
   if (isLoading) {
     return (
@@ -1023,7 +979,7 @@ const FunkoDetails: React.FC = () => {
         isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
       }`}
     >
-      {/* 🔝 Header - IDENTYCZNY jak w WelcomeSite */}
+      {/* 🔝 Header */}
       <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
         <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
           <Link to="/" className="no-underline">
@@ -1071,7 +1027,6 @@ const FunkoDetails: React.FC = () => {
 
         {/* 🌐 Language, 🌙 Theme, 🔐 Login */}
         <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0">
-          {/* Language Dropdown */}
           <div className="relative">
             <button
               ref={languageButtonRef}
@@ -1123,7 +1078,6 @@ const FunkoDetails: React.FC = () => {
             )}
           </div>
 
-          {/* 🌙 Theme Toggle */}
           <button
             onClick={toggleTheme}
             className={`p-2 rounded-full ${
@@ -1136,28 +1090,36 @@ const FunkoDetails: React.FC = () => {
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
 
-          {/* 🔐 Dashboard/Login */}
           <button
-            onClick={() => {
-              const user = JSON.parse(localStorage.getItem("user") || "{}");
-              navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginRegisterSite");
-            }}
+            onClick={() => navigate(loginButtonTo)}
             className={`flex items-center gap-2 px-4 py-2 rounded ${
               isDarkMode
                 ? "bg-yellow-500 text-black hover:bg-yellow-600"
                 : "bg-green-600 text-white hover:bg-green-700"
             }`}
           >
-            {t.goToDashboard || "Dashboard"}
+            {loginButtonText}
           </button>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="flex-grow container mx-auto px-4 py-8 max-w-5xl">
-        {/* Main details */}
         <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
           <h1 className="text-3xl font-bold mb-2">{funkoItem.title}</h1>
+          
+          {/* AI Description */}
+          {isGenerating && (
+            <div className="mb-4 p-3 rounded bg-blue-100 dark:bg-blue-900 text-sm">
+              Generating AI description...
+            </div>
+          )}
+          {aiDescription && (
+            <div className="mb-4 p-3 rounded bg-gray-100 dark:bg-gray-600 text-sm italic">
+              {aiDescription}
+            </div>
+          )}
+
           <div className="flex gap-4 mb-6">
             <button
               onClick={toggleWishlist}
@@ -1214,7 +1176,6 @@ const FunkoDetails: React.FC = () => {
         {/* Shopping Links Section */}
         <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
           <h2 className="text-xl font-semibold mb-4">Search on Shopping Sites</h2>
-          {/* Country Filters */}
           <div className="mb-4">
             <p className="text-sm font-medium mb-2">Search in countries:</p>
             <div className="flex flex-wrap gap-2">
@@ -1234,7 +1195,6 @@ const FunkoDetails: React.FC = () => {
             </div>
           </div>
 
-          {/* Scraping Results */}
           {scrapingResults.length > 0 && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-3">Current Prices</h3>
@@ -1268,7 +1228,6 @@ const FunkoDetails: React.FC = () => {
             </div>
           )}
 
-          {/* Direct Links to Shopping Sites */}
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {selectedCountries.flatMap(countryCode => {
               const countryShops = shops[countryCode];

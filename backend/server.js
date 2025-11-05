@@ -1020,6 +1020,7 @@ app.patch('/api/friends/accept/:friendId', authenticateToken, async (req, res) =
   const userId = req.user.id;
 
   try {
+    // Aktualizuj status przyjaźni
     await pool.query(
       `UPDATE friendships 
        SET status = 'accepted' 
@@ -1033,6 +1034,21 @@ app.patch('/api/friends/accept/:friendId', authenticateToken, async (req, res) =
        ON CONFLICT (user_id, friend_id) DO UPDATE SET status = 'accepted'`,
       [userId, friendId]
     );
+
+    // ✅ DODAJ: Przyznaj punkty OBOIM użytkownikom
+    await pool.query(
+      'SELECT award_loyalty_points($1, $2, $3, $4)',
+      [userId, LOYALTY_POINTS.friend_add, 'Accepted friend request', 'friend_add']
+    );
+    
+    await pool.query(
+      'SELECT award_loyalty_points($1, $2, $3, $4)',
+      [friendId, LOYALTY_POINTS.friend_add, 'Friend request was accepted', 'friend_add']
+    );
+
+    // ✅ DODAJ: Sprawdź osiągnięcia dla obu użytkowników
+    await checkAndUnlockAchievements(userId);
+    await checkAndUnlockAchievements(friendId);
 
     res.json({ message: 'Friend request accepted' });
   } catch (err) {
@@ -2184,6 +2200,488 @@ app.get('/api/test/items', authenticateToken, isAdmin, async (req, res) => {
     });
   }
 });
+// ======================
+// LOYALTY REWARDS SYSTEM ROUTES
+// ======================
+
+// Definicja punktów za akcje
+const LOYALTY_POINTS = {
+  daily_login: 5,
+  collection_add: 10,
+  wishlist_add: 5,
+  friend_add: 15,
+  chat_message: 2,
+  profile_update: 10,
+  item_comment: 20,
+  streak_bonus_7: 50,
+  streak_bonus_30: 200
+};
+
+// Middleware do aktualizacji streak
+const updateLoginStreak = async (userId) => {
+  try {
+    const user = await pool.query(
+      'SELECT last_streak_date, current_streak, longest_streak FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (user.rows.length === 0) return;
+
+    const { last_streak_date, current_streak, longest_streak } = user.rows[0];
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+    let newStreak = current_streak || 0;
+    let pointsAwarded = 0;
+
+    if (!last_streak_date || last_streak_date === yesterday) {
+      newStreak += 1;
+      pointsAwarded = LOYALTY_POINTS.daily_login;
+
+      // Bonusy za streak
+      if (newStreak === 7) pointsAwarded += LOYALTY_POINTS.streak_bonus_7;
+      if (newStreak === 30) pointsAwarded += LOYALTY_POINTS.streak_bonus_30;
+
+      await pool.query(
+        `UPDATE users 
+         SET current_streak = $1, 
+             longest_streak = GREATEST(longest_streak, $1),
+             last_streak_date = $2,
+             loyalty_points = loyalty_points + $3
+         WHERE id = $4`,
+        [newStreak, today, pointsAwarded, userId]
+      );
+
+      if (pointsAwarded > 0) {
+        await pool.query(
+          `INSERT INTO loyalty_points_history (user_id, points_change, reason, action_type)
+           VALUES ($1, $2, $3, $4)`,
+          [userId, pointsAwarded, `Daily login streak: ${newStreak} days`, 'daily_login']
+        );
+      }
+    } else if (last_streak_date !== today) {
+      // Reset streak jeśli przerwa dłuższa niż 1 dzień
+      await pool.query(
+        'UPDATE users SET current_streak = 1, last_streak_date = $1 WHERE id = $2',
+        [today, userId]
+      );
+    }
+
+    // Sprawdź i odblokuj osiągnięcia
+    await checkAndUnlockAchievements(userId);
+  } catch (err) {
+    console.error('Error updating streak:', err);
+  }
+};
+
+// Funkcja do sprawdzania osiągnięć
+const checkAndUnlockAchievements = async (userId) => {
+  try {
+    const result = await pool.query('SELECT check_and_unlock_achievements($1)', [userId]);
+    
+    if (result.rows && result.rows.length > 0) {
+      // Przyznaj punkty za odblokowane osiągnięcia
+      for (const achievement of result.rows) {
+        if (achievement.points) {
+          await pool.query(
+            'SELECT award_loyalty_points($1, $2, $3, $4)',
+            [userId, achievement.points, `Achievement unlocked: ${achievement.achievement_id}`, 'achievement']
+          );
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error checking achievements:', err);
+  }
+};
+
+// 📊 GET /api/loyalty/dashboard - Pełny dashboard lojalności
+app.get('/api/loyalty/dashboard', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    // Dane użytkownika
+    const userData = await pool.query(`
+      SELECT 
+        u.loyalty_points,
+        u.loyalty_level,
+        u.current_streak,
+        u.longest_streak,
+        u.profile_frame,
+        u.active_title,
+        u.active_theme,
+        ll.level_name,
+        ll.badge_emoji,
+        ll.min_points as current_level_min,
+        (SELECT min_points FROM loyalty_levels WHERE level_number = u.loyalty_level + 1) as next_level_min
+      FROM users u
+      JOIN loyalty_levels ll ON u.loyalty_level = ll.level_number
+      WHERE u.id = $1
+    `, [userId]);
+
+    // Osiągnięcia użytkownika
+    const achievements = await pool.query(`
+      SELECT 
+        a.achievement_id,
+        a.name,
+        a.description,
+        a.category,
+        a.emoji,
+        a.points_reward,
+        ua.unlocked_at,
+        ua.is_new,
+        CASE WHEN ua.id IS NOT NULL THEN TRUE ELSE FALSE END as unlocked
+      FROM achievements a
+      LEFT JOIN user_achievements ua ON a.achievement_id = ua.achievement_id AND ua.user_id = $1
+      ORDER BY 
+        CASE WHEN ua.id IS NOT NULL THEN 0 ELSE 1 END,
+        a.points_reward DESC
+    `, [userId]);
+
+    // Postęp w osiągnięciach
+    const progress = await pool.query(`
+      SELECT 
+        (SELECT COUNT(*) FROM collection WHERE user_id = $1) as collection_count,
+        (SELECT COUNT(*) FROM wishlist WHERE user_id = $1) as wishlist_count,
+        (SELECT COUNT(*) FROM friendships WHERE (user_id = $1 OR friend_id = $1) AND status = 'accepted') as friend_count,
+        $1 as user_id
+    `, [userId]);
+
+    // Historia punktów (ostatnie 10 wpisów)
+    const pointsHistory = await pool.query(`
+      SELECT points_change, reason, action_type, created_at
+      FROM loyalty_points_history
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      LIMIT 10
+    `, [userId]);
+
+    // Odblokowane nagrody
+    const rewards = await pool.query(`
+      SELECT reward_type, reward_id, unlocked_at
+      FROM user_rewards
+      WHERE user_id = $1
+      ORDER BY unlocked_at DESC
+    `, [userId]);
+
+    const user = userData.rows[0];
+    const levelProgress = user.next_level_min 
+      ? ((user.loyalty_points - user.current_level_min) / (user.next_level_min - user.current_level_min)) * 100
+      : 100;
+
+    res.json({
+      user: {
+        loyaltyPoints: user.loyalty_points,
+        level: user.loyalty_level,
+        levelName: user.level_name,
+        badgeEmoji: user.badge_emoji,
+        levelProgress: Math.round(levelProgress),
+        nextLevelPoints: user.next_level_min,
+        currentStreak: user.current_streak,
+        longestStreak: user.longest_streak,
+        profileFrame: user.profile_frame,
+        activeTitle: user.active_title,
+        activeTheme: user.active_theme
+      },
+      achievements: achievements.rows,
+      progress: progress.rows[0],
+      pointsHistory: pointsHistory.rows,
+      rewards: rewards.rows
+    });
+  } catch (err) {
+    console.error('Error fetching loyalty dashboard:', err);
+    res.status(500).json({ error: 'Failed to fetch loyalty data' });
+  }
+});
+
+// 🎁 POST /api/loyalty/award-points - Przyznaj punkty za akcję
+app.post('/api/loyalty/award-points', authenticateToken, async (req, res) => {
+  const { actionType, details } = req.body;
+  const userId = req.user.id;
+
+  const points = LOYALTY_POINTS[actionType];
+  if (!points) {
+    return res.status(400).json({ error: 'Invalid action type' });
+  }
+
+  try {
+    await pool.query(
+      'SELECT award_loyalty_points($1, $2, $3, $4)',
+      [userId, points, details || `Action: ${actionType}`, actionType]
+    );
+
+    await checkAndUnlockAchievements(userId);
+
+    res.json({ 
+      message: 'Points awarded', 
+      points,
+      actionType 
+    });
+  } catch (err) {
+    console.error('Error awarding points:', err);
+    res.status(500).json({ error: 'Failed to award points' });
+  }
+});
+
+// 🏆 GET /api/loyalty/achievements - Wszystkie osiągnięcia użytkownika
+app.get('/api/loyalty/achievements', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const achievements = await pool.query(`
+      SELECT 
+        a.*,
+        ua.unlocked_at,
+        ua.is_new,
+        CASE WHEN ua.id IS NOT NULL THEN TRUE ELSE FALSE END as unlocked
+      FROM achievements a
+      LEFT JOIN user_achievements ua ON a.achievement_id = ua.achievement_id AND ua.user_id = $1
+      ORDER BY unlocked DESC, a.points_reward DESC
+    `, [userId]);
+
+    res.json(achievements.rows);
+  } catch (err) {
+    console.error('Error fetching achievements:', err);
+    res.status(500).json({ error: 'Failed to fetch achievements' });
+  }
+});
+
+// ✅ POST /api/loyalty/achievements/:id/mark-seen - Oznacz osiągnięcie jako zobaczone
+app.post('/api/loyalty/achievements/:id/mark-seen', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  try {
+    await pool.query(
+      'UPDATE user_achievements SET is_new = FALSE WHERE user_id = $1 AND achievement_id = $2',
+      [userId, id]
+    );
+
+    res.json({ message: 'Achievement marked as seen' });
+  } catch (err) {
+    console.error('Error marking achievement:', err);
+    res.status(500).json({ error: 'Failed to mark achievement' });
+  }
+});
+
+// 🎨 GET /api/loyalty/rewards - Dostępne nagrody do odblokowania
+app.get('/api/loyalty/rewards', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const user = await pool.query(
+      'SELECT loyalty_level FROM users WHERE id = $1',
+      [userId]
+    );
+
+    const level = user.rows[0].loyalty_level;
+
+    // Definicja wszystkich nagród
+    const allRewards = {
+      frames: [
+        { id: 'bronze', name: 'Bronze Frame', reqLevel: 1, color: 'from-amber-700 to-amber-900' },
+        { id: 'silver', name: 'Silver Frame', reqLevel: 2, color: 'from-gray-400 to-gray-600' },
+        { id: 'gold', name: 'Gold Frame', reqLevel: 3, color: 'from-yellow-400 to-yellow-600' },
+        { id: 'platinum', name: 'Platinum Frame', reqLevel: 4, color: 'from-blue-400 to-purple-600' },
+        { id: 'diamond', name: 'Diamond Frame', reqLevel: 5, color: 'from-cyan-400 to-blue-600' }
+      ],
+      titles: [
+        { id: 'newbie', text: 'Newbie Collector', reqLevel: 1 },
+        { id: 'enthusiast', text: 'Funko Enthusiast', reqLevel: 2 },
+        { id: 'expert', text: 'Collection Expert', reqLevel: 3 },
+        { id: 'master', text: 'Funko Master', reqLevel: 4 },
+        { id: 'legend', text: 'Pop! Legend', reqLevel: 5 }
+      ],
+      themes: [
+        { id: 'default', name: 'Default', reqLevel: 1 },
+        { id: 'ocean', name: 'Ocean Blue', reqLevel: 2, reqPoints: 500 },
+        { id: 'sunset', name: 'Sunset Orange', reqLevel: 3, reqPoints: 1000 },
+        { id: 'galaxy', name: 'Galaxy Purple', reqLevel: 4, reqPoints: 2000 },
+        { id: 'emerald', name: 'Emerald Green', reqLevel: 5, reqPoints: 3000 }
+      ]
+    };
+
+    // Odblokowane nagrody
+    const unlocked = await pool.query(
+      'SELECT reward_type, reward_id FROM user_rewards WHERE user_id = $1',
+      [userId]
+    );
+
+    const unlockedSet = new Set(unlocked.rows.map(r => `${r.reward_type}:${r.reward_id}`));
+
+    const available = {
+      frames: allRewards.frames.filter(f => f.reqLevel <= level).map(f => ({
+        ...f,
+        unlocked: unlockedSet.has(`frame:${f.id}`)
+      })),
+      titles: allRewards.titles.filter(t => t.reqLevel <= level).map(t => ({
+        ...t,
+        unlocked: unlockedSet.has(`title:${t.id}`)
+      })),
+      themes: allRewards.themes.filter(t => t.reqLevel <= level).map(t => ({
+        ...t,
+        unlocked: unlockedSet.has(`theme:${t.id}`)
+      }))
+    };
+
+    res.json(available);
+  } catch (err) {
+    console.error('Error fetching rewards:', err);
+    res.status(500).json({ error: 'Failed to fetch rewards' });
+  }
+});
+
+// 🔓 POST /api/loyalty/rewards/unlock - Odblokuj nagrodę
+app.post('/api/loyalty/rewards/unlock', authenticateToken, async (req, res) => {
+  const { rewardType, rewardId } = req.body;
+  const userId = req.user.id;
+
+  if (!['frame', 'title', 'theme'].includes(rewardType)) {
+    return res.status(400).json({ error: 'Invalid reward type' });
+  }
+
+  try {
+    await pool.query(
+      `INSERT INTO user_rewards (user_id, reward_type, reward_id)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (user_id, reward_type, reward_id) DO NOTHING`,
+      [userId, rewardType, rewardId]
+    );
+
+    res.json({ message: 'Reward unlocked', rewardType, rewardId });
+  } catch (err) {
+    console.error('Error unlocking reward:', err);
+    res.status(500).json({ error: 'Failed to unlock reward' });
+  }
+});
+
+// 🎨 PATCH /api/loyalty/rewards/activate - Aktywuj nagrodę (ustaw jako aktywną)
+app.patch('/api/loyalty/rewards/activate', authenticateToken, async (req, res) => {
+  const { rewardType, rewardId } = req.body;
+  const userId = req.user.id;
+
+  try {
+    const column = rewardType === 'frame' ? 'profile_frame' 
+                 : rewardType === 'title' ? 'active_title'
+                 : 'active_theme';
+
+    await pool.query(
+      `UPDATE users SET ${column} = $1 WHERE id = $2`,
+      [rewardId, userId]
+    );
+
+    res.json({ message: 'Reward activated', rewardType, rewardId });
+  } catch (err) {
+    console.error('Error activating reward:', err);
+    res.status(500).json({ error: 'Failed to activate reward' });
+  }
+});
+
+// 🔥 GET /api/loyalty/streak - Informacje o streak
+app.get('/api/loyalty/streak', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    await updateLoginStreak(userId);
+
+    const streak = await pool.query(
+      'SELECT current_streak, longest_streak, last_streak_date FROM users WHERE id = $1',
+      [userId]
+    );
+
+    res.json(streak.rows[0]);
+  } catch (err) {
+    console.error('Error fetching streak:', err);
+    res.status(500).json({ error: 'Failed to fetch streak' });
+  }
+});
+
+// 📈 GET /api/loyalty/leaderboard - Ranking lojalności (zaktualizowany)
+app.get('/api/loyalty/leaderboard', authenticateToken, async (req, res) => {
+  const { filter = 'all' } = req.query;
+
+  try {
+    let timeFilter = '';
+    if (filter === 'weekly') {
+      timeFilter = `AND lph.created_at >= NOW() - INTERVAL '7 days'`;
+    } else if (filter === 'monthly') {
+      timeFilter = `AND lph.created_at >= NOW() - INTERVAL '30 days'`;
+    }
+
+    const leaderboard = await pool.query(`
+      SELECT 
+        u.id,
+        u.login,
+        u.loyalty_points,
+        u.loyalty_level,
+        ll.badge_emoji,
+        ll.level_name,
+        (SELECT COUNT(*) FROM collection WHERE user_id = u.id) as collection_size,
+        COALESCE(SUM(lph.points_change), 0) as period_points
+      FROM users u
+      JOIN loyalty_levels ll ON u.loyalty_level = ll.level_number
+      LEFT JOIN loyalty_points_history lph ON u.id = lph.user_id ${timeFilter}
+      WHERE u.loyalty_points > 0
+      GROUP BY u.id, u.login, u.loyalty_points, u.loyalty_level, ll.badge_emoji, ll.level_name
+      ORDER BY ${filter === 'all' ? 'u.loyalty_points' : 'period_points'} DESC
+      LIMIT 50
+    `);
+
+    res.json(leaderboard.rows);
+  } catch (err) {
+    console.error('Error fetching leaderboard:', err);
+    res.status(500).json({ error: 'Failed to fetch leaderboard' });
+  }
+});
+
+// Dodaj updateLoginStreak do logowania
+app.post('/api/login', async (req, res) => {
+  const { login, password } = req.body;
+
+  if (!login || !password) {
+    return res.status(400).json({ error: 'Login and password required' });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT id, email, login, password_hash, name, surname, gender, date_of_birth, role, nationality
+       FROM users WHERE login = $1`,
+      [login]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const user = result.rows[0];
+    const validPassword = await comparePasswords(password, user.password_hash);
+
+    if (!validPassword) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    await pool.query(
+      `UPDATE users SET last_login = NOW() WHERE id = $1`,
+      [user.id]
+    );
+
+    // ✅ Aktualizuj streak przy logowaniu
+    await updateLoginStreak(user.id);
+
+    const token = generateToken(user);
+    const { password_hash, ...safeUser } = user;
+
+    res.json({
+      message: 'Login successful',
+      user: safeUser,
+      token: token
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 
 // ======================
 // SERVER STARTUP
@@ -2201,5 +2699,6 @@ const startServer = async () => {
     process.exit(1);
   }
 };
+
 
 startServer();

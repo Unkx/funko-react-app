@@ -5,6 +5,7 @@ import ItemList from "./ItemList.tsx";
 import { motion, AnimatePresence } from "framer-motion";
 import ChatComponent from './ChatComponent';
 import FriendProfileModal from './FriendProfileModal';
+import LoyaltyDashboard from './LoyaltyDashboard';
 
 // SVG Icons
 import MoonIcon from "./assets/moon.svg?react";
@@ -488,6 +489,28 @@ const handleRemoveFriend = async (friendId: string) => {
       console.error("Error starting chat:", err);
     }
   };
+
+  // 🔹 Loyalty Dashboard state
+  const [showLoyaltyDashboard, setShowLoyaltyDashboard] = useState(false);
+
+    const awardPoints = async (actionType: string, details?: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    
+    try {
+      await fetch("http://localhost:5000/api/loyalty/award-points", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ actionType, details })
+      });
+    } catch (err) {
+      console.error("Failed to award points:", err);
+    }
+  };
+
 
   // 🔹 Fetch admin analytics data
   const fetchAdminAnalytics = async () => {
@@ -1116,8 +1139,9 @@ useEffect(() => {
                 });
                 if (response.ok) {
                   alert("Friend request sent!");
+                  await awardPoints("friend_add", `Sent friend request to ${friendLogin}`); // ✅ DODANE
                   input.value = "";
-                  fetchOutgoingRequests(); // ✅ Immediate update
+                  fetchOutgoingRequests();
                 } else {
                   const error = await response.json();
                   alert(error.error || "Failed to send friend request");
@@ -1674,6 +1698,13 @@ useEffect(() => {
           <button onClick={() => setActiveView("social")} className={`px-3 py-1 rounded flex items-center gap-2 ${activeView === "social" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}>
             <UsersIcon className="w-4 h-4" /> {t.social || "Social"}
           </button>
+
+          <button 
+            onClick={() => setShowLoyaltyDashboard(true)} 
+            className={`px-3 py-1 rounded flex items-center gap-2 ...`}>
+            🏆 {t.rewards || "Rewards"}
+          </button>
+
         </div>
       </nav>
 
@@ -2268,6 +2299,13 @@ useEffect(() => {
       {/* Account Details Modal */}
       {showAccountDetails && renderAccountDetailsModal()}
 
+      {/* Loyalty Dashboard Modal */}
+      {showLoyaltyDashboard && (
+        <LoyaltyDashboard 
+          isDarkMode={isDarkMode}
+          onClose={() => setShowLoyaltyDashboard(false)}
+        />
+      )}
       {/* Footer */}
       <footer className={`py-4 text-center text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
         &copy; {new Date().getFullYear()} Pop&Go! — {t.adminPanel || "Admin Panel"}

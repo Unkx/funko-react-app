@@ -1,190 +1,185 @@
--- Run these SQL commands to update your database for the chat system
+-- ===================================
+-- LOYALTY SYSTEM DATABASE MIGRATION
+-- ===================================
 
--- 1. Add is_read column to messages table (if it doesn't exist)
-ALTER TABLE messages 
-ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT FALSE;
+-- 1. Dodaj kolumny do tabeli users (jeśli jeszcze nie istnieją)
+ALTER TABLE users 
+ADD COLUMN IF NOT EXISTS loyalty_points INT DEFAULT 0,
+ADD COLUMN IF NOT EXISTS loyalty_level INT DEFAULT 1,
+ADD COLUMN IF NOT EXISTS current_streak INT DEFAULT 0,
+ADD COLUMN IF NOT EXISTS longest_streak INT DEFAULT 0,
+ADD COLUMN IF NOT EXISTS last_streak_date DATE,
+ADD COLUMN IF NOT EXISTS profile_frame VARCHAR(50) DEFAULT 'bronze',
+ADD COLUMN IF NOT EXISTS active_title VARCHAR(100),
+ADD COLUMN IF NOT EXISTS active_theme VARCHAR(50) DEFAULT 'default';
 
--- 2. Create index for faster message queries
-CREATE INDEX IF NOT EXISTS idx_messages_conversation_created 
-ON messages(conversation_id, created_at DESC);
-
--- 3. Create index for unread messages
-CREATE INDEX IF NOT EXISTS idx_messages_read_status 
-ON messages(conversation_id, sender_id, is_read) 
-WHERE is_read = FALSE;
-
--- 4. Add index to friendships for faster lookups
-CREATE INDEX IF NOT EXISTS idx_friendships_user_status 
-ON friendships(user_id, status);
-
-CREATE INDEX IF NOT EXISTS idx_friendships_friend_status 
-ON friendships(friend_id, status);
-
--- 5. Add timestamp to conversations
-ALTER TABLE conversations 
-ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
-
--- 6. Update existing messages to be marked as read (optional - for existing data)
--- UPDATE messages SET is_read = TRUE WHERE created_at < NOW() - INTERVAL '1 day';
-
--- 7. Verify the structure
-SELECT 
-    table_name, 
-    column_name, 
-    data_type, 
-    is_nullable
-FROM information_schema.columns
-WHERE table_name IN ('messages', 'conversations', 'friendships')
-ORDER BY table_name, ordinal_position;
-
-//Friend 
--- ==========================================
--- DATABASE SCHEMA UPDATES FOR FRIEND PROFILES
--- Run these SQL commands in your PostgreSQL database
--- ==========================================
-
--- 1. Add missing columns to wishlist table (if they don't exist)
-ALTER TABLE wishlist 
-ADD COLUMN IF NOT EXISTS priority VARCHAR(10) DEFAULT 'medium',
-ADD COLUMN IF NOT EXISTS max_price DECIMAL(10,2),
-ADD COLUMN IF NOT EXISTS target_condition VARCHAR(50),
-ADD COLUMN IF NOT EXISTS notes TEXT;
-
--- 2. Add missing columns to collection table (if they don't exist)
-ALTER TABLE collection
-ADD COLUMN IF NOT EXISTS notes TEXT,
-ADD COLUMN IF NOT EXISTS purchase_price DECIMAL(10,2),
-ADD COLUMN IF NOT EXISTS series VARCHAR(255),
-ADD COLUMN IF NOT EXISTS added_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
-
--- 3. Ensure loyalty_score column exists in users table
-ALTER TABLE users
-ADD COLUMN IF NOT EXISTS loyalty_score INTEGER DEFAULT 0,
-ADD COLUMN IF NOT EXISTS days_active INTEGER DEFAULT 0,
-ADD COLUMN IF NOT EXISTS last_activity_date DATE;
-
--- 4. Create index for better performance on friend queries
-CREATE INDEX IF NOT EXISTS idx_friendships_user_friend 
-ON friendships(user_id, friend_id, status);
-
-CREATE INDEX IF NOT EXISTS idx_friendships_friend_user 
-ON friendships(friend_id, user_id, status);
-
--- 5. Create index for collection queries
-CREATE INDEX IF NOT EXISTS idx_collection_user_id 
-ON collection(user_id);
-
--- 6. Create index for wishlist queries
-CREATE INDEX IF NOT EXISTS idx_wishlist_user_id 
-ON wishlist(user_id);
-
--- 7. Ensure conversations table has proper structure
-CREATE TABLE IF NOT EXISTS conversations (
-    id SERIAL PRIMARY KEY,
-    user1_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    user2_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT conversations_users_unique UNIQUE (user1_id, user2_id),
-    CONSTRAINT conversations_different_users CHECK (user1_id < user2_id)
-);
-
--- 8. Ensure messages table has proper structure
-CREATE TABLE IF NOT EXISTS messages (
-    id SERIAL PRIMARY KEY,
-    conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-    sender_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    content TEXT NOT NULL,
-    is_read BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- 9. Add indexes for messages
-CREATE INDEX IF NOT EXISTS idx_messages_conversation 
-ON messages(conversation_id, created_at);
-
-CREATE INDEX IF NOT EXISTS idx_messages_unread 
-ON messages(conversation_id, is_read) WHERE is_read = FALSE;
-
--- 10. Verify data integrity
--- Check if any existing wishlist items need default priority
-UPDATE wishlist 
-SET priority = 'medium' 
-WHERE priority IS NULL;
-
--- 11. Optional: Add CHECK constraint for priority values
-ALTER TABLE wishlist
-ADD CONSTRAINT wishlist_priority_check 
-CHECK (priority IN ('low', 'medium', 'high'));
-
--- 12. Optional: Add CHECK constraint for condition values
-ALTER TABLE collection
-ADD CONSTRAINT collection_condition_check 
-CHECK (condition IN ('mint', 'near_mint', 'good', 'fair', 'poor'));
-
--- 13. View to easily see friend connections (optional, for debugging)
-CREATE OR REPLACE VIEW v_friend_connections AS
-SELECT 
-    u1.id as user_id,
-    u1.login as user_login,
-    u2.id as friend_id,
-    u2.login as friend_login,
-    f.status,
-    f.created_at
-FROM friendships f
-JOIN users u1 ON f.user_id = u1.id
-JOIN users u2 ON f.friend_id = u2.id;
-
--- 14. Function to get mutual friends count (optional)
-CREATE OR REPLACE FUNCTION get_mutual_friends_count(user1 INT, user2 INT)
-RETURNS INTEGER AS $$
-    SELECT COUNT(*)::INTEGER
-    FROM (
-        SELECT friend_id FROM friendships WHERE user_id = user1 AND status = 'accepted'
-        INTERSECT
-        SELECT friend_id FROM friendships WHERE user_id = user2 AND status = 'accepted'
-    ) mutual;
-$$ LANGUAGE SQL;
-
--- ==========================================
--- VERIFICATION QUERIES
--- Run these to verify the updates worked
--- ==========================================
-
--- Check wishlist table structure
-SELECT column_name, data_type, is_nullable
-FROM information_schema.columns
-WHERE table_name = 'wishlist'
-ORDER BY ordinal_position;
-
--- Check collection table structure
-SELECT column_name, data_type, is_nullable
-FROM information_schema.columns
-WHERE table_name = 'collection'
-ORDER BY ordinal_position;
-
--- Check indexes
-SELECT 
-    tablename,
-    indexname,
-    indexdef
-FROM pg_indexes
-WHERE tablename IN ('wishlist', 'collection', 'friendships', 'messages')
-ORDER BY tablename, indexname;
-
--- Check for any existing friend connections
-SELECT 
-    COUNT(*) as total_friendships,
-    COUNT(*) FILTER (WHERE status = 'accepted') as accepted,
-    COUNT(*) FILTER (WHERE status = 'pending') as pending
-FROM friendships;
-
--- Example wishlist table definition
-CREATE TABLE wishlist (
+-- 2. Tabela poziomów lojalności
+CREATE TABLE IF NOT EXISTS loyalty_levels (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  added_at TIMESTAMP DEFAULT NOW(),
-  priority TEXT CHECK (priority IN ('low', 'medium', 'high')),
-  max_price NUMERIC(10, 2),
-  target_condition TEXT,
-  UNIQUE(user_id, funko_id)
+  level_number INT UNIQUE NOT NULL,
+  level_name VARCHAR(50) NOT NULL,
+  min_points INT NOT NULL,
+  badge_emoji VARCHAR(10),
+  frame_id VARCHAR(50),
+  created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Dodaj domyślne poziomy
+INSERT INTO loyalty_levels (level_number, level_name, min_points, badge_emoji, frame_id) 
+VALUES 
+  (1, 'Beginner', 0, '🌱', 'bronze'),
+  (2, 'Collector', 100, '📦', 'silver'),
+  (3, 'Expert', 500, '⭐', 'gold'),
+  (4, 'Master', 1000, '🏆', 'platinum'),
+  (5, 'Legend', 2500, '👑', 'diamond')
+ON CONFLICT (level_number) DO NOTHING;
+
+-- 3. Tabela osiągnięć (achievements)
+CREATE TABLE IF NOT EXISTS achievements (
+  id SERIAL PRIMARY KEY,
+  achievement_id VARCHAR(50) UNIQUE NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  description TEXT,
+  category VARCHAR(50), -- 'collection', 'social', 'streak', 'special'
+  emoji VARCHAR(10),
+  points_reward INT DEFAULT 0,
+  requirement_type VARCHAR(50), -- 'collection_count', 'friend_count', 'streak_days', etc.
+  requirement_value INT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Dodaj przykładowe osiągnięcia
+INSERT INTO achievements (achievement_id, name, description, category, emoji, points_reward, requirement_type, requirement_value)
+VALUES
+  -- Collection achievements
+  ('first_item', 'First Steps', 'Add your first item to collection', 'collection', '🎯', 50, 'collection_count', 1),
+  ('collector_10', 'Starter Collector', 'Collect 10 Funko Pops', 'collection', '📦', 100, 'collection_count', 10),
+  ('collector_50', 'Serious Collector', 'Collect 50 Funko Pops', 'collection', '🗃️', 250, 'collection_count', 50),
+  ('collector_100', 'Pro Collector', 'Collect 100 Funko Pops', 'collection', '🏪', 500, 'collection_count', 100),
+  
+  -- Social achievements
+  ('first_friend', 'Making Friends', 'Add your first friend', 'social', '👋', 75, 'friend_count', 1),
+  ('social_5', 'Social Butterfly', 'Have 5 friends', 'social', '🦋', 150, 'friend_count', 5),
+  ('social_25', 'Popular User', 'Have 25 friends', 'social', '⭐', 300, 'friend_count', 25),
+  
+  -- Streak achievements
+  ('streak_7', 'Week Warrior', '7 day login streak', 'streak', '🔥', 100, 'streak_days', 7),
+  ('streak_30', 'Monthly Master', '30 day login streak', 'streak', '📅', 300, 'streak_days', 30),
+  ('streak_100', 'Dedication', '100 day login streak', 'streak', '💎', 1000, 'streak_days', 100),
+  
+  -- Special achievements
+  ('complete_profile', 'Complete Profile', 'Fill out all profile information', 'special', '✅', 100, 'profile_complete', 1),
+  ('first_wishlist', 'Wishful Thinking', 'Add first item to wishlist', 'special', '💭', 50, 'wishlist_count', 1)
+ON CONFLICT (achievement_id) DO NOTHING;
+
+-- 4. Tabela postępów użytkowników w osiągnięciach
+CREATE TABLE IF NOT EXISTS user_achievements (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  achievement_id VARCHAR(50) REFERENCES achievements(achievement_id),
+  unlocked_at TIMESTAMP DEFAULT NOW(),
+  is_new BOOLEAN DEFAULT TRUE, -- czy użytkownik widział powiadomienie
+  UNIQUE(user_id, achievement_id)
+);
+
+-- 5. Tabela odblokowywanych nagród
+CREATE TABLE IF NOT EXISTS user_rewards (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  reward_type VARCHAR(50), -- 'frame', 'title', 'theme'
+  reward_id VARCHAR(50),
+  unlocked_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(user_id, reward_type, reward_id)
+);
+
+-- 6. Tabela historii punktów lojalności
+CREATE TABLE IF NOT EXISTS loyalty_points_history (
+  id SERIAL PRIMARY KEY,
+  user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  points_change INT NOT NULL,
+  reason VARCHAR(100),
+  action_type VARCHAR(50),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 7. Indeksy dla wydajności
+CREATE INDEX IF NOT EXISTS idx_user_achievements_user ON user_achievements(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_rewards_user ON user_rewards(user_id);
+CREATE INDEX IF NOT EXISTS idx_loyalty_history_user ON loyalty_points_history(user_id);
+CREATE INDEX IF NOT EXISTS idx_users_loyalty_points ON users(loyalty_points DESC);
+
+-- ===================================
+-- FUNKCJE POMOCNICZE
+-- ===================================
+
+-- Funkcja do automatycznego przyznawania punktów
+CREATE OR REPLACE FUNCTION award_loyalty_points(
+  p_user_id INT,
+  p_points INT,
+  p_reason VARCHAR(100),
+  p_action_type VARCHAR(50)
+)
+RETURNS void AS $$
+BEGIN
+  -- Dodaj punkty do użytkownika
+  UPDATE users 
+  SET loyalty_points = loyalty_points + p_points
+  WHERE id = p_user_id;
+  
+  -- Zapisz historię
+  INSERT INTO loyalty_points_history (user_id, points_change, reason, action_type)
+  VALUES (p_user_id, p_points, p_reason, p_action_type);
+  
+  -- Zaktualizuj poziom lojalności
+  UPDATE users u
+  SET loyalty_level = (
+    SELECT MAX(level_number)
+    FROM loyalty_levels
+    WHERE min_points <= u.loyalty_points
+  )
+  WHERE id = p_user_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Funkcja do sprawdzania i odblokowywania osiągnięć
+CREATE OR REPLACE FUNCTION check_and_unlock_achievements(p_user_id INT)
+RETURNS TABLE(achievement_id VARCHAR, points INT) AS $$
+BEGIN
+  RETURN QUERY
+  WITH user_stats AS (
+    SELECT 
+      p_user_id as user_id,
+      (SELECT COUNT(*) FROM collection WHERE user_id = p_user_id) as collection_count,
+      (SELECT COUNT(*) FROM wishlist WHERE user_id = p_user_id) as wishlist_count,
+      (SELECT COUNT(*) FROM friendships WHERE (user_id = p_user_id OR friend_id = p_user_id) AND status = 'accepted') as friend_count,
+      (SELECT current_streak FROM users WHERE id = p_user_id) as streak_days,
+      (SELECT CASE WHEN name IS NOT NULL AND surname IS NOT NULL AND gender IS NOT NULL AND date_of_birth IS NOT NULL AND nationality IS NOT NULL THEN 1 ELSE 0 END FROM users WHERE id = p_user_id) as profile_complete
+  ),
+  eligible_achievements AS (
+    SELECT a.achievement_id, a.points_reward
+    FROM achievements a
+    CROSS JOIN user_stats us
+    WHERE NOT EXISTS (
+      SELECT 1 FROM user_achievements ua 
+      WHERE ua.user_id = p_user_id AND ua.achievement_id = a.achievement_id
+    )
+    AND (
+      (a.requirement_type = 'collection_count' AND us.collection_count >= a.requirement_value) OR
+      (a.requirement_type = 'wishlist_count' AND us.wishlist_count >= a.requirement_value) OR
+      (a.requirement_type = 'friend_count' AND us.friend_count >= a.requirement_value) OR
+      (a.requirement_type = 'streak_days' AND us.streak_days >= a.requirement_value) OR
+      (a.requirement_type = 'profile_complete' AND us.profile_complete >= a.requirement_value)
+    )
+  )
+  INSERT INTO user_achievements (user_id, achievement_id)
+  SELECT p_user_id, ea.achievement_id
+  FROM eligible_achievements ea
+  RETURNING achievement_id, (SELECT points_reward FROM achievements WHERE achievements.achievement_id = user_achievements.achievement_id);
+END;
+$$ LANGUAGE plpgsql;
+
+COMMENT ON TABLE loyalty_levels IS 'Definicje poziomów lojalności';
+COMMENT ON TABLE achievements IS 'Dostępne osiągnięcia w systemie';
+COMMENT ON TABLE user_achievements IS 'Odblokowane osiągnięcia użytkowników';
+COMMENT ON TABLE user_rewards IS 'Odblokowane nagrody wizualne (ramki, tytuły, motywy)';
+COMMENT ON TABLE loyalty_points_history IS 'Historia zmian punktów lojalności';

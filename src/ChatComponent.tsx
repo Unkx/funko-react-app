@@ -114,6 +114,29 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
     }
   };
 
+    // Loyalty Dashboard state
+    const [showLoyaltyDashboard, setShowLoyaltyDashboard] = useState(false);
+  
+    // Funkcja do automatycznego przyznawania punktów
+    const awardPoints = async (actionType: string, details?: string) => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      
+      try {
+        await fetch("http://localhost:5000/api/loyalty/award-points", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ actionType, details })
+        });
+      } catch (err) {
+        console.error("Failed to award points:", err);
+      }
+    };
+  
+    
   const fetchActiveUsers = async () => {
     const token = localStorage.getItem('token');
     try {
@@ -191,7 +214,8 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
         }
       );
 
-      if (response.ok) {
+    if (response.ok) {
+    await awardPoints("chat_message", "Sent message");
         const message = await response.json();
         setMessages(prev => [...prev, message]);
         setNewMessage('');

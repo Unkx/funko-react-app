@@ -3,8 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import LanguageSelectorPopup from "./LanguageSelectorPopup";
 import { translations } from "./Translations/TranslationsDashboard";
 import { motion, AnimatePresence } from "framer-motion";
-
-
+import LoyaltyDashboard from './LoyaltyDashboard';
+import LoyaltyLeaderboard from './LoyaltyLeaderboard';
+import LoyaltyWidget from './LoyaltyWidget';
 // Icons
 import MoonIcon from "./assets/moon.svg?react";
 import SunIcon from "./assets/sun.svg?react";
@@ -133,6 +134,59 @@ const DashboardSite: React.FC = () => {
   }));
 };
 
+  // Loyalty Dashboard state
+  const [showLoyaltyDashboard, setShowLoyaltyDashboard] = useState(false);
+
+  // Funkcja do automatycznego przyznawania punktów
+  const awardPoints = async (actionType: string, details?: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    
+    try {
+      await fetch("http://localhost:5000/api/loyalty/award-points", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ actionType, details })
+      });
+    } catch (err) {
+      console.error("Failed to award points:", err);
+    }
+  };
+
+  // Na początku komponentu, po useState
+useEffect(() => {
+  const checkNewAchievements = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const response = await fetch("http://localhost:5000/api/loyalty/achievements", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.ok) {
+        const achievements = await response.json();
+        const newAchievements = achievements.filter((a: any) => a.is_new && a.unlocked);
+
+        if (newAchievements.length > 0) {
+          // Możesz pokazać toast notification lub modal
+          console.log("New achievements unlocked!", newAchievements);
+        }
+      }
+    } catch (err) {
+      console.error("Error checking achievements:", err);
+    }
+  };
+
+  // Sprawdzaj co 30 sekund
+  const interval = setInterval(checkNewAchievements, 30000);
+  checkNewAchievements(); // Natychmiastowe pierwsze sprawdzenie
+
+  return () => clearInterval(interval);
+}, []);
   // Collection states
   const [collection, setCollection] = useState<FunkoItem[]>([]);
   const [filteredCollection, setFilteredCollection] = useState<FunkoItem[]>([]);
@@ -195,7 +249,7 @@ const DashboardSite: React.FC = () => {
   const [showChat, setShowChat] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState<any>(null);
 
-  // Add these functions (identical to DashboardSite)
+// Fetch incoming friend requests
 const fetchIncomingRequests = async () => {
   const token = localStorage.getItem("token");
   if (!token) return;
@@ -211,7 +265,7 @@ const fetchIncomingRequests = async () => {
     console.error("Error fetching incoming requests:", err);
   }
 };
-
+// Fetch outgoing friend requests
 const fetchOutgoingRequests = async () => {
   const token = localStorage.getItem("token");
   if (!token) return;
@@ -226,6 +280,7 @@ const fetchOutgoingRequests = async () => {
   } catch (err) {
     console.error("Error fetching outgoing requests:", err);
   }
+  
 };
 
 const handleAcceptRequest = async (senderId: string, friendshipId: string) => {
@@ -255,8 +310,9 @@ const handleRejectRequest = async (friendshipId: string) => {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (response.ok) {
-      alert("Friend request removed");
-      fetchIncomingRequests();
+      alert("Friend request sent!");
+      await awardPoints("friend_add", `Sent friend request to ${friendLogin}`); // ← DODAJ TO
+      input.value = "";
       fetchOutgoingRequests();
     }
   } catch (err) {
@@ -682,7 +738,8 @@ useEffect(() => {
 
       console.log("📡 Response status:", response.status);
       
-      if (!response.ok) {
+      if (response.ok) {
+        await awardPoints("profile_update", "Updated profile information");
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to update profile");
       }
@@ -809,11 +866,15 @@ useEffect(() => {
   // Log activity when adding to collection
   const handleAddToCollection = async (item: any) => {
     await logActivity("collection_add", { item_id: item.id, title: item.title });
+
+    await awardPoints("collection_add", `Added ${item.title}`);
   };
 
   // Log activity when adding to wishlist
   const handleAddToWishlist = async (item: any) => {
     await logActivity("wishlist_add", { item_id: item.id, title: item.title });
+
+    await awardPoints("wishlist_add", `Added ${item.title}`);
   };
 
   const handleMoveToCollection = async (item: WishlistItem) => {
@@ -985,7 +1046,14 @@ useEffect(() => {
               <p className="text-sm">Start using the app to see your statistics!</p>
             </div>
           )}
+
+          <LoyaltyLeaderboard 
+            isDarkMode={isDarkMode}
+            currentUserId={user?.id || 0}
+          />
+
         </div>
+        
       )}
     </div>
   );
@@ -1027,8 +1095,9 @@ useEffect(() => {
                 });
                 if (response.ok) {
                   alert("Friend request sent!");
+                  await awardPoints("friend_add", `Sent friend request to ${friendLogin}`); // ✅ DODANE
                   input.value = "";
-                  fetchOutgoingRequests(); // ✅ Immediate update
+                  fetchOutgoingRequests();
                 } else {
                   const error = await response.json();
                   alert(error.error || "Failed to send friend request");
@@ -1344,6 +1413,14 @@ useEffect(() => {
             </>
           )}
         </ul>
+      </section>
+
+      {/* Section: Loyalty Widget */}
+      <section className="max-w-4xl w-full mx-auto mb-8">
+        <LoyaltyWidget 
+          isDarkMode={isDarkMode}
+          onOpenFull={() => setShowLoyaltyDashboard(true)}
+        />
       </section>
       {/* Section: Collection Preview */}
       <section className={`max-w-4xl w-full mb-8 p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
@@ -2039,6 +2116,13 @@ useEffect(() => {
             <UsersIcon className="w-4 h-4" />
             {t.social || "Social"}
           </button>
+          <button 
+            onClick={() => setShowLoyaltyDashboard(true)} 
+            className={`px-3 py-1 rounded flex items-center gap-2 ${isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200"}`}
+          >
+            🏆 {t.rewards || "Rewards"}
+          </button>
+
         </div>
       </nav>
 
@@ -2112,6 +2196,14 @@ useEffect(() => {
             </motion.div>
           )}
         </AnimatePresence>
+
+          {/* Loyalty Dashboard Modal */}
+          {showLoyaltyDashboard && (
+            <LoyaltyDashboard 
+              isDarkMode={isDarkMode}
+              onClose={() => setShowLoyaltyDashboard(false)}
+            />
+            )}
       </main>
 
       {/* Footer */}

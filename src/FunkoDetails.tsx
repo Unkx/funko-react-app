@@ -727,30 +727,32 @@ const FunkoDetails: React.FC = () => {
   };
 
   const toggleWishlist = async () => {
-    if (!user) {
-      alert(t.loginRequiredMessage || "Please log in");
-      navigate("/loginregistersite");
-      return;
+  if (!user) {
+    alert(t.loginRequiredMessage || "Please log in");
+    navigate("/loginregistersite");
+    return;
+  }
+  if (!funkoItem || isUpdatingWishlist) return;
+  setIsUpdatingWishlist(true);
+  try {
+    if (inWishlist) {
+      await api.delete(`/wishlist/${funkoItem.id}`);
+    } else {
+      await api.post("/wishlist", {
+        funkoId: funkoItem.id,
+        title: funkoItem.title,
+        number: funkoItem.number,
+        imageName: funkoItem.imageName,
+      });
+      // ✅ Award points only when ADDING (not removing)
+      await awardPoints("wishlist_add", `Added "${funkoItem.title}" to wishlist`);
     }
-    if (!funkoItem || isUpdatingWishlist) return;
-    setIsUpdatingWishlist(true);
-    try {
-      if (inWishlist) {
-        await api.delete(`/wishlist/${funkoItem.id}`);
-      } else {
-        await api.post("/wishlist", {
-          funkoId: funkoItem.id,
-          title: funkoItem.title,
-          number: funkoItem.number,
-          imageName: funkoItem.imageName,
-        });
-      }
-      setInWishlist(!inWishlist);
-    } catch (err) {
-      alert(t.updateError || "Error updating wishlist.");
-    } finally {
-      setIsUpdatingWishlist(false);
-    }
+    setInWishlist(!inWishlist);
+  } catch (err) {
+    alert(t.updateError || "Error updating wishlist.");
+  } finally {
+    setIsUpdatingWishlist(false);
+  }
   };
 
   const toggleCollection = async () => {
@@ -771,6 +773,8 @@ const FunkoDetails: React.FC = () => {
           number: funkoItem.number,
           imageName: funkoItem.imageName,
         });
+        // ✅ Award points only when ADDING
+        await awardPoints("collection_add", `Added "${funkoItem.title}" to collection`);
       }
       setInCollection(!inCollection);
     } catch (err) {
@@ -789,6 +793,21 @@ const FunkoDetails: React.FC = () => {
   const loginButtonText = useMemo(() => {
     return user ? t.goToDashboard || "Dashboard" : t.goToLoginSite || "Log In";
   }, [t, user]);
+
+    // Helper: Award loyalty points
+  const awardPoints = async (actionType: string, details?: string) => {
+    const token = localStorage.getItem("token");
+    if (!token || !user) return; // Only logged-in users earn points
+
+    try {
+      await api.post("/loyalty/award-points", {
+        actionType,
+        details: details || `Performed action: ${actionType}`
+      });
+    } catch (err) {
+      console.warn("Failed to award loyalty points:", err);
+    }
+  };
 
   // ✅ WSZYSTKIE useEffect razem, bez duplikatów
   useEffect(() => {
@@ -854,6 +873,29 @@ const FunkoDetails: React.FC = () => {
       });
     };
   }, [navigate]);
+
+  // ✅ Award visit points once per session per item
+  useEffect(() => {
+  const awardVisitPoints = async () => {
+    if (!user || !funkoItem) return;
+
+    const visitPointsKey = `visit_points_awarded_${funkoItem.id}_${user.id}`;
+    const lastAwarded = sessionStorage.getItem(visitPointsKey);
+
+    // Optional: Add time-based cooldown (e.g., max once per 24h)
+    // But sessionStorage resets on tab close – good for "per session"
+    if (lastAwarded) return;
+
+    try {
+      await awardPoints("item_view", `Viewed "${funkoItem.title}"`);
+      sessionStorage.setItem(visitPointsKey, "true"); // mark as awarded in this session
+    } catch (err) {
+      console.warn("Failed to award visit points:", err);
+    }
+  };
+
+  awardVisitPoints();
+  }, [user, funkoItem]);
 
   useEffect(() => {
     localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");

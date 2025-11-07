@@ -172,49 +172,49 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-app.post('/api/login', async (req, res) => {
-  const { login, password } = req.body;
+// app.post('/api/login', async (req, res) => {
+//   const { login, password } = req.body;
 
-  if (!login || !password) {
-    return res.status(400).json({ error: 'Login and password required' });
-  }
+//   if (!login || !password) {
+//     return res.status(400).json({ error: 'Login and password required' });
+//   }
 
-  try {
-    const result = await pool.query(
-      `SELECT id, email, login, password_hash, name, surname, gender, date_of_birth, role
-       FROM users WHERE login = $1`,
-      [login]
-    );
+//   try {
+//     const result = await pool.query(
+//       `SELECT id, email, login, password_hash, name, surname, gender, date_of_birth, role
+//        FROM users WHERE login = $1`,
+//       [login]
+//     );
 
-    if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
+//     if (result.rows.length === 0) {
+//       return res.status(401).json({ error: 'Invalid credentials' });
+//     }
 
-    const user = result.rows[0];
-    const validPassword = await comparePasswords(password, user.password_hash);
+//     const user = result.rows[0];
+//     const validPassword = await comparePasswords(password, user.password_hash);
 
-    if (!validPassword) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
+//     if (!validPassword) {
+//       return res.status(401).json({ error: 'Invalid credentials' });
+//     }
 
-    await pool.query(
-      `UPDATE users SET last_login = NOW() WHERE id = $1`,
-      [user.id]
-    );
+//     await pool.query(
+//       `UPDATE users SET last_login = NOW() WHERE id = $1`,
+//       [user.id]
+//     );
 
-    const token = generateToken(user);
-    const { password_hash, ...safeUser } = user;
+//     const token = generateToken(user);
+//     const { password_hash, ...safeUser } = user;
 
-    res.json({
-      message: 'Login successful',
-      user: safeUser,
-      token: token
-    });
-  } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
+//     res.json({
+//       message: 'Login successful',
+//       user: safeUser,
+//       token: token
+//     });
+//   } catch (err) {
+//     console.error('Login error:', err);
+//     res.status(500).json({ error: 'Server error' });
+//   }
+// });
 
 // ======================
 // USER ROUTES
@@ -663,46 +663,7 @@ app.get('/api/items/search', async (req, res) => {
 // ======================
 // WISHLIST ROUTES
 // ======================
-app.post('/api/wishlist', authenticateToken, async (req, res) => {
-  const { funkoId, title, number, imageName } = req.body;
-  const userId = req.user.id;
 
-  if (!funkoId) {
-    return res.status(400).json({ error: "Funko ID is required" });
-  }
-
-  try {
-    await pool.query(
-      `INSERT INTO funko_items (id, title, number, image_name)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (id) DO UPDATE SET
-         title = EXCLUDED.title,
-         number = EXCLUDED.number,
-         image_name = EXCLUDED.image_name`,
-      [funkoId, title, number, imageName]
-    );
-
-    const result = await pool.query(
-      `INSERT INTO wishlist (user_id, funko_id)
-       VALUES ($1, $2)
-       ON CONFLICT (user_id, funko_id) DO NOTHING
-       RETURNING *`,
-      [userId, funkoId]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(200).json({ message: "Already in wishlist" });
-    }
-
-    res.status(201).json({
-      message: "Added to wishlist",
-      item: { id: funkoId, title, number, imageName }
-    });
-  } catch (err) {
-    console.error("Error adding to wishlist:", err);
-    res.status(500).json({ error: "Database error" });
-  }
-});
 
 app.delete('/api/wishlist/:funkoId', authenticateToken, async (req, res) => {
   const { funkoId } = req.params;
@@ -724,25 +685,6 @@ app.delete('/api/wishlist/:funkoId', authenticateToken, async (req, res) => {
   } catch (err) {
     console.error("Error removing from wishlist:", err);
     res.status(500).json({ error: "Database error" });
-  }
-});
-
-app.get('/api/wishlist', authenticateToken, async (req, res) => {
-  const userId = req.user.id;
-
-  try {
-    const result = await pool.query(
-      `SELECT fi.*, w.added_at FROM wishlist w
-      JOIN funko_items fi ON w.funko_id = fi.id
-      WHERE w.user_id = $1
-      ORDER BY w.added_at DESC`,
-      [userId]
-    );
-
-    res.json(result.rows);
-  } catch (err) {
-    console.error("Error fetching wishlist:", err);
-    res.status(500).json({ error: "Failed to load wishlist" });
   }
 });
 
@@ -773,46 +715,6 @@ app.get('/api/wishlist/check/:funkoId', authenticateToken, async (req, res) => {
 // ======================
 // COLLECTION ROUTES
 // ======================
-app.post('/api/collection', authenticateToken, async (req, res) => {
-  const { funkoId, title, number, imageName, condition = "Mint" } = req.body;
-  const userId = req.user.id;
-
-  if (!funkoId) {
-    return res.status(400).json({ error: "Funko ID is required" });
-  }
-
-  try {
-    await pool.query(
-      `INSERT INTO funko_items (id, title, number, image_name)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (id) DO UPDATE SET
-         title = EXCLUDED.title,
-         number = EXCLUDED.number,
-         image_name = EXCLUDED.image_name`,
-      [funkoId, title, number, imageName]
-    );
-
-    const result = await pool.query(
-      `INSERT INTO collection (user_id, funko_id, condition)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (user_id, funko_id) DO NOTHING
-       RETURNING *`,
-      [userId, funkoId, condition]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(200).json({ message: "Already in collection" });
-    }
-
-    res.status(201).json({
-      message: "Added to collection",
-      item: { id: funkoId, title, number, imageName, condition }
-    });
-  } catch (err) {
-    console.error("Error adding to collection:", err);
-    res.status(500).json({ error: "Database error" });
-  }
-});
 
 app.delete('/api/collection/:funkoId', authenticateToken, async (req, res) => {
   const { funkoId } = req.params;
@@ -837,24 +739,6 @@ app.delete('/api/collection/:funkoId', authenticateToken, async (req, res) => {
   }
 });
 
-app.get('/api/collection', authenticateToken, async (req, res) => {
-  const userId = req.user.id;
-
-  try {
-    const result = await pool.query(
-      `SELECT fi.*, c.condition, c.purchase_date FROM collection c
-       JOIN funko_items fi ON c.funko_id = fi.id
-       WHERE c.user_id = $1
-       ORDER BY c.purchase_date DESC`,
-      [userId]
-    );
-
-    res.json(result.rows);
-  } catch (err) {
-    console.error("Error fetching collection:", err);
-    res.status(500).json({ error: "Failed to load collection" });
-  }
-});
 
 app.get('/api/collection/check/:funkoId', authenticateToken, async (req, res) => {
   const { funkoId } = req.params;
@@ -2206,6 +2090,7 @@ app.get('/api/test/items', authenticateToken, isAdmin, async (req, res) => {
 
 // Definicja punktów za akcje
 const LOYALTY_POINTS = {
+  item_view: 1 ,
   daily_login: 5,
   collection_add: 10,
   wishlist_add: 5,
@@ -2275,51 +2160,90 @@ const updateLoginStreak = async (userId) => {
 };
 
 // Funkcja do sprawdzania osiągnięć
+// Replace the checkAndUnlockAchievements function in your server.js
+
+// Replace the checkAndUnlockAchievements function in your server.js
+
 const checkAndUnlockAchievements = async (userId) => {
   try {
-    const result = await pool.query('SELECT check_and_unlock_achievements($1)', [userId]);
+    const result = await pool.query('SELECT * FROM check_and_unlock_achievements($1)', [userId]);
     
     if (result.rows && result.rows.length > 0) {
-      // Przyznaj punkty za odblokowane osiągnięcia
+      // Award points for each unlocked achievement
       for (const achievement of result.rows) {
         if (achievement.points) {
           await pool.query(
-            'SELECT award_loyalty_points($1, $2, $3, $4)',
-            [userId, achievement.points, `Achievement unlocked: ${achievement.achievement_id}`, 'achievement']
+            `INSERT INTO loyalty_points_history (user_id, points_change, reason, action_type)
+             VALUES ($1, $2, $3, $4)`,
+            [
+              userId, 
+              achievement.points, 
+              `Achievement unlocked: ${achievement.achievement_name || achievement.achievement_id}`, 
+              'achievement'
+            ]
+          );
+          
+          // Update user's total loyalty points
+          await pool.query(
+            'UPDATE users SET loyalty_points = loyalty_points + $1 WHERE id = $2',
+            [achievement.points, userId]
           );
         }
       }
+      
+      return result.rows;
     }
+    
+    return [];
   } catch (err) {
     console.error('Error checking achievements:', err);
+    return [];
   }
 };
 
-// 📊 GET /api/loyalty/dashboard - Pełny dashboard lojalności
+
+// Update the loyalty dashboard route to include requirement_value
 app.get('/api/loyalty/dashboard', authenticateToken, async (req, res) => {
   const userId = req.user.id;
-
   try {
-    // Dane użytkownika
     const userData = await pool.query(`
       SELECT 
         u.loyalty_points,
         u.loyalty_level,
         u.current_streak,
         u.longest_streak,
-        u.profile_frame,
+
         u.active_title,
         u.active_theme,
-        ll.level_name,
-        ll.badge_emoji,
-        ll.min_points as current_level_min,
-        (SELECT min_points FROM loyalty_levels WHERE level_number = u.loyalty_level + 1) as next_level_min
+        u.active_badge,
+        u.active_avatar,
+        u.active_background,
+        COALESCE(ll.level_name, 'Beginner') AS level_name,
+        COALESCE(ll.badge_emoji, '🌱') AS badge_emoji,
+        COALESCE(ll.min_points, 0) AS current_level_min,
+        (SELECT min_points FROM loyalty_levels WHERE level_number = u.loyalty_level + 1) AS next_level_min
       FROM users u
-      JOIN loyalty_levels ll ON u.loyalty_level = ll.level_number
+      LEFT JOIN loyalty_levels ll ON u.loyalty_level = ll.level_number
       WHERE u.id = $1
     `, [userId]);
 
-    // Osiągnięcia użytkownika
+    if (userData.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = userData.rows[0];
+
+    let levelProgress = 100;
+    let nextLevelPoints = null;
+
+    if (user.next_level_min !== null && user.next_level_min > user.current_level_min) {
+      const diff = user.next_level_min - user.current_level_min;
+      const earned = user.loyalty_points - user.current_level_min;
+      levelProgress = Math.min(100, Math.max(0, (earned / diff) * 100));
+      nextLevelPoints = user.next_level_min - user.loyalty_points;
+    }
+
+    // ✅ Include requirement_value in achievements query
     const achievements = await pool.query(`
       SELECT 
         a.achievement_id,
@@ -2328,6 +2252,7 @@ app.get('/api/loyalty/dashboard', authenticateToken, async (req, res) => {
         a.category,
         a.emoji,
         a.points_reward,
+        a.requirement_value,
         ua.unlocked_at,
         ua.is_new,
         CASE WHEN ua.id IS NOT NULL THEN TRUE ELSE FALSE END as unlocked
@@ -2335,19 +2260,18 @@ app.get('/api/loyalty/dashboard', authenticateToken, async (req, res) => {
       LEFT JOIN user_achievements ua ON a.achievement_id = ua.achievement_id AND ua.user_id = $1
       ORDER BY 
         CASE WHEN ua.id IS NOT NULL THEN 0 ELSE 1 END,
+        a.category,
         a.points_reward DESC
     `, [userId]);
 
-    // Postęp w osiągnięciach
     const progress = await pool.query(`
       SELECT 
         (SELECT COUNT(*) FROM collection WHERE user_id = $1) as collection_count,
         (SELECT COUNT(*) FROM wishlist WHERE user_id = $1) as wishlist_count,
-        (SELECT COUNT(*) FROM friendships WHERE (user_id = $1 OR friend_id = $1) AND status = 'accepted') as friend_count,
-        $1 as user_id
+        (SELECT COUNT(*) FROM friendships 
+         WHERE (user_id = $1 OR friend_id = $1) AND status = 'accepted') as friend_count
     `, [userId]);
 
-    // Historia punktów (ostatnie 10 wpisów)
     const pointsHistory = await pool.query(`
       SELECT points_change, reason, action_type, created_at
       FROM loyalty_points_history
@@ -2356,7 +2280,6 @@ app.get('/api/loyalty/dashboard', authenticateToken, async (req, res) => {
       LIMIT 10
     `, [userId]);
 
-    // Odblokowane nagrody
     const rewards = await pool.query(`
       SELECT reward_type, reward_id, unlocked_at
       FROM user_rewards
@@ -2364,24 +2287,22 @@ app.get('/api/loyalty/dashboard', authenticateToken, async (req, res) => {
       ORDER BY unlocked_at DESC
     `, [userId]);
 
-    const user = userData.rows[0];
-    const levelProgress = user.next_level_min 
-      ? ((user.loyalty_points - user.current_level_min) / (user.next_level_min - user.current_level_min)) * 100
-      : 100;
-
     res.json({
       user: {
-        loyaltyPoints: user.loyalty_points,
-        level: user.loyalty_level,
+        loyaltyPoints: user.loyalty_points || 0,
+        level: user.loyalty_level || 1,
         levelName: user.level_name,
         badgeEmoji: user.badge_emoji,
         levelProgress: Math.round(levelProgress),
-        nextLevelPoints: user.next_level_min,
-        currentStreak: user.current_streak,
-        longestStreak: user.longest_streak,
-        profileFrame: user.profile_frame,
+        nextLevelPoints: nextLevelPoints,
+        currentStreak: user.current_streak || 0,
+        longestStreak: user.longest_streak || 0,
+        profileBadge: user.profile_badge,
         activeTitle: user.active_title,
-        activeTheme: user.active_theme
+        activeTheme: user.active_theme,
+        activeBadge: user.active_badge,
+        activeAvatar: user.active_avatar,
+        activeBackground: user.active_background
       },
       achievements: achievements.rows,
       progress: progress.rows[0],
@@ -2393,6 +2314,238 @@ app.get('/api/loyalty/dashboard', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch loyalty data' });
   }
 });
+
+// Update the collection add route to check achievements
+// ✅ GET /api/collection – Fetch user's full collection
+app.get('/api/collection', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const result = await pool.query(`
+      SELECT 
+        fi.id,
+        fi.title,
+        fi.number,
+        fi.image_name,
+        fi.series,
+        c.condition,
+        c.purchase_date,
+        c.purchase_price,
+        c.notes
+      FROM collection c
+      JOIN funko_items fi ON c.funko_id = fi.id
+      WHERE c.user_id = $1
+      ORDER BY c.purchase_date DESC
+    `, [userId]);
+
+    const items = result.rows.map(row => ({
+      ...row,
+      series: row.series ? (typeof row.series === 'string' ? JSON.parse(row.series) : row.series) : []
+    }));
+
+    res.json(items);
+  } catch (err) {
+    console.error('Error fetching collection:', err);
+    res.status(500).json({ error: 'Failed to load collection' });
+  }
+});
+
+// ✅ GET /api/wishlist – Fetch user's full wishlist
+app.get('/api/wishlist', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const result = await pool.query(`
+      SELECT 
+        fi.id,
+        fi.title,
+        fi.number,
+        fi.image_name,
+        fi.series,
+        w.added_at,
+        w.priority,
+        w.max_price,
+        w.target_condition,
+        w.notes
+      FROM wishlist w
+      JOIN funko_items fi ON w.funko_id = fi.id
+      WHERE w.user_id = $1
+      ORDER BY w.added_at DESC
+    `, [userId]);
+
+    const items = result.rows.map(row => ({
+      ...row,
+      series: row.series ? (typeof row.series === 'string' ? JSON.parse(row.series) : row.series) : []
+    }));
+
+    res.json(items);
+  } catch (err) {
+    console.error('Error fetching wishlist:', err);
+    res.status(500).json({ error: 'Failed to load wishlist' });
+  }
+});
+
+// Update the wishlist add route to check achievements
+app.post('/api/wishlist', authenticateToken, async (req, res) => {
+  const { funkoId, title, number, imageName } = req.body;
+  const userId = req.user.id;
+
+  if (!funkoId) {
+    return res.status(400).json({ error: "Funko ID is required" });
+  }
+
+  try {
+    await pool.query(
+      `INSERT INTO funko_items (id, title, number, image_name)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (id) DO UPDATE SET
+         title = EXCLUDED.title,
+         number = EXCLUDED.number,
+         image_name = EXCLUDED.image_name`,
+      [funkoId, title, number, imageName]
+    );
+
+    const result = await pool.query(
+      `INSERT INTO wishlist (user_id, funko_id)
+       VALUES ($1, $2)
+       ON CONFLICT (user_id, funko_id) DO NOTHING
+       RETURNING *`,
+      [userId, funkoId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(200).json({ message: "Already in wishlist" });
+    }
+
+    // ✅ Award points for adding to wishlist
+    await pool.query(
+      `INSERT INTO loyalty_points_history (user_id, points_change, reason, action_type)
+       VALUES ($1, $2, $3, $4)`,
+      [userId, LOYALTY_POINTS.wishlist_add, 'Added item to wishlist', 'wishlist_add']
+    );
+    
+    await pool.query(
+      'UPDATE users SET loyalty_points = loyalty_points + $1 WHERE id = $2',
+      [LOYALTY_POINTS.wishlist_add, userId]
+    );
+
+    // ✅ Check and unlock achievements
+    const unlockedAchievements = await checkAndUnlockAchievements(userId);
+
+    res.status(201).json({
+      message: "Added to wishlist",
+      item: { id: funkoId, title, number, imageName },
+      pointsAwarded: LOYALTY_POINTS.wishlist_add,
+      newAchievements: unlockedAchievements
+    });
+  } catch (err) {
+    console.error("Error adding to wishlist:", err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+// Update the loyalty dashboard route to include requirement_value
+
+// 📊 GET /api/loyalty/dashboard - Pełny dashboard lojalności
+// app.get('/api/loyalty/dashboard', authenticateToken, async (req, res) => {
+//   const userId = req.user.id;
+//   try {
+//     const userData = await pool.query(`
+//       SELECT 
+//         u.loyalty_points,
+//         u.loyalty_level,
+//         u.current_streak,
+//         u.longest_streak,
+//         u.profile_badge,
+//         u.active_title,
+//         u.active_theme,
+//         COALESCE(ll.level_name, 'Beginner') AS level_name,
+//         COALESCE(ll.badge_emoji, '🌱') AS badge_emoji,
+//         COALESCE(ll.min_points, 0) AS current_level_min,
+//         (SELECT min_points FROM loyalty_levels WHERE level_number = u.loyalty_level + 1) AS next_level_min
+//       FROM users u
+//       LEFT JOIN loyalty_levels ll ON u.loyalty_level = ll.level_number
+//       WHERE u.id = $1
+//     `, [userId]);
+
+//     if (userData.rows.length === 0) {
+//       return res.status(404).json({ error: 'User not found' });
+//     }
+
+//     const user = userData.rows[0];
+
+//     let levelProgress = 100;
+//     let nextLevelPoints = null;
+
+//     if (user.next_level_min !== null && user.next_level_min > user.current_level_min) {
+//       const diff = user.next_level_min - user.current_level_min;
+//       const earned = user.loyalty_points - user.current_level_min;
+//       levelProgress = Math.min(100, Math.max(0, (earned / diff) * 100));
+//       nextLevelPoints = user.next_level_min;
+//     }
+
+//     const achievements = await pool.query(`
+//       SELECT 
+//         a.achievement_id,
+//         a.name,
+//         a.description,
+//         a.category,
+//         a.emoji,
+//         a.points_reward,
+//         ua.unlocked_at,
+//         ua.is_new,
+//         CASE WHEN ua.id IS NOT NULL THEN TRUE ELSE FALSE END as unlocked
+//       FROM achievements a
+//       LEFT JOIN user_achievements ua ON a.achievement_id = ua.achievement_id AND ua.user_id = $1
+//       ORDER BY 
+//         CASE WHEN ua.id IS NOT NULL THEN 0 ELSE 1 END,
+//         a.points_reward DESC
+//     `, [userId]);
+
+//     const progress = await pool.query(`
+//       SELECT 
+//         (SELECT COUNT(*) FROM collection WHERE user_id = $1) as collection_count,
+//         (SELECT COUNT(*) FROM wishlist WHERE user_id = $1) as wishlist_count,
+//         (SELECT COUNT(*) FROM friendships WHERE (user_id = $1 OR friend_id = $1) AND status = 'accepted') as friend_count
+//     `, [userId]);
+
+//     const pointsHistory = await pool.query(`
+//       SELECT points_change, reason, action_type, created_at
+//       FROM loyalty_points_history
+//       WHERE user_id = $1
+//       ORDER BY created_at DESC
+//       LIMIT 10
+//     `, [userId]);
+
+//     const rewards = await pool.query(`
+//       SELECT reward_type, reward_id, unlocked_at
+//       FROM user_rewards
+//       WHERE user_id = $1
+//       ORDER BY unlocked_at DESC
+//     `, [userId]);
+
+//     res.json({
+//       user: {
+//         loyaltyPoints: user.loyalty_points || 0,
+//         level: user.loyalty_level || 1,
+//         levelName: user.level_name,
+//         badgeEmoji: user.badge_emoji,
+//         levelProgress: Math.round(levelProgress),
+//         nextLevelPoints: nextLevelPoints,
+//         currentStreak: user.current_streak || 0,
+//         longestStreak: user.longest_streak || 0,
+//         profile_Badge: user.profile_badge,
+//         activeTitle: user.active_title,
+//         activeTheme: user.active_theme
+//       },
+//       achievements: achievements.rows,
+//       progress: progress.rows[0],
+//       pointsHistory: pointsHistory.rows,
+//       rewards: rewards.rows
+//     });
+//   } catch (err) {
+//     console.error('Error fetching loyalty dashboard:', err);
+//     res.status(500).json({ error: 'Failed to fetch loyalty data' });
+//   }
+// });
 
 // 🎁 POST /api/loyalty/award-points - Przyznaj punkty za akcję
 app.post('/api/loyalty/award-points', authenticateToken, async (req, res) => {
@@ -2478,28 +2631,100 @@ app.get('/api/loyalty/rewards', authenticateToken, async (req, res) => {
 
     // Definicja wszystkich nagród
     const allRewards = {
-      frames: [
-        { id: 'bronze', name: 'Bronze Frame', reqLevel: 1, color: 'from-amber-700 to-amber-900' },
-        { id: 'silver', name: 'Silver Frame', reqLevel: 2, color: 'from-gray-400 to-gray-600' },
-        { id: 'gold', name: 'Gold Frame', reqLevel: 3, color: 'from-yellow-400 to-yellow-600' },
-        { id: 'platinum', name: 'Platinum Frame', reqLevel: 4, color: 'from-blue-400 to-purple-600' },
-        { id: 'diamond', name: 'Diamond Frame', reqLevel: 5, color: 'from-cyan-400 to-blue-600' }
-      ],
-      titles: [
-        { id: 'newbie', text: 'Newbie Collector', reqLevel: 1 },
-        { id: 'enthusiast', text: 'Funko Enthusiast', reqLevel: 2 },
-        { id: 'expert', text: 'Collection Expert', reqLevel: 3 },
-        { id: 'master', text: 'Funko Master', reqLevel: 4 },
-        { id: 'legend', text: 'Pop! Legend', reqLevel: 5 }
-      ],
-      themes: [
-        { id: 'default', name: 'Default', reqLevel: 1 },
-        { id: 'ocean', name: 'Ocean Blue', reqLevel: 2, reqPoints: 500 },
-        { id: 'sunset', name: 'Sunset Orange', reqLevel: 3, reqPoints: 1000 },
-        { id: 'galaxy', name: 'Galaxy Purple', reqLevel: 4, reqPoints: 2000 },
-        { id: 'emerald', name: 'Emerald Green', reqLevel: 5, reqPoints: 3000 }
-      ]
-    };
+    badges: [
+      { 
+        id: 'bronze', 
+        name: 'Bronze Badge', 
+        reqLevel: 1, 
+        imageUrl: '/assets/badges/bronze.png'
+      },
+      { 
+        id: 'silver', 
+        name: 'Silver Badge', 
+        reqLevel: 2, 
+        imageUrl: '/assets/badges/silver.png'
+      },
+      { 
+        id: 'gold', 
+        name: 'Gold Badge', 
+        reqLevel: 3, 
+        imageUrl: '/assets/badges/gold.png'
+      },
+      { 
+        id: 'platinum', 
+        name: 'Platinum Badge', 
+        reqLevel: 4, 
+        imageUrl: '/assets/badges/platinum.png'
+      },
+      { 
+        id: 'diamond', 
+        name: 'Diamond Badge', 
+        reqLevel: 5, 
+        imageUrl: '/assets/badges/diamond.png'
+      }
+    ],
+    titles: [
+      { id: 'newbie', text: 'Newbie Collector', reqLevel: 1 },
+      { id: 'enthusiast', text: 'Funko Enthusiast', reqLevel: 2 },
+      { id: 'expert', text: 'Collection Expert', reqLevel: 3 },
+      { id: 'master', text: 'Funko Master', reqLevel: 4 },
+      { id: 'legend', text: 'Pop! Legend', reqLevel: 5 }
+    ],
+    themes: [
+      { 
+        id: 'default', 
+        name: 'Default', 
+        reqLevel: 1, 
+        imageUrl: '/assets/themes/default.jpg'
+      },
+      { 
+        id: 'ocean', 
+        name: 'Ocean Blue', 
+        reqLevel: 2, 
+        reqPoints: 500,
+        imageUrl: '/assets/themes/ocean-blue.jpg'
+      },
+      { 
+        id: 'sunset', 
+        name: 'Sunset Orange', 
+        reqLevel: 3, 
+        reqPoints: 1000,
+        imageUrl: '/assets/themes/sunset-orange.jpg'
+      },
+      { 
+        id: 'galaxy', 
+        name: 'Galaxy Purple', 
+        reqLevel: 4, 
+        reqPoints: 2000,
+        imageUrl: '/assets/themes/galaxy-purple.jpg'
+      },
+      { 
+        id: 'emerald', 
+        name: 'Emerald Green', 
+        reqLevel: 5, 
+        reqPoints: 3000,
+        imageUrl: '/assets/themes/emerald-green.jpg'
+      }
+    ],
+    avatars: [
+      { 
+        id: "ava_01", 
+        name: "Cosmic Explorer", 
+        imageUrl: "/assets/avatars/cosmic.png", 
+        reqLevel: 1, 
+        reqPoints: 1000 
+      }
+    ],
+    backgrounds: [
+      { 
+        id: "bg_01", 
+        name: "Nebula Sky", 
+        imageUrl: "/assets/backgrounds/nebula.jpg", 
+        reqLevel: 7, 
+        reqPoints: 2000 
+      }
+    ]
+  };
 
     // Odblokowane nagrody
     const unlocked = await pool.query(
@@ -2510,9 +2735,9 @@ app.get('/api/loyalty/rewards', authenticateToken, async (req, res) => {
     const unlockedSet = new Set(unlocked.rows.map(r => `${r.reward_type}:${r.reward_id}`));
 
     const available = {
-      frames: allRewards.frames.filter(f => f.reqLevel <= level).map(f => ({
+      badges: allRewards.badges.filter(f => f.reqLevel <= level).map(f => ({
         ...f,
-        unlocked: unlockedSet.has(`frame:${f.id}`)
+        unlocked: unlockedSet.has(`badge:${f.id}`)
       })),
       titles: allRewards.titles.filter(t => t.reqLevel <= level).map(t => ({
         ...t,
@@ -2521,7 +2746,19 @@ app.get('/api/loyalty/rewards', authenticateToken, async (req, res) => {
       themes: allRewards.themes.filter(t => t.reqLevel <= level).map(t => ({
         ...t,
         unlocked: unlockedSet.has(`theme:${t.id}`)
-      }))
+      })),
+      badges: allRewards.badges?.filter(b => b.reqLevel <= level).map(b => ({
+        ...b,
+        unlocked: unlockedSet.has(`badge:${b.id}`)
+      })) || [],
+      avatars: allRewards.avatars?.filter(a => a.reqLevel <= level).map(a => ({
+        ...a,
+        unlocked: unlockedSet.has(`avatar:${a.id}`)
+      })) || [],
+      backgrounds: allRewards.backgrounds?.filter(bg => bg.reqLevel <= level).map(bg => ({
+        ...bg,
+        unlocked: unlockedSet.has(`background:${bg.id}`)
+      })) || []
     };
 
     res.json(available);
@@ -2536,7 +2773,7 @@ app.post('/api/loyalty/rewards/unlock', authenticateToken, async (req, res) => {
   const { rewardType, rewardId } = req.body;
   const userId = req.user.id;
 
-  if (!['frame', 'title', 'theme'].includes(rewardType)) {
+  if (!['badge', 'title', 'theme'].includes(rewardType)) {
     return res.status(400).json({ error: 'Invalid reward type' });
   }
 
@@ -2561,7 +2798,7 @@ app.patch('/api/loyalty/rewards/activate', authenticateToken, async (req, res) =
   const userId = req.user.id;
 
   try {
-    const column = rewardType === 'frame' ? 'profile_frame' 
+    const column = rewardType === 'badge' ? 'profile_badge' 
                  : rewardType === 'title' ? 'active_title'
                  : 'active_theme';
 

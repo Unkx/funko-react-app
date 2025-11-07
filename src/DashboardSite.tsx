@@ -126,6 +126,8 @@ const DashboardSite: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
   const { name, value } = e.target;
   setEditForm(prev => ({
@@ -154,9 +156,9 @@ const DashboardSite: React.FC = () => {
     } catch (err) {
       console.error("Failed to award points:", err);
     }
-  };
+};
 
-  // Na początku komponentu, po useState
+// Na początku komponentu, po useState
 useEffect(() => {
   const checkNewAchievements = async () => {
     const token = localStorage.getItem("token");
@@ -460,6 +462,98 @@ useEffect(() => {
       console.error("❌ Failed to fetch user data:", err);
     }
   };
+
+
+  // Component for rendering a collection item card
+    const CollectionItemCard = ({ item }: { item: FunkoItem }) => (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className={`rounded-lg overflow-hidden border ${
+          isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"
+        } hover:shadow-lg transition-shadow`}
+      >
+        <Link 
+          to={`/funko/${item.id}`}
+          className="block hover:no-underline"
+          // ✅ Removed onClick={onClose}
+        >
+          {item.image_name ? (
+            <img 
+              src={item.image_name} 
+              alt={item.title} 
+              className="w-full h-32 object-contain bg-gray-100 cursor-pointer"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/placeholder-image.png';
+              }}
+            />
+          ) : (
+            <div className="w-full h-32 bg-gray-200 flex items-center justify-center cursor-pointer">
+              <span className="text-gray-500">No Image</span>
+            </div>
+          )}
+          <div className="p-3">
+            <h4 className="font-semibold text-sm truncate hover:text-blue-500 transition-colors" title={item.title}>
+              {item.title}
+            </h4>
+            <p className="text-xs text-gray-500">#{item.number}</p>
+            {item.condition && (
+              <p className="text-xs mt-1">
+                <span className="font-medium">Condition:</span> {item.condition}
+              </p>
+            )}
+            <div className="mt-2 text-xs text-blue-500 font-medium">
+              View Details →
+            </div>
+          </div>
+        </Link>
+      </motion.div>
+    );
+    // Add this inside the DashboardSite component, near the CollectionItemCard definition.
+    const WishlistItemCard = ({ item }: { item: WishlistItem }) => (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className={`rounded-lg overflow-hidden border ${
+          isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"
+        } hover:shadow-lg transition-shadow`}
+      >
+        <Link 
+          to={`/funko/${item.id}`}
+          className="block hover:no-underline"
+          // ✅ Removed onClick={onClose}
+        >
+          {item.image_name ? (
+            <img 
+              src={item.image_name} 
+              alt={item.title} 
+              className="w-full h-32 object-contain bg-gray-100 cursor-pointer"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/placeholder-image.png';
+              }}
+            />
+          ) : (
+            <div className="w-full h-32 bg-gray-200 flex items-center justify-center cursor-pointer">
+              <span className="text-gray-500">No Image</span>
+            </div>
+          )}
+          <div className="p-3">
+            <h4 className="font-semibold text-sm truncate hover:text-blue-500 transition-colors" title={item.title}>
+              {item.title}
+            </h4>
+            <p className="text-xs text-gray-500">#{item.number}</p>
+            {item.priority && (
+              <p className="text-xs mt-1">
+                <span className="font-medium">Priority:</span> {item.priority}
+              </p>
+            )}
+            <div className="mt-2 text-xs text-blue-500 font-medium">
+              View Details →
+            </div>
+          </div>
+        </Link>
+      </motion.div>
+    );
 
   // W useEffect pozostaw tylko wywołanie funkcji:
   useEffect(() => {
@@ -1423,6 +1517,7 @@ useEffect(() => {
         />
       </section>
       {/* Section: Collection Preview */}
+
       <section className={`max-w-4xl w-full mb-8 p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">{t.yourCollection}</h3>
@@ -1436,18 +1531,13 @@ useEffect(() => {
         {collectionLoading ? <p>Loading...</p> : collection.length === 0 ? <p>{t.emptyCollection}</p> :
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {collection.slice(0, 3).map(item => (
-              <div key={item.id} className="border rounded p-3 bg-white shadow">
-                {item.image_name && <img src={item.image_name} alt={item.title} className="w-full h-32 object-contain mb-2" />}
-                <div className="font-semibold">{item.title}</div>
-                <div>#{item.number}</div>
-                <div>{t.collection} {item.condition}</div>
-                <div className="text-xs text-gray-500">Added: {item.purchase_date ? new Date(item.purchase_date).toLocaleDateString() : ""}</div>
-              </div>
+              <CollectionItemCard key={item.id} item={item} />
             ))}
           </div>
         }
       </section>
       {/* Section: Wishlist Preview */}
+
       <section className={`max-w-4xl w-full mb-8 p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">{t.yourWishlist}</h3>
@@ -1461,12 +1551,7 @@ useEffect(() => {
         {wishlistLoading ? <p>Loading...</p> : wishlist.length === 0 ? <p>{t.noItemsInWishlist}</p> :
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {wishlist.slice(0, 3).map(item => (
-              <div key={item.id} className="border rounded p-3 bg-white shadow">
-                {item.image_name && <img src={item.image_name} alt={item.title} className="w-full h-32 object-contain mb-2" />}
-                <div className="font-semibold">{item.title}</div>
-                <div>#{item.number}</div>
-                <div className="text-xs text-gray-500">Added: {item.added_date ? new Date(item.added_date).toLocaleDateString() : ""}</div>
-              </div>
+              <WishlistItemCard key={item.id} item={item} />
             ))}
           </div>
         }

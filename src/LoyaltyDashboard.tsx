@@ -5,29 +5,7 @@ import TrophyIcon from "./assets/trophy.svg?react";
 import FireIcon from "./assets/fire.svg?react";
 import GiftIcon from "./assets/gift.svg?react";
 
-interface LoyaltyData {
-  user: {
-    loyaltyPoints: number;
-    level: number;
-    levelName: string;
-    badgeEmoji: string;
-    levelProgress: number;
-    nextLevelPoints: number;
-    currentStreak: number;
-    longestStreak: number;
-    profileFrame: string;
-    activeTitle: string;
-    activeTheme: string;
-  };
-  achievements: Achievement[];
-  progress: {
-    collection_count: number;
-    wishlist_count: number;
-    friend_count: number;
-  };
-  pointsHistory: PointsHistory[];
-  rewards: Reward[];
-}
+// =============== INTERFACES ===============
 
 interface Achievement {
   achievement_id: string;
@@ -54,12 +32,6 @@ interface Reward {
   unlocked_at: string;
 }
 
-interface AvailableRewards {
-  frames: RewardItem[];
-  titles: RewardItem[];
-  themes: RewardItem[];
-}
-
 interface RewardItem {
   id: string;
   name?: string;
@@ -68,12 +40,53 @@ interface RewardItem {
   unlocked: boolean;
   color?: string;
   reqPoints?: number;
+  imageUrl?: string;
 }
+
+interface AvailableRewards {
+  frames: RewardItem[];
+  titles: RewardItem[];
+  themes: RewardItem[];
+  badges: RewardItem[];
+  avatars: RewardItem[];       // 👈 NEW
+  backgrounds: RewardItem[];   // 👈 NEW
+}
+
+interface LoyaltyData {
+  user: {
+    loyaltyPoints: number;
+    level: number;
+    levelName: string;
+    badgeEmoji: string;
+    levelProgress: number;
+    nextLevelPoints: number;
+    currentStreak: number;
+    longestStreak: number;
+    profileBadge: string;
+    activeTitle: string;
+    activeTheme: string;
+    activeBadge: string | null;
+    activeAvatar: string | null;       // 👈 NEW
+    activeBackground: string | null;   // 👈 NEW
+  };
+  achievements: Achievement[];
+  progress: {
+    collection_count: number;
+    wishlist_count: number;
+    friend_count: number;
+  };
+  pointsHistory: PointsHistory[];
+  rewards: Reward[];
+}
+
+// =============== PROPS ===============
 
 interface Props {
   isDarkMode: boolean;
   onClose: () => void;
 }
+
+// =============== COMPONENT ===============
 
 const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
   const [loyaltyData, setLoyaltyData] = useState<LoyaltyData | null>(null);
@@ -100,7 +113,6 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
         const data = await response.json();
         setLoyaltyData(data);
         
-        // Sprawdź nowe osiągnięcia
         const newAchievement = data.achievements.find((a: Achievement) => a.is_new && a.unlocked);
         if (newAchievement) {
           setShowNewAchievement(newAchievement);
@@ -125,7 +137,14 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
       
       if (response.ok) {
         const data = await response.json();
-        setAvailableRewards(data);
+        setAvailableRewards({
+          frames: data.frames || [],
+          titles: data.titles || [],
+          themes: data.themes || [],
+          badges: data.badges || [],
+          avatars: data.avatars || [],         // 👈 NEW
+          backgrounds: data.backgrounds || [], // 👈 NEW
+        });
       }
     } catch (err) {
       console.error("Error fetching rewards:", err);
@@ -165,9 +184,12 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
       if (response.ok) {
         alert("Reward activated!");
         fetchLoyaltyData();
+      } else {
+        alert("Failed to activate reward.");
       }
     } catch (err) {
       console.error("Error activating reward:", err);
+      alert("An error occurred.");
     }
   };
 
@@ -223,7 +245,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
     );
   }
 
-  if (!loyaltyData) {
+  if (!loyaltyData || !availableRewards) {
     return null;
   }
 
@@ -418,38 +440,48 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
               </motion.div>
             )}
 
-            {activeTab === "rewards" && availableRewards && (
+            {activeTab === "rewards" && (
               <motion.div
                 key="rewards"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="space-y-6"
+                className="space-y-8"
               >
                 {/* Profile Frames */}
                 <div>
-                  <h3 className="text-2xl font-bold mb-4">Profile Frames</h3>
+                  <h3 className="text-2xl font-bold mb-4">Profile Badges</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    {availableRewards.frames.map((frame) => (
+                    {availableRewards.badges.map((badge) => (
                       <div
-                        key={frame.id}
-                        className={`p-4 rounded-lg text-center ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg ${!frame.unlocked && "opacity-50"}`}
+                        key={badge.id}
+                        className={`p-4 rounded-lg text-center ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg ${!badge.unlocked && "opacity-50"}`}
                       >
-                        <div
-                          className={`w-20 h-20 mx-auto rounded-full bg-gradient-to-br ${frame.color} p-1 mb-2`}
-                        >
-                          <div className={`w-full h-full rounded-full ${isDarkMode ? "bg-gray-800" : "bg-white"}`} />
-                        </div>
-                        <p className="font-bold text-sm">{frame.name}</p>
-                        {frame.unlocked ? (
+                        {badge.imageUrl ? (
+                          <img
+                            src={badge.imageUrl}
+                            alt={badge.name}
+                            className="w-20 h-20 mx-auto rounded-full object-cover border-2 border-gray-300"
+                          />
+                        ) : (
+                          <div className="w-20 h-20 mx-auto rounded-full bg-gray-700"></div>
+                        )}
+                        <p className="font-bold text-sm">{badge.name}</p>
+                        {badge.unlocked ? (
                           <button
-                            onClick={() => activateReward("frame", frame.id)}
-                            className={`mt-2 px-3 py-1 rounded text-xs ${loyaltyData.user.profileFrame === frame.id ? "bg-green-500" : (isDarkMode ? "bg-yellow-500" : "bg-blue-500")} text-white`}
+                            onClick={() => activateReward("badge", badge.id)}
+                            className={`mt-2 px-3 py-1 rounded text-xs ${
+                              loyaltyData.user.profileBadge === badge.id
+                                ? "bg-green-500"
+                                : isDarkMode
+                                ? "bg-yellow-500"
+                                : "bg-blue-500"
+                            } text-white`}
                           >
-                            {loyaltyData.user.profileFrame === frame.id ? "Active" : "Activate"}
+                            {loyaltyData.user.profileBadge === badge.id ? "Active" : "Activate"}
                           </button>
                         ) : (
-                          <p className="text-xs opacity-75 mt-2">Level {frame.reqLevel}</p>
+                          <p className="text-xs opacity-75 mt-2">Level {badge.reqLevel}</p>
                         )}
                       </div>
                     ))}
@@ -474,7 +506,13 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                         {title.unlocked && (
                           <button
                             onClick={() => activateReward("title", title.id)}
-                            className={`px-3 py-1 rounded text-xs ${loyaltyData.user.activeTitle === title.id ? "bg-green-500" : (isDarkMode ? "bg-yellow-500" : "bg-blue-500")} text-white`}
+                            className={`px-3 py-1 rounded text-xs ${
+                              loyaltyData.user.activeTitle === title.id
+                                ? "bg-green-500"
+                                : isDarkMode
+                                ? "bg-yellow-500"
+                                : "bg-blue-500"
+                            } text-white`}
                           >
                             {loyaltyData.user.activeTitle === title.id ? "Active" : "Activate"}
                           </button>
@@ -484,7 +522,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                   </div>
                 </div>
 
-                {/* Themes */}
+                {/* Color Themes */}
                 <div>
                   <h3 className="text-2xl font-bold mb-4">Color Themes</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -493,12 +531,26 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                         key={theme.id}
                         className={`p-4 rounded-lg text-center ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg ${!theme.unlocked && "opacity-50"}`}
                       >
-                        <div className="w-full h-20 rounded-lg bg-gradient-to-br from-blue-400 to-purple-600 mb-2" />
+                          {theme.imageUrl ? (
+                            <img
+                              src={theme.imageUrl}
+                              alt={theme.name}
+                              className="w-full h-20 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-20 rounded-lg bg-gray-700"></div>
+                          )}
                         <p className="font-bold text-sm">{theme.name}</p>
                         {theme.unlocked ? (
                           <button
                             onClick={() => activateReward("theme", theme.id)}
-                            className={`mt-2 px-3 py-1 rounded text-xs ${loyaltyData.user.activeTheme === theme.id ? "bg-green-500" : (isDarkMode ? "bg-yellow-500" : "bg-blue-500")} text-white`}
+                            className={`mt-2 px-3 py-1 rounded text-xs ${
+                              loyaltyData.user.activeTheme === theme.id
+                                ? "bg-green-500"
+                                : isDarkMode
+                                ? "bg-yellow-500"
+                                : "bg-blue-500"
+                            } text-white`}
                           >
                             {loyaltyData.user.activeTheme === theme.id ? "Active" : "Activate"}
                           </button>
@@ -511,6 +563,132 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                     ))}
                   </div>
                 </div>
+
+                {/* Special Badges */}
+                {availableRewards.badges.length > 0 && (
+                  <div>
+                    <h3 className="text-2xl font-bold mb-4">Special Badges</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                      {availableRewards.badges.map((badge) => (
+                        <div
+                          key={badge.id}
+                          className={`p-4 rounded-lg text-center ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg ${!badge.unlocked && "opacity-50"}`}
+                        >
+                          {badge.imageUrl ? (
+                            <img
+                              src={badge.imageUrl}
+                              alt={badge.name}
+                              className="w-16 h-16 mx-auto mb-2 rounded-full object-contain"
+                            />
+                          ) : (
+                            <div className="text-4xl mb-2">{badge.name || "🌟"}</div>
+                          )}
+                          <p className="font-bold text-sm">{badge.name}</p>
+                          {badge.unlocked ? (
+                            <button
+                              onClick={() => activateReward("badge", badge.id)}
+                              className={`mt-2 px-3 py-1 rounded text-xs ${
+                                loyaltyData.user.activeBadge === badge.id
+                                  ? "bg-green-500"
+                                  : isDarkMode
+                                  ? "bg-yellow-500"
+                                  : "bg-blue-500"
+                              } text-white`}
+                            >
+                              {loyaltyData.user.activeBadge === badge.id ? "Active" : "Equip"}
+                            </button>
+                          ) : (
+                            <p className="text-xs opacity-75 mt-2">
+                              Level {badge.reqLevel} • {badge.reqPoints} pts
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Avatars */}
+                {availableRewards.avatars.length > 0 && (
+                  <div>
+                    <h3 className="text-2xl font-bold mb-4">Avatars</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                      {availableRewards.avatars.map((avatar) => (
+                        <div
+                          key={avatar.id}
+                          className={`p-4 rounded-lg text-center ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg ${!avatar.unlocked && "opacity-50"}`}
+                        >
+                          <img
+                            src={avatar.imageUrl || "/default-avatar.png"}
+                            alt={avatar.name}
+                            className="w-20 h-20 mx-auto mb-2 rounded-full object-cover border-2 border-gray-300"
+                          />
+                          <p className="font-bold text-sm">{avatar.name}</p>
+                          {avatar.unlocked ? (
+                            <button
+                              onClick={() => activateReward("avatar", avatar.id)}
+                              className={`mt-2 px-3 py-1 rounded text-xs ${
+                                loyaltyData.user.activeAvatar === avatar.id
+                                  ? "bg-green-500"
+                                  : isDarkMode
+                                  ? "bg-yellow-500"
+                                  : "bg-blue-500"
+                              } text-white`}
+                            >
+                              {loyaltyData.user.activeAvatar === avatar.id ? "Active" : "Use"}
+                            </button>
+                          ) : (
+                            <p className="text-xs opacity-75 mt-2">
+                              Level {avatar.reqLevel} • {avatar.reqPoints} pts
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Profile Backgrounds */}
+                {availableRewards.backgrounds.length > 0 && (
+                  <div>
+                    <h3 className="text-2xl font-bold mb-4">Profile Backgrounds</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {availableRewards.backgrounds.map((bg) => (
+                        <div
+                          key={bg.id}
+                          className={`p-3 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg ${!bg.unlocked && "opacity-50"}`}
+                        >
+                          <div className="relative w-full h-24 mb-3 rounded overflow-hidden">
+                            <img
+                              src={bg.imageUrl || "/default-bg.jpg"}
+                              alt={bg.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <p className="font-bold text-sm text-center">{bg.name}</p>
+                          {bg.unlocked ? (
+                            <button
+                              onClick={() => activateReward("background", bg.id)}
+                              className={`mt-2 w-full px-3 py-1 rounded text-xs ${
+                                loyaltyData.user.activeBackground === bg.id
+                                  ? "bg-green-500"
+                                  : isDarkMode
+                                  ? "bg-yellow-500"
+                                  : "bg-blue-500"
+                              } text-white`}
+                            >
+                              {loyaltyData.user.activeBackground === bg.id ? "Active" : "Apply"}
+                            </button>
+                          ) : (
+                            <p className="text-xs opacity-75 mt-2 text-center">
+                              Level {bg.reqLevel} • {bg.reqPoints} pts
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

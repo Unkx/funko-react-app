@@ -1014,14 +1014,14 @@ useEffect(() => {
   // 🔹 Render Analytics View
   const renderAnalyticsView = () => (
     <div className="max-w-7xl mx-auto w-full">
-      <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+      <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
         {t.yourStats || "Your Statistics"}
       </h2>
       {dashboardAnalyticsLoading ? (
         <div className="text-center py-8">Loading your stats...</div>
       ) : (
         <div className="space-y-6">
-          <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+          <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white border border-gray-200"}`}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-semibold">{t.loyaltyScore || "Loyalty Score"}</h3>
               <div className="flex items-center gap-2">
@@ -1042,7 +1042,7 @@ useEffect(() => {
               </div>
             </div>
           </div>
-          <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+          <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white border border-gray-200"}`}>
             <h3 className="text-xl font-semibold mb-4">{t.yourActivity || "Your Activity"}</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="text-center">
@@ -1062,7 +1062,7 @@ useEffect(() => {
             </div>
           </div>
           {userStats?.breakdown && userStats.breakdown.length > 0 && (
-            <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+            <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white border border-gray-200"}`}>
               <h3 className="text-xl font-semibold mb-4">{t.activityBreakdown || "Activity Breakdown"}</h3>
               <div className="space-y-2">
                 {userStats.breakdown.map((action: any, idx: number) => (
@@ -1075,7 +1075,7 @@ useEffect(() => {
             </div>
           )}
           {leaderboard.length > 0 && (
-            <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+            <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white border border-gray-200"}`}>
               <h3 className="text-xl font-semibold mb-4">{t.leaderboard || "Leaderboard"}</h3>
               <div className="space-y-2">
                 {leaderboard.slice(0, 10).map((entry: any, idx: number) => {
@@ -1084,7 +1084,7 @@ useEffect(() => {
                     <div 
                       key={idx} 
                       className={`flex justify-between items-center p-2 rounded ${
-                        isCurrentUser ? (isDarkMode ? "bg-yellow-900" : "bg-green-100") : ""
+                        isCurrentUser ? (isDarkMode ? "bg-yellow-900" : "bg-blue-50") : ""
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -1110,18 +1110,18 @@ useEffect(() => {
   // 🔹 Render Social View
   const renderSocialView = () => (
     <div className="max-w-7xl mx-auto w-full">
-      <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+      <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
         {t.social || "Social"}
       </h2>
       {/* Add Friend Form */}
-      <div className={`p-6 rounded-lg shadow-lg mb-6 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+      <div className={`p-6 rounded-lg shadow-lg mb-6 ${isDarkMode ? "bg-gray-700" : "bg-white border border-gray-200"}`}>
         <h3 className="text-xl font-semibold mb-4">{t.addFriend || "Add Friend"}</h3>
         <div className="flex gap-2">
           <input
             id="friendLoginInput"
             type="text"
             placeholder="Enter username..."
-            className={`flex-1 px-4 py-2 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+            className={`flex-1 px-4 py-2 rounded border border-gray-300 ${isDarkMode ? "bg-gray-600" : "bg-gray-50"}`}
           />
           <button
             onClick={async () => {
@@ -1157,7 +1157,7 @@ useEffect(() => {
               }
             }}
             className={`px-6 py-2 rounded ${
-              isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"
+              isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-600 hover:bg-blue-700"
             } text-white`}
           >
             {t.sendRequest || "Send Request"}
@@ -1167,7 +1167,7 @@ useEffect(() => {
 
       {/* Incoming Requests */}
       {incomingRequests.length > 0 && (
-        <div className={`p-6 rounded-lg shadow-lg mb-6 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+        <div className={`p-6 rounded-lg shadow-lg mb-6 ${isDarkMode ? "bg-gray-700" : "bg-white border border-gray-200"}`}>
           <h3 className="text-xl font-semibold mb-4">
             {t.incomingRequests || "Friend Requests"} ({incomingRequests.length})
           </h3>
@@ -1210,7 +1210,7 @@ useEffect(() => {
 
       {/* Outgoing Requests */}
       {outgoingRequests.length > 0 && (
-        <div className={`p-6 rounded-lg shadow-lg mb-6 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+        <div className={`p-6 rounded-lg shadow-lg mb-6 ${isDarkMode ? "bg-gray-700" : "bg-white border border-gray-200"}`}>
           <h3 className="text-xl font-semibold mb-4">
             {t.sentRequests || "Sent Requests"} ({outgoingRequests.length})
           </h3>
@@ -1244,7 +1244,7 @@ useEffect(() => {
       )}
 
       {/* Friends List */}
-      <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+      <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white border border-gray-200"}`}>
         <h3 className="text-xl font-semibold mb-4">
           {t.yourFriends || "Your Friends"} ({friends.filter((f: any) => f.status === "accepted").length})
         </h3>
@@ -1258,7 +1258,7 @@ useEffect(() => {
               <div 
                 key={friend.id}
                 className={`p-4 rounded-lg border ${
-                  isDarkMode ? "border-gray-600" : "border-gray-200"
+                  isDarkMode ? "border-gray-600" : "border-gray-200 bg-gray-50"
                 }`}
               >
                 <div className="flex justify-between items-start mb-2">
@@ -1329,7 +1329,7 @@ useEffect(() => {
   // 🔹 Render Account Details Modal
   const renderAccountDetailsModal = () => (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" onClick={() => setShowAccountDetails(false)}>
-      <div className={`w-full max-w-md p-6 rounded-lg shadow-xl ${isDarkMode ? "bg-gray-800" : "bg-white"}`} onClick={(e) => e.stopPropagation()}>
+      <div className={`w-full max-w-md p-6 rounded-lg shadow-xl ${isDarkMode ? "bg-gray-800" : "bg-white border border-gray-200"}`} onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">{t.accountDetails || "Account Details"}</h3>
           <button
@@ -1445,7 +1445,7 @@ useEffect(() => {
   // 🔹 Render Add User Modal
   const renderAddUserModal = () => (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" onClick={() => setShowAddUserModal(false)}>
-      <div className="w-full max-w-md p-6 rounded-lg shadow-xl bg-white dark:bg-gray-800" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-md p-6 rounded-lg shadow-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
         <h3 className="text-xl font-semibold mb-4">{t.addUser || "Add New User"}</h3>
         <form onSubmit={(e) => { e.preventDefault(); handleAddUser(); }}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
@@ -1454,7 +1454,7 @@ useEffect(() => {
               placeholder="First Name"
               value={newUser.name}
               onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-              className="p-2 border rounded dark:bg-gray-700"
+              className="p-2 border border-gray-300 rounded dark:bg-gray-700"
               required
             />
             <input
@@ -1462,7 +1462,7 @@ useEffect(() => {
               placeholder="Last Name"
               value={newUser.surname}
               onChange={(e) => setNewUser({ ...newUser, surname: e.target.value })}
-              className="p-2 border rounded dark:bg-gray-700"
+              className="p-2 border border-gray-300 rounded dark:bg-gray-700"
               required
             />
           </div>
@@ -1471,7 +1471,7 @@ useEffect(() => {
             placeholder="Email"
             value={newUser.email}
             onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-            className="w-full p-2 mb-3 border rounded dark:bg-gray-700"
+            className="w-full p-2 mb-3 border border-gray-300 rounded dark:bg-gray-700"
             required
           />
           <input
@@ -1479,7 +1479,7 @@ useEffect(() => {
             placeholder="Username (login)"
             value={newUser.login}
             onChange={(e) => setNewUser({ ...newUser, login: e.target.value })}
-            className="w-full p-2 mb-3 border rounded dark:bg-gray-700"
+            className="w-full p-2 mb-3 border border-gray-300 rounded dark:bg-gray-700"
             required
           />
           <input
@@ -1487,14 +1487,14 @@ useEffect(() => {
             placeholder="Password"
             value={newUser.password}
             onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-            className="w-full p-2 mb-3 border rounded dark:bg-gray-700"
+            className="w-full p-2 mb-3 border border-gray-300 rounded dark:bg-gray-700"
             required
           />
           <div className="grid grid-cols-2 gap-3 mb-3">
             <select
               value={newUser.gender}
               onChange={(e) => setNewUser({ ...newUser, gender: e.target.value as any })}
-              className="p-2 border rounded dark:bg-gray-700"
+              className="p-2 border border-gray-300 rounded dark:bg-gray-700"
             >
               <option value="male">Male</option>
               <option value="female">Female</option>
@@ -1505,14 +1505,14 @@ useEffect(() => {
               type="date"
               value={newUser.date_of_birth}
               onChange={(e) => setNewUser({ ...newUser, date_of_birth: e.target.value })}
-              className="p-2 border rounded dark:bg-gray-700"
+              className="p-2 border border-gray-300 rounded dark:bg-gray-700"
               required
             />
           </div>
           <select
             value={newUser.role}
             onChange={(e) => setNewUser({ ...newUser, role: e.target.value as any })}
-            className="w-full p-2 mb-4 border rounded dark:bg-gray-700"
+            className="w-full p-2 mb-4 border border-gray-300 rounded dark:bg-gray-700"
           >
             <option value="user">User</option>
             <option value="admin">Admin</option>
@@ -1521,13 +1521,13 @@ useEffect(() => {
             <button
               type="button"
               onClick={() => setShowAddUserModal(false)}
-              className="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded"
+              className="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded border border-gray-400"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded"
             >
               Create User
             </button>
@@ -1540,7 +1540,7 @@ useEffect(() => {
   // Early return if not authorized
   if (!token || !currentUser || currentUser.role !== "admin") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-800 text-center px-4">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-800 text-center px-4">
         <p className="text-red-600 text-3xl font-semibold mb-4">
           {t.accessRestricted || "You have no access here."}
         </p>
@@ -1555,14 +1555,14 @@ useEffect(() => {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-gray-300 text-black"}`}>
+    <div className={`min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-gray-800"}`}>
       {/* 🔝 Header */}
-      <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
+      <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4  dark:bg-gray-800  border-gray-200 dark:border-gray-700">
         <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
           <Link to="/" className="no-underline">
             <h1
               className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
-                isDarkMode ? "text-yellow-400" : "text-green-600"
+                isDarkMode ? "text-yellow-400" : "text-blue-600"
               }`}
             >
               Pop&Go!
@@ -1578,8 +1578,8 @@ useEffect(() => {
               navigate(`/searchsite?q=${encodeURIComponent(searchTerm.trim())}`);
             }
           }}
-          className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden ${
-            isDarkMode ? "bg-gray-700" : "bg-gray-100"
+          className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden border border-gray-300 ${
+            isDarkMode ? "bg-gray-700" : "bg-white"
           }`}
         >
           <input
@@ -1590,7 +1590,7 @@ useEffect(() => {
             className={`flex-grow px-4 py-2 outline-none ${
               isDarkMode
                 ? "bg-gray-700 text-white placeholder-gray-400"
-                : "bg-gray-300 text-black placeholder-gray-500"
+                : "bg-white text-gray-800 placeholder-gray-500"
             }`}
             aria-label="Search for Funko Pops"
           />
@@ -1599,7 +1599,7 @@ useEffect(() => {
             className={`px-4 py-2 ${
               isDarkMode
                 ? "bg-yellow-500 hover:bg-yellow-600"
-                : "bg-green-600 hover:bg-green-700"
+                : "bg-blue-600 hover:bg-blue-700"
             } text-white`}
             aria-label="Search"
           >
@@ -1614,10 +1614,10 @@ useEffect(() => {
             <button
               ref={buttonRef}
               onClick={toggleLanguageDropdown}
-              className={`p-2 rounded-full flex items-center gap-1 ${
+              className={`p-2 rounded-full flex items-center gap-1 border border-gray-300 ${
                 isDarkMode
                   ? "bg-gray-700 hover:bg-gray-600"
-                  : "bg-gray-200 hover:bg-neutral-600"
+                  : "bg-white hover:bg-gray-100"
               }`}
               aria-label="Select language"
               aria-expanded={showLanguageDropdown}
@@ -1634,7 +1634,7 @@ useEffect(() => {
             {showLanguageDropdown && (
               <div
                 ref={dropdownRef}
-                className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
+                className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 border border-gray-200 ${
                   isDarkMode ? "bg-gray-700" : "bg-white"
                 }`}
                 onClick={(e) => e.stopPropagation()}
@@ -1647,10 +1647,10 @@ useEffect(() => {
                       language === code
                         ? isDarkMode
                           ? "bg-yellow-500 text-black"
-                          : "bg-green-600 text-white"
+                          : "bg-blue-600 text-white"
                         : isDarkMode
                         ? "hover:bg-gray-600"
-                        : "hover:bg-neutral-500"
+                        : "hover:bg-gray-100"
                     }`}
                   >
                     <span className="w-5 h-5">{flag}</span>
@@ -1664,10 +1664,10 @@ useEffect(() => {
           {/* 🌙 Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className={`p-2 rounded-full ${
+            className={`p-2 rounded-full border border-gray-300 ${
               isDarkMode
                 ? "bg-gray-700 hover:bg-gray-600"
-                : "bg-gray-200 hover:bg-gray-600"
+                : "bg-white hover:bg-gray-100"
             }`}
             aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
@@ -1675,11 +1675,10 @@ useEffect(() => {
           </button>
 
           {/* 🔐 Dashboard/Login */}
-
-           <button
+          <button
             onClick={handleLogout}
-            className={`flex items-center gap-2 px-4 py-2 rounded ${
-              isDarkMode ? "bg-red-600 hover:bg-red-800 " : "bg-red-500 hover:bg-red-800"
+            className={`flex items-center gap-2 px-4 py-2 rounded border border-red-600 ${
+              isDarkMode ? "bg-red-600 hover:bg-red-700" : "bg-red-500 hover:bg-red-600"
             } text-white shadow-md`}
           >
             {t.logout}
@@ -1688,28 +1687,45 @@ useEffect(() => {
       </header>
 
       {/* 🔹 Updated Navigation */}
-      <nav className={`px-8 py-2 ${isDarkMode ? "bg-gray-700" : "bg-gray-300"}`}>
+      <nav className={`px-8 py-2 ${isDarkMode ? "bg-gray-700" : "bg-white border-b border-gray-200"}`}>
         <div className="flex gap-4 flex-wrap">
-          <button onClick={() => setActiveView("users")} className={`px-3 py-1 rounded ${activeView === "users" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}>
+          <button onClick={() => setActiveView("users")} className={`px-3 py-1 rounded border ${
+            activeView === "users" 
+              ? (isDarkMode ? "bg-yellow-500 text-black border-yellow-500" : "bg-blue-600 text-white border-blue-600") 
+              : (isDarkMode ? "hover:bg-gray-600 border-gray-600" : "hover:bg-gray-100 border-gray-300")
+          }`}>
             {t.listOfUsers || "Users"}
           </button>
-          <button onClick={() => setActiveView("items")} className={`px-3 py-1 rounded ${activeView === "items" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}>
+          <button onClick={() => setActiveView("items")} className={`px-3 py-1 rounded border ${
+            activeView === "items" 
+              ? (isDarkMode ? "bg-yellow-500 text-black border-yellow-500" : "bg-blue-600 text-white border-blue-600") 
+              : (isDarkMode ? "hover:bg-gray-600 border-gray-600" : "hover:bg-gray-100 border-gray-300")
+          }`}>
             {t.listOfItems || "Items"}
           </button>
           {/* 🔹 NEW TABS */}
-          <button onClick={() => setActiveView("analytics")} className={`px-3 py-1 rounded flex items-center gap-2 ${activeView === "analytics" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}>
+          <button onClick={() => setActiveView("analytics")} className={`px-3 py-1 rounded border flex items-center gap-2 ${
+            activeView === "analytics" 
+              ? (isDarkMode ? "bg-yellow-500 text-black border-yellow-500" : "bg-blue-600 text-white border-blue-600") 
+              : (isDarkMode ? "hover:bg-gray-600 border-gray-600" : "hover:bg-gray-100 border-gray-300")
+          }`}>
             <ChartIcon className="w-4 h-4" /> {t.analytics || "Analytics"}
           </button>
-          <button onClick={() => setActiveView("social")} className={`px-3 py-1 rounded flex items-center gap-2 ${activeView === "social" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}>
+          <button onClick={() => setActiveView("social")} className={`px-3 py-1 rounded border flex items-center gap-2 ${
+            activeView === "social" 
+              ? (isDarkMode ? "bg-yellow-500 text-black border-yellow-500" : "bg-blue-600 text-white border-blue-600") 
+              : (isDarkMode ? "hover:bg-gray-600 border-gray-600" : "hover:bg-gray-100 border-gray-300")
+          }`}>
             <UsersIcon className="w-4 h-4" /> {t.social || "Social"}
           </button>
 
           <button 
             onClick={() => setShowLoyaltyDashboard(true)} 
-            className={`px-3 py-1 rounded flex items-center gap-2 ...`}>
+            className={`px-3 py-1 rounded border flex items-center gap-2 ${
+              isDarkMode ? "hover:bg-gray-600 border-gray-600" : "hover:bg-gray-100 border-gray-300"
+            }`}>
             🏆 {t.rewards || "Rewards"}
           </button>
-
         </div>
       </nav>
 
@@ -1726,7 +1742,7 @@ useEffect(() => {
 
               {/* 🔹 Advanced Analytics Section */}
               {showAnalytics && (
-                <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+                <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white border border-gray-200"}`}>
                   <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl sm:text-2xl font-semibold flex items-center gap-2">
                       <ChartIcon className="w-6 h-6" />
@@ -1747,7 +1763,7 @@ useEffect(() => {
                   ) : adminAnalytics ? (
                     <div className="space-y-6">
                       {/* User Engagement Metrics */}
-                      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-600" : "bg-blue-50"}`}>
+                      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-600" : "bg-blue-50 border border-blue-100"}`}>
                         <h4 className="font-semibold text-lg mb-4">
                           {t.userEngagement || "User Engagement (Last 30 Days)"}
                         </h4>
@@ -1770,7 +1786,7 @@ useEffect(() => {
                       </div>
 
                       {/* Top Actions */}
-                      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-600" : "bg-green-50"}`}>
+                      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-600" : "bg-green-50 border border-green-100"}`}>
                         <h4 className="font-semibold text-lg mb-4">
                           {t.topActions || "Top User Actions"}
                         </h4>
@@ -1785,7 +1801,7 @@ useEffect(() => {
                       </div>
 
                       {/* Retention Rate */}
-                      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-600" : "bg-purple-50"}`}>
+                      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-600" : "bg-purple-50 border border-purple-100"}`}>
                         <h4 className="font-semibold text-lg mb-4">
                           {t.retentionRate || "User Retention (7-Day)"}
                         </h4>
@@ -1800,7 +1816,7 @@ useEffect(() => {
                       </div>
 
                       {/* Social Engagement */}
-                      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-600" : "bg-orange-50"}`}>
+                      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-600" : "bg-orange-50 border border-orange-100"}`}>
                         <h4 className="font-semibold text-lg mb-4">
                           {t.socialEngagement || "Social Engagement"}
                         </h4>
@@ -1824,8 +1840,8 @@ useEffect(() => {
                       <div className="text-center">
                         <button
                           onClick={fetchAdminAnalytics}
-                          className={`px-6 py-3 rounded-lg ${
-                            isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"
+                          className={`px-6 py-3 rounded-lg border ${
+                            isDarkMode ? "bg-yellow-500 hover:bg-yellow-600 border-yellow-500" : "bg-blue-600 hover:bg-blue-700 border-blue-600"
                           } text-white font-medium`}
                         >
                           {t.refreshAnalytics || "Refresh Analytics"}
@@ -1841,7 +1857,7 @@ useEffect(() => {
               )}
 
               {/* Site Statistics Section */}
-              <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+              <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white border border-gray-200"}`}>
                 <h3 className="text-xl sm:text-2xl font-semibold mb-6 text-center flex items-center justify-center gap-2">
                   <ChartIcon className="w-6 h-6" />
                   {t.siteStatistics || "Site Statistics"}
@@ -1851,7 +1867,7 @@ useEffect(() => {
                 ) : siteStats ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Total Users */}
-                    <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-blue-50"}`}>
+                    <div className={`p-4 rounded-lg flex flex-col items-center border ${isDarkMode ? "bg-gray-600 border-gray-500" : "bg-blue-50 border-blue-100"}`}>
                       <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 text-blue-600 mb-2">
                         <UsersIcon className="w-6 h-6" />
                       </div>
@@ -1859,7 +1875,7 @@ useEffect(() => {
                       <p className="text-2xl font-bold">{siteStats.totalUsers}</p>
                     </div>
                     {/* Total Items */}
-                    <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-green-50"}`}>
+                    <div className={`p-4 rounded-lg flex flex-col items-center border ${isDarkMode ? "bg-gray-600 border-gray-500" : "bg-green-50 border-green-100"}`}>
                       <div className="flex items-center justify-center w-12 h-12 rounded-full bg-green-100 text-green-600 mb-2">
                         <EyeIcon className="w-6 h-6" />
                       </div>
@@ -1867,7 +1883,7 @@ useEffect(() => {
                       <p className="text-2xl font-bold">{siteStats.totalItems}</p>
                     </div>
                     {/* New Users (Last 7 Days) */}
-                    <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-purple-50"}`}>
+                    <div className={`p-4 rounded-lg flex flex-col items-center border ${isDarkMode ? "bg-gray-600 border-gray-500" : "bg-purple-50 border-purple-100"}`}>
                       <div className="flex items-center justify-center w-12 h-12 rounded-full bg-purple-100 text-purple-600 mb-2">
                         <CalendarIcon className="w-6 h-6" />
                       </div>
@@ -1875,7 +1891,7 @@ useEffect(() => {
                       <p className="text-2xl font-bold">{siteStats.newUsersLast7Days}</p>
                     </div>
                     {/* Active Users (Last 24h) */}
-                    <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-orange-50"}`}>
+                    <div className={`p-4 rounded-lg flex flex-col items-center border ${isDarkMode ? "bg-gray-600 border-gray-500" : "bg-orange-50 border-orange-100"}`}>
                       <div className="flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 text-orange-600 mb-2">
                         <EyeIcon className="w-6 h-6" />
                       </div>
@@ -1883,7 +1899,7 @@ useEffect(() => {
                       <p className="text-2xl font-bold">{siteStats.activeUsersLast24Hours}</p>
                     </div>
                     {/* Total Visits */}
-                    <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-red-50"}`}>
+                    <div className={`p-4 rounded-lg flex flex-col items-center border ${isDarkMode ? "bg-gray-600 border-gray-500" : "bg-red-50 border-red-100"}`}>
                       <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 text-red-600 mb-2">
                         <EyeIcon className="w-6 h-6" />
                       </div>
@@ -1891,7 +1907,7 @@ useEffect(() => {
                       <p className="text-2xl font-bold">{siteStats.totalVisits}</p>
                     </div>
                     {/* Average Users Per Day */}
-                    <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-indigo-50"}`}>
+                    <div className={`p-4 rounded-lg flex flex-col items-center border ${isDarkMode ? "bg-gray-600 border-gray-500" : "bg-indigo-50 border-indigo-100"}`}>
                       <div className="flex items-center justify-center w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 mb-2">
                         <ChartIcon className="w-6 h-6" />
                       </div>
@@ -1899,7 +1915,7 @@ useEffect(() => {
                       <p className="text-2xl font-bold">{siteStats.averageUsersPerDay}</p>
                     </div>
                     {/* Most Active User */}
-                    <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-pink-50"}`}>
+                    <div className={`p-4 rounded-lg flex flex-col items-center border ${isDarkMode ? "bg-gray-600 border-gray-500" : "bg-pink-50 border-pink-100"}`}>
                       <div className="flex items-center justify-center w-12 h-12 rounded-full bg-pink-100 text-pink-600 mb-2">
                         <UsersIcon className="w-6 h-6" />
                       </div>
@@ -1907,7 +1923,7 @@ useEffect(() => {
                       <p className="text-xl font-bold truncate max-w-full">{siteStats.mostActiveUser || "N/A"}</p>
                     </div>
                     {/* Items Added (Last 30 Days) */}
-                    <div className={`p-4 rounded-lg flex flex-col items-center ${isDarkMode ? "bg-gray-600" : "bg-teal-50"}`}>
+                    <div className={`p-4 rounded-lg flex flex-col items-center border ${isDarkMode ? "bg-gray-600 border-gray-500" : "bg-teal-50 border-teal-100"}`}>
                       <div className="flex items-center justify-center w-12 h-12 rounded-full bg-teal-100 text-teal-600 mb-2">
                         <CalendarIcon className="w-6 h-6" />
                       </div>
@@ -1921,7 +1937,7 @@ useEffect(() => {
               </section>
 
               {/* Users Section */}
-              <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} mb-8`}>
+              <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white border border-gray-200"} mb-8`}>
                 <h3 className="text-xl sm:text-2xl font-semibold mb-4">{t.listOfUsers}</h3>
                 {loading ? (
                   <p className="text-lg">{t.loading}</p>
@@ -1929,55 +1945,55 @@ useEffect(() => {
                   <p className="text-red-500 text-lg">{error}</p>
                 ) : (
                   <div className="overflow-x-auto w-full">
-                    <table className={`min-w-full border-collapse text-sm sm:text-base ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
-                      <thead className={`${isDarkMode ? "bg-gray-700" : "bg-gray-200"} text-left`}>
+                    <table className={`min-w-full border-collapse text-sm sm:text-base ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800"} border border-gray-200`}>
+                      <thead className={`${isDarkMode ? "bg-gray-700" : "bg-gray-100"} text-left border-b border-gray-300`}>
                         <tr>
-                          <th className="w-16 px-2 sm:px-3 py-2 text-center font-semibold">ID</th>
-                          <th className="px-2 sm:px-3 py-2 font-semibold">Login</th>
-                          <th className="px-2 sm:px-3 py-2 font-semibold hidden md:table-cell">Email</th>
-                          <th className="px-2 sm:px-3 py-2 text-center font-semibold">Role</th>
-                          <th className="px-2 sm:px-3 py-2 text-center font-semibold hidden lg:table-cell">Date of Registration</th>
-                          <th className="px-2 sm:px-3 py-2 text-center font-semibold hidden lg:table-cell">Last Activity</th>
-                          <th className="px-2 sm:px-3 py-2 text-center font-semibold">Status</th>
-                          <th className="px-2 sm:px-3 py-2 text-center font-semibold">Actions</th>
-                          <th className="px-2 sm:px-3 py-2 text-center font-semibold">Delete</th>
+                          <th className="w-16 px-2 sm:px-3 py-2 text-center font-semibold border-r border-gray-300">ID</th>
+                          <th className="px-2 sm:px-3 py-2 font-semibold border-r border-gray-300">Login</th>
+                          <th className="px-2 sm:px-3 py-2 font-semibold hidden md:table-cell border-r border-gray-300">Email</th>
+                          <th className="px-2 sm:px-3 py-2 text-center font-semibold border-r border-gray-300">Role</th>
+                          <th className="px-2 sm:px-3 py-2 text-center font-semibold hidden lg:table-cell border-r border-gray-300">Date of Registration</th>
+                          <th className="px-2 sm:px-3 py-2 text-center font-semibold hidden lg:table-cell border-r border-gray-300">Last Activity</th>
+                          <th className="px-2 sm:px-3 py-2 text-center font-semibold border-r border-gray-300">Status</th>
+                          <th className="px-2 sm:px-3 py-2 text-center font-semibold border-r border-gray-300">Actions</th>
+                          <th className="px-2 sm:px-3 py-2 text-center font-semibold border-r border-gray-300">Delete</th>
                           <th className="px-2 sm:px-3 py-2 text-center font-semibold">Details</th>
                         </tr>
                       </thead>
                       <tbody>
                         {users.map((user) => (
-                          <tr key={user.id} className={`transition-colors ${isDarkMode ? "even:bg-gray-700 odd:bg-gray-600 hover:bg-gray-500" : "even:bg-gray-100 odd:bg-white hover:bg-gray-200"}`}>
-                            <td className="w-16 px-2 sm:px-3 py-2 text-center">
+                          <tr key={user.id} className={`transition-colors border-b border-gray-200 ${isDarkMode ? "even:bg-gray-700 odd:bg-gray-600 hover:bg-gray-500" : "even:bg-gray-50 odd:bg-white hover:bg-gray-100"}`}>
+                            <td className="w-16 px-2 sm:px-3 py-2 text-center border-r border-gray-300">
                               {user.id}
                               {isSuperAdmin(user) && (
                                 <span className="block text-xs text-purple-600">★</span>
                               )}
                             </td>
-                            <td className="px-2 sm:px-3 py-2 truncate max-w-[100px]" title={user.login}>{user.login}</td>
-                            <td className="px-2 sm:px-3 py-2 truncate hidden md:table-cell" title={user.email}>{user.email}</td>
-                            <td className="px-2 sm:px-3 py-2 capitalize text-center">
+                            <td className="px-2 sm:px-3 py-2 truncate max-w-[100px] border-r border-gray-300" title={user.login}>{user.login}</td>
+                            <td className="px-2 sm:px-3 py-2 truncate hidden md:table-cell border-r border-gray-300" title={user.email}>{user.email}</td>
+                            <td className="px-2 sm:px-3 py-2 capitalize text-center border-r border-gray-300">
                               {user.role}
                               {isSuperAdmin(user) && (
                                 <span className="block text-xs text-purple-600">super</span>
                               )}
                             </td>
-                            <td className="px-2 sm:px-3 py-2 text-center hidden lg:table-cell">{new Date(user.created_at).toLocaleDateString()}</td>
-                            <td className="px-2 sm:px-3 py-2 text-center text-xs hidden lg:table-cell">
+                            <td className="px-2 sm:px-3 py-2 text-center hidden lg:table-cell border-r border-gray-300">{new Date(user.created_at).toLocaleDateString()}</td>
+                            <td className="px-2 sm:px-3 py-2 text-center text-xs hidden lg:table-cell border-r border-gray-300">
                               {user.last_login ? new Date(user.last_login).toLocaleString() : t.never}
                             </td>
-                            <td className="px-2 sm:px-3 py-2 text-center">
+                            <td className="px-2 sm:px-3 py-2 text-center border-r border-gray-300">
                               {user.is_active ? (
                                 <span className="text-green-500 font-semibold text-xs sm:text-sm">{t.online}</span>
                               ) : (
                                 <span className="text-red-500 font-semibold text-xs sm:text-sm">{t.offline}</span>
                               )}
                             </td>
-                            <td className="px-2 sm:px-3 py-2 text-center">
+                            <td className="px-2 sm:px-3 py-2 text-center border-r border-gray-300">
                               {user.role !== "admin" && (
                                 <button
                                   onClick={() => handleMakeAdmin(user.id, user.login)}
-                                  className={`px-2 py-1 rounded text-xs sm:text-sm ${
-                                    isDarkMode ? "bg-yellow-600 hover:bg-yellow-700" : "bg-yellow-500 hover:bg-yellow-600"
+                                  className={`px-2 py-1 rounded text-xs sm:text-sm border ${
+                                    isDarkMode ? "bg-yellow-600 hover:bg-yellow-700 border-yellow-600" : "bg-yellow-500 hover:bg-yellow-600 border-yellow-500"
                                   } text-black font-medium transition whitespace-nowrap`}
                                   title={t.makeAdmin || "Make Admin"}
                                 >
@@ -1985,12 +2001,12 @@ useEffect(() => {
                                 </button>
                               )}
                             </td>
-                            <td className="px-2 sm:px-3 py-2 text-center">
+                            <td className="px-2 sm:px-3 py-2 text-center border-r border-gray-300">
                               {canDeleteUser(user) && (
                                 <button
                                   onClick={() => handleDeleteUser(user.id, user.login)}
-                                  className={`px-2 py-1 rounded text-xs sm:text-sm ${
-                                    isDarkMode ? "bg-red-600 hover:bg-red-700" : "bg-red-500 hover:bg-red-600"
+                                  className={`px-2 py-1 rounded text-xs sm:text-sm border ${
+                                    isDarkMode ? "bg-red-600 hover:bg-red-700 border-red-600" : "bg-red-500 hover:bg-red-600 border-red-500"
                                   } text-white font-medium transition whitespace-nowrap`}
                                   title={t.deleteUser || "Delete User"}
                                 >
@@ -2001,8 +2017,8 @@ useEffect(() => {
                             <td className="px-2 sm:px-3 py-2 text-center">
                               <button
                                 onClick={() => handleViewAccountDetails(user)}
-                                className={`px-2 py-1 rounded text-xs sm:text-sm ${
-                                  isDarkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
+                                className={`px-2 py-1 rounded text-xs sm:text-sm border ${
+                                  isDarkMode ? "bg-blue-600 hover:bg-blue-700 border-blue-600" : "bg-blue-500 hover:bg-blue-600 border-blue-500"
                                 } text-white font-medium transition whitespace-nowrap`}
                                 title={t.viewDetails || "View Details"}
                               >
@@ -2024,8 +2040,8 @@ useEffect(() => {
 
                     <button
                       onClick={() => setShowAddUserModal(true)}
-                      className={`px-4 py-2 rounded font-medium ${
-                        isDarkMode ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-blue-500 hover:bg-blue-600 text-white"
+                      className={`px-4 py-2 rounded font-medium border mt-4 ${
+                        isDarkMode ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-600" : "bg-blue-500 hover:bg-blue-600 text-white border-blue-500"
                       }`}
                     >
                       + {t.addUser || "Add User"}
@@ -2039,15 +2055,15 @@ useEffect(() => {
           {activeView === "items" && (
             <motion.div key="items" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.5, ease: "easeInOut" }} className="w-full max-w-7xl">
               {/* Items Section */}
-              <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mt-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+              <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mt-8 ${isDarkMode ? "bg-gray-700" : "bg-white border border-gray-200"}`}>
                 <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4 sm:gap-0">
                   <h3 className="text-xl sm:text-2xl font-semibold">{t.listOfItems || "List of Items"}</h3>
                   <button
                     onClick={() => setShowAddItemModal(true)}
-                    className={`px-4 py-2 rounded font-medium flex items-center gap-1 ${
+                    className={`px-4 py-2 rounded font-medium flex items-center gap-1 border ${
                       isDarkMode
-                        ? "bg-blue-600 hover:bg-blue-700 text-white"
-                        : "bg-blue-500 hover:bg-blue-600 text-white"
+                        ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
+                        : "bg-blue-500 hover:bg-blue-600 text-white border-blue-500"
                     } transition`}
                   >
                     + {t.addItem || "Add Item"}
@@ -2065,10 +2081,10 @@ useEffect(() => {
                         setSearchTerm(e.target.value);
                         setIsTyping(true);
                       }}
-                      className={`w-full pl-10 pr-10 py-2 border rounded-lg ${
+                      className={`w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg ${
                         isDarkMode
                           ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                          : "bg-white border-gray-300 text-black placeholder-gray-500"
+                          : "bg-white border-gray-300 text-gray-800 placeholder-gray-500"
                       } focus:outline-none focus:ring-2 focus:ring-blue-500`}
                     />
                     {searchTerm && (
@@ -2099,37 +2115,37 @@ useEffect(() => {
                 {/* Conditionally render ItemList or search results */}
                 {searchTerm ? (
                   <div className="overflow-x-auto">
-                    <table className={`min-w-full border-collapse text-sm sm:text-base ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
-                      <thead className={`${isDarkMode ? "bg-gray-700" : "bg-gray-200"} text-left`}>
+                    <table className={`min-w-full border-collapse text-sm sm:text-base ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800"} border border-gray-200`}>
+                      <thead className={`${isDarkMode ? "bg-gray-700" : "bg-gray-100"} text-left border-b border-gray-300`}>
                         <tr>
-                          <th className="px-2 sm:px-3 py-2 font-semibold">ID</th>
-                          <th className="px-2 sm:px-3 py-2 font-semibold">Title</th>
-                          <th className="px-2 sm:px-3 py-2 font-semibold">Number</th>
-                          <th className="px-2 sm:px-3 py-2 font-semibold">Category</th>
-                          <th className="px-2 sm:px-3 py-2 font-semibold">Series</th>
-                          <th className="px-2 sm:px-3 py-2 font-semibold text-center">Exclusive</th>
-                          <th className="px-2 sm:px-3 py-2 font-semibold">Image</th>
+                          <th className="px-2 sm:px-3 py-2 font-semibold border-r border-gray-300">ID</th>
+                          <th className="px-2 sm:px-3 py-2 font-semibold border-r border-gray-300">Title</th>
+                          <th className="px-2 sm:px-3 py-2 font-semibold border-r border-gray-300">Number</th>
+                          <th className="px-2 sm:px-3 py-2 font-semibold border-r border-gray-300">Category</th>
+                          <th className="px-2 sm:px-3 py-2 font-semibold border-r border-gray-300">Series</th>
+                          <th className="px-2 sm:px-3 py-2 font-semibold text-center border-r border-gray-300">Exclusive</th>
+                          <th className="px-2 sm:px-3 py-2 font-semibold border-r border-gray-300">Image</th>
                           <th className="px-2 sm:px-3 py-2 font-semibold text-center">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {filteredItems.map((item) => (
-                          <tr key={item.id} className={`transition-colors ${isDarkMode ? "even:bg-gray-700 odd:bg-gray-600 hover:bg-gray-500" : "even:bg-gray-100 odd:bg-white hover:bg-gray-200"}`}>
-                            <td className="px-2 sm:px-3 py-2">{item.id}</td>
-                            <td className="px-2 sm:px-3 py-2">{item.title}</td>
-                            <td className="px-2 sm:px-3 py-2">{item.number}</td>
-                            <td className="px-2 sm:px-3 py-2">{item.category}</td>
-                            <td className="px-2 sm:px-3 py-2">
+                          <tr key={item.id} className={`transition-colors border-b border-gray-200 ${isDarkMode ? "even:bg-gray-700 odd:bg-gray-600 hover:bg-gray-500" : "even:bg-gray-50 odd:bg-white hover:bg-gray-100"}`}>
+                            <td className="px-2 sm:px-3 py-2 border-r border-gray-300">{item.id}</td>
+                            <td className="px-2 sm:px-3 py-2 border-r border-gray-300">{item.title}</td>
+                            <td className="px-2 sm:px-3 py-2 border-r border-gray-300">{item.number}</td>
+                            <td className="px-2 sm:px-3 py-2 border-r border-gray-300">{item.category}</td>
+                            <td className="px-2 sm:px-3 py-2 border-r border-gray-300">
                               {item.series && item.series.length > 0 ? item.series.join(", ") : "-"}
                             </td>
-                            <td className="px-2 sm:px-3 py-2 text-center">
+                            <td className="px-2 sm:px-3 py-2 text-center border-r border-gray-300">
                               {item.exclusive ? (
                                 <span className="text-green-500 font-semibold">✓</span>
                               ) : (
                                 <span className="text-red-500 font-semibold">✗</span>
                               )}
                             </td>
-                            <td className="px-2 sm:px-3 py-2">
+                            <td className="px-2 sm:px-3 py-2 border-r border-gray-300">
                               {item.imageName ? item.imageName : "-"}
                             </td>
                             <td className="px-2 sm:px-3 py-2 text-center">
@@ -2137,8 +2153,8 @@ useEffect(() => {
                                 onClick={() => {
                                   console.log("Edit item:", item.id);
                                 }}
-                                className={`px-2 py-1 rounded text-xs sm:text-sm ${
-                                  isDarkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
+                                className={`px-2 py-1 rounded text-xs sm:text-sm border ${
+                                  isDarkMode ? "bg-blue-600 hover:bg-blue-700 border-blue-600" : "bg-blue-500 hover:bg-blue-600 border-blue-500"
                                 } text-white font-medium transition mx-1`}
                               >
                                 {t.edit || "Edit"}
@@ -2170,7 +2186,7 @@ useEffect(() => {
               {showAddItemModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" onClick={() => setShowAddItemModal(false)}>
                   <div
-                    className={`w-full max-w-md p-6 rounded-lg shadow-xl ${isDarkMode ? "bg-gray-800" : "bg-white"}`}
+                    className={`w-full max-w-md p-6 rounded-lg shadow-xl border ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <h3 className="text-xl font-semibold mb-4">{t.addItem || "Add New Item"}</h3>
@@ -2186,10 +2202,10 @@ useEffect(() => {
                           type="text"
                           value={newItem.title}
                           onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
-                          className={`w-full p-2 border rounded ${
+                          className={`w-full p-2 border border-gray-300 rounded ${
                             isDarkMode
                               ? "bg-gray-700 border-gray-600 text-white"
-                              : "bg-white border-gray-300 text-black"
+                              : "bg-white border-gray-300 text-gray-800"
                           }`}
                           required
                         />
@@ -2200,10 +2216,10 @@ useEffect(() => {
                           type="text"
                           value={newItem.number}
                           onChange={(e) => setNewItem({ ...newItem, number: e.target.value })}
-                          className={`w-full p-2 border rounded ${
+                          className={`w-full p-2 border border-gray-300 rounded ${
                             isDarkMode
                               ? "bg-gray-700 border-gray-600 text-white"
-                              : "bg-white border-gray-300 text-black"
+                              : "bg-white border-gray-300 text-gray-800"
                           }`}
                           required
                         />
@@ -2214,10 +2230,10 @@ useEffect(() => {
                           type="text"
                           value={newItem.category}
                           onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
-                          className={`w-full p-2 border rounded ${
+                          className={`w-full p-2 border border-gray-300 rounded ${
                             isDarkMode
                               ? "bg-gray-700 border-gray-600 text-white"
-                              : "bg-white border-gray-300 text-black"
+                              : "bg-white border-gray-300 text-gray-800"
                           }`}
                           required
                         />
@@ -2234,10 +2250,10 @@ useEffect(() => {
                               series: e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
                             })
                           }
-                          className={`w-full p-2 border rounded ${
+                          className={`w-full p-2 border border-gray-300 rounded ${
                             isDarkMode
                               ? "bg-gray-700 border-gray-600 text-white"
-                              : "bg-white border-gray-300 text-black"
+                              : "bg-white border-gray-300 text-gray-800"
                           }`}
                         />
                       </div>
@@ -2259,10 +2275,10 @@ useEffect(() => {
                           type="text"
                           value={newItem.imageName}
                           onChange={(e) => setNewItem({ ...newItem, imageName: e.target.value })}
-                          className={`w-full p-2 border rounded ${
+                          className={`w-full p-2 border border-gray-300 rounded ${
                             isDarkMode
                               ? "bg-gray-700 border-gray-600 text-white"
-                              : "bg-white border-gray-300 text-black"
+                              : "bg-white border-gray-300 text-gray-800"
                           }`}
                         />
                       </div>
@@ -2270,16 +2286,16 @@ useEffect(() => {
                         <button
                           type="button"
                           onClick={() => setShowAddItemModal(false)}
-                          className={`px-4 py-2 rounded ${
-                            isDarkMode ? "bg-gray-600 hover:bg-gray-500" : "bg-gray-300 hover:bg-gray-400"
+                          className={`px-4 py-2 rounded border ${
+                            isDarkMode ? "bg-gray-600 hover:bg-gray-500 border-gray-600" : "bg-gray-300 hover:bg-gray-400 border-gray-400"
                           } transition`}
                         >
                           {t.cancel || "Cancel"}
                         </button>
                         <button
                           type="submit"
-                          className={`px-4 py-2 rounded ${
-                            isDarkMode ? "bg-green-600 hover:bg-green-700" : "bg-green-500 hover:bg-green-600"
+                          className={`px-4 py-2 rounded border ${
+                            isDarkMode ? "bg-blue-600 hover:bg-blue-700 border-blue-600" : "bg-blue-500 hover:bg-blue-600 border-blue-500"
                           } text-white transition`}
                         >
                           {t.addItem || "Add Item"}
@@ -2312,7 +2328,7 @@ useEffect(() => {
         />
       )}
       {/* Footer */}
-      <footer className={`py-4 text-center text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+      <footer className={`py-4 text-center text-sm ${isDarkMode ? "text-gray-400 bg-gray-800" : "text-gray-600 bg-white border-t border-gray-200"}`}>
         &copy; {new Date().getFullYear()} Pop&Go! — {t.adminPanel || "Admin Panel"}
       </footer>
     </div>
@@ -2321,6 +2337,3 @@ useEffect(() => {
 
 export default Admin;
 
-function setShouldShowPopup(arg0: boolean) {
-  throw new Error("Function not implemented.");
-}

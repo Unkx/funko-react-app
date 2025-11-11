@@ -264,9 +264,9 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-      <div className={`w-full max-w-6xl rounded-lg shadow-2xl ${isDarkMode ? "bg-gray-800" : "bg-white"} max-h-[90vh] overflow-y-auto`}>
+      <div className={`w-full max-w-6xl rounded-lg shadow-2xl ${isDarkMode ? "bg-gray-800" : "bg-gray-200"} max-h-[90vh] overflow-y-auto`}>
         {/* Header */}
-        <div className={`sticky top-0 z-10 p-6 border-b ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}`}>
+        <div className={`sticky top-0 z-10 p-6 border-b ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-gray-100 border-gray-200"}`}>
           <div className="flex justify-between items-center">
             <h2 className="text-3xl font-bold flex items-center gap-2">
               <TrophyIcon className="w-8 h-8 text-yellow-500" />
@@ -284,19 +284,19 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
           <div className="flex gap-4 mt-4">
             <button
               onClick={() => setActiveTab("overview")}
-              className={`px-4 py-2 rounded ${activeTab === "overview" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "bg-gray-700" : "bg-gray-200")}`}
+              className={`px-4 py-2 rounded ${activeTab === "overview" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "bg-gray-700" : "bg-gray-200")}`}
             >
               {t.overview}
             </button>
             <button
               onClick={() => setActiveTab("achievements")}
-              className={`px-4 py-2 rounded ${activeTab === "achievements" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "bg-gray-700" : "bg-gray-200")}`}
+              className={`px-4 py-2 rounded ${activeTab === "achievements" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "bg-gray-700" : "bg-gray-200")}`}
             >
               {t.achievements}
             </button>
             <button
               onClick={() => setActiveTab("rewards")}
-              className={`px-4 py-2 rounded ${activeTab === "rewards" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "bg-gray-700" : "bg-gray-200")}`}
+              className={`px-4 py-2 rounded ${activeTab === "rewards" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "bg-gray-700" : "bg-gray-200")}`}
             >
               {t.rewards}
             </button>

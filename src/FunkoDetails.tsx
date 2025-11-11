@@ -84,7 +84,7 @@ const FunkoDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  // ✅ WSZYSTKIE useState na początku (przed useRef i useEffect)
+  // State declarations
   const [funkoItem, setFunkoItem] = useState<FunkoItemWithId | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -109,8 +109,9 @@ const FunkoDetails: React.FC = () => {
   const [priceHistory, setPriceHistory] = useState<PricePoint[]>([]);
   const [aiDescription, setAiDescription] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [collectionError, setCollectionError] = useState<string | null>(null);
   
-  const [user] = useState(() => {
+  const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
       try {
@@ -125,13 +126,13 @@ const FunkoDetails: React.FC = () => {
     return null;
   });
 
-  // ✅ useRef po wszystkich useState
+  // Refs
   const languageDropdownRef = useRef<HTMLDivElement>(null);
   const languageButtonRef = useRef<HTMLButtonElement>(null);
 
   const t = translations[language] || translations["EN"];
 
-  // 🌐 Centralized country configuration
+  // Country configuration
   const countries = {
     USA: {
       name: "USA",
@@ -183,7 +184,7 @@ const FunkoDetails: React.FC = () => {
     },
   };
 
-  // 🌍 Languages for dropdown
+  // Languages for dropdown
   const languages = {
     US: { name: "USA", flag: <USAFlag className="w-5 h-5" /> },
     EN: { name: "UK", flag: <UKFlag className="w-5 h-5" /> },
@@ -612,7 +613,6 @@ const FunkoDetails: React.FC = () => {
     }
   };
 
-
   const generateDescription = async (title: string, number: string, targetLang: string): Promise<string> => {
     const apiKey = import.meta.env.VITE_AI_API_KEY;
     if (!apiKey) throw new Error("Brak klucza API (VITE_AI_API_KEY w .env)");
@@ -628,7 +628,16 @@ const FunkoDetails: React.FC = () => {
       RU: "russian",
     };
 
-    const prompt = `Write a short, engaging product description in ${langNames[targetLang] || targetLang.toLowerCase()} for a Funko Pop! titled "${title}" with number ${number}. Focus on collectibility, design, and pop culture relevance. Max 2-3 sentences.`;
+    const prompt = `Write a comprehensive, engaging product description in ${langNames[targetLang] || targetLang.toLowerCase()} for a Funko Pop! titled "${title}" with number ${number}. 
+    
+    Include details about:
+    - Character background and pop culture significance
+    - Design features and unique characteristics
+    - Collectibility and rarity
+    - Why it's a must-have for collectors
+    - Any special features or exclusive elements
+    
+    Make it detailed but engaging, around 4-6 sentences. Write in a natural, enthusiastic tone.`;
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -637,9 +646,9 @@ const FunkoDetails: React.FC = () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile", // "mixtral-8x7b-32768" lub "llama3-8b-8192" – oba darmowe i dobre
+        model: "llama-3.3-70b-versatile",
         messages: [{ role: "user", content: prompt }],
-        max_tokens: 100,
+        max_tokens: 250,
         temperature: 0.7,
       }),
     });
@@ -647,7 +656,7 @@ const FunkoDetails: React.FC = () => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Groq API error:", errorText);
-      throw new Error("AI opis nie mógł zostać wygenerowany");
+      throw new Error("AI description could not be generated");
     }
 
     const data = await response.json();
@@ -726,33 +735,56 @@ const FunkoDetails: React.FC = () => {
     }
   };
 
+  // Debug function to check user authentication
+  const checkUserAuth = () => {
+    const token = localStorage.getItem("token");
+    const userData = localStorage.getItem("user");
+    console.log("🔐 Auth Check:", {
+      hasToken: !!token,
+      hasUser: !!userData,
+      user: userData ? JSON.parse(userData) : null,
+      token: token ? `${token.substring(0, 20)}...` : null
+    });
+    return token && userData;
+  };
+
   const toggleWishlist = async () => {
-  if (!user) {
-    alert(t.loginRequiredMessage || "Please log in");
-    navigate("/loginregistersite");
-    return;
-  }
-  if (!funkoItem || isUpdatingWishlist) return;
-  setIsUpdatingWishlist(true);
-  try {
-    if (inWishlist) {
-      await api.delete(`/wishlist/${funkoItem.id}`);
-    } else {
-      await api.post("/wishlist", {
-        funkoId: funkoItem.id,
-        title: funkoItem.title,
-        number: funkoItem.number,
-        imageName: funkoItem.imageName,
-      });
-      // ✅ Award points only when ADDING (not removing)
-      await awardPoints("wishlist_add", `Added "${funkoItem.title}" to wishlist`);
+    if (!user) {
+      alert(t.loginRequiredMessage || "Please log in");
+      navigate("/loginregistersite");
+      return;
     }
-    setInWishlist(!inWishlist);
-  } catch (err) {
-    alert(t.updateError || "Error updating wishlist.");
-  } finally {
-    setIsUpdatingWishlist(false);
-  }
+    if (!funkoItem || isUpdatingWishlist) return;
+    
+    console.log("🔄 Toggling wishlist for:", funkoItem.id);
+    setIsUpdatingWishlist(true);
+    setCollectionError(null);
+    
+    try {
+      if (inWishlist) {
+        console.log("🗑️ Removing from wishlist");
+        const response = await api.delete(`/wishlist/${funkoItem.id}`);
+        console.log("✅ Wishlist remove response:", response.status);
+      } else {
+        console.log("➕ Adding to wishlist");
+        const response = await api.post("/wishlist", {
+          funkoId: funkoItem.id,
+          title: funkoItem.title,
+          number: funkoItem.number,
+          imageName: funkoItem.imageName,
+        });
+        console.log("✅ Wishlist add response:", response.status);
+        await awardPoints("wishlist_add", `Added "${funkoItem.title}" to wishlist`);
+      }
+      setInWishlist(!inWishlist);
+    } catch (err: any) {
+      console.error("❌ Wishlist error:", err);
+      const errorMsg = err.response?.data?.error || err.message || "Error updating wishlist.";
+      setCollectionError(errorMsg);
+      alert(errorMsg);
+    } finally {
+      setIsUpdatingWishlist(false);
+    }
   };
 
   const toggleCollection = async () => {
@@ -762,28 +794,45 @@ const FunkoDetails: React.FC = () => {
       return;
     }
     if (!funkoItem || isUpdatingCollection) return;
+
     setIsUpdatingCollection(true);
+    setCollectionError(null);
+
     try {
+      // 🔁 Ensure item exists in DB first
+      if (!funkoItem.id.startsWith("http")) {
+        try {
+          await api.post('/api/items/sync-single', { item: funkoItem });
+        } catch (syncErr) {
+          console.warn("Sync before collection add failed:", syncErr);
+          // Optional: still proceed if backend allows it
+        }
+      }
+
       if (inCollection) {
         await api.delete(`/collection/${funkoItem.id}`);
       } else {
-        await api.post("/collection", {
+        const response = await api.post("/collection", {
           funkoId: funkoItem.id,
           title: funkoItem.title,
           number: funkoItem.number,
           imageName: funkoItem.imageName,
         });
-        // ✅ Award points only when ADDING
+        console.log("✅ Collection add response:", response.data);
         await awardPoints("collection_add", `Added "${funkoItem.title}" to collection`);
       }
+
       setInCollection(!inCollection);
-    } catch (err) {
-      alert(t.updateError || "Error updating collection.");
+    } catch (err: any) {
+      console.error("❌ Collection toggle error:", err);
+      const errorMsg = err.response?.data?.error || err.message || t.updateError || "Error updating collection.";
+      setCollectionError(errorMsg); // ✅ Now visible in UI
+      alert(errorMsg);
     } finally {
       setIsUpdatingCollection(false);
     }
   };
-
+  
   const loginButtonTo = useMemo(() => {
     if (user?.role === "admin") return "/adminSite";
     if (user?.role === "user") return "/dashboardSite";
@@ -794,10 +843,9 @@ const FunkoDetails: React.FC = () => {
     return user ? t.goToDashboard || "Dashboard" : t.goToLoginSite || "Log In";
   }, [t, user]);
 
-    // Helper: Award loyalty points
   const awardPoints = async (actionType: string, details?: string) => {
     const token = localStorage.getItem("token");
-    if (!token || !user) return; // Only logged-in users earn points
+    if (!token || !user) return;
 
     try {
       await api.post("/loyalty/award-points", {
@@ -809,7 +857,37 @@ const FunkoDetails: React.FC = () => {
     }
   };
 
-  // ✅ WSZYSTKIE useEffect razem, bez duplikatów
+  // Check item status in collection and wishlist
+  const checkItemStatus = async () => {
+    if (!funkoItem || !user) return;
+    
+    console.log("🔍 Checking item status for:", funkoItem.id);
+    
+    try {
+      const [wishlistRes, collectionRes] = await Promise.all([
+        api.get(`/wishlist/check/${funkoItem.id}`),
+        api.get(`/collection/check/${funkoItem.id}`),
+      ]);
+      
+      console.log("📊 Item status:", {
+        inWishlist: wishlistRes.data.exists,
+        inCollection: collectionRes.data.exists
+      });
+      
+      setInWishlist(wishlistRes.data.exists);
+      setInCollection(collectionRes.data.exists);
+    } catch (err: any) {
+      console.error("❌ Error checking item status:", err);
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        console.log("🔐 Authentication failed, redirecting to login");
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        navigate("/loginregistersite");
+      }
+    }
+  };
+
+  // Effects
   useEffect(() => {
     if (id) {
       const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
@@ -823,27 +901,9 @@ const FunkoDetails: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
-    const checkItemStatus = async () => {
-      if (!funkoItem || !user) return;
-      try {
-        const [wishlistRes, collectionRes] = await Promise.all([
-          api.get(`/wishlist/check/${funkoItem.id}`),
-          api.get(`/collection/check/${funkoItem.id}`),
-        ]);
-        setInWishlist(wishlistRes.data.exists);
-        setInCollection(collectionRes.data.exists);
-      } catch (err) {
-        if (
-          axios.isAxiosError(err) &&
-          (err.response?.status === 401 || err.response?.status === 403)
-        ) {
-          localStorage.removeItem("user");
-          localStorage.removeItem("token");
-          navigate("/loginregistersite");
-        }
-      }
-    };
-    checkItemStatus();
+    if (funkoItem && user) {
+      checkItemStatus();
+    }
   }, [funkoItem, user, navigate]);
 
   useEffect(() => {
@@ -874,27 +934,24 @@ const FunkoDetails: React.FC = () => {
     };
   }, [navigate]);
 
-  // ✅ Award visit points once per session per item
   useEffect(() => {
-  const awardVisitPoints = async () => {
-    if (!user || !funkoItem) return;
+    const awardVisitPoints = async () => {
+      if (!user || !funkoItem) return;
 
-    const visitPointsKey = `visit_points_awarded_${funkoItem.id}_${user.id}`;
-    const lastAwarded = sessionStorage.getItem(visitPointsKey);
+      const visitPointsKey = `visit_points_awarded_${funkoItem.id}_${user.id}`;
+      const lastAwarded = sessionStorage.getItem(visitPointsKey);
 
-    // Optional: Add time-based cooldown (e.g., max once per 24h)
-    // But sessionStorage resets on tab close – good for "per session"
-    if (lastAwarded) return;
+      if (lastAwarded) return;
 
-    try {
-      await awardPoints("item_view", `Viewed "${funkoItem.title}"`);
-      sessionStorage.setItem(visitPointsKey, "true"); // mark as awarded in this session
-    } catch (err) {
-      console.warn("Failed to award visit points:", err);
-    }
-  };
+      try {
+        await awardPoints("item_view", `Viewed "${funkoItem.title}"`);
+        sessionStorage.setItem(visitPointsKey, "true");
+      } catch (err) {
+        console.warn("Failed to award visit points:", err);
+      }
+    };
 
-  awardVisitPoints();
+    awardVisitPoints();
   }, [user, funkoItem]);
 
   useEffect(() => {
@@ -926,7 +983,6 @@ const FunkoDetails: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showLanguageDropdown]);
 
-  // ✅ AI Description - na końcu
   useEffect(() => {
     const generateIfNeeded = async () => {
       if (!funkoItem || !language) return;
@@ -957,12 +1013,12 @@ const FunkoDetails: React.FC = () => {
     return (
       <div
         className={`min-h-screen flex items-center justify-center ${
-          isDarkMode ? "bg-gray-800" : "bg-neutral-400"
+          isDarkMode ? "bg-gray-800" : "bg-neutral-100"
         }`}
       >
         <div
           className={`animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 ${
-            isDarkMode ? "border-yellow-500" : "bg-green-600"
+            isDarkMode ? "border-yellow-500" : "border-green-600"
           }`}
         ></div>
       </div>
@@ -973,7 +1029,7 @@ const FunkoDetails: React.FC = () => {
     return (
       <div
         className={`min-h-screen flex items-center justify-center ${
-          isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
+          isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-100 text-black"
         }`}
       >
         <div className="text-center p-4">
@@ -997,7 +1053,7 @@ const FunkoDetails: React.FC = () => {
     return (
       <div
         className={`min-h-screen flex items-center justify-center ${
-          isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
+          isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-100 text-black"
         }`}
       >
         <p>Error: Funko Pop data not available.</p>
@@ -1018,10 +1074,10 @@ const FunkoDetails: React.FC = () => {
   return (
     <div
       className={`min-h-screen flex flex-col ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
+        isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-100 text-black"
       }`}
     >
-      {/* 🔝 Header */}
+      {/* Header */}
       <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
         <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
           <Link to="/" className="no-underline">
@@ -1035,7 +1091,7 @@ const FunkoDetails: React.FC = () => {
           </Link>
         </div>
 
-        {/* 🔍 Search */}
+        {/* Search */}
         <form
           onSubmit={handleSearch}
           className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden ${
@@ -1067,7 +1123,7 @@ const FunkoDetails: React.FC = () => {
           </button>
         </form>
 
-        {/* 🌐 Language, 🌙 Theme, 🔐 Login */}
+        {/* Language, Theme, Login */}
         <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0">
           <div className="relative">
             <button
@@ -1146,89 +1202,192 @@ const FunkoDetails: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow container mx-auto px-4 py-8 max-w-5xl">
-        <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
-          <h1 className="text-3xl font-bold mb-2">{funkoItem.title}</h1>
-          
-          {/* AI Description */}
-          {isGenerating && (
-            <div className="mb-4 p-3 rounded bg-blue-100 dark:bg-blue-900 text-sm">
-              Generating AI description...
-            </div>
-          )}
-          {aiDescription && (
-            <div className="mb-4 p-3 rounded bg-gray-100 dark:bg-gray-600 text-sm italic">
-              {aiDescription}
-            </div>
-          )}
-
-          <div className="flex gap-4 mb-6">
-            <button
-              onClick={toggleWishlist}
-              disabled={isUpdatingWishlist}
-              className={`px-4 py-2 rounded flex-1 ${
-                inWishlist
-                  ? "bg-red-600 text-white"
-                  : "bg-gray-200 dark:bg-gray-600"
-              }`}
-            >
-              {inWishlist ? t.removeFromWishlist : t.addToWishlist}
-            </button>
-            <button
-              onClick={toggleCollection}
-              disabled={isUpdatingCollection}
-              className={`px-4 py-2 rounded flex-1 ${
-                inCollection
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-200 dark:bg-gray-600"
-              }`}
-            >
-              {inCollection ? t.removeFromCollection : t.addToCollection}
-            </button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h2 className="text-xl font-semibold mb-3">{t.details}</h2>
-              <p><span className="font-medium">{t.number}:</span> {funkoItem.number}</p>
-              <p><span className="font-medium">{t.category}:</span> {funkoItem.category}</p>
-              <p><span className="font-medium">{t.series}:</span> {funkoItem.series?.join(", ")}</p>
-              {funkoItem.exclusive && (
-                <span className="inline-block px-2 py-1 rounded text-sm bg-green-600">
-                  {t.exclusive}
-                </span>
-              )}
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold mb-3">{t.additionalInformation}</h2>
-              <div className="p-4 rounded bg-gray-200 dark:bg-gray-600">
+      <main className="flex-grow container mx-auto px-4 py-8 max-w-6xl">
+        {/* Product Overview Section */}
+        <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white border border-gray-200"}`}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Image Section - First column */}
+            <div className="lg:col-span-1">
+              <div className={`p-6 rounded-lg ${
+                isDarkMode 
+                  ? "bg-gray-600 border border-gray-500" 
+                  : "bg-white border-2 border-green-100 shadow-md"
+              }`}>
                 {funkoItem.imageName ? (
                   <img
                     src={funkoItem.imageName}
                     alt={funkoItem.title}
-                    className="rounded w-full max-h-80 object-contain"
+                    className={`rounded-lg w-full h-auto max-h-96 object-contain transition-all duration-300 ${
+                      isDarkMode 
+                        ? "filter brightness-90" 
+                        : "filter brightness-105 shadow-lg"
+                    }`}
                   />
                 ) : (
-                  <p>{t.noImageAvailable}</p>
+                  <div className={`w-full h-64 rounded-lg flex items-center justify-center ${
+                    isDarkMode ? "bg-gray-500" : "bg-green-50 border-2 border-green-200"
+                  }`}>
+                    <p className={isDarkMode ? "text-gray-300" : "text-green-600"}>
+                      {t.noImageAvailable}
+                    </p>
+                  </div>
                 )}
+              </div>
+            </div>
+
+            {/* Product Details Section - Second column */}
+            <div className="lg:col-span-2">
+              <h1 className="text-3xl font-bold mb-4">{funkoItem.title}</h1>
+              
+              {/* Error Message */}
+              {collectionError && (
+                <div className={`mb-4 p-3 rounded-lg ${
+                  isDarkMode ? "bg-red-900 text-red-200" : "bg-red-100 text-red-800"
+                }`}>
+                  <p className="text-sm">{collectionError}</p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-4 mb-6">
+                <button
+                  onClick={toggleWishlist}
+                  disabled={isUpdatingWishlist}
+                  className={`px-6 py-3 rounded-lg flex-1 font-semibold transition-all ${
+                    inWishlist
+                      ? "bg-red-600 text-white hover:bg-red-700"
+                      : isDarkMode
+                      ? "bg-gray-600 hover:bg-gray-500 text-white"
+                      : "bg-green-500 hover:bg-green-600 text-white"
+                  } ${isUpdatingWishlist ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  {isUpdatingWishlist ? "..." : (inWishlist ? t.removeFromWishlist : t.addToWishlist)}
+                </button>
+                <button
+                  onClick={toggleCollection}
+                  disabled={isUpdatingCollection}
+                  className={`px-6 py-3 rounded-lg flex-1 font-semibold transition-all ${
+                    inCollection
+                      ? "bg-green-600 text-white hover:bg-green-700"
+                      : isDarkMode
+                      ? "bg-gray-600 hover:bg-gray-500 text-white"
+                      : "bg-blue-500 hover:bg-blue-600 text-white"
+                  } ${isUpdatingCollection ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  {isUpdatingCollection ? "..." : (inCollection ? t.removeFromCollection : t.addToCollection)}
+                </button>
+              </div>
+
+              {/* Debug Info (only in development) */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className={`mb-4 p-3 rounded text-xs ${
+                  isDarkMode ? "bg-gray-600 text-gray-300" : "bg-gray-100 text-gray-600"
+                }`}>
+                  <p>Item ID: {funkoItem.id}</p>
+                  <p>Status: {inCollection ? "In Collection" : "Not in Collection"}</p>
+                  <p>User: {user ? user.login : "Not logged in"}</p>
+                </div>
+              )}
+
+              {/* Product Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h2 className="text-xl font-semibold mb-3 text-green-400">{t.details}</h2>
+                  <div className="space-y-3">
+                    <p><span className="font-medium">{t.number}:</span> <span className="text-lg font-bold">{funkoItem.number}</span></p>
+                    <p><span className="font-medium">{t.category}:</span> {funkoItem.category}</p>
+                    <p><span className="font-medium">{t.series}:</span> {funkoItem.series?.join(", ")}</p>
+                    {funkoItem.exclusive && (
+                      <span className="inline-block px-3 py-1 rounded-full text-sm bg-yellow-500 text-black font-semibold">
+                        ⭐ {t.exclusive}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold mb-3 text-green-400">{t.additionalInformation}</h2>
+                  <div className={`p-4 rounded-lg ${
+                    isDarkMode ? "bg-gray-600" : "bg-green-50 border border-green-100"
+                  }`}>
+                    <p className="text-sm">
+                      This collectible figure features detailed design and is part of the popular Funko Pop! vinyl collection.
+                      Perfect for display and adding to your growing collection.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
+        {/* AI Description Section */}
+        {(isGenerating || aiDescription) && (
+          <div className={`p-6 rounded-lg shadow-lg mb-8 ${
+            isDarkMode ? "bg-gray-700 border-l-4 border-green-400" : "bg-white border-l-4 border-green-500"
+          }`}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                isDarkMode ? "bg-green-400" : "bg-green-500"
+              }`}>
+                <span className="text-white font-bold text-sm">AI</span>
+              </div>
+              <h2 className="text-xl font-semibold">
+                {isGenerating ? "Generating Description..." : "AI-Powered Description"}
+              </h2>
+            </div>
+            
+            {isGenerating && (
+              <div className={`p-4 rounded-lg ${
+                isDarkMode ? "bg-gray-600" : "bg-blue-50 border border-blue-200"
+              }`}>
+                <div className="flex items-center gap-3">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                  <p className="text-blue-600 dark:text-blue-300">
+                    Crafting a detailed description for this collectible...
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {aiDescription && (
+              <div className={`p-4 rounded-lg ${
+                isDarkMode ? "bg-gray-600" : "bg-gray-50 border border-gray-200"
+              }`}>
+                <p className="text-lg leading-relaxed whitespace-pre-line">
+                  {aiDescription}
+                </p>
+                <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-500">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                    🤖 AI-generated description • Refresh page to regenerate
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Shopping Links Section */}
-        <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
-          <h2 className="text-xl font-semibold mb-4">Search on Shopping Sites</h2>
-          <div className="mb-4">
-            <p className="text-sm font-medium mb-2">Search in countries:</p>
+        <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white border border-gray-200"}`}>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <span>🛒</span>
+            {t.searchOnShoppingSites}
+          </h2>
+          
+          <div className="mb-6">
+            <p className="text-sm font-medium mb-3">{t.searchInCountries}</p>
             <div className="flex flex-wrap gap-2">
               {Object.entries(shoppingCountries).map(([code, country]) => (
                 <button
                   key={code}
                   onClick={() => handleCountryToggle(code)}
-                  className={`px-3 py-1 rounded text-sm ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     selectedCountries.includes(code)
-                      ? isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"
-                      : isDarkMode ? "bg-gray-600 text-gray-300" : "bg-gray-200 text-gray-700"
+                      ? isDarkMode 
+                        ? "bg-yellow-500 text-black shadow-lg" 
+                        : "bg-green-600 text-white shadow-lg"
+                      : isDarkMode 
+                      ? "bg-gray-600 text-gray-300 hover:bg-gray-500" 
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                   }`}
                 >
                   {country.flag} {country.name}
@@ -1239,13 +1398,15 @@ const FunkoDetails: React.FC = () => {
 
           {scrapingResults.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-3">Current Prices</h3>
+              <h3 className="text-lg font-semibold mb-3">💰 {t.currentPrices}</h3>
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {scrapingResults.map((result, index) => (
                   <div
                     key={index}
-                    className={`p-4 rounded border-l-4 ${
-                      isDarkMode ? "border-green-400 bg-gray-600" : "border-green-600 bg-green-50"
+                    className={`p-4 rounded-lg border-l-4 ${
+                      isDarkMode 
+                        ? "border-green-400 bg-gray-600" 
+                        : "border-green-500 bg-green-50 shadow-sm"
                     }`}
                   >
                     <div className="flex justify-between items-start mb-2">
@@ -1262,7 +1423,7 @@ const FunkoDetails: React.FC = () => {
                       </div>
                     </div>
                     <p className="text-xs text-gray-400 mt-2">
-                      Updated: {result.date}
+                      {t.updated}: {result.date}
                     </p>
                   </div>
                 ))}
@@ -1270,7 +1431,7 @@ const FunkoDetails: React.FC = () => {
             </div>
           )}
 
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {selectedCountries.flatMap(countryCode => {
               const countryShops = shops[countryCode];
               if (!countryShops) return [];
@@ -1280,41 +1441,45 @@ const FunkoDetails: React.FC = () => {
                 return (
                   <div
                     key={`${countryCode}-${index}`}
-                    className={`p-4 rounded border-l-4 transition-all ${
-                      isDarkMode ? "border-gray-500 bg-gray-600" : "border-gray-400 bg-gray-100"
+                    className={`p-4 rounded-lg border-l-4 transition-all ${
+                      isDarkMode 
+                        ? "border-gray-500 bg-gray-600 hover:bg-gray-500" 
+                        : "border-gray-300 bg-gray-50 hover:bg-white shadow-sm hover:shadow-md"
                     }`}
                   >
-                    <div className="flex justify-between items-start mb-2">
+                    <div className="flex justify-between items-start mb-3">
                       <div>
                         <h3 className="font-semibold flex items-center gap-2">
                           {shop.name}
                         </h3>
-                        <p className="text-xs text-gray-500 flex items-center gap-1">
+                        <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
                           {shoppingCountries[countryCode as keyof typeof shoppingCountries].flag} 
                           {shoppingCountries[countryCode as keyof typeof shoppingCountries].name}
                         </p>
                       </div>
                       <div className="text-right">
-                        <span className="text-xs px-2 py-1 rounded bg-gray-500 text-white">
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          isDarkMode ? "bg-gray-500 text-white" : "bg-gray-200 text-gray-700"
+                        }`}>
                           {shop.currency}
                         </span>
                       </div>
                     </div>
                     <div className="flex justify-between items-center mt-4">
                       <p className="text-xs text-gray-400">
-                        Direct search link
+                        {t.directSearchLink}
                       </p>
                       <a
                         href={searchUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`px-3 py-1 text-sm rounded transition-all ${
+                        className={`px-4 py-2 text-sm rounded-lg font-medium transition-all ${
                           isDarkMode 
-                            ? "bg-yellow-500 text-black hover:bg-yellow-400" 
-                            : "bg-green-600 text-white hover:bg-green-700"
+                            ? "bg-yellow-500 text-black hover:bg-yellow-400 shadow" 
+                            : "bg-green-600 text-white hover:bg-green-700 shadow hover:shadow-lg"
                         }`}
                       >
-                        Search on {shop.name}
+                        🔍 Search
                       </a>
                     </div>
                   </div>
@@ -1325,45 +1490,58 @@ const FunkoDetails: React.FC = () => {
 
           {selectedCountries.length === 0 && (
             <div className="text-center py-8 text-gray-500">
-              <p>Select countries to see shopping links</p>
+              <p>{t.selectCountriesToSeeLinks}</p>
             </div>
           )}
         </div>
 
-        {/* Related items */}
-        <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
-          <h2 className="text-xl font-semibold mb-4">{t.relatedItems || "Related Items"}</h2>
+        {/* Related items section */}
+        <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white border border-gray-200"}`}>
+          <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+            <span>🎯</span>
+            {t.relatedItems || "Related Items"}
+          </h2>
           {relatedItems.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {relatedItems.map((item) => (
                 <Link
                   key={item.id}
                   to={`/funko/${item.id}`}
-                  className="block rounded-lg p-3 border dark:border-gray-600 hover:shadow-lg transition"
+                  className={`block rounded-lg p-3 transition-all ${
+                    isDarkMode 
+                      ? "border border-gray-600 hover:border-green-400 hover:shadow-lg" 
+                      : "border border-gray-200 hover:border-green-300 hover:shadow-lg"
+                  }`}
                 >
                   {item.imageName ? (
                     <img
                       src={item.imageName}
                       alt={item.title}
-                      className="w-full h-32 object-contain mb-2"
+                      className={`w-full h-32 object-contain mb-2 rounded ${
+                        isDarkMode ? "bg-gray-600" : "bg-gray-100"
+                      }`}
                     />
                   ) : (
-                    <div className="w-full h-32 bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                    <div className={`w-full h-32 rounded flex items-center justify-center ${
+                      isDarkMode ? "bg-gray-600" : "bg-gray-100"
+                    }`}>
                       {t.noImageAvailable}
                     </div>
                   )}
-                  <h3 className="text-sm font-medium">{item.title}</h3>
-                  <p className="text-xs text-gray-500">{item.number}</p>
+                  <h3 className="text-sm font-medium line-clamp-2">{item.title}</h3>
+                  <p className="text-xs text-gray-500">#{item.number}</p>
                 </Link>
               ))}
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-500">{t.noRelatedItems || "No related items found."}</p>
+              <p className="text-gray-500 mb-4">{t.noRelatedItems || "No related items found."}</p>
               <Link 
                 to="/searchsite" 
-                className={`mt-4 inline-block px-4 py-2 rounded ${
-                  isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"
+                className={`px-6 py-2 rounded-lg font-medium transition-all ${
+                  isDarkMode 
+                    ? "bg-yellow-500 text-black hover:bg-yellow-400" 
+                    : "bg-green-600 text-white hover:bg-green-700"
                 }`}
               >
                 Browse All Items
@@ -1373,10 +1551,10 @@ const FunkoDetails: React.FC = () => {
         </div>
       </main>
 
-      {/* 📝 Footer */}
+      {/* Footer */}
       <footer
-        className={`text-center py-4 ${
-          isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-300 text-gray-700"
+        className={`text-center py-6 ${
+          isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-800 text-gray-300"
         }`}
       >
         {t.copyright}

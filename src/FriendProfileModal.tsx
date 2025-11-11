@@ -218,7 +218,7 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
 
   const renderProfileTab = () => (
     <div className="space-y-6">
-      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow`}>
+      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-900" : "bg-white"} shadow`}>
         <h3 className="text-xl font-semibold mb-4">{t.basicInfo || "Basic Info"}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -472,7 +472,7 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
           </button>
         </div>
 
-        <div className={`px-4 pt-4 sticky top-14 z-10 ${isDarkMode ? "bg-gray-800" : "bg-gray-100"}`}>
+        <div className={`px-4 pt-4 sticky top-14 z-10 ${isDarkMode ? "bg-slate-800" : "bg-white"}`}>
           <div className="flex space-x-1">
             {[
               { key: "profile", icon: "👤", label: t.profile || "Profile" },

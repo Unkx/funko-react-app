@@ -1,7 +1,7 @@
 // src/pages/MostVisitedSite.tsx
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate} from "react-router-dom";
-import { translations } from "./Translations/TranslationsWelcomeSite";
+import { translations } from "./Translations/TranslationsMostVisitedSite";
 import "./WelcomeSite.css";
 import MoonIcon from "/src/assets/moon.svg?react";
 import SunIcon from "/src/assets/sun.svg?react";
@@ -181,11 +181,12 @@ const MostVisitedSite: React.FC = () => {
     });
   }, [mostVisitedItems, sortBy]);
 
+  // Get translated popularity badges
   const getPopularityBadge = (visits: number) => {
-    if (visits >= 20) return { text: "🔥 Very Popular", color: "bg-red-500" };
-    if (visits >= 10) return { text: "⭐ Popular", color: "bg-orange-500" };
-    if (visits >= 5) return { text: "📈 Trending", color: "bg-blue-500" };
-    return { text: "👀 Getting views", color: "bg-green-500" };
+    if (visits >= 20) return { text: t.veryPopular || "🔥 Very Popular", color: "bg-red-500" };
+    if (visits >= 10) return { text: t.popular || "⭐ Popular", color: "bg-orange-500" };
+    if (visits >= 5) return { text: t.trending || "📈 Trending", color: "bg-blue-500" };
+    return { text: t.gettingViews || "👀 Getting views", color: "bg-green-500" };
   };
 
   // Track item clicks on this page too
@@ -338,7 +339,7 @@ const MostVisitedSite: React.FC = () => {
                 ? "bg-gray-700 hover:bg-gray-600"
                 : "bg-gray-200 hover:bg-gray-600"
             }`}
-            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+            aria-label={isDarkMode ? t.switchToLight || "Switch to light mode" : t.switchToDark || "Switch to dark mode"}
           >
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
@@ -366,7 +367,7 @@ const MostVisitedSite: React.FC = () => {
           <p className="text-lg opacity-80">
             {mostVisitedItems.length === 0 
               ? t.noVisitsYet || "No items have been visited yet. Start browsing!"
-              : `Discover the ${mostVisitedItems.length} most popular Funko Pops in the community`
+              : t.discoverPopularItems?.replace("{count}", mostVisitedItems.length.toString()) || `Discover the ${mostVisitedItems.length} most popular Funko Pops in the community`
             }
           </p>
         </div>
@@ -409,11 +410,10 @@ const MostVisitedSite: React.FC = () => {
               >
                 <option value="visits">{t.mostVisited || "Most Visited"}</option>
                 <option value="title">{t.title || "Title"}</option>
-                <option value="category">{t.category || "Category"}</option>
               </select>
             </div>
             <div className="text-sm opacity-75">
-              {t.showing || "Showing"} {mostVisitedItems.length} {t.items || "items"}
+              {t.showing?.replace("{count}", mostVisitedItems.length.toString()) || `Showing ${mostVisitedItems.length} items`}
             </div>
           </div>
         )}
@@ -512,7 +512,7 @@ const MostVisitedSite: React.FC = () => {
                   : "bg-gray-200 hover:bg-gray-300"
               }`}
             >
-              {t.browseAllItems || "Browse All Items"} ({allItems.length})
+              {t.browseAllItems?.replace("{count}", allItems.length.toString()) || `Browse All Items (${allItems.length})`}
             </Link>
           </div>
         )}

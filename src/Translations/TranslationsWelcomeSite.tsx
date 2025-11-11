@@ -14,6 +14,12 @@ export const translations = {
     goToCategories:"Go To Catergories",
     goToMostVisited: "Go To Most Visited Items",
     goToDashboard: "Dashboard",
+    TargetCondition: "Target Condition",
+    Remove: "Remove",
+    Edit: "Edit",
+    Save: "Save",
+    Added: "Added",
+    AddToCollection: "Add to Collection",
 
     //chat commands 
     chatGreeting: "Hi there! 😊 I'm PopBot! Ask me to search for Pops, show categories, or find popular items!",
@@ -50,6 +56,12 @@ export const translations = {
     goToCategories: "Przejdź do kategorii",
     goToMostVisited: "Przejdź do najczęściej odwiedzanych elementów",
     goToDashboard: "Panel sterowania",
+    TargetCondition: "Warunek docelowy",
+    Remove: "Usuń",
+    Edit: "Edytuj",
+    Save: "Zapisz",
+    Added: "Dodano",
+    AddToCollection: "Dodaj do kolekcji",
 
     //chat commands
     chatGreeting: "Cześć! 😊 Jestem PopBot! Poproś mnie o wyszukanie Popów, pokazanie kategorii lub znalezienie popularnych przedmiotów!",
@@ -86,6 +98,12 @@ export const translations = {
     goToCategories: "Перейти к категориям",
     goToMostVisited: "Перейти к наиболее посещаемым элементам",
     goToDashboard: "Панель управления",
+    TargetCondition: "Условие цели",
+    Remove: "Удалить",
+    Edit: "Редактировать",
+    Save: "Сохранить",
+    Added: "Добавлено",
+    AddToCollection: "Добавить в коллекцию",
 
     //chat commands
     chatGreeting: "Привет! 😊 Я PopBot! Попросите меня найти Попов, показать категории или найти популярные предметы!" ,
@@ -121,6 +139,12 @@ export const translations = {
     goToCategories: "Ir a categorías",
     goToMostVisited: "Ir a los elementos más visitados",
     goToDashboard: "Panel de control",
+    TargetCondition: "Condición objetivo",
+    Remove: "Eliminar",
+    Edit: "Editar",
+    Save: "Guardar",
+    Added: "Añadido",
+    AddToCollection: "Agregar a la colección",
 
     //chat commands
     chatGreeting: "¡Hola! 😊 ¡Soy PopBot! ¡Pídeme que busque Pops, muestre categorías o encuentre artículos populares!",
@@ -156,6 +180,12 @@ export const translations = {
     goToCategories : "Aller aux catégories ",
     goToMostVisited : "Aller aux ",
     goToDashboard: "Tableau de bord",
+    TargetCondition: "Condition cible",
+    Remove: "Supprimer",
+    Edit: "Éditer",
+    Save: "Enregistrer",
+    Added: "Ajouté",
+    AddToCollection: "Ajouter à la collection",
 
     //chat commands
     chatGreeting: "Salut! 😊 Je suis PopBot! Demandez-moi de rechercher des Pops, d'afficher des catégories ou de trouver des articles populaires!",
@@ -191,6 +221,12 @@ export const translations = {
     goToCategories: "Zu den Kategorien",
     goToMostVisited: "Zu den meistbesuchten Artikeln",
     goToDashboard: "Dashboard",
+    TargetCondition: "Zielbedingung",
+    Remove: "Entfernen",
+    Edit: "Bearbeiten",
+    Save: "Speichern",
+    Added: "Hinzugefügt",
+    AddToCollection: "Zur Sammlung hinzufügen",
 
     //chat commands
     chatGreeting: "Hallo! 😊 Ich bin PopBot! Bitte mich, Pops zu suchen, Kategorien anzuzeigen oder beliebte Artikel zu finden!" ,

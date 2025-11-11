@@ -635,7 +635,7 @@ const mostVisitedItems = useMemo(() => {
         <form
           onSubmit={handleSearch}
           className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden ${
-            isDarkMode ? "bg-gray-700" : "bg-gray-100"
+            isDarkMode ? "bg-gray-700" : "bg-white-600"
           }`}
         >
           <input
@@ -751,11 +751,11 @@ const mostVisitedItems = useMemo(() => {
       {/* 🧭 Main Content */}
       <main className="flex-grow p-4 sm:p-8 flex flex-col items-center">
         {/* 📍 Current language & region */}
-        <div className={`mb-6 text-center ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
+        {/* <div className={`mb-6 text-center ${isDarkMode ? "text-gray-300" : "text-gray-600"}`}>
           <p className="text-sm">
             {languageNames[t.language] || "Unknown"} • {region}
           </p>
-        </div>
+        </div> */}
 
         {/* 🎲 Random Items */}
         <section className="w-full max-w-4xl mt-10 mb-10">

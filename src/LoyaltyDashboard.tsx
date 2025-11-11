@@ -4,6 +4,7 @@ import StarIcon from "./assets/star.svg?react";
 import TrophyIcon from "./assets/trophy.svg?react";
 import FireIcon from "./assets/fire.svg?react";
 import GiftIcon from "./assets/gift.svg?react";
+import { translations } from "./Translations/TranslationsLoyaltyDashboard";
 
 // =============== INTERFACES ===============
 
@@ -48,8 +49,8 @@ interface AvailableRewards {
   titles: RewardItem[];
   themes: RewardItem[];
   badges: RewardItem[];
-  avatars: RewardItem[];       // 👈 NEW
-  backgrounds: RewardItem[];   // 👈 NEW
+  avatars: RewardItem[];
+  backgrounds: RewardItem[];
 }
 
 interface LoyaltyData {
@@ -66,8 +67,8 @@ interface LoyaltyData {
     activeTitle: string;
     activeTheme: string;
     activeBadge: string | null;
-    activeAvatar: string | null;       // 👈 NEW
-    activeBackground: string | null;   // 👈 NEW
+    activeAvatar: string | null;
+    activeBackground: string | null;
   };
   achievements: Achievement[];
   progress: {
@@ -94,6 +95,18 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
   const [activeTab, setActiveTab] = useState<"overview" | "achievements" | "rewards">("overview");
   const [availableRewards, setAvailableRewards] = useState<AvailableRewards | null>(null);
   const [showNewAchievement, setShowNewAchievement] = useState<Achievement | null>(null);
+  
+  // Language state
+  const [language, setLanguage] = useState(() => {
+    return localStorage.getItem('preferredLanguage') || 'EN';
+  });
+
+  const t = translations[language] || translations['EN'];
+
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('preferredLanguage') || 'EN';
+    setLanguage(savedLanguage);
+  }, []);
 
   useEffect(() => {
     fetchLoyaltyData();
@@ -142,8 +155,8 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
           titles: data.titles || [],
           themes: data.themes || [],
           badges: data.badges || [],
-          avatars: data.avatars || [],         // 👈 NEW
-          backgrounds: data.backgrounds || [], // 👈 NEW
+          avatars: data.avatars || [],
+          backgrounds: data.backgrounds || [],
         });
       }
     } catch (err) {
@@ -182,14 +195,14 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
       });
 
       if (response.ok) {
-        alert("Reward activated!");
+        alert(t.rewardActivated);
         fetchLoyaltyData();
       } else {
-        alert("Failed to activate reward.");
+        alert(t.failedToActivate);
       }
     } catch (err) {
       console.error("Error activating reward:", err);
-      alert("An error occurred.");
+      alert(t.errorOccurred);
     }
   };
 
@@ -239,7 +252,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
         <div className={`p-8 rounded-lg ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto"></div>
-          <p className="mt-4">Loading your rewards...</p>
+          <p className="mt-4">{t.loadingRewards}</p>
         </div>
       </div>
     );
@@ -257,7 +270,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
           <div className="flex justify-between items-center">
             <h2 className="text-3xl font-bold flex items-center gap-2">
               <TrophyIcon className="w-8 h-8 text-yellow-500" />
-              Loyalty Rewards
+              {t.loyaltyRewards}
             </h2>
             <button
               onClick={onClose}
@@ -273,19 +286,19 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
               onClick={() => setActiveTab("overview")}
               className={`px-4 py-2 rounded ${activeTab === "overview" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "bg-gray-700" : "bg-gray-200")}`}
             >
-              Overview
+              {t.overview}
             </button>
             <button
               onClick={() => setActiveTab("achievements")}
               className={`px-4 py-2 rounded ${activeTab === "achievements" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "bg-gray-700" : "bg-gray-200")}`}
             >
-              Achievements
+              {t.achievements}
             </button>
             <button
               onClick={() => setActiveTab("rewards")}
               className={`px-4 py-2 rounded ${activeTab === "rewards" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "bg-gray-700" : "bg-gray-200")}`}
             >
-              Rewards
+              {t.rewards}
             </button>
           </div>
         </div>
@@ -307,22 +320,22 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                     <div>
                       <div className="text-6xl mb-2">{loyaltyData.user.badgeEmoji}</div>
                       <h3 className="text-2xl font-bold">{loyaltyData.user.levelName}</h3>
-                      <p className="text-sm opacity-75">Level {loyaltyData.user.level}</p>
+                      <p className="text-sm opacity-75">{t.level} {loyaltyData.user.level}</p>
                     </div>
                     <div className="text-right">
                       <div className="text-4xl font-bold text-yellow-500">
                         {loyaltyData.user.loyaltyPoints}
                       </div>
-                      <p className="text-sm opacity-75">Loyalty Points</p>
+                      <p className="text-sm opacity-75">{t.loyaltyPoints}</p>
                     </div>
                   </div>
 
                   {/* Progress Bar */}
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span>Progress to Level {loyaltyData.user.level + 1}</span>
+                      <span>{t.progressToLevel.replace('{level}', (loyaltyData.user.level + 1).toString())}</span>
                       {loyaltyData.user.nextLevelPoints && (
-                        <span>{loyaltyData.user.nextLevelPoints} points needed</span>
+                        <span>{t.pointsNeeded.replace('{points}', loyaltyData.user.nextLevelPoints.toString())}</span>
                       )}
                     </div>
                     <div className="w-full bg-gray-300 rounded-full h-3">
@@ -338,27 +351,27 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                 <div className={`p-6 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
                   <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
                     <FireIcon className="w-6 h-6 text-orange-500" />
-                    Login Streak
+                    {t.loginStreak}
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center">
                       <div className="text-4xl font-bold text-orange-500">
                         {loyaltyData.user.currentStreak}
                       </div>
-                      <p className="text-sm opacity-75">Current Streak</p>
+                      <p className="text-sm opacity-75">{t.currentStreak}</p>
                     </div>
                     <div className="text-center">
                       <div className="text-4xl font-bold text-yellow-500">
                         {loyaltyData.user.longestStreak}
                       </div>
-                      <p className="text-sm opacity-75">Longest Streak</p>
+                      <p className="text-sm opacity-75">{t.longestStreak}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Recent Activity */}
                 <div className={`p-6 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
-                  <h3 className="text-xl font-semibold mb-4">Recent Activity</h3>
+                  <h3 className="text-xl font-semibold mb-4">{t.recentActivity}</h3>
                   <div className="space-y-2">
                     {loyaltyData.pointsHistory.slice(0, 5).map((item, idx) => (
                       <div
@@ -389,9 +402,11 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                 exit={{ opacity: 0, y: -20 }}
               >
                 <div className="mb-6">
-                  <h3 className="text-2xl font-bold mb-2">Trophy Case</h3>
+                  <h3 className="text-2xl font-bold mb-2">{t.trophyCase}</h3>
                   <p className="opacity-75">
-                    {loyaltyData.achievements.filter(a => a.unlocked).length} / {loyaltyData.achievements.length} Unlocked
+                    {t.unlockedCount
+                      .replace('{unlocked}', loyaltyData.achievements.filter(a => a.unlocked).length.toString())
+                      .replace('{total}', loyaltyData.achievements.length.toString())}
                   </p>
                 </div>
 
@@ -423,14 +438,14 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                               />
                             </div>
                             <p className="text-xs text-center mt-1 opacity-75">
-                              {Math.round(progress)}% Complete
+                              {t.complete.replace('{percent}', Math.round(progress).toString())}
                             </p>
                           </div>
                         )}
 
                         <div className="mt-2 text-center">
                           <span className="text-xs text-yellow-500 font-bold">
-                            {achievement.points_reward} pts
+                            {achievement.points_reward} {t.loyaltyPoints.toLowerCase()}
                           </span>
                         </div>
                       </div>
@@ -450,7 +465,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
               >
                 {/* Profile Frames */}
                 <div>
-                  <h3 className="text-2xl font-bold mb-4">Profile Badges</h3>
+                  <h3 className="text-2xl font-bold mb-4">{t.profileBadges}</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     {availableRewards.badges.map((badge) => (
                       <div
@@ -478,10 +493,10 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                                 : "bg-blue-500"
                             } text-white`}
                           >
-                            {loyaltyData.user.profileBadge === badge.id ? "Active" : "Activate"}
+                            {loyaltyData.user.profileBadge === badge.id ? t.active : t.activate}
                           </button>
                         ) : (
-                          <p className="text-xs opacity-75 mt-2">Level {badge.reqLevel}</p>
+                          <p className="text-xs opacity-75 mt-2">{t.requiresLevel.replace('{level}', badge.reqLevel.toString())}</p>
                         )}
                       </div>
                     ))}
@@ -490,7 +505,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
 
                 {/* Titles */}
                 <div>
-                  <h3 className="text-2xl font-bold mb-4">Titles</h3>
+                  <h3 className="text-2xl font-bold mb-4">{t.titles}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {availableRewards.titles.map((title) => (
                       <div
@@ -500,7 +515,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                         <div>
                           <p className="font-bold">{title.text}</p>
                           {!title.unlocked && (
-                            <p className="text-xs opacity-75">Requires Level {title.reqLevel}</p>
+                            <p className="text-xs opacity-75">{t.requiresLevel.replace('{level}', title.reqLevel.toString())}</p>
                           )}
                         </div>
                         {title.unlocked && (
@@ -514,7 +529,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                                 : "bg-blue-500"
                             } text-white`}
                           >
-                            {loyaltyData.user.activeTitle === title.id ? "Active" : "Activate"}
+                            {loyaltyData.user.activeTitle === title.id ? t.active : t.activate}
                           </button>
                         )}
                       </div>
@@ -524,7 +539,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
 
                 {/* Color Themes */}
                 <div>
-                  <h3 className="text-2xl font-bold mb-4">Color Themes</h3>
+                  <h3 className="text-2xl font-bold mb-4">{t.colorThemes}</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     {availableRewards.themes.map((theme) => (
                       <div
@@ -552,11 +567,13 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                                 : "bg-blue-500"
                             } text-white`}
                           >
-                            {loyaltyData.user.activeTheme === theme.id ? "Active" : "Activate"}
+                            {loyaltyData.user.activeTheme === theme.id ? t.active : t.activate}
                           </button>
                         ) : (
                           <p className="text-xs opacity-75 mt-2">
-                            Level {theme.reqLevel} • {theme.reqPoints} pts
+                            {t.requiresPoints
+                              .replace('{level}', theme.reqLevel.toString())
+                              .replace('{points}', (theme.reqPoints || 0).toString())}
                           </p>
                         )}
                       </div>
@@ -567,7 +584,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                 {/* Special Badges */}
                 {availableRewards.badges.length > 0 && (
                   <div>
-                    <h3 className="text-2xl font-bold mb-4">Special Badges</h3>
+                    <h3 className="text-2xl font-bold mb-4">{t.specialBadges}</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                       {availableRewards.badges.map((badge) => (
                         <div
@@ -595,11 +612,13 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                                   : "bg-blue-500"
                               } text-white`}
                             >
-                              {loyaltyData.user.activeBadge === badge.id ? "Active" : "Equip"}
+                              {loyaltyData.user.activeBadge === badge.id ? t.active : t.equip}
                             </button>
                           ) : (
                             <p className="text-xs opacity-75 mt-2">
-                              Level {badge.reqLevel} • {badge.reqPoints} pts
+                              {t.requiresPoints
+                                .replace('{level}', badge.reqLevel.toString())
+                                .replace('{points}', (badge.reqPoints || 0).toString())}
                             </p>
                           )}
                         </div>
@@ -611,7 +630,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                 {/* Avatars */}
                 {availableRewards.avatars.length > 0 && (
                   <div>
-                    <h3 className="text-2xl font-bold mb-4">Avatars</h3>
+                    <h3 className="text-2xl font-bold mb-4">{t.avatars}</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                       {availableRewards.avatars.map((avatar) => (
                         <div
@@ -635,11 +654,13 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                                   : "bg-blue-500"
                               } text-white`}
                             >
-                              {loyaltyData.user.activeAvatar === avatar.id ? "Active" : "Use"}
+                              {loyaltyData.user.activeAvatar === avatar.id ? t.active : t.use}
                             </button>
                           ) : (
                             <p className="text-xs opacity-75 mt-2">
-                              Level {avatar.reqLevel} • {avatar.reqPoints} pts
+                              {t.requiresPoints
+                                .replace('{level}', avatar.reqLevel.toString())
+                                .replace('{points}', (avatar.reqPoints || 0).toString())}
                             </p>
                           )}
                         </div>
@@ -651,7 +672,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                 {/* Profile Backgrounds */}
                 {availableRewards.backgrounds.length > 0 && (
                   <div>
-                    <h3 className="text-2xl font-bold mb-4">Profile Backgrounds</h3>
+                    <h3 className="text-2xl font-bold mb-4">{t.profileBackgrounds}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {availableRewards.backgrounds.map((bg) => (
                         <div
@@ -677,11 +698,13 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                                   : "bg-blue-500"
                               } text-white`}
                             >
-                              {loyaltyData.user.activeBackground === bg.id ? "Active" : "Apply"}
+                              {loyaltyData.user.activeBackground === bg.id ? t.active : t.apply}
                             </button>
                           ) : (
                             <p className="text-xs opacity-75 mt-2 text-center">
-                              Level {bg.reqLevel} • {bg.reqPoints} pts
+                              {t.requiresPoints
+                                .replace('{level}', bg.reqLevel.toString())
+                                .replace('{points}', (bg.reqPoints || 0).toString())}
                             </p>
                           )}
                         </div>
@@ -716,19 +739,19 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                 {showNewAchievement.emoji}
               </motion.div>
               <h2 className="text-3xl font-bold text-white mb-2">
-                Achievement Unlocked!
+                {t.achievementUnlocked}
               </h2>
               <p className="text-xl text-white/90 mb-4">
                 {showNewAchievement.name}
               </p>
               <p className="text-white/75 mb-6">
-                +{showNewAchievement.points_reward} Loyalty Points
+                {t.pointsReward.replace('{points}', showNewAchievement.points_reward.toString())}
               </p>
               <button
                 onClick={() => markAchievementSeen(showNewAchievement.achievement_id)}
                 className="px-6 py-2 bg-white text-orange-500 rounded-full font-bold hover:bg-gray-100"
               >
-                Awesome!
+                {t.awesome}
               </button>
             </div>
           </motion.div>

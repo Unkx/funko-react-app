@@ -815,10 +815,15 @@ useEffect(() => {
   const toggleCountryDropdown = () => setShowCountryDropdown((prev) => !prev);
   const toggleLanguageDropdown = () => setShowLanguageDropdown((prev) => !prev);
 
-  const selectLanguage = (langCode: string) => {
-    setLanguage(langCode);
-    localStorage.setItem("preferredLanguage", langCode);
+  const selectLanguage = (lang: string) => {
+    setLanguage(lang);
+    localStorage.setItem("preferredLanguage", lang);
     setShowLanguageDropdown(false);
+    
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new CustomEvent('languageChanged', { 
+      detail: { language: lang } 
+    }));
   };
 
   const handleLogout = () => {
@@ -1550,7 +1555,7 @@ useEffect(() => {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-100 text-black"}`}>
+    <div className={`min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-gray-300 text-black"}`}>
       {/* 🔝 Header */}
       <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
         <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
@@ -1585,7 +1590,7 @@ useEffect(() => {
             className={`flex-grow px-4 py-2 outline-none ${
               isDarkMode
                 ? "bg-gray-700 text-white placeholder-gray-400"
-                : "bg-white text-black placeholder-gray-500"
+                : "bg-gray-300 text-black placeholder-gray-500"
             }`}
             aria-label="Search for Funko Pops"
           />

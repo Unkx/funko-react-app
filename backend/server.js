@@ -758,7 +758,65 @@ app.get('/api/collection/check/:funkoId', authenticateToken, async (req, res) =>
     res.status(500).json({ error: "Database error" });
   }
 });
+// ✅ Add item to user's collection
+app.post('/api/collection', authenticateToken, async (req, res) => {
+  const { funkoId, title, number, imageName } = req.body;
+  const userId = req.user.id;
 
+  if (!funkoId) {
+    return res.status(400).json({ error: "Funko ID is required" });
+  }
+
+  try {
+    // Ensure the Funko item exists in funko_items table
+    await pool.query(
+      `INSERT INTO funko_items (id, title, number, image_name)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (id) DO UPDATE SET
+         title = EXCLUDED.title,
+         number = EXCLUDED.number,
+         image_name = EXCLUDED.image_name`,
+      [funkoId, title || null, number || null, imageName || null]
+    );
+
+    // Add to user's collection (with upsert to avoid duplicates)
+    const result = await pool.query(
+      `INSERT INTO collection (user_id, funko_id)
+       VALUES ($1, $2)
+       ON CONFLICT (user_id, funko_id) DO NOTHING
+       RETURNING *`,
+      [userId, funkoId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(200).json({ message: "Already in collection" });
+    }
+
+    // ✅ Award loyalty points
+    await pool.query(
+      `INSERT INTO loyalty_points_history (user_id, points_change, reason, action_type)
+       VALUES ($1, $2, $3, $4)`,
+      [userId, LOYALTY_POINTS.collection_add, 'Added item to collection', 'collection_add']
+    );
+    await pool.query(
+      'UPDATE users SET loyalty_points = loyalty_points + $1 WHERE id = $2',
+      [LOYALTY_POINTS.collection_add, userId]
+    );
+
+    // ✅ Check achievements
+    const unlockedAchievements = await checkAndUnlockAchievements(userId);
+
+    res.status(201).json({
+      message: "Added to collection",
+      funkoId,
+      pointsAwarded: LOYALTY_POINTS.collection_add,
+      newAchievements: unlockedAchievements
+    });
+  } catch (err) {
+    console.error("Error adding to collection:", err);
+    res.status(500).json({ error: "Failed to add to collection" });
+  }
+});
 app.post('/api/collection/share', authenticateToken, async (req, res) => {
   const { is_public } = req.body;
   const userId = req.user.id;

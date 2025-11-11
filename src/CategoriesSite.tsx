@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { translations } from "./Translations/TranslationsWelcomeSite";
+import { translations } from "./Translations/TranslationsCategoriesSite";
 import "./WelcomeSite.css";
 import { FunkoItems } from "./FunkoItems";
 
@@ -31,80 +31,6 @@ interface FunkoItem {
   imageName: string;
 }
 
-// Predefined Funko categories with descriptions and sample items
-const FUNKO_CATEGORIES = [
-  {
-    id: "tv",
-    name: "Funko TV",
-    description: "Characters from your favorite TV shows",
-    icon: "📺",
-    sampleItems: ["Friends", "The Office", "Stranger Things", "Game of Thrones"]
-  },
-  {
-    id: "movies",
-    name: "Funko Movies", 
-    description: "Iconic characters from blockbuster films",
-    icon: "🎬",
-    sampleItems: ["Star Wars", "Harry Potter", "Marvel", "DC Comics"]
-  },
-  {
-    id: "wwe",
-    name: "Funko WWE",
-    description: "Wrestling superstars and legends",
-    icon: "💪",
-    sampleItems: ["John Cena", "The Rock", "Stone Cold", "Undertaker"]
-  },
-  {
-    id: "games",
-    name: "Funko Games",
-    description: "Characters from video games",
-    icon: "🎮",
-    sampleItems: ["Fortnite", "Overwatch", "Halo", "Pokémon"]
-  },
-  {
-    id: "anime",
-    name: "Funko Anime",
-    description: "Beloved anime and manga characters",
-    icon: "🇯🇵",
-    sampleItems: ["Dragon Ball Z", "Naruto", "One Piece", "My Hero Academia"]
-  },
-  {
-    id: "music",
-    name: "Funko Music",
-    description: "Music icons and bands",
-    icon: "🎵",
-    sampleItems: ["The Beatles", "Michael Jackson", "Queen", "KISS"]
-  },
-  {
-    id: "sports",
-    name: "Funko Sports",
-    description: "Sports legends and teams",
-    icon: "⚽",
-    sampleItems: ["NBA Stars", "NFL Legends", "Soccer Icons", "Baseball Heroes"]
-  },
-  {
-    id: "comics",
-    name: "Funko Comics",
-    description: "Superheroes and comic book characters",
-    icon: "💥",
-    sampleItems: ["Spider-Man", "Batman", "Superman", "X-Men"]
-  },
-  {
-    id: "disney",
-    name: "Funko Disney",
-    description: "Disney classics and new favorites",
-    icon: "🏰",
-    sampleItems: ["Mickey Mouse", "Frozen", "Toy Story", "Marvel"]
-  },
-  {
-    id: "holiday",
-    name: "Funko Holiday",
-    description: "Seasonal and holiday specials",
-    icon: "🎄",
-    sampleItems: ["Christmas", "Halloween", "Easter", "Valentine's Day"]
-  }
-];
-
 // 📚 Language display names
 const languageNames = {
   EN: "English",
@@ -134,6 +60,80 @@ const CategoriesSite: React.FC = () => {
 
   const navigate = useNavigate();
   const t = translations[language] || translations["EN"];
+
+  // Predefined Funko categories with descriptions and sample items - MOVED INSIDE COMPONENT
+  const FUNKO_CATEGORIES = [
+    {
+      id: "tv",
+      name: t.funkoTV || "Funko TV",
+      description: t.tvDescription || "Characters from your favorite TV shows",
+      icon: "📺",
+      sampleItems: ["Friends", "The Office", "Stranger Things", "Game of Thrones"]
+    },
+    {
+      id: "movies",
+      name: t.funkoMovies || "Funko Movies", 
+      description: t.moviesDescription || "Iconic characters from blockbuster films",
+      icon: "🎬",
+      sampleItems: ["Star Wars", "Harry Potter", "Marvel", "DC Comics"]
+    },
+    {
+      id: "wwe",
+      name: t.funkoWWE || "Funko WWE",
+      description: t.wweDescription || "Wrestling superstars and legends",
+      icon: "💪",
+      sampleItems: ["John Cena", "The Rock", "Stone Cold", "Undertaker"]
+    },
+    {
+      id: "games",
+      name: t.funkoGames || "Funko Games",
+      description: t.gamesDescription || "Characters from video games",
+      icon: "🎮",
+      sampleItems: ["Fortnite", "Overwatch", "Halo", "Pokémon"]
+    },
+    {
+      id: "anime",
+      name: t.funkoAnime || "Funko Anime",
+      description: t.animeDescription || "Beloved anime and manga characters",
+      icon: "🇯🇵",
+      sampleItems: ["Dragon Ball Z", "Naruto", "One Piece", "My Hero Academia"]
+    },
+    {
+      id: "music",
+      name: t.funkoMusic || "Funko Music",
+      description: t.musicDescription || "Music icons and bands",
+      icon: "🎵",
+      sampleItems: ["The Beatles", "Michael Jackson", "Queen", "KISS"]
+    },
+    {
+      id: "sports",
+      name: t.funkoSports || "Funko Sports",
+      description: t.sportsDescription || "Sports legends and teams",
+      icon: "⚽",
+      sampleItems: ["NBA Stars", "NFL Legends", "Soccer Icons", "Baseball Heroes"]
+    },
+    {
+      id: "comics",
+      name: t.funkoComics || "Funko Comics",
+      description: t.comicsDescription || "Superheroes and comic book characters",
+      icon: "💥",
+      sampleItems: ["Spider-Man", "Batman", "Superman", "X-Men"]
+    },
+    {
+      id: "disney",
+      name: t.funkoDisney || "Funko Disney",
+      description: t.disneyDescription || "Disney classics and new favorites",
+      icon: "🏰",
+      sampleItems: ["Mickey Mouse", "Frozen", "Toy Story", "Marvel"]
+    },
+    {
+      id: "holiday",
+      name: t.funkoHoliday || "Funko Holiday",
+      description: t.holidayDescription || "Seasonal and holiday specials",
+      icon: "🎄",
+      sampleItems: ["Christmas", "Halloween", "Easter", "Valentine's Day"]
+    }
+  ];
 
   // Refs for dropdowns
   const languageDropdownRef = useRef<HTMLDivElement>(null);
@@ -305,7 +305,7 @@ const CategoriesSite: React.FC = () => {
       }`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-yellow-500 mx-auto mb-4"></div>
-          <p className="text-lg">Loading Funko Categories...</p>
+          <p className="text-lg">{t.loading || "Loading Funko Categories..."}</p>
         </div>
       </div>
     );
@@ -327,7 +327,7 @@ const CategoriesSite: React.FC = () => {
                 : "bg-green-600 text-white hover:bg-green-700"
             }`}
           >
-            Try Again
+            {t.tryAgain || "Try Again"}
           </button>
         </div>
       </div>
@@ -335,7 +335,7 @@ const CategoriesSite: React.FC = () => {
   }
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"}`}>
+    <div className={`min-h-screen ${isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-700 text-black"}`}>
       {/* 🔝 Header */}
       <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
         <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
@@ -469,11 +469,11 @@ const CategoriesSite: React.FC = () => {
       <main className="p-4 md:p-8">
         {/* Page Title */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-4">Funko Categories</h1>
+          <h1 className="text-4xl font-bold mb-4">{t.funkoCategories || "Funko Categories"}</h1>
           <p className="text-lg opacity-80">
             {selectedCategory 
-              ? `Exploring ${FUNKO_CATEGORIES.find(cat => cat.id === selectedCategory)?.name}`
-              : `Browse ${FUNKO_CATEGORIES.length} Funko categories with ${items.length} total items`
+              ? `${t.exploringCategory || "Exploring"} ${FUNKO_CATEGORIES.find(cat => cat.id === selectedCategory)?.name}`
+              : `${t.browseCategories || "Browse categories with"} ${FUNKO_CATEGORIES.length} ${t.totalItems || "total items"}`
             }
           </p>
         </div>
@@ -484,7 +484,7 @@ const CategoriesSite: React.FC = () => {
             <form onSubmit={handleSearch} className="flex gap-2">
               <input
                 type="text"
-                placeholder={`Search in ${FUNKO_CATEGORIES.find(cat => cat.id === selectedCategory)?.name}...`}
+                placeholder={`${t.searchInCategory || "Search in"} ${FUNKO_CATEGORIES.find(cat => cat.id === selectedCategory)?.name}...`}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={`flex-grow px-4 py-2 rounded-lg border ${
@@ -557,7 +557,7 @@ const CategoriesSite: React.FC = () => {
                                 isDarkMode ? "bg-gray-600" : "bg-gray-100"
                               }`}
                             >
-                              <span className="text-xs opacity-50">Coming Soon</span>
+                              <span className="text-xs opacity-50">{t.comingSoon || "Coming Soon"}</span>
                             </div>
                           ))
                         }
@@ -565,7 +565,7 @@ const CategoriesSite: React.FC = () => {
                       
                       {/* Popular Series */}
                       <div className="text-xs opacity-75 mb-2">
-                        <strong>Popular: </strong>
+                        <strong>{t.popular || "Popular"}: </strong>
                         {category.sampleItems.slice(0, 3).join(", ")}
                       </div>
                     </div>
@@ -585,8 +585,8 @@ const CategoriesSite: React.FC = () => {
                       disabled={itemCount === 0}
                     >
                       {itemCount > 0 
-                        ? `View Category (${itemCount})` 
-                        : "Coming Soon"}
+                        ? `${t.viewCategory || "View Category"} (${itemCount})` 
+                        : t.comingSoon || "Coming Soon"}
                     </button>
                   </div>
                 </div>
@@ -604,7 +604,7 @@ const CategoriesSite: React.FC = () => {
                     isDarkMode ? "bg-gray-600 hover:bg-gray-500" : "bg-gray-300 hover:bg-gray-400"
                   }`}
                 >
-                  ← Back
+                  ← {t.back || "Back"}
                 </button>
                 <div>
                   <h2 className="text-2xl font-bold">
@@ -616,7 +616,7 @@ const CategoriesSite: React.FC = () => {
                 </div>
               </div>
               <div className="text-sm opacity-75">
-                {filteredItems.length} items {searchQuery && `(filtered from ${categoryItems.length})`}
+                {filteredItems.length} {t.items || "items"} {searchQuery && `(${t.filteredFrom || "filtered from"} ${categoryItems.length})`}
               </div>
             </div>
 
@@ -625,13 +625,13 @@ const CategoriesSite: React.FC = () => {
                 <div className="text-6xl mb-4">📺</div>
                 <p className="text-xl mb-4">
                   {searchQuery 
-                    ? `No items found matching "${searchQuery}"` 
-                    : "No items found in this category yet"}
+                    ? `${t.noItemsFound || "No items found"} matching "${searchQuery}"` 
+                    : t.noItemsInCategory || "No items found in this category yet"}
                 </p>
                 <p className="mb-6 opacity-75">
                   {searchQuery 
-                    ? "Try adjusting your search terms" 
-                    : `Check back soon for new ${FUNKO_CATEGORIES.find(cat => cat.id === selectedCategory)?.name} releases!`}
+                    ? t.tryAdjustingSearch || "Try adjusting your search terms" 
+                    : `${t.checkBackSoon || "Check back soon for new"} ${FUNKO_CATEGORIES.find(cat => cat.id === selectedCategory)?.name} ${t.releases || "releases"}!`}
                 </p>
                 <div className="flex gap-4 justify-center">
                   {searchQuery && (
@@ -643,7 +643,7 @@ const CategoriesSite: React.FC = () => {
                           : "bg-gray-300 hover:bg-gray-400"
                       }`}
                     >
-                      Clear Search
+                      {t.clearSearch || "Clear Search"}
                     </button>
                   )}
                   <button
@@ -654,7 +654,7 @@ const CategoriesSite: React.FC = () => {
                         : "bg-green-600 text-white hover:bg-green-700"
                     }`}
                   >
-                    Browse All Categories
+                    {t.browseAllCategories || "Browse All Categories"}
                   </button>
                 </div>
               </div>
@@ -688,7 +688,7 @@ const CategoriesSite: React.FC = () => {
                           isDarkMode ? "bg-yellow-600" : "bg-green-600"
                         } text-white`}
                       >
-                        Exclusive
+                        {t.exclusive || "Exclusive"}
                       </span>
                     )}
                   </Link>

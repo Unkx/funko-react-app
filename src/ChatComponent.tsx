@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageCircle, Send, X, Users } from 'lucide-react';
+import { translations } from './Translations/TranslationsChatComponent';
 
 interface ChatComponentProps {
   isDarkMode: boolean;
@@ -55,11 +56,45 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
   const [loading, setLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [activeUsers, setActiveUsers] = useState<Set<number>>(new Set());
-  const [userProfiles, setUserProfiles] = useState<Map<number, UserProfile>>(new Map()); // 👈 Przechowuje profile użytkowników
+  const [userProfiles, setUserProfiles] = useState<Map<number, UserProfile>>(new Map());
+  const [language, setLanguage] = useState(() => {
+    return localStorage.getItem('preferredLanguage') || 'EN';
+  });
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-  // 👇 Funkcja do pobierania profilu użytkownika
+  const t = translations[language] || translations['EN'];
+
+  // Get language from localStorage on component mount
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('preferredLanguage') || 'EN';
+    setLanguage(savedLanguage);
+
+    // Listen for storage events (changes in other tabs/components)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'preferredLanguage' && e.newValue) {
+        setLanguage(e.newValue);
+      }
+    };
+
+    // Also listen for custom event (for same-page updates)
+    const handleLanguageChange = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.language) {
+        setLanguage(customEvent.detail.language);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('languageChanged', handleLanguageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('languageChanged', handleLanguageChange);
+    };
+  }, []);
+
   const fetchUserProfile = async (userId: number): Promise<UserProfile | null> => {
     const token = localStorage.getItem('token');
     try {
@@ -76,11 +111,9 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
     return null;
   };
 
-  // 👇 Funkcja do pobierania profilów dla wszystkich konwersacji
   const fetchUserProfilesForConversations = async (convs: Conversation[]) => {
     const profiles = new Map<number, UserProfile>();
     
-    // Pobierz profile dla każdego unikalnego użytkownika w konwersacjach
     const uniqueUserIds = [...new Set(convs.map(conv => conv.friend_id))];
     
     for (const userId of uniqueUserIds) {
@@ -103,7 +136,6 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
         const data = await response.json();
         setConversations(data);
         
-        // 👇 Pobierz profile użytkowników dla konwersacji
         await fetchUserProfilesForConversations(data);
         
         const total = data.reduce((sum: number, conv: Conversation) => sum + (conv.unread_count || 0), 0);
@@ -114,29 +146,24 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
     }
   };
 
-    // Loyalty Dashboard state
-    const [showLoyaltyDashboard, setShowLoyaltyDashboard] = useState(false);
-  
-    // Funkcja do automatycznego przyznawania punktów
-    const awardPoints = async (actionType: string, details?: string) => {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-      
-      try {
-        await fetch("http://localhost:5000/api/loyalty/award-points", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({ actionType, details })
-        });
-      } catch (err) {
-        console.error("Failed to award points:", err);
-      }
-    };
-  
+  const awardPoints = async (actionType: string, details?: string) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
     
+    try {
+      await fetch('http://localhost:5000/api/loyalty/award-points', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ actionType, details })
+      });
+    } catch (err) {
+      console.error('Failed to award points:', err);
+    }
+  };
+  
   const fetchActiveUsers = async () => {
     const token = localStorage.getItem('token');
     try {
@@ -180,12 +207,10 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
     }
   };
 
-  // 👇 Poprawiona funkcja przełączania konwersacji z pobieraniem profilu
   const handleSelectConversation = async (conversation: Conversation) => {
     setMessages([]);
     setLoading(true);
     
-    // 👇 Upewnij się, że mamy aktualny profil użytkownika
     if (!userProfiles.has(conversation.friend_id)) {
       const profile = await fetchUserProfile(conversation.friend_id);
       if (profile) {
@@ -214,8 +239,8 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
         }
       );
 
-    if (response.ok) {
-    await awardPoints("chat_message", "Sent message");
+      if (response.ok) {
+        await awardPoints('chat_message', 'Sent message');
         const message = await response.json();
         setMessages(prev => [...prev, message]);
         setNewMessage('');
@@ -233,10 +258,38 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
     }
   };
 
-  // 👇 Pobierz narodowość z profilu użytkownika
   const getFriendNationality = (friendId: number): string | undefined => {
     const profile = userProfiles.get(friendId);
     return profile?.nationality;
+  };
+
+  // Enhanced time formatting with translations
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    
+    // Today
+    if (date.toDateString() === now.toDateString()) {
+      if (diff < 60000) return t.justNow;
+      if (diff < 3600000) return `${Math.floor(diff / 60000)}${t.minutesAgo}`;
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    
+    // Yesterday
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (date.toDateString() === yesterday.toDateString()) {
+      return t.yesterday;
+    }
+    
+    // This week
+    if (diff < 604800000) {
+      return date.toLocaleDateString([], { weekday: 'short' });
+    }
+    
+    // Older
+    return date.toLocaleDateString();
   };
 
   useEffect(() => {
@@ -294,7 +347,6 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
       if (!token) return;
 
       try {
-        // 👇 Najpierw pobierz profil użytkownika aby mieć narodowość
         const profile = await fetchUserProfile(friend.id);
         
         const convResponse = await fetch(`http://localhost:5000/api/chat/conversation/${friend.id}`, {
@@ -308,14 +360,13 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
             friend_id: friend.id,
             friend_login: friend.login,
             friend_name: friend.name,
-            friend_nationality: profile?.nationality || friend.nationality, // 👈 Użyj narodowości z profilu
+            friend_nationality: profile?.nationality || friend.nationality,
             last_message: null,
             last_message_time: null,
             unread_count: 0,
             is_active: activeUsers.has(friend.id)
           };
           
-          // 👇 Zapisz profil w stanie
           if (profile) {
             setUserProfiles(prev => new Map(prev).set(friend.id, profile));
           }
@@ -330,17 +381,6 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
 
     openFriendChat();
   }, [friend, user, activeUsers]);
-
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    
-    if (diff < 60000) return 'Just now';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-    if (diff < 86400000) return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    return date.toLocaleDateString();
-  };
 
   const renderNationalityFlag = (nationality: string | undefined) => {
     if (!nationality) return null;
@@ -363,18 +403,74 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
     return activeUsers.has(userId);
   };
 
+  // Define static Tailwind class names for each theme
+  const themeClasses = {
+    dark: {
+      bg: 'bg-slate-900', // Dark blue background
+      text: 'text-white',
+      border: 'border-slate-700',
+      headerBg: 'bg-slate-900',
+      headerBorder: 'border-slate-700',
+      conversationBg: 'bg-slate-800',
+      conversationHover: 'hover:bg-slate-700',
+      messageOwnBg: 'bg-green-500',
+      messageOwnText: 'text-white',
+      messageOtherBg: 'bg-slate-800',
+      messageOtherText: 'text-white',
+      messageOtherBorder: 'border-slate-700',
+      inputBg: 'bg-slate-800',
+      inputBorder: 'border-slate-700',
+      inputFocusRing: 'focus:ring-green-500',
+      buttonBg: 'bg-green-500',
+      buttonHover: 'hover:bg-green-600',
+      buttonDisabled: 'disabled:bg-slate-800',
+      unreadBadgeBg: 'bg-red-500',
+      unreadBadgeText: 'text-white',
+      onlineIndicator: 'bg-green-500',
+      offlineIndicator: 'bg-gray-400',
+      loadingText: 'text-gray-400',
+      noMessagesText: 'text-gray-400',
+      placeholder: 'placeholder-gray-400',
+    },
+    light: {
+      bg: 'bg-white',
+      text: 'text-gray-900',
+      border: 'border-gray-200',
+      headerBg: 'bg-white',
+      headerBorder: 'border-gray-200',
+      conversationBg: 'bg-gray-50',
+      conversationHover: 'hover:bg-white',
+      messageOwnBg: 'bg-blue-500',
+      messageOwnText: 'text-white',
+      messageOtherBg: 'bg-white',
+      messageOtherText: 'text-gray-900',
+      messageOtherBorder: 'border-gray-200',
+      inputBg: 'bg-white',
+      inputBorder: 'border-gray-300',
+      inputFocusRing: 'focus:ring-blue-500',
+      buttonBg: 'bg-blue-500',
+      buttonHover: 'hover:bg-blue-600',
+      buttonDisabled: 'disabled:bg-gray-200',
+      unreadBadgeBg: 'bg-red-500',
+      unreadBadgeText: 'text-white',
+      onlineIndicator: 'bg-green-500',
+      offlineIndicator: 'bg-gray-400',
+      loadingText: 'text-gray-500',
+      noMessagesText: 'text-gray-500',
+      placeholder: 'placeholder-gray-500',
+    }
+  };
+
+  const classes = isDarkMode ? themeClasses.dark : themeClasses.light;
+
   return (
-    <div className={`fixed bottom-4 right-4 w-96 h-[600px] rounded-lg shadow-2xl flex flex-col z-50 ${
-      isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'
-    }`}>
-      <div className={`flex items-center justify-between p-4 border-b ${
-        isDarkMode ? 'border-gray-700' : 'border-gray-200'
-      }`}>
+    <div className={`fixed bottom-4 right-4 w-96 h-[600px] rounded-lg shadow-2xl flex flex-col z-50 ${classes.bg} ${classes.text} ${classes.border}`}>
+      <div className={`flex items-center justify-between p-4 border-b ${classes.headerBorder} ${classes.headerBg}`}>
         <div className="flex items-center gap-2">
-          <MessageCircle className="w-5 h-5" />
+          <MessageCircle className="w-5 h-5 text-green-400" />
           <div className="flex flex-col">
             <h3 className="font-semibold">
-              {selectedConversation ? selectedConversation.friend_name : 'Messages'}
+              {selectedConversation ? selectedConversation.friend_name : t.messages}
             </h3>
             {selectedConversation && (
               <div className="flex items-center gap-2 text-xs">
@@ -385,13 +481,12 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
                         ? 'bg-green-500 animate-pulse' 
                         : 'bg-gray-400'
                     }`}
-                    title={isUserActive(selectedConversation.friend_id) ? "Online" : "Offline"}
+                    title={isUserActive(selectedConversation.friend_id) ? t.online : t.offline}
                   />
-                  <span className="text-gray-500">
-                    {isUserActive(selectedConversation.friend_id) ? "Online" : "Offline"}
+                  <span className={`text-${classes.placeholder}`}>
+                    {isUserActive(selectedConversation.friend_id) ? t.online : t.offline}
                   </span>
                 </div>
-                {/* 👇 Użyj narodowości z profilu użytkownika */}
                 {getFriendNationality(selectedConversation.friend_id) && (
                   <div className="flex items-center gap-1 text-gray-500">
                     <span>•</span>
@@ -403,7 +498,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
             )}
           </div>
           {unreadCount > 0 && !selectedConversation && (
-            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+            <span className={`bg-red-500 text-white text-xs px-2 py-1 rounded-full`}>
               {unreadCount}
             </span>
           )}
@@ -415,28 +510,28 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
                 setSelectedConversation(null);
                 setMessages([]);
               }}
-              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
             >
-              <Users className="w-4 h-4" />
+              <Users className="w-4 h-4 text-gray-600" />
             </button>
           )}
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+            className="p-1 hover:bg-gray-100 rounded transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4 text-gray-600" />
           </button>
         </div>
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col">
         {!selectedConversation ? (
-          <div className="h-full overflow-y-auto">
+          <div className={`h-full overflow-y-auto ${classes.conversationBg}`}>
             {conversations.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                <MessageCircle className="w-12 h-12 mb-2" />
-                <p>No conversations yet</p>
-                <p className="text-sm">Start chatting with your friends!</p>
+              <div className="flex flex-col items-center justify-center h-full text-gray-500 p-4">
+                <MessageCircle className="w-12 h-12 mb-2 text-gray-400" />
+                <p className="text-center mb-1">{t.noConversations}</p>
+                <p className="text-sm text-center">{t.startChatting}</p>
               </div>
             ) : (
               conversations.map(conv => {
@@ -446,11 +541,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
                   <button
                     key={conv.conversation_id}
                     onClick={() => handleSelectConversation(conv)}
-                    className={`w-full p-4 border-b text-left transition-colors ${
-                      isDarkMode
-                        ? 'border-gray-700 hover:bg-gray-700'
-                        : 'border-gray-200 hover:bg-gray-50'
-                    }`}
+                    className={`w-full p-4 border-b ${classes.border} text-left transition-colors ${classes.conversationHover} ${classes.conversationBg}`}
                   >
                     <div className="flex justify-between items-start mb-1">
                       <div className="flex items-center gap-2">
@@ -461,7 +552,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
                               ? 'bg-green-500 animate-pulse' 
                               : 'bg-gray-400'
                           }`}
-                          title={isUserActive(conv.friend_id) ? "Online" : "Offline"}
+                          title={isUserActive(conv.friend_id) ? t.online : t.offline}
                         />
                         {friendNationality && (
                           <span className="text-sm" title={friendNationality}>
@@ -469,12 +560,12 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
                           </span>
                         )}
                       </div>
-                      <span className="text-xs text-gray-500">
+                      <span className={`text-xs ${classes.placeholder}`}>
                         {conv.last_message_time && formatTime(conv.last_message_time)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <p className="text-sm text-gray-500 truncate flex-1">
+                      <p className={`text-sm truncate flex-1 ${classes.placeholder}`}>
                         {conv.last_message || 'No messages yet'}
                       </p>
                       {conv.unread_count > 0 && (
@@ -492,13 +583,13 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
           <>
             <div 
               ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto p-4 space-y-3"
+              className={`flex-1 overflow-y-auto p-4 space-y-3 ${classes.bg}`}
             >
               {loading ? (
-                <div className="text-center text-gray-500">Loading messages...</div>
+                <div className={`text-center ${classes.loadingText}`}>{t.loadingMessages}</div>
               ) : messages.length === 0 ? (
-                <div className="text-center text-gray-500">
-                  No messages yet. Start the conversation!
+                <div className={`text-center ${classes.noMessagesText}`}>
+                  {t.noMessages}. {t.startConversation}
                 </div>
               ) : (
                 messages.map((msg, idx) => {
@@ -513,12 +604,8 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
                       <div
                         className={`max-w-[75%] rounded-lg p-3 relative ${
                           isOwn
-                            ? isDarkMode
-                              ? 'bg-yellow-600 text-white'
-                              : 'bg-blue-100 text-gray-900'
-                            : isDarkMode
-                              ? 'bg-gray-700'
-                              : 'bg-gray-200'
+                            ? `${classes.messageOwnBg} ${classes.messageOwnText} shadow-sm`
+                            : `${classes.messageOtherBg} ${classes.messageOtherText} border ${classes.messageOtherBorder}`
                         } ${
                           !isOwn && isSenderActive 
                             ? 'ring-2 ring-green-400 ring-opacity-50' 
@@ -526,13 +613,13 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
                         }`}
                       >
                         <p className="text-sm break-words">{msg.content}</p>
-                        <p className="text-xs mt-1 opacity-70">
+                        <p className={`text-xs mt-1 ${isOwn ? 'text-blue-100' : classes.placeholder}`}>
                           {formatTime(msg.created_at)}
                         </p>
                         {!isOwn && isSenderActive && (
                           <div 
                             className="absolute -top-1 -left-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"
-                            title="User is online"
+                            title={t.userOnline}
                           />
                         )}
                       </div>
@@ -542,28 +629,20 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
               )}
             </div>
 
-            <div className={`p-4 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+            <div className={`p-4 border-t ${classes.border} ${classes.bg}`}>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Type a message..."
-                  className={`flex-1 px-3 py-2 rounded ${
-                    isDarkMode
-                      ? 'bg-gray-700 text-white placeholder-gray-400'
-                      : 'bg-gray-100 text-gray-900'
-                  }`}
+                  placeholder={t.typeMessage}
+                  className={`flex-1 px-3 py-2 rounded border ${classes.inputBorder} ${classes.inputBg} ${classes.text} ${classes.placeholder} focus:outline-none focus:ring-2 ${classes.inputFocusRing} focus:border-transparent`}
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!newMessage.trim()}
-                  className={`px-4 py-2 rounded ${
-                    isDarkMode
-                      ? 'bg-yellow-500 hover:bg-yellow-600'
-                      : 'bg-green-600 hover:bg-green-700'
-                  } text-white disabled:opacity-50 disabled:cursor-not-allowed`}
+                  className={`px-4 py-2 rounded ${classes.buttonBg} ${classes.buttonHover} text-white ${classes.buttonDisabled} transition-colors flex items-center justify-center`}
                 >
                   <Send className="w-4 h-4" />
                 </button>

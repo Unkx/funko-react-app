@@ -288,7 +288,7 @@ const CollectionPage: React.FC = () => {
   };
 
   const handleDeleteItem = async (itemId: string) => {
-    if (!confirm("Are you sure you want to remove this item from your collection?")) return;
+    if (!confirm(t.confirmDelete)) return;
 
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -402,13 +402,13 @@ const CollectionPage: React.FC = () => {
       <nav className={`px-8 py-2 ${isDarkMode ? "bg-gray-700" : "bg-gray-300"}`}>
         <div className="flex gap-4">
           <Link to="/dashboardSite" className={`px-3 py-1 rounded ${isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200"}`}>
-            Dashboard
+            {t.dashboard}
           </Link>
           <Link to="/collection" className={`px-3 py-1 rounded ${isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"}`}>
-            Collection
+            {t.collection}
           </Link>
           <Link to="/wishlist" className={`px-3 py-1 rounded ${isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200"}`}>
-            Wishlist
+            {t.wishlist}
           </Link>
         </div>
       </nav>
@@ -434,12 +434,12 @@ const CollectionPage: React.FC = () => {
             <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Search Collection</label>
+                  <label className="block text-sm font-medium mb-1">{t.searchCollection}</label>
                   <input
                     type="text"
                     value={collectionSearch}
                     onChange={(e) => setCollectionSearch(e.target.value)}
-                    placeholder="Search by title, number, or series..."
+                    placeholder={t.searchByPlaceholder}
                     className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
                   />
                 </div>
@@ -450,37 +450,37 @@ const CollectionPage: React.FC = () => {
                     onChange={(e) => setFilterCondition(e.target.value)}
                     className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
                   >
-                    <option value="all">All Conditions</option>
-                    {conditions.map(condition => (
-                      <option key={condition} value={condition}>
-                        {condition.charAt(0).toUpperCase() + condition.slice(1).replace('_', ' ')}
-                      </option>
-                    ))}
+                    <option value="all">{t.allConditions}</option>
+                      {conditions.map(condition => (
+                        <option key={condition} value={condition}>
+                          {t[condition] || condition.charAt(0).toUpperCase() + condition.slice(1).replace('_', ' ')}
+                        </option>
+                      ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Sort By</label>
+                  <label className="block text-sm font-medium mb-1">{t.sortBy}</label>
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
                     className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
                   >
-                    <option value="title">Title</option>
-                    <option value="number">Number</option>
-                    <option value="condition">Condition</option>
-                    <option value="purchase_date">Purchase Date</option>
-                    <option value="purchase_price">Price</option>
+                    <option value="title">{t.title}</option>
+                    <option value="number">{t.number}</option>
+                    <option value="condition">{t.condition}</option>
+                    <option value="purchase_date">{t.purchaseDate}</option>
+                    <option value="purchase_price">{t.price}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Order</label>
+                  <label className="block text-sm font-medium mb-1">{t.order}</label>
                   <select
                     value={sortOrder}
                     onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
                     className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
                   >
-                    <option value="asc">Ascending</option>
-                    <option value="desc">Descending</option>
+                    <option value="asc">{t.ascending}</option>
+                    <option value="desc">{t.descending}</option>
                   </select>
                 </div>
               </div>
@@ -494,25 +494,25 @@ const CollectionPage: React.FC = () => {
                 <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
                   {collection.length}
                 </div>
-                <div className="text-sm">Total Items</div>
+                <div className="text-sm">{t.totalItems}</div>
               </div>
               <div>
                 <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
                   {filteredCollection.length}
                 </div>
-                <div className="text-sm">Filtered Items</div>
+                <div className="text-sm">{t.filteredItems}</div>
               </div>
               <div>
                 <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
                   ${collection.reduce((sum, item) => sum + (item.purchase_price || 0), 0).toFixed(2)}
                 </div>
-                <div className="text-sm">Total Value</div>
+                <div className="text-sm">{t.totalValue}</div>
               </div>
               <div>
                 <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
                   {new Set(collection.map(item => item.series)).size}
                 </div>
-                <div className="text-sm">Series</div>
+                <div className="text-sm">{t.series}</div>
               </div>
             </div>
           </div>
@@ -521,22 +521,22 @@ const CollectionPage: React.FC = () => {
           {loading ? (
             <div className="text-center py-8">Loading your collection...</div>
           ) : filteredCollection.length === 0 ? (
-            <div className="text-center py-8">
-              {collection.length === 0 ? (
-                <div>
-                  <p className="mb-4">{t.emptyCollection}</p>
-                  <Link 
-                    to="/searchsite" 
-                    className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"} text-white`}
-                  >
-                    Start Adding Items
-                  </Link>
+              <div className="text-center py-8">
+                  {collection.length === 0 ? (
+                    <div>
+                      <p className="mb-4">{t.emptyCollection}</p>
+                      <Link 
+                        to="/searchsite" 
+                        className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"} text-white`}
+                      >
+                        {t.startAddingItems}
+                      </Link>
+                    </div>
+                  ) : (
+                    <p>{t.noItemsMatch}</p>
+                  )}
                 </div>
               ) : (
-                <p>No items match your current filters.</p>
-              )}
-            </div>
-          ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredCollection.map(item => (
                 <div key={item.id} className={`rounded-lg shadow-lg overflow-hidden ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
@@ -583,7 +583,7 @@ const CollectionPage: React.FC = () => {
                           name="notes"
                           value={editForm.notes || ""}
                           onChange={handleInputChange}
-                          placeholder="Notes"
+                          placeholder={t.notes}
                           rows={2}
                           className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
                         />
@@ -593,14 +593,14 @@ const CollectionPage: React.FC = () => {
                             className="flex-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded flex items-center justify-center gap-1"
                           >
                             <SaveIcon className="w-4 h-4" />
-                            Save
+                            {t.save}
                           </button>
                           <button
                             onClick={handleCancelEdit}
                             className="flex-1 px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded flex items-center justify-center gap-1"
                           >
                             <CancelIcon className="w-4 h-4" />
-                            Cancel
+                            {t.cancel}
                           </button>
                         </div>
                       </div>
@@ -608,12 +608,12 @@ const CollectionPage: React.FC = () => {
                       <>
                         <h3 className="font-bold text-lg mb-2">{item.title}</h3>
                         <p className="text-sm mb-1">#{item.number}</p>
-                        {item.series && <p className="text-sm mb-1">Series: {item.series}</p>}
-                        {item.condition && <p className="text-sm mb-1">Condition: {item.condition}</p>}
-                        {item.purchase_price && <p className="text-sm mb-1">Price: ${item.purchase_price}</p>}
+                        {item.series && <p className="text-sm mb-1">{t.seriesLabel}: {item.series}</p>}
+                        {item.condition && <p className="text-sm mb-1">{t.conditionLabel}: {t[item.condition] || item.condition}</p>}
+                        {item.purchase_price && <p className="text-sm mb-1">{t.price}: ${item.purchase_price}</p>}
                         {item.purchase_date && (
                           <p className="text-sm mb-1">
-                            Purchased: {new Date(item.purchase_date).toLocaleDateString()}
+                            {t.purchased}: {new Date(item.purchase_date).toLocaleDateString()}
                           </p>
                         )}
                         {item.notes && <p className="text-sm mb-3 italic">{item.notes}</p>}
@@ -623,14 +623,14 @@ const CollectionPage: React.FC = () => {
                             className={`flex-1 px-3 py-1 rounded flex items-center justify-center gap-1 ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-500 hover:bg-blue-600"} text-white`}
                           >
                             <EditIcon className="w-4 h-4" />
-                            Edit
+                            {t.edit}
                           </button>
                           <button
                             onClick={() => handleDeleteItem(item.id)}
                             className="flex-1 px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded flex items-center justify-center gap-1"
                           >
                             <DeleteIcon className="w-4 h-4" />
-                            Remove
+                            {t.remove}
                           </button>
                         </div>
                       </>

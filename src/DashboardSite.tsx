@@ -34,15 +34,17 @@ import FranceFlag from "./assets/flags/france.svg?react";
 import GermanyFlag from "./assets/flags/germany.svg?react";
 import SpainFlag from "./assets/flags/spain.svg?react";
 import USAFlag from "./assets/flags/usa.svg?react";
+import CanadaFlag from "./assets/flags/canada.svg?react";
 
-const languages = {
+const headerLanguages = {
   EN: { name: "English", flag: <UKFlag className="w-5 h-5" /> },
+  US: { name: "English (US)", flag: <USAFlag className="w-5 h-5" /> },
+  CA: { name: "English (CA)", flag: <CanadaFlag className="w-5 h-5" /> },
   PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
   RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
   FR: { name: "Français", flag: <FranceFlag className="w-5 h-5" /> },
   DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
   ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
-  US: { name: "English (US)", flag: <USAFlag className="w-5 h-5" /> },
 };
 
 const languageNames = {
@@ -52,6 +54,7 @@ const languageNames = {
   FR: "Français",
   DE: "Deutsch",
   ES: "Español",
+  CA: "English (CA)",
 };
 
 interface User {
@@ -772,8 +775,13 @@ useEffect(() => {
     setLanguage(lang);
     localStorage.setItem("preferredLanguage", lang);
     setShowLanguageDropdown(false);
+    
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new CustomEvent('languageChanged', { 
+      detail: { language: lang } 
+    }));
   };
-
+  
   const toggleTheme = () => setIsDarkMode((prev) => !prev);
   const toggleLanguageDropdown = () => setShowLanguageDropdown((prev) => !prev);
 
@@ -1141,11 +1149,6 @@ useEffect(() => {
             </div>
           )}
 
-          <LoyaltyLeaderboard 
-            isDarkMode={isDarkMode}
-            currentUserId={user?.id || 0}
-          />
-
         </div>
         
       )}
@@ -1379,15 +1382,21 @@ useEffect(() => {
         {t.dashboardWelcome} 
       </h2>
       {/* Section: Profile Info */}
-      <section className="max-w-4xl w-full mx-auto bg-opacity-50 p-8 rounded-xl shadow-xl mb-10 dark:bg-gray-800 bg-white">
+      <section
+          className={`max-w-4xl w-full mx-auto p-8 rounded-xl shadow-xl mb-10 
+                      ${isDarkMode ? 'bg-gray-700 border-gray-900' : 'bg-gray-300 border border-gray-900'}
+                      
+                      hover:shadow-2xl`}
+        >
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-bold text-gray-800 dark:text-white">{t.profile}</h3>
+          <h3 className="text-2xl font-bold text-gray-800">
+            {t.profile}
+          </h3>
           {!isEditing ? (
             <button
               onClick={handleEditClick}
-              className={`p-3 rounded-lg flex items-center gap-2 transition-colors ${
-                isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"
-              } text-white`}
+              className={`p-3 rounded-lg flex items-center gap-2 transition-all duration-300 transform hover:scale-105 shadow-lg 
+                          bg-yellow-500 hover:bg-yellow-600 shadow-yellow-500/25 text-white font-semibold`}
             >
               <EditIcon className="w-5 h-5" />
               <span className="font-medium">{t.edit}</span>
@@ -1397,135 +1406,211 @@ useEffect(() => {
               <button
                 onClick={handleSaveChanges}
                 disabled={isLoading}
-                className={`p-3 rounded-lg flex items-center gap-2 transition-colors ${
-                  isDarkMode ? "bg-green-500 hover:bg-green-600" : "bg-green-600 hover:bg-green-700"
-                } text-white`}
+                className={`p-3 rounded-lg flex items-center gap-2 transition-all duration-300 transform hover:scale-105 shadow-lg 
+                            bg-green-500 hover:bg-green-600 shadow-green-500/25 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none`}
               >
                 <SaveIcon className="w-5 h-5" />
                 <span className="font-medium">{isLoading ? t.saving : t.save}</span>
               </button>
               <button
                 onClick={handleCancelEdit}
-                className={`p-3 rounded-lg flex items-center gap-2 transition-colors ${
-                  isDarkMode ? "bg-gray-500 hover:bg-gray-600" : "bg-gray-300 hover:bg-gray-400"
-                } text-gray-800 dark:text-white`}
+                className={`p-3 rounded-lg flex items-center gap-2 transition-all duration-300 transform hover:scale-105 border-2 
+                            bg-white hover:bg-gray-50 border-gray-300 text-gray-700 hover:text-gray-900 shadow-md font-semibold`}
               >
                 <CancelIcon className="w-5 h-5" />
-                <span className="font-medium">{t.cancel}</span>
+                <span className="font-medium">{t.cancelInfo}</span>
               </button>
             </div>
           )}
         </div>
+
         {error && (
-          <div className={`mb-6 p-3 rounded-lg text-sm ${
-            isDarkMode ? "bg-red-900 text-red-200" : "bg-red-100 text-red-800"
-          }`}>
-            {error}
+          <div className="mb-6 p-4 rounded-lg text-sm border-l-4 
+                          bg-red-50 text-red-800 border-red-400 shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">⚠️</span>
+              <span>{error}</span>
+            </div>
           </div>
         )}
+
         <ul className="space-y-4 text-lg">
           {isEditing ? (
             <>
-              <li className="flex flex-col md:flex-row md:items-center gap-2">
-                <strong className="w-full md:w-1/3 text-gray-700 dark:text-gray-300">{t.name}:</strong>
+              <li className="flex flex-col md:flex-row md:items-center gap-3 p-3 rounded-lg bg-gray-50 transition-colors">
+                <strong className="w-full md:w-1/3 text-gray-700 flex items-center gap-2">
+                  <span className="text-blue-500">👤</span>
+                  {t.name}:
+                </strong>
                 <input
                   type="text"
                   name="name"
                   value={editForm.name}
                   onChange={handleInputChange}
-                  className={`flex-grow px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none ${
-                    isDarkMode ? "bg-gray-700 text-white border-gray-600" : "bg-gray-50 text-gray-900 border-gray-300"
-                  }`}
+                  className={`flex-grow px-4 py-3 rounded-lg border-2 transition-all duration-300 focus:ring-2 focus:ring-blue-500 outline-none 
+                              bg-white text-gray-900 border-gray-300 focus:border-blue-500 shadow-sm`}
+                  placeholder={t.name}
                 />
               </li>
-              <li className="flex flex-col md:flex-row md:items-center gap-2">
-                <strong className="w-full md:w-1/3 text-gray-700 dark:text-gray-300">{t.surname}:</strong>
+
+              <li className="flex flex-col md:flex-row md:items-center gap-3 p-3 rounded-lg bg-gray-50 transition-colors">
+                <strong className="w-full md:w-1/3 text-gray-700 flex items-center gap-2">
+                  <span className="text-blue-500">👥</span>
+                  {t.surname}:
+                </strong>
                 <input
                   type="text"
                   name="surname"
                   value={editForm.surname}
                   onChange={handleInputChange}
-                  className={`flex-grow px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none ${
-                    isDarkMode ? "bg-gray-700 text-white border-gray-600" : "bg-gray-50 text-gray-900 border-gray-300"
-                  }`}
+                  className={`flex-grow px-4 py-3 rounded-lg border-2 transition-all duration-300 focus:ring-2 focus:ring-blue-500 outline-none 
+                              bg-white text-gray-900 border-gray-300 focus:border-blue-500 shadow-sm`}
+                  placeholder={t.surname}
                 />
               </li>
-              <li className="flex flex-col md:flex-row md:items-center gap-2">
-                <strong className="w-full md:w-1/3 text-gray-700 dark:text-gray-300">{t.gender}:</strong>
+
+              <li className="flex flex-col md:flex-row md:items-center gap-3 p-3 rounded-lg bg-gray-50 transition-colors">
+                <strong className="w-full md:w-1/3 text-gray-700 flex items-center gap-2">
+                  <span className="text-purple-500">⚧️</span>
+                  {t.gender}:
+                </strong>
                 <select
                   name="gender"
                   value={editForm.gender}
                   onChange={handleInputChange}
-                  className={`flex-grow px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none ${
-                    isDarkMode ? "bg-gray-700 text-white border-gray-100" : "bg-gray-50 text-gray-100 border-gray-300"
-                  }`}
+                  className={`flex-grow px-4 py-3 rounded-lg border-2 transition-all duration-300 focus:ring-2 focus:ring-blue-500 outline-none 
+                              bg-white text-gray-900 border-gray-300 focus:border-blue-500 shadow-sm`}
                 >
-                  <option value="">{t.selectGender}</option>
-                  <option value="male">{t.male}</option>
-                  <option value="female">{t.female}</option>
-                  <option value="other">{t.other}</option>
-                  <option value="prefer_not_to_say">{t.preferNotToSay}</option>
+                  <option value="" className="text-gray-500">{t.selectGender}</option>
+                  <option value="male" className="text-gray-900">{t.male}</option>
+                  <option value="female" className="text-gray-900">{t.female}</option>
+                  <option value="other" className="text-gray-900">{t.other}</option>
+                  <option value="prefer_not_to_say" className="text-gray-900">{t.preferNotToSay}</option>
                 </select>
               </li>
-              <li className="flex flex-col md:flex-row md:items-center gap-2">
-                <strong className="w-full md:w-1/3 text-gray-700 dark:text-gray-300">{t.dateOfBirth}:</strong>
+
+              <li className="flex flex-col md:flex-row md:items-center gap-3 p-3 rounded-lg bg-gray-50 transition-colors">
+                <strong className="w-full md:w-1/3 text-gray-700 flex items-center gap-2">
+                  <span className="text-green-500">🎂</span>
+                  {t.dateOfBirth}:
+                </strong>
                 <input
                   type="date"
                   name="date_of_birth"
                   value={editForm.date_of_birth}
                   onChange={handleInputChange}
-                  className={`flex-grow px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none ${
-                    isDarkMode ? "bg-gray-700 text-white border-gray-600" : "bg-gray-50 text-gray-900 border-gray-300"
-                  }`}
+                  className={`flex-grow px-4 py-3 rounded-lg border-2 transition-all duration-300 focus:ring-2 focus:ring-blue-500 outline-none 
+                              bg-white text-gray-900 border-gray-300 focus:border-blue-500 shadow-sm`}
                 />
               </li>
-              <li className="flex flex-col md:flex-row md:items-center gap-2">
-                <strong className="w-full md:w-1/3 text-gray-700 dark:text-gray-300">{t.nationality || "Nationality"}:</strong>
+
+              <li className="flex flex-col md:flex-row md:items-center gap-3 p-3 rounded-lg bg-gray-50 transition-colors">
+                <strong className="w-full md:w-1/3 text-gray-700 flex items-center gap-2">
+                  <span className="text-red-500">🌍</span>
+                  {t.nationality || "Nationality"}:
+                </strong>
                 <input
                   type="text"
                   name="nationality"
                   value={editForm.nationality || ""}
                   onChange={handleInputChange}
                   placeholder="Enter your country"
-                  className={`flex-grow px-4 py-2 rounded-lg border focus:ring-2 focus:ring-blue-500 outline-none ${
-                    isDarkMode ? "bg-gray-700 text-white border-gray-600" : "bg-gray-50 text-gray-900 border-gray-300"
-                  }`}
+                  className={`flex-grow px-4 py-3 rounded-lg border-2 transition-all duration-300 focus:ring-2 focus:ring-blue-500 outline-none 
+                              bg-white text-gray-900 border-gray-300 focus:border-blue-500 shadow-sm`}
                 />
               </li>
             </>
           ) : (
             <>
-              <li><strong className="text-gray-700 dark:text-gray-300">{t.name}:</strong> {user?.name || "N/A"}</li>
-              <li><strong className="text-gray-700 dark:text-gray-300">{t.surname}:</strong> {user?.surname || "N/A"}</li>
-              <li><strong className="text-gray-700 dark:text-gray-300">{t.email}:</strong> {user?.email || "N/A"}</li>
-              <li><strong className="text-gray-700 dark:text-gray-300">{t.login}:</strong> {user?.login || "N/A"}</li>
-              <li><strong className="text-gray-700 dark:text-gray-300">{t.gender}:</strong> {user?.gender ? t[user.gender] || user.gender : "N/A"}</li>
-              <li><strong className="text-gray-700 dark:text-gray-300">{t.dateOfBirth}:</strong> {formatDate(user?.date_of_birth || "")}</li>
-              <li><strong className="text-gray-700 dark:text-gray-300">{t.userSince}:</strong> {formatDate(user?.created_at || "")}</li>
-              <li><strong className="text-gray-700 dark:text-gray-300">{t.lastLogin}:</strong> {formatDate(user?.last_login || "")}</li>
-              <li><strong className="text-gray-700 dark:text-gray-300">{t.nationality || "Nationality"}:</strong> {user?.nationality}</li>
+              <li className="p-4 rounded-lg border border-blue-500 bg-blue-50 transition-all hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  <span className="text-blue-500 text-xl">👤</span>
+                  <strong className="text-gray-700">{t.name}:</strong>
+                  <span className="text-gray-900 font-medium">{user?.name || "N/A"}</span>
+                </div>
+              </li>
+
+              <li className="p-4 rounded-lg border border-green-500 bg-green-50 transition-all hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  <span className="text-green-500 text-xl">👥</span>
+                  <strong className="text-gray-700">{t.surname}:</strong>
+                  <span className="text-gray-900 font-medium">{user?.surname || "N/A"}</span>
+                </div>
+              </li>
+
+              <li className="p-4 rounded-lg border border-purple-500 bg-purple-50 transition-all hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  <span className="text-purple-500 text-xl">📧</span>
+                  <strong className="text-gray-700">{t.email}:</strong>
+                  <span className="text-gray-900 font-medium">{user?.email || "N/A"}</span>
+                </div>
+              </li>
+
+              <li className="p-4 rounded-lg border border-yellow-500 bg-yellow-50 transition-all hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  <span className="text-yellow-500 text-xl">🔑</span>
+                  <strong className="text-gray-700">{t.login}:</strong>
+                  <span className="text-gray-900 font-medium">{user?.login || "N/A"}</span>
+                </div>
+              </li>
+
+              <li className="p-4 rounded-lg border border-pink-500 bg-pink-50 transition-all hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  <span className="text-pink-500 text-xl">⚧️</span>
+                  <strong className="text-gray-700">{t.gender}:</strong>
+                  <span className="text-gray-900 font-medium">
+                    {user?.gender ? t[user.gender] || user.gender : "N/A"}
+                  </span>
+                </div>
+              </li>
+
+              <li className="p-4 rounded-lg border border-emerald-500 bg-emerald-50 transition-all hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  <span className="text-emerald-500 text-xl">🎂</span>
+                  <strong className="text-gray-700">{t.dateOfBirth}:</strong>
+                  <span className="text-gray-900 font-medium">{formatDate(user?.date_of_birth || "")}</span>
+                </div>
+              </li>
+
+              <li className="p-4 rounded-lg border border-cyan-500 bg-cyan-50 transition-all hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  <span className="text-cyan-500 text-xl">📅</span>
+                  <strong className="text-gray-700">{t.userSince}:</strong>
+                  <span className="text-gray-900 font-medium">{formatDate(user?.created_at || "")}</span>
+                </div>
+              </li>
+
+              <li className="p-4 rounded-lg border border-orange-500 bg-orange-50 transition-all hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  <span className="text-orange-500 text-xl">🕒</span>
+                  <strong className="text-gray-700">{t.lastLogin}:</strong>
+                  <span className="text-gray-900 font-medium">{formatDate(user?.last_login || "")}</span>
+                </div>
+              </li>
+
+              <li className="p-4 rounded-lg border border-red-500 bg-red-50 transition-all hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  <span className="text-red-500 text-xl">🌍</span>
+                  <strong className="text-gray-700">{t.nationality || "Nationality"}:</strong>
+                  <span className="text-gray-900 font-medium">{user?.nationality || "Not specified"}</span>
+                </div>
+              </li>
             </>
           )}
         </ul>
       </section>
 
-      {/* Section: Loyalty Widget */}
-      <section className="max-w-4xl w-full mx-auto mb-8">
-        <LoyaltyWidget 
-          isDarkMode={isDarkMode}
-          onOpenFull={() => setShowLoyaltyDashboard(true)}
-        />
-      </section>
+
       {/* Section: Collection Preview */}
 
-      <section className={`max-w-4xl w-full mb-8 p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+      <section className={`max-w-4xl w-full mb-8 p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-gray-300"}`}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">{t.yourCollection}</h3>
           <button 
             onClick={() => setActiveView("collection")}
             className={`px-3 py-1 rounded text-sm ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-500 hover:bg-green-600"} text-white`}
           >
-            View All
+            {t.viewAll ||  "View All"}
           </button>
         </div>
         {collectionLoading ? <p>Loading...</p> : collection.length === 0 ? <p>{t.emptyCollection}</p> :
@@ -1538,14 +1623,14 @@ useEffect(() => {
       </section>
       {/* Section: Wishlist Preview */}
 
-      <section className={`max-w-4xl w-full mb-8 p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+      <section className={`max-w-4xl w-full mb-8 p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-gray-300"}`}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">{t.yourWishlist}</h3>
           <button 
             onClick={() => setActiveView("wishlist")}
             className={`px-3 py-1 rounded text-sm ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-500 hover:bg-green-600"} text-white`}
           >
-            View All
+            {t.viewAll ||  "View All"}
           </button>
         </div>
         {wishlistLoading ? <p>Loading...</p> : wishlist.length === 0 ? <p>{t.noItemsInWishlist}</p> :
@@ -1570,7 +1655,7 @@ useEffect(() => {
           className={`px-4 py-2 rounded flex items-center gap-2 ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}
         >
           <FilterIcon className="w-4 h-4" />
-          Filters
+          {t.filters || "Filters"}
         </button>
       </div>
       {showCollectionFilters && (
@@ -1948,7 +2033,7 @@ useEffect(() => {
                       onChange={handleWishlistInputChange}
                       className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
                     >
-                      <option value="">Target Condition</option>
+                      <option value="">{t.TargetCondition || "Target Condition"}</option>
                       {conditions.map(condition => (
                         <option key={condition} value={condition}>
                           {condition.charAt(0).toUpperCase() + condition.slice(1).replace('_', ' ')}
@@ -1969,7 +2054,7 @@ useEffect(() => {
                         className="flex-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded flex items-center justify-center gap-1"
                       >
                         <SaveIcon className="w-4 h-4" />
-                        Save
+                        {t.Save || "Save"}
                       </button>
                       <button
                         onClick={handleCancelWishlistEdit}
@@ -1996,7 +2081,7 @@ useEffect(() => {
                     {item.max_price && <p className="text-sm mb-1">Max Price: ${item.max_price}</p>}
                     {item.added_date && (
                       <p className="text-sm mb-1">
-                        Added: {new Date(item.added_date).toLocaleDateString()}
+                        {t.Added || "Added "}:{new Date(item.added_date).toLocaleDateString()}
                       </p>
                     )}
                     {item.notes && <p className="text-sm mb-3 italic">{item.notes}</p>}
@@ -2007,14 +2092,14 @@ useEffect(() => {
                           className={`flex-1 px-3 py-1 rounded flex items-center justify-center gap-1 ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-500 hover:bg-blue-600"} text-white`}
                         >
                           <EditIcon className="w-4 h-4" />
-                          Edit
+                          {t.Edit || "Edit"}
                         </button>
                         <button
                           onClick={() => handleDeleteWishlistItem(item.id)}
                           className="flex-1 px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded flex items-center justify-center gap-1"
                         >
                           <DeleteIcon className="w-4 h-4" />
-                          Remove
+                          {t.Remove || "Remove"}
                         </button>
                       </div>
                       <button
@@ -2022,7 +2107,7 @@ useEffect(() => {
                         className={`w-full px-3 py-1 rounded flex items-center justify-center gap-1 ${isDarkMode ? "bg-green-500 hover:bg-green-600" : "bg-green-600 hover:bg-green-700"} text-white`}
                       >
                         <ShoppingCartIcon className="w-4 h-4" />
-                        Add to Collection
+                        {t.AddToCollection || "Add to Collection"}
                       </button>
                     </div>
                   </>
@@ -2109,7 +2194,7 @@ useEffect(() => {
 
             {showLanguageDropdown && (
               <div
-                ref={languageDropdownRef}
+                ref={dropdownRef}
                 className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
                   isDarkMode ? "bg-gray-700" : "bg-white"
                 }`}

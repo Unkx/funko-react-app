@@ -142,9 +142,9 @@ app.get('/', (req, res) => {
 // AUTH ROUTES
 // ======================
 app.post('/api/register', async (req, res) => {
-  
   const { email, login, name, surname, password, gender, date_of_birth, nationality } = req.body;
 
+  // ✅ nationality is now optional — only require the rest
   if (!email || !login || !name || !surname || !password || !gender || !date_of_birth) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
@@ -1669,6 +1669,22 @@ app.post('/api/loyalty/calculate', authenticateToken, async (req, res) => {
   }
 });
 
+// 🎯 POST /api/loyalty/achievements/check - Force check and unlock achievements
+app.post('/api/loyalty/achievements/check', authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const unlocked = await checkAndUnlockAchievements(userId);
+    res.json({
+      message: 'Achievements checked and unlocked',
+      unlockedCount: unlocked.length,
+      unlocked: unlocked
+    });
+  } catch (err) {
+    console.error('Error checking achievements:', err);
+    res.status(500).json({ error: 'Failed to check achievements' });
+  }
+});
+
 app.get('/api/loyalty/leaderboard', authenticateToken, async (req, res) => {
   try {
     const leaderboard = await pool.query(`
@@ -2228,26 +2244,24 @@ const checkAndUnlockAchievements = async (userId) => {
     
     if (result.rows && result.rows.length > 0) {
       // Award points for each unlocked achievement
-      for (const achievement of result.rows) {
-        if (achievement.points) {
-          await pool.query(
-            `INSERT INTO loyalty_points_history (user_id, points_change, reason, action_type)
-             VALUES ($1, $2, $3, $4)`,
-            [
-              userId, 
-              achievement.points, 
-              `Achievement unlocked: ${achievement.achievement_name || achievement.achievement_id}`, 
-              'achievement'
-            ]
-          );
-          
-          // Update user's total loyalty points
-          await pool.query(
-            'UPDATE users SET loyalty_points = loyalty_points + $1 WHERE id = $2',
-            [achievement.points, userId]
-          );
-        }
-      }
+    for (const achievement of result.rows) {
+    if (achievement.points_reward) {
+      await pool.query(
+        `INSERT INTO loyalty_points_history (user_id, points_change, reason, action_type)
+        VALUES ($1, $2, $3, $4)`,
+        [
+          userId, 
+          achievement.points_reward, 
+          `Achievement unlocked: ${achievement.name || achievement.achievement_id}`, 
+          'achievement'
+        ]
+      );
+      await pool.query(
+        'UPDATE users SET loyalty_points = loyalty_points + $1 WHERE id = $2',
+        [achievement.points_reward, userId]
+      );
+    }
+    }
       
       return result.rows;
     }

@@ -140,7 +140,7 @@ const LoginRegisterSite: React.FC = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegisterError("");
-    if (!email || !regLogin || !name || !surname || !regPassword || !confirmPassword || !gender || !nationality || !dateOfBirth) {
+    if (!email || !regLogin || !name || !surname || !regPassword || !confirmPassword || !gender || !dateOfBirth) {
       setRegisterError(tRegister.allFieldsRequired || "All fields are required.");
       return;
     }

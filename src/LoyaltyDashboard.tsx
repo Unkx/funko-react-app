@@ -118,6 +118,13 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
     if (!token) return;
 
     try {
+      // First, trigger achievement check
+      await fetch("http://localhost:5000/api/loyalty/achievements/check", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Then fetch updated data
       const response = await fetch("http://localhost:5000/api/loyalty/dashboard", {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -125,7 +132,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
       if (response.ok) {
         const data = await response.json();
         setLoyaltyData(data);
-        
+
         const newAchievement = data.achievements.find((a: Achievement) => a.is_new && a.unlocked);
         if (newAchievement) {
           setShowNewAchievement(newAchievement);

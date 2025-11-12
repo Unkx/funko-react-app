@@ -337,7 +337,7 @@ const CategoriesSite: React.FC = () => {
   return (
     <div className={`min-h-screen ${isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-gray-800"}`}>
       {/* 🔝 Header */}
-      <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4 dark:bg-gray-800  border-gray-200 dark:border-gray-700">
+      <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4 dark:bg-blue-100  border-gray-200: dark:border-gray-700">
         <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
           <Link to="/" className="no-underline">
             <h1

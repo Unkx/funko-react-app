@@ -63,7 +63,9 @@ const LoginRegisterSite: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [gender, setGender] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
+  const [nationality, setNationality] = useState("");
   const [registerError, setRegisterError] = useState("");
+
 
   // Save theme
   useEffect(() => {
@@ -138,7 +140,7 @@ const LoginRegisterSite: React.FC = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegisterError("");
-    if (!email || !regLogin || !name || !surname || !regPassword || !confirmPassword || !gender || !dateOfBirth) {
+    if (!email || !regLogin || !name || !surname || !regPassword || !confirmPassword || !gender || !nationality || !dateOfBirth) {
       setRegisterError(tRegister.allFieldsRequired || "All fields are required.");
       return;
     }
@@ -153,8 +155,9 @@ const LoginRegisterSite: React.FC = () => {
       surname,
       password: regPassword,
       gender,
-      role: "user",
+      nationality, // ✅ send it
       date_of_birth: new Date(dateOfBirth).toISOString().split("T")[0],
+      // ❌ remove "role"
     };
     try {
       const response = await fetch("http://localhost:5000/api/register", {
@@ -286,7 +289,7 @@ const LoginRegisterSite: React.FC = () => {
             <input type="password" placeholder={tRegister.confirmPassword} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={`px-4 py-2 rounded ${
               isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
             }`} />
-            <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className={`px-4 py-2 rounded ${
+            <input type="text" placeholder={tRegister.nationality} value={nationality} onChange={(e) => setNationality(e.target.value)} className={`px-4 py-2 rounded ${
               isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
             }`} />
             <select value={gender} onChange={(e) => setGender(e.target.value)} className={`px-4 py-2 rounded ${
@@ -298,6 +301,10 @@ const LoginRegisterSite: React.FC = () => {
                 <option value="other">{tRegister.other}</option>
                 <option value="prefer_not_to_say">{tRegister.preferNotToSay}</option>
             </select>
+            <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className={`px-4 py-2 rounded ${
+              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+            }`} />
+
             <div className="flex gap-2">
                 <button type="submit" className={`flex-1 px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : "bg-green-600 hover:bg-green-700 text-white"}`}>
                 {tRegister.registerButton}

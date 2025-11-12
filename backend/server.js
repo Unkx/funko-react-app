@@ -142,7 +142,8 @@ app.get('/', (req, res) => {
 // AUTH ROUTES
 // ======================
 app.post('/api/register', async (req, res) => {
-  const { email, login, name, surname, password, gender, date_of_birth } = req.body;
+  
+  const { email, login, name, surname, password, gender, date_of_birth, nationality } = req.body;
 
   if (!email || !login || !name || !surname || !password || !gender || !date_of_birth) {
     return res.status(400).json({ error: 'Missing required fields' });
@@ -151,12 +152,11 @@ app.post('/api/register', async (req, res) => {
   try {
     const hashedPassword = await hashPassword(password);
     const newUser = await pool.query(
-      `INSERT INTO users (email, login, name, surname, password_hash, gender, date_of_birth, role)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING id, email, login, name, surname, gender, date_of_birth, role`,
-      [email, login, name, surname, hashedPassword, gender, date_of_birth, 'user']
+      `INSERT INTO users (email, login, name, surname, password_hash, gender, date_of_birth, nationality, role)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING id, email, login, name, surname, gender, date_of_birth, nationality, role`,
+      [email, login, name, surname, hashedPassword, gender, date_of_birth, nationality, 'user'] // ✅ add nationality
     );
-
     res.status(201).json(newUser.rows[0]);
   } catch (err) {
     if (err.code === '23505') {

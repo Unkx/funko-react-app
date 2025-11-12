@@ -840,14 +840,16 @@ useEffect(() => {
 
       console.log("📡 Response status:", response.status);
       
-      if (response.ok) {
-        await awardPoints("profile_update", "Updated profile information");
+      if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to update profile");
       }
 
       const updatedUser = await response.json();
       console.log("✅ User updated in database:", updatedUser);
+      
+      // Award points for profile update
+      await awardPoints("profile_update", "Updated profile information");
       
       // Wywołaj fetchUserData bez await (lub z await, ale już nie ma błędu)
       fetchUserData(); // ← TO JEST TERAZ POPRAWNE

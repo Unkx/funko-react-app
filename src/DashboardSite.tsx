@@ -23,9 +23,8 @@ import StarIcon from "./assets/star.svg?react";
 import PlusIcon from "./assets/plus.svg?react";
 import ChartIcon from "./assets/chart.svg?react";
 import UsersIcon from "./assets/users.svg?react";
-import ChatComponent from './ChatComponent';
+import ChatComponent from "./ChatComponent";
 import FriendProfileModal from './FriendProfileModal';
-
 // Flags
 import UKFlag from "./assets/flags/UK.svg?react";
 import PolandFlag from "./assets/flags/poland.svg?react";
@@ -97,7 +96,6 @@ interface WishlistItem {
   target_condition?: string;
 }
 
-// Updated ActiveView type
 type ActiveView = "dashboard" | "collection" | "wishlist" | "analytics" | "social";
 
 const DashboardSite: React.FC = () => {
@@ -125,28 +123,22 @@ const DashboardSite: React.FC = () => {
     date_of_birth: "",
     nationality: "",
   });
-  
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-  const { name, value } = e.target;
-  setEditForm(prev => ({
-    ...prev,
-    [name]: value
-  }));
-};
+    const { name, value } = e.target;
+    setEditForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
-  // Loyalty Dashboard state
   const [showLoyaltyDashboard, setShowLoyaltyDashboard] = useState(false);
 
-  // Funkcja do automatycznego przyznawania punktów
   const awardPoints = async (actionType: string, details?: string) => {
     const token = localStorage.getItem("token");
     if (!token) return;
-    
     try {
       await fetch("http://localhost:5000/api/loyalty/award-points", {
         method: "POST",
@@ -159,40 +151,33 @@ const DashboardSite: React.FC = () => {
     } catch (err) {
       console.error("Failed to award points:", err);
     }
-};
-
-// Na początku komponentu, po useState
-useEffect(() => {
-  const checkNewAchievements = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    try {
-      const response = await fetch("http://localhost:5000/api/loyalty/achievements", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.ok) {
-        const achievements = await response.json();
-        const newAchievements = achievements.filter((a: any) => a.is_new && a.unlocked);
-
-        if (newAchievements.length > 0) {
-          // Możesz pokazać toast notification lub modal
-          console.log("New achievements unlocked!", newAchievements);
-        }
-      }
-    } catch (err) {
-      console.error("Error checking achievements:", err);
-    }
   };
 
-  // Sprawdzaj co 30 sekund
-  const interval = setInterval(checkNewAchievements, 30000);
-  checkNewAchievements(); // Natychmiastowe pierwsze sprawdzenie
+  useEffect(() => {
+    const checkNewAchievements = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      try {
+        const response = await fetch("http://localhost:5000/api/loyalty/achievements", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const achievements = await response.json();
+          const newAchievements = achievements.filter((a: any) => a.is_new && a.unlocked);
+          if (newAchievements.length > 0) {
+            console.log("New achievements unlocked!", newAchievements);
+          }
+        }
+      } catch (err) {
+        console.error("Error checking achievements:", err);
+      }
+    };
 
-  return () => clearInterval(interval);
-}, []);
-  // Collection states
+    const interval = setInterval(checkNewAchievements, 30000);
+    checkNewAchievements();
+    return () => clearInterval(interval);
+  }, []);
+
   const [collection, setCollection] = useState<FunkoItem[]>([]);
   const [filteredCollection, setFilteredCollection] = useState<FunkoItem[]>([]);
   const [collectionLoading, setCollectionLoading] = useState(true);
@@ -204,7 +189,6 @@ useEffect(() => {
   const [collectionSearch, setCollectionSearch] = useState("");
   const [showCollectionFilters, setShowCollectionFilters] = useState(false);
 
-  // Wishlist states
   const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [filteredWishlist, setFilteredWishlist] = useState<WishlistItem[]>([]);
   const [wishlistLoading, setWishlistLoading] = useState(true);
@@ -216,7 +200,6 @@ useEffect(() => {
   const [wishlistSearch, setWishlistSearch] = useState("");
   const [showWishlistFilters, setShowWishlistFilters] = useState(false);
 
-  // Analytics and Social states
   const [userStats, setUserStats] = useState<any>(null);
   const [loyaltyData, setLoyaltyData] = useState<any>(null);
   const [friends, setFriends] = useState<any[]>([]);
@@ -228,20 +211,15 @@ useEffect(() => {
   const navigate = useNavigate();
   const t = translations[language] || translations["EN"];
 
-  // Social state
   const [showFriendProfile, setShowFriendProfile] = useState(false);
-  const [selectedFriendForProfile, setSelectedFriendForProfile] = useState<any>(null);  
+  const [selectedFriendForProfile, setSelectedFriendForProfile] = useState<any>(null);
   const handleViewFriendProfile = (friend: any) => {
-    // Use friend.user_id or friend.friend_user_id instead of friend.id
     setSelectedFriendForProfile({
       ...friend,
-      userId: friend.user_id || friend.friend_user_id // adjust based on your API structure
+      userId: friend.user_id || friend.friend_user_id
     });
     setShowFriendProfile(true);
   };
-  //const profileResponse = await fetch(`http://localhost:5000/api/users/${friendId}`, ...);
-  // const collectionResponse = await fetch(`http://localhost:5000/api/collection/user/${friendId}`, ...);
-  // const wishlistResponse = await fetch(`http://localhost:5000/api/wishlist/user/${friendId}`, ...); 
 
   const pageVariants = {
     initial: { opacity: 0, x: 50 },
@@ -254,96 +232,92 @@ useEffect(() => {
   const [showChat, setShowChat] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState<any>(null);
 
-// Fetch incoming friend requests
-const fetchIncomingRequests = async () => {
-  const token = localStorage.getItem("token");
-  if (!token) return;
-  try {
-    const response = await fetch("http://localhost:5000/api/friends/requests/incoming", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (response.ok) {
-      const data = await response.json();
-      setIncomingRequests(data);
+  const fetchIncomingRequests = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const response = await fetch("http://localhost:5000/api/friends/requests/incoming", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setIncomingRequests(data);
+      }
+    } catch (err) {
+      console.error("Error fetching incoming requests:", err);
     }
-  } catch (err) {
-    console.error("Error fetching incoming requests:", err);
-  }
-};
-// Fetch outgoing friend requests
-const fetchOutgoingRequests = async () => {
-  const token = localStorage.getItem("token");
-  if (!token) return;
-  try {
-    const response = await fetch("http://localhost:5000/api/friends/requests/outgoing", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (response.ok) {
-      const data = await response.json();
-      setOutgoingRequests(data);
-    }
-  } catch (err) {
-    console.error("Error fetching outgoing requests:", err);
-  }
-  
-};
+  };
 
-const handleAcceptRequest = async (senderId: string, friendshipId: string) => {
-  const token = localStorage.getItem("token");
-  if (!token) return;
-  try {
-    const response = await fetch(`http://localhost:5000/api/friends/accept/${senderId}`, {
-      method: "PATCH",
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (response.ok) {
-      alert("Friend request accepted!");
-      fetchIncomingRequests();
-      fetchUserAnalytics(); // refresh friends list
+  const fetchOutgoingRequests = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const response = await fetch("http://localhost:5000/api/friends/requests/outgoing", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setOutgoingRequests(data);
+      }
+    } catch (err) {
+      console.error("Error fetching outgoing requests:", err);
     }
-  } catch (err) {
-    console.error("Error accepting request:", err);
-  }
-};
+  };
 
-const handleRejectRequest = async (friendshipId: string) => {
-  const token = localStorage.getItem("token");
-  if (!token) return;
-  try {
-    const response = await fetch(`http://localhost:5000/api/friends/request/${friendshipId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (response.ok) {
-      alert("Friend request sent!");
-      await awardPoints("friend_add", `Sent friend request to ${friendLogin}`); // ← DODAJ TO
-      input.value = "";
-      fetchOutgoingRequests();
+  const handleAcceptRequest = async (senderId: string, friendshipId: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const response = await fetch(`http://localhost:5000/api/friends/accept/${senderId}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        alert("Friend request accepted!");
+        fetchIncomingRequests();
+        fetchUserAnalytics();
+      }
+    } catch (err) {
+      console.error("Error accepting request:", err);
     }
-  } catch (err) {
-    console.error("Error rejecting request:", err);
-  }
-};
+  };
 
-const handleRemoveFriend = async (friendId: string) => {
-  if (!confirm("Are you sure you want to remove this friend?")) return;
-  const token = localStorage.getItem("token");
-  if (!token) return;
-  try {
-    const response = await fetch(`http://localhost:5000/api/friends/${friendId}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (response.ok) {
-      alert("Friend removed");
-      fetchUserAnalytics();
+  const handleRejectRequest = async (friendshipId: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const response = await fetch(`http://localhost:5000/api/friends/request/${friendshipId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        alert("Friend request removed");
+        fetchIncomingRequests();
+        fetchOutgoingRequests();
+      }
+    } catch (err) {
+      console.error("Error rejecting request:", err);
     }
-  } catch (err) {
-    console.error("Error removing friend:", err);
-  }
-};
+  };
 
-  // Chat states
+  const handleRemoveFriend = async (friendId: string) => {
+    if (!confirm("Are you sure you want to remove this friend?")) return;
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    try {
+      const response = await fetch(`http://localhost:5000/api/friends/${friendId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.ok) {
+        alert("Friend removed");
+        fetchUserAnalytics();
+      }
+    } catch (err) {
+      console.error("Error removing friend:", err);
+    }
+  };
+
   const handleStartChat = async (friend: any) => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -365,7 +339,6 @@ const handleRemoveFriend = async (friendId: string) => {
     }
   };
 
-  // Theme effect
   useEffect(() => {
     localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
     if (isDarkMode) {
@@ -375,61 +348,46 @@ const handleRemoveFriend = async (friendId: string) => {
     }
   }, [isDarkMode]);
 
-  // Auto-logout after 10 minutes of inactivity
-useEffect(() => {
-  let timer: NodeJS.Timeout;
-
-  const resetTimer = () => {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(() => {
-      // Perform logout
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
-      navigate("/loginregistersite");
-    }, 10 * 60 * 1000); // 10 minutes = 600,000 ms
-  };
-
-  // Initial setup
-  resetTimer();
-
-  // List of events to consider as "user activity"
-  const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click", "wheel"];
-
-  // Attach event listeners
-  events.forEach((event) => {
-    window.addEventListener(event, resetTimer, true);
-  });
-
-  // Cleanup on unmount
-  return () => {
-    clearTimeout(timer);
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    const resetTimer = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        navigate("/loginregistersite");
+      }, 10 * 60 * 1000);
+    };
+    resetTimer();
+    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click", "wheel"];
     events.forEach((event) => {
-      window.removeEventListener(event, resetTimer, true);
+      window.addEventListener(event, resetTimer, true);
     });
-  };
-}, [navigate]);
+    return () => {
+      clearTimeout(timer);
+      events.forEach((event) => {
+        window.removeEventListener(event, resetTimer, true);
+      });
+    };
+  }, [navigate]);
 
-    // Update the useEffect that loads social data
   useEffect(() => {
     if (activeView === "social") {
       fetchIncomingRequests();
       fetchOutgoingRequests();
-      fetchUserAnalytics(); // also load friends
+      fetchUserAnalytics();
     }
   }, [activeView]);
 
-  // Przenieś tę funkcję na zewnątrz useEffect, aby była dostępna w całym komponencie
   const fetchUserData = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
       navigate("/loginregistersite");
       return;
     }
-
     try {
       const userData = localStorage.getItem("user");
       let userId;
-      
       if (userData) {
         const parsedUser = JSON.parse(userData);
         userId = parsedUser.id;
@@ -437,17 +395,11 @@ useEffect(() => {
         navigate("/loginregistersite");
         return;
       }
-
-      console.log("🔄 Fetching fresh user data from backend...");
-      
       const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
       if (response.ok) {
         const freshUserData = await response.json();
-        console.log("✅ Fresh user data received:", freshUserData);
-        
         setUser(freshUserData);
         setEditForm({
           name: freshUserData.name,
@@ -456,7 +408,6 @@ useEffect(() => {
           date_of_birth: freshUserData.date_of_birth,
           nationality: freshUserData.nationality || ""
         });
-        
         localStorage.setItem("user", JSON.stringify(freshUserData));
       } else {
         console.error("❌ Failed to fetch user data");
@@ -466,112 +417,98 @@ useEffect(() => {
     }
   };
 
-
-  // Component for rendering a collection item card
-    const CollectionItemCard = ({ item }: { item: FunkoItem }) => (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className={`rounded-lg overflow-hidden border ${
-          isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"
-        } hover:shadow-lg transition-shadow`}
-      >
-        <Link 
-          to={`/funko/${item.id}`}
-          className="block hover:no-underline"
-          // ✅ Removed onClick={onClose}
-        >
-          {item.image_name ? (
-            <img 
-              src={item.image_name} 
-              alt={item.title} 
-              className="w-full h-32 object-contain bg-gray-100 cursor-pointer"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/placeholder-image.png';
-              }}
-            />
-          ) : (
-            <div className="w-full h-32 bg-gray-200 flex items-center justify-center cursor-pointer">
-              <span className="text-gray-500">No Image</span>
-            </div>
-          )}
-          <div className="p-3">
-            <h4 className="font-semibold text-sm truncate hover:text-blue-500 transition-colors" title={item.title}>
-              {item.title}
-            </h4>
-            <p className="text-xs text-gray-500">#{item.number}</p>
-            {item.condition && (
-              <p className="text-xs mt-1">
-                <span className="font-medium">Condition:</span> {item.condition}
-              </p>
-            )}
-            <div className="mt-2 text-xs text-blue-500 font-medium">
-              View Details →
-            </div>
+  const CollectionItemCard = ({ item }: { item: FunkoItem }) => (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className={`rounded-lg overflow-hidden border ${
+        isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"
+      } hover:shadow-lg transition-shadow`}
+    >
+      <Link to={`/funko/${item.id}`} className="block hover:no-underline">
+        {item.image_name ? (
+          <img 
+            src={item.image_name} 
+            alt={item.title} 
+            className="w-full h-32 object-contain bg-gray-100 cursor-pointer"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/placeholder-image.png';
+            }}
+          />
+        ) : (
+          <div className="w-full h-32 bg-gray-200 flex items-center justify-center cursor-pointer">
+            <span className="text-gray-500">No Image</span>
           </div>
-        </Link>
-      </motion.div>
-    );
-    // Add this inside the DashboardSite component, near the CollectionItemCard definition.
-    const WishlistItemCard = ({ item }: { item: WishlistItem }) => (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className={`rounded-lg overflow-hidden border ${
-          isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"
-        } hover:shadow-lg transition-shadow`}
-      >
-        <Link 
-          to={`/funko/${item.id}`}
-          className="block hover:no-underline"
-          // ✅ Removed onClick={onClose}
-        >
-          {item.image_name ? (
-            <img 
-              src={item.image_name} 
-              alt={item.title} 
-              className="w-full h-32 object-contain bg-gray-100 cursor-pointer"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/placeholder-image.png';
-              }}
-            />
-          ) : (
-            <div className="w-full h-32 bg-gray-200 flex items-center justify-center cursor-pointer">
-              <span className="text-gray-500">No Image</span>
-            </div>
+        )}
+        <div className="p-3">
+          <h4 className="font-semibold text-sm truncate hover:text-blue-500 transition-colors" title={item.title}>
+            {item.title}
+          </h4>
+          <p className="text-xs text-gray-500">#{item.number}</p>
+          {item.condition && (
+            <p className="text-xs mt-1">
+              <span className="font-medium">Condition:</span> {item.condition}
+            </p>
           )}
-          <div className="p-3">
-            <h4 className="font-semibold text-sm truncate hover:text-blue-500 transition-colors" title={item.title}>
-              {item.title}
-            </h4>
-            <p className="text-xs text-gray-500">#{item.number}</p>
-            {item.priority && (
-              <p className="text-xs mt-1">
-                <span className="font-medium">Priority:</span> {item.priority}
-              </p>
-            )}
-            <div className="mt-2 text-xs text-blue-500 font-medium">
-              View Details →
-            </div>
+          <div className="mt-2 text-xs text-blue-500 font-medium">
+            View Details →
           </div>
-        </Link>
-      </motion.div>
-    );
+        </div>
+      </Link>
+    </motion.div>
+  );
 
-  // W useEffect pozostaw tylko wywołanie funkcji:
+  const WishlistItemCard = ({ item }: { item: WishlistItem }) => (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className={`rounded-lg overflow-hidden border ${
+        isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"
+      } hover:shadow-lg transition-shadow`}
+    >
+      <Link to={`/funko/${item.id}`} className="block hover:no-underline">
+        {item.image_name ? (
+          <img 
+            src={item.image_name} 
+            alt={item.title} 
+            className="w-full h-32 object-contain bg-gray-100 cursor-pointer"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/placeholder-image.png';
+            }}
+          />
+        ) : (
+          <div className="w-full h-32 bg-gray-200 flex items-center justify-center cursor-pointer">
+            <span className="text-gray-500">No Image</span>
+          </div>
+        )}
+        <div className="p-3">
+          <h4 className="font-semibold text-sm truncate hover:text-blue-500 transition-colors" title={item.title}>
+            {item.title}
+          </h4>
+          <p className="text-xs text-gray-500">#{item.number}</p>
+          {item.priority && (
+            <p className="text-xs mt-1">
+              <span className="font-medium">Priority:</span> {item.priority}
+            </p>
+          )}
+          <div className="mt-2 text-xs text-blue-500 font-medium">
+            View Details →
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  );
+
   useEffect(() => {
     const initializeUserData = async () => {
       await fetchUserData();
     };
-    
     initializeUserData();
-    
     const hasSeenPopup = localStorage.getItem("hasSeenLanguagePopup");
     if (!hasSeenPopup) {
       setShouldShowPopup(true);
       localStorage.setItem("hasSeenLanguagePopup", "true");
     }
-    
     const handleClickOutside = (event: MouseEvent) => {
       if (
         showLanguageDropdown &&
@@ -587,14 +524,12 @@ useEffect(() => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showLanguageDropdown, navigate]);
 
-  // Fetch analytics when analytics tab is active
   useEffect(() => {
     if (activeView === "analytics") {
       fetchUserAnalytics();
     }
   }, [activeView]);
 
-  // Fetch collection
   useEffect(() => {
     const fetchCollection = async () => {
       const token = localStorage.getItem("token");
@@ -624,7 +559,6 @@ useEffect(() => {
     }
   }, [navigate, activeView]);
 
-  // Filter and sort collection
   useEffect(() => {
     let filtered = collection.filter(item => {
       const matchesSearch = item.title.toLowerCase().includes(collectionSearch.toLowerCase()) ||
@@ -649,7 +583,6 @@ useEffect(() => {
     setFilteredCollection(filtered);
   }, [collection, collectionSearch, filterCondition, collectionSortBy, collectionSortOrder]);
 
-  // Fetch wishlist
   useEffect(() => {
     const fetchWishlist = async () => {
       const token = localStorage.getItem("token");
@@ -679,7 +612,6 @@ useEffect(() => {
     }
   }, [navigate, activeView]);
 
-  // Filter and sort wishlist
   useEffect(() => {
     let filtered = wishlist.filter(item => {
       const matchesSearch = item.title.toLowerCase().includes(wishlistSearch.toLowerCase()) ||
@@ -708,16 +640,13 @@ useEffect(() => {
     setFilteredWishlist(filtered);
   }, [wishlist, wishlistSearch, filterPriority, wishlistSortBy, wishlistSortOrder]);
 
-  // Dodaj ten useEffect na początku komponentu, zaraz po stanach
-useEffect(() => {
-  const initializeUserData = async () => {
-    await fetchUserData();
-  };
-  
-  initializeUserData();
-}, []); // Puste dependencies - uruchamia się tylko przy montowaniu komponentu
+  useEffect(() => {
+    const initializeUserData = async () => {
+      await fetchUserData();
+    };
+    initializeUserData();
+  }, []);
 
-  // Activity logging function
   const logActivity = async (actionType: string, details?: any) => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -739,7 +668,6 @@ useEffect(() => {
     }
   };
 
-  // Fetch user analytics data
   const fetchUserAnalytics = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -751,19 +679,10 @@ useEffect(() => {
         fetch("http://localhost:5000/api/friends", { headers: { Authorization: `Bearer ${token}` } }),
         fetch("http://localhost:5000/api/loyalty/leaderboard", { headers: { Authorization: `Bearer ${token}` } })
       ]);
-      
       if (statsRes.ok) setUserStats(await statsRes.json());
-      else console.warn("Failed to fetch user stats");
-      
       if (loyaltyRes.ok) setLoyaltyData(await loyaltyRes.json());
-      else console.warn("Failed to fetch loyalty data");
-      
       if (friendsRes.ok) setFriends(await friendsRes.json());
-      else console.warn("Failed to fetch friends");
-      
       if (leaderboardRes.ok) setLeaderboard(await leaderboardRes.json());
-      else console.warn("Failed to fetch leaderboard");
-      
     } catch (err) {
       console.error("Failed to fetch user analytics:", err);
     } finally {
@@ -775,17 +694,12 @@ useEffect(() => {
     setLanguage(lang);
     localStorage.setItem("preferredLanguage", lang);
     setShowLanguageDropdown(false);
-    
-    // Dispatch custom event to notify other components
-    window.dispatchEvent(new CustomEvent('languageChanged', { 
-      detail: { language: lang } 
-    }));
+    window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: lang } }));
   };
-  
+
   const toggleTheme = () => setIsDarkMode((prev) => !prev);
   const toggleLanguageDropdown = () => setShowLanguageDropdown((prev) => !prev);
 
-  // Log activity on search
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -804,8 +718,6 @@ useEffect(() => {
   };
 
   const handleEditClick = () => setIsEditing(true);
-
-  
   const handleCancelEdit = () => {
     setIsEditing(false);
     if (user) {
@@ -814,7 +726,7 @@ useEffect(() => {
         surname: user.surname,
         gender: user.gender,
         date_of_birth: user.date_of_birth,
-        nationality: user.nationality || "" // Dodaj tę linię
+        nationality: user.nationality || ""
       });
     }
     setError("");
@@ -824,9 +736,6 @@ useEffect(() => {
     if (!user) return;
     setIsLoading(true);
     setError("");
-
-    console.log("💾 Saving user data:", editForm);
-
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(`http://localhost:5000/api/users/${user.id}`, {
@@ -837,26 +746,14 @@ useEffect(() => {
         },
         body: JSON.stringify(editForm)
       });
-
-      console.log("📡 Response status:", response.status);
-      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to update profile");
       }
-
       const updatedUser = await response.json();
-      console.log("✅ User updated in database:", updatedUser);
-      
-      // Award points for profile update
       await awardPoints("profile_update", "Updated profile information");
-      
-      // Wywołaj fetchUserData bez await (lub z await, ale już nie ma błędu)
-      fetchUserData(); // ← TO JEST TERAZ POPRAWNE
-      
+      fetchUserData();
       setIsEditing(false);
-      console.log("🎉 Profile updated successfully!");
-      
     } catch (err) {
       console.error("❌ Update error:", err);
       setError(err instanceof Error ? err.message : "An unknown error occurred");
@@ -864,7 +761,7 @@ useEffect(() => {
       setIsLoading(false);
     }
   };
-  // Collection item handlers
+
   const handleEditCollectionItem = (item: FunkoItem) => {
     setEditingCollectionItem(item.id);
     setEditCollectionForm(item);
@@ -918,7 +815,6 @@ useEffect(() => {
     setEditCollectionForm(prev => ({ ...prev, [name]: value }));
   };
 
-  // Wishlist item handlers
   const handleEditWishlistItem = (item: WishlistItem) => {
     setEditingWishlistItem(item.id);
     setEditWishlistForm(item);
@@ -967,17 +863,13 @@ useEffect(() => {
     }
   };
 
-  // Log activity when adding to collection
   const handleAddToCollection = async (item: any) => {
     await logActivity("collection_add", { item_id: item.id, title: item.title });
-
     await awardPoints("collection_add", `Added ${item.title}`);
   };
 
-  // Log activity when adding to wishlist
   const handleAddToWishlist = async (item: any) => {
     await logActivity("wishlist_add", { item_id: item.id, title: item.title });
-
     await awardPoints("wishlist_add", `Added ${item.title}`);
   };
 
@@ -1016,7 +908,7 @@ useEffect(() => {
     switch (priority) {
       case "high": return "text-red-500";
       case "medium": return "text-yellow-500";
-      case "low": return "text-green-500";
+      case "low": return "text-blue-500";
       default: return "text-gray-500";
     }
   };
@@ -1041,13 +933,11 @@ useEffect(() => {
     return date.toLocaleDateString(language);
   };
 
-  // Render Analytics View
   const renderAnalyticsView = () => (
     <div className="max-w-7xl mx-auto w-full">
-      <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+      <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
         {t.yourStats || "Your Statistics"}
       </h2>
-
       {analyticsLoading ? (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
@@ -1055,7 +945,6 @@ useEffect(() => {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Loyalty Score Card */}
           <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-semibold">{t.loyaltyScore || "Loyalty Score"}</h3>
@@ -1077,8 +966,6 @@ useEffect(() => {
               </div>
             </div>
           </div>
-
-          {/* Activity Stats */}
           <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
             <h3 className="text-xl font-semibold mb-4">{t.yourActivity || "Your Activity"}</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -1098,8 +985,6 @@ useEffect(() => {
               </div>
             </div>
           </div>
-
-          {/* Activity Breakdown */}
           {userStats?.breakdown && userStats.breakdown.length > 0 && (
             <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
               <h3 className="text-xl font-semibold mb-4">{t.activityBreakdown || "Activity Breakdown"}</h3>
@@ -1113,8 +998,6 @@ useEffect(() => {
               </div>
             </div>
           )}
-
-          {/* Leaderboard Position */}
           {leaderboard.length > 0 && (
             <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
               <h3 className="text-xl font-semibold mb-4">{t.leaderboard || "Leaderboard"}</h3>
@@ -1125,7 +1008,7 @@ useEffect(() => {
                     <div 
                       key={idx} 
                       className={`flex justify-between items-center p-2 rounded ${
-                        isCurrentUser ? (isDarkMode ? "bg-yellow-900" : "bg-green-100") : ""
+                        isCurrentUser ? (isDarkMode ? "bg-yellow-900" : "bg-blue-100") : ""
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -1143,27 +1026,22 @@ useEffect(() => {
               </div>
             </div>
           )}
-
           {(!userStats && !analyticsLoading) && (
             <div className="text-center py-8 text-gray-500">
               <p>No analytics data available yet.</p>
               <p className="text-sm">Start using the app to see your statistics!</p>
             </div>
           )}
-
         </div>
-        
       )}
     </div>
   );
 
-  // Render Social View
   const renderSocialView = () => (
     <div className="max-w-7xl mx-auto w-full">
-      <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+      <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
         {t.social || "Social"}
       </h2>
-      {/* Add Friend Form */}
       <div className={`p-6 rounded-lg shadow-lg mb-6 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
         <h3 className="text-xl font-semibold mb-4">{t.addFriend || "Add Friend"}</h3>
         <div className="flex gap-2">
@@ -1194,7 +1072,7 @@ useEffect(() => {
                 });
                 if (response.ok) {
                   alert("Friend request sent!");
-                  await awardPoints("friend_add", `Sent friend request to ${friendLogin}`); // ✅ DODANE
+                  await awardPoints("friend_add", `Sent friend request to ${friendLogin}`);
                   input.value = "";
                   fetchOutgoingRequests();
                 } else {
@@ -1207,15 +1085,13 @@ useEffect(() => {
               }
             }}
             className={`px-6 py-2 rounded ${
-              isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"
+              isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-600 hover:bg-blue-700"
             } text-white`}
           >
             {t.sendRequest || "Send Request"}
           </button>
         </div>
       </div>
-
-      {/* Incoming Requests */}
       {incomingRequests.length > 0 && (
         <div className={`p-6 rounded-lg shadow-lg mb-6 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
           <h3 className="text-xl font-semibold mb-4">
@@ -1257,8 +1133,6 @@ useEffect(() => {
           </div>
         </div>
       )}
-
-      {/* Outgoing Requests */}
       {outgoingRequests.length > 0 && (
         <div className={`p-6 rounded-lg shadow-lg mb-6 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
           <h3 className="text-xl font-semibold mb-4">
@@ -1292,8 +1166,6 @@ useEffect(() => {
           </div>
         </div>
       )}
-
-      {/* Friends List */}
       <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
         <h3 className="text-xl font-semibold mb-4">
           {t.yourFriends || "Your Friends"} ({friends.filter((f: any) => f.status === "accepted").length})
@@ -1337,7 +1209,6 @@ useEffect(() => {
                         isDarkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
                       } text-white text-sm`}
                     >
-                      
                       {t.chat || "Chat"}
                     </button>
                     <button
@@ -1352,8 +1223,6 @@ useEffect(() => {
           </div>
         )}
       </div>
-
-      {/* Chat Modal */}
       {showChat && selectedFriend && (
         <ChatComponent 
           isDarkMode={isDarkMode}
@@ -1362,7 +1231,6 @@ useEffect(() => {
           onClose={() => setShowChat(false)}
         />
       )}
-      {/* Friend Profile Modal */}
       {showFriendProfile && selectedFriendForProfile && (
         <FriendProfileModal
           friendId={selectedFriendForProfile.id}
@@ -1380,20 +1248,18 @@ useEffect(() => {
   const renderDashboardView = () => (
     <>
       <h3 className="text-xl font-semibold mb-4 ">{t.welcome} {user?.name || ""}</h3>
-      <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+      <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
         {t.dashboardWelcome} 
       </h2>
-      {/* Section: Profile Info */}
       <section
           className={`max-w-4xl w-full mx-auto p-8 rounded-xl shadow-xl mb-10 
-                      ${isDarkMode ? 'bg-gray-700 border-gray-900' : 'bg-gray-300 border border-gray-900'}
-                      
+                      ${isDarkMode ? 'bg-gray-700 border-gray-900' : 'bg-white '}
                       hover:shadow-2xl`}
         >
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-bold text-gray-800">
-            {t.profile}
-          </h3>
+            <h3 className={`text-2xl font-bold ${isDarkMode ? "text-yellow-500" : "text-blue-600"}`}>
+              {t.profile}
+            </h3>
           {!isEditing ? (
             <button
               onClick={handleEditClick}
@@ -1409,7 +1275,7 @@ useEffect(() => {
                 onClick={handleSaveChanges}
                 disabled={isLoading}
                 className={`p-3 rounded-lg flex items-center gap-2 transition-all duration-300 transform hover:scale-105 shadow-lg 
-                            bg-green-500 hover:bg-green-600 shadow-green-500/25 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none`}
+                            bg-blue-500 hover:bg-blue-600 shadow-blue-500/25 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none`}
               >
                 <SaveIcon className="w-5 h-5" />
                 <span className="font-medium">{isLoading ? t.saving : t.save}</span>
@@ -1417,7 +1283,7 @@ useEffect(() => {
               <button
                 onClick={handleCancelEdit}
                 className={`p-3 rounded-lg flex items-center gap-2 transition-all duration-300 transform hover:scale-105 border-2 
-                            bg-white hover:bg-gray-50 border-gray-300 text-gray-700 hover:text-gray-900 shadow-md font-semibold`}
+                            bg-white hover:bg-gray-50 border-white text-gray-700 hover:text-gray-900 shadow-md font-semibold`}
               >
                 <CancelIcon className="w-5 h-5" />
                 <span className="font-medium">{t.cancelInfo}</span>
@@ -1425,7 +1291,6 @@ useEffect(() => {
             </div>
           )}
         </div>
-
         {error && (
           <div className="mb-6 p-4 rounded-lg text-sm border-l-4 
                           bg-red-50 text-red-800 border-red-400 shadow-sm">
@@ -1435,7 +1300,6 @@ useEffect(() => {
             </div>
           </div>
         )}
-
         <ul className="space-y-4 text-lg">
           {isEditing ? (
             <>
@@ -1454,7 +1318,6 @@ useEffect(() => {
                   placeholder={t.name}
                 />
               </li>
-
               <li className="flex flex-col md:flex-row md:items-center gap-3 p-3 rounded-lg bg-gray-50 transition-colors">
                 <strong className="w-full md:w-1/3 text-gray-700 flex items-center gap-2">
                   <span className="text-blue-500">👥</span>
@@ -1470,7 +1333,6 @@ useEffect(() => {
                   placeholder={t.surname}
                 />
               </li>
-
               <li className="flex flex-col md:flex-row md:items-center gap-3 p-3 rounded-lg bg-gray-50 transition-colors">
                 <strong className="w-full md:w-1/3 text-gray-700 flex items-center gap-2">
                   <span className="text-purple-500">⚧️</span>
@@ -1490,10 +1352,9 @@ useEffect(() => {
                   <option value="prefer_not_to_say" className="text-gray-900">{t.preferNotToSay}</option>
                 </select>
               </li>
-
               <li className="flex flex-col md:flex-row md:items-center gap-3 p-3 rounded-lg bg-gray-50 transition-colors">
                 <strong className="w-full md:w-1/3 text-gray-700 flex items-center gap-2">
-                  <span className="text-green-500">🎂</span>
+                  <span className="text-blue-500">🎂</span>
                   {t.dateOfBirth}:
                 </strong>
                 <input
@@ -1505,7 +1366,6 @@ useEffect(() => {
                               bg-white text-gray-900 border-gray-300 focus:border-blue-500 shadow-sm`}
                 />
               </li>
-
               <li className="flex flex-col md:flex-row md:items-center gap-3 p-3 rounded-lg bg-gray-50 transition-colors">
                 <strong className="w-full md:w-1/3 text-gray-700 flex items-center gap-2">
                   <span className="text-red-500">🌍</span>
@@ -1531,15 +1391,13 @@ useEffect(() => {
                   <span className="text-gray-900 font-medium">{user?.name || "N/A"}</span>
                 </div>
               </li>
-
               <li className="p-4 rounded-lg border border-green-500 bg-green-50 transition-all hover:shadow-md">
                 <div className="flex items-center gap-2">
-                  <span className="text-green-500 text-xl">👥</span>
+                  <span className="text-blue-500 text-xl">👥</span>
                   <strong className="text-gray-700">{t.surname}:</strong>
                   <span className="text-gray-900 font-medium">{user?.surname || "N/A"}</span>
                 </div>
               </li>
-
               <li className="p-4 rounded-lg border border-purple-500 bg-purple-50 transition-all hover:shadow-md">
                 <div className="flex items-center gap-2">
                   <span className="text-purple-500 text-xl">📧</span>
@@ -1547,7 +1405,6 @@ useEffect(() => {
                   <span className="text-gray-900 font-medium">{user?.email || "N/A"}</span>
                 </div>
               </li>
-
               <li className="p-4 rounded-lg border border-yellow-500 bg-yellow-50 transition-all hover:shadow-md">
                 <div className="flex items-center gap-2">
                   <span className="text-yellow-500 text-xl">🔑</span>
@@ -1555,7 +1412,6 @@ useEffect(() => {
                   <span className="text-gray-900 font-medium">{user?.login || "N/A"}</span>
                 </div>
               </li>
-
               <li className="p-4 rounded-lg border border-pink-500 bg-pink-50 transition-all hover:shadow-md">
                 <div className="flex items-center gap-2">
                   <span className="text-pink-500 text-xl">⚧️</span>
@@ -1565,7 +1421,6 @@ useEffect(() => {
                   </span>
                 </div>
               </li>
-
               <li className="p-4 rounded-lg border border-emerald-500 bg-emerald-50 transition-all hover:shadow-md">
                 <div className="flex items-center gap-2">
                   <span className="text-emerald-500 text-xl">🎂</span>
@@ -1573,7 +1428,6 @@ useEffect(() => {
                   <span className="text-gray-900 font-medium">{formatDate(user?.date_of_birth || "")}</span>
                 </div>
               </li>
-
               <li className="p-4 rounded-lg border border-cyan-500 bg-cyan-50 transition-all hover:shadow-md">
                 <div className="flex items-center gap-2">
                   <span className="text-cyan-500 text-xl">📅</span>
@@ -1581,7 +1435,6 @@ useEffect(() => {
                   <span className="text-gray-900 font-medium">{formatDate(user?.created_at || "")}</span>
                 </div>
               </li>
-
               <li className="p-4 rounded-lg border border-orange-500 bg-orange-50 transition-all hover:shadow-md">
                 <div className="flex items-center gap-2">
                   <span className="text-orange-500 text-xl">🕒</span>
@@ -1589,7 +1442,6 @@ useEffect(() => {
                   <span className="text-gray-900 font-medium">{formatDate(user?.last_login || "")}</span>
                 </div>
               </li>
-
               <li className="p-4 rounded-lg border border-red-500 bg-red-50 transition-all hover:shadow-md">
                 <div className="flex items-center gap-2">
                   <span className="text-red-500 text-xl">🌍</span>
@@ -1601,16 +1453,12 @@ useEffect(() => {
           )}
         </ul>
       </section>
-
-
-      {/* Section: Collection Preview */}
-
-      <section className={`max-w-4xl w-full mb-8 p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-gray-300"}`}>
+      <section className={`max-w-4xl w-full mb-8 p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">{t.yourCollection}</h3>
           <button 
             onClick={() => setActiveView("collection")}
-            className={`px-3 py-1 rounded text-sm ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-500 hover:bg-green-600"} text-white`}
+            className={`px-3 py-1 rounded text-sm ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-500 hover:bg-blue-600"} text-white`}
           >
             {t.viewAll ||  "View All"}
           </button>
@@ -1623,14 +1471,12 @@ useEffect(() => {
           </div>
         }
       </section>
-      {/* Section: Wishlist Preview */}
-
-      <section className={`max-w-4xl w-full mb-8 p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-gray-300"}`}>
+      <section className={`max-w-4xl w-full mb-8 p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">{t.yourWishlist}</h3>
           <button 
             onClick={() => setActiveView("wishlist")}
-            className={`px-3 py-1 rounded text-sm ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-500 hover:bg-green-600"} text-white`}
+            className={`px-3 py-1 rounded text-sm ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-500 hover:bg-blue-600"} text-white`}
           >
             {t.viewAll ||  "View All"}
           </button>
@@ -1649,7 +1495,7 @@ useEffect(() => {
   const renderCollectionView = () => (
     <div className="max-w-7xl mx-auto w-full">
       <div className="flex justify-between items-center mb-6">
-        <h2 className={`text-3xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+        <h2 className={`text-3xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
           {t.yourCollection}
         </h2>
         <button
@@ -1719,25 +1565,25 @@ useEffect(() => {
       <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
           <div>
-            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
               {collection.length}
             </div>
             <div className="text-sm">{t.TotalItems}</div>
           </div>
           <div>
-            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
               {filteredCollection.length}
             </div>
             <div className="text-sm">{t.FilteredItems}</div>
           </div>
           <div>
-            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
               ${collection.reduce((sum, item) => sum + (item.purchase_price || 0), 0).toFixed(2)}
             </div>
             <div className="text-sm">{t.TotalValue}</div>
           </div>
           <div>
-            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
               {new Set(collection.map(item => item.series)).size}
             </div>
             <div className="text-sm">Series</div>
@@ -1753,7 +1599,7 @@ useEffect(() => {
               <p className="mb-4">{t.emptyCollection}</p>
               <Link 
                 to="/searchsite" 
-                className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"} text-white`}
+                className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-600 hover:bg-blue-700"} text-white`}
               >
                 {t.StartAddingItems}
               </Link>
@@ -1816,7 +1662,7 @@ useEffect(() => {
                     <div className="flex gap-2">
                       <button
                         onClick={handleSaveCollectionEdit}
-                        className="flex-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded flex items-center justify-center gap-1"
+                        className="flex-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded flex items-center justify-center gap-1"
                       >
                         <SaveIcon className="w-4 h-4" />
                         Save
@@ -1872,7 +1718,7 @@ useEffect(() => {
   const renderWishlistView = () => (
     <div className="max-w-7xl mx-auto w-full">
       <div className="flex justify-between items-center mb-6">
-        <h2 className={`text-3xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+        <h2 className={`text-3xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
           {t.yourWishlist}
         </h2>
         <button
@@ -1942,25 +1788,25 @@ useEffect(() => {
       <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
           <div>
-            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
               {wishlist.length}
             </div>
             <div className="text-sm">{t.TotalItems}</div>
           </div>
           <div>
-            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
               {wishlist.filter(item => item.priority === "high").length}
             </div>
             <div className="text-sm">{t.HighPriority}</div>
           </div>
           <div>
-            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
               ${wishlist.reduce((sum, item) => sum + (item.max_price || 0), 0).toFixed(2)}
             </div>
             <div className="text-sm">{t.TotalBudget}</div>
           </div>
           <div>
-            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
               {new Set(wishlist.map(item => item.series)).size}
             </div>
             <div className="text-sm">{t.Series}</div>
@@ -1976,7 +1822,7 @@ useEffect(() => {
               <p className="mb-4">{t.noItemsInWishlist}</p>
               <Link 
                 to="/searchsite" 
-                className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"} text-white`}
+                className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-600 hover:bg-blue-700"} text-white`}
               >
                 {t.StartAddingItems}
               </Link>
@@ -2053,7 +1899,7 @@ useEffect(() => {
                     <div className="flex gap-2">
                       <button
                         onClick={handleSaveWishlistEdit}
-                        className="flex-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded flex items-center justify-center gap-1"
+                        className="flex-1 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded flex items-center justify-center gap-1"
                       >
                         <SaveIcon className="w-4 h-4" />
                         {t.Save || "Save"}
@@ -2106,7 +1952,7 @@ useEffect(() => {
                       </div>
                       <button
                         onClick={() => handleMoveToCollection(item)}
-                        className={`w-full px-3 py-1 rounded flex items-center justify-center gap-1 ${isDarkMode ? "bg-green-500 hover:bg-green-600" : "bg-green-600 hover:bg-green-700"} text-white`}
+                        className={`w-full px-3 py-1 rounded flex items-center justify-center gap-1 ${isDarkMode ? "bg-blue-500 hover:bg-blue-600" : "bg-blue-600 hover:bg-blue-700"} text-white`}
                       >
                         <ShoppingCartIcon className="w-4 h-4" />
                         {t.AddToCollection || "Add to Collection"}
@@ -2123,22 +1969,19 @@ useEffect(() => {
   );
 
   return (
-    <div className={`welcome-site min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"}`}>
-      {/* Header */}
-           <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
+    <div className={`welcome-site min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-gray-900"}`}>  
+      <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
         <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
           <Link to="/" className="no-underline">
             <h1
               className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
-                isDarkMode ? "text-yellow-400" : "text-green-600"
+                isDarkMode ? "text-yellow-400" : "text-blue-600"
               }`}
             >
               Pop&Go!
             </h1>
           </Link>
         </div>
-
-        {/* 🔍 Search */}
         <form
           onSubmit={handleSearch}
           className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden ${
@@ -2162,24 +2005,21 @@ useEffect(() => {
             className={`px-4 py-2 ${
               isDarkMode
                 ? "bg-yellow-500 hover:bg-yellow-600"
-                : "bg-green-600 hover:bg-green-700"
+                : "bg-blue-600 hover:bg-blue-700"
             } text-white`}
             aria-label="Search"
           >
             <SearchIcon className="w-5 h-5" />
           </button>
         </form>
-
-        {/* 🌐 Language, 🌙 Theme, 🔐 Logout */}
         <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0">
-          {/* Language Dropdown */}
           <div className="relative">
             <button
               ref={languageButtonRef}
               onClick={toggleLanguageDropdown}
               className={`p-2 rounded-full flex items-center gap-1 ${
                 isDarkMode
-                  ? "bg-gray-700 hover:bg-gray-600"
+                  ? "bg-gray-600 hover:bg-gray-500"
                   : "bg-gray-200 hover:bg-neutral-600"
               }`}
               aria-label="Select language"
@@ -2193,7 +2033,6 @@ useEffect(() => {
                 }`}
               />
             </button>
-
             {showLanguageDropdown && (
               <div
                 ref={dropdownRef}
@@ -2210,10 +2049,10 @@ useEffect(() => {
                       language === code
                         ? isDarkMode
                           ? "bg-yellow-500 text-black"
-                          : "bg-green-600 text-white"
+                          : "bg-blue-600 text-white"
                         : isDarkMode
                         ? "hover:bg-gray-600"
-                        : "hover:bg-neutral-500"
+                        : "hover:bg-white"
                     }`}
                   >
                     <span className="w-5 h-5">{flag}</span>
@@ -2223,8 +2062,6 @@ useEffect(() => {
               </div>
             )}
           </div>
-
-          {/* 🌙 Theme Toggle */}
           <button
             onClick={toggleTheme}
             className={`p-2 rounded-full ${
@@ -2236,8 +2073,6 @@ useEffect(() => {
           >
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
-
-          {/* 🔐 Logout */}
           <button
             onClick={handleLogout}
             className={`flex items-center gap-2 px-4 py-2 rounded ${
@@ -2250,40 +2085,36 @@ useEffect(() => {
           </button>
         </div>
       </header>
-
-      {/* Navigation */}
-      <nav className={`px-8 py-2 ${isDarkMode ? "bg-gray-700" : "bg-gray-300"}`}>
+      <nav className={`px-8 py-2 ${isDarkMode ? "bg-gray-700" : "bg-white border-b border-gray-200"}`}>
         <div className="flex gap-4 flex-wrap">
           <button 
             onClick={() => setActiveView("dashboard")} 
-            className={`px-3 py-1 rounded ${activeView === "dashboard" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}
+            className={`px-3 py-1 rounded ${activeView === "dashboard" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}
           >
             {t.dashboard}
           </button>
           <button 
             onClick={() => setActiveView("collection")} 
-            className={`px-3 py-1 rounded ${activeView === "collection" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}
+            className={`px-3 py-1 rounded ${activeView === "collection" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}
           >
             {t.collection}
           </button>
           <button 
             onClick={() => setActiveView("wishlist")} 
-            className={`px-3 py-1 rounded ${activeView === "wishlist" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}
+            className={`px-3 py-1 rounded ${activeView === "wishlist" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}
           >
             {t.wishlist}
           </button>
-          {/* Analytics Tab */}
           <button 
             onClick={() => setActiveView("analytics")} 
-            className={`px-3 py-1 rounded flex items-center gap-2 ${activeView === "analytics" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}
+            className={`px-3 py-1 rounded flex items-center gap-2 ${activeView === "analytics" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}
           >
             <ChartIcon className="w-4 h-4" />
             {t.analytics || "Analytics"}
           </button>
-          {/* Social Tab */}
           <button 
             onClick={() => setActiveView("social")} 
-            className={`px-3 py-1 rounded flex items-center gap-2 ${activeView === "social" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}
+            className={`px-3 py-1 rounded flex items-center gap-2 ${activeView === "social" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}
           >
             <UsersIcon className="w-4 h-4" />
             {t.social || "Social"}
@@ -2294,11 +2125,8 @@ useEffect(() => {
           >
             🏆 {t.rewards || "Rewards"}
           </button>
-
         </div>
       </nav>
-
-      {/* Main content */}
       <main className="flex-grow flex items-center justify-center px-8 py-8 relative overflow-hidden">
         <AnimatePresence mode="wait">
           {activeView === "dashboard" && (
@@ -2339,7 +2167,6 @@ useEffect(() => {
               {renderWishlistView()}
             </motion.div>
           )}
-          {/* Analytics View */}
           {activeView === "analytics" && (
             <motion.div
               key="analytics"
@@ -2353,7 +2180,6 @@ useEffect(() => {
               {renderAnalyticsView()}
             </motion.div>
           )}
-          {/* Social View */}
           {activeView === "social" && (
             <motion.div
               key="social"
@@ -2368,18 +2194,14 @@ useEffect(() => {
             </motion.div>
           )}
         </AnimatePresence>
-
-          {/* Loyalty Dashboard Modal */}
-          {showLoyaltyDashboard && (
-            <LoyaltyDashboard 
-              isDarkMode={isDarkMode}
-              onClose={() => setShowLoyaltyDashboard(false)}
-            />
-            )}
+        {showLoyaltyDashboard && (
+          <LoyaltyDashboard 
+            isDarkMode={isDarkMode}
+            onClose={() => setShowLoyaltyDashboard(false)}
+          />
+        )}
       </main>
-
-      {/* Footer */}
-      <footer className={`text-center py-4 ${isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-200 text-gray-700"}`}>
+      <footer className={`text-center py-4 ${isDarkMode ? "bg-gray-900 text-gray-400" : "bg-white text-gray-700"}`}>
         {t.copyright}
       </footer>
     </div>

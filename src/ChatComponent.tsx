@@ -403,71 +403,20 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
     return activeUsers.has(userId);
   };
 
-  // Define static Tailwind class names for each theme
-  const themeClasses = {
-    dark: {
-      bg: 'bg-slate-900', // Dark blue background
-      text: 'text-white',
-      border: 'border-slate-700',
-      headerBg: 'bg-slate-900',
-      headerBorder: 'border-slate-700',
-      conversationBg: 'bg-slate-800',
-      conversationHover: 'hover:bg-slate-700',
-      messageOwnBg: 'bg-green-500',
-      messageOwnText: 'text-white',
-      messageOtherBg: 'bg-slate-800',
-      messageOtherText: 'text-white',
-      messageOtherBorder: 'border-slate-700',
-      inputBg: 'bg-slate-800',
-      inputBorder: 'border-slate-700',
-      inputFocusRing: 'focus:ring-green-500',
-      buttonBg: 'bg-green-500',
-      buttonHover: 'hover:bg-green-600',
-      buttonDisabled: 'disabled:bg-slate-800',
-      unreadBadgeBg: 'bg-red-500',
-      unreadBadgeText: 'text-white',
-      onlineIndicator: 'bg-green-500',
-      offlineIndicator: 'bg-gray-400',
-      loadingText: 'text-gray-400',
-      noMessagesText: 'text-gray-400',
-      placeholder: 'placeholder-gray-400',
-    },
-    light: {
-      bg: 'bg-white',
-      text: 'text-gray-900',
-      border: 'border-gray-200',
-      headerBg: 'bg-white',
-      headerBorder: 'border-gray-200',
-      conversationBg: 'bg-gray-50',
-      conversationHover: 'hover:bg-white',
-      messageOwnBg: 'bg-blue-500',
-      messageOwnText: 'text-white',
-      messageOtherBg: 'bg-white',
-      messageOtherText: 'text-gray-900',
-      messageOtherBorder: 'border-gray-200',
-      inputBg: 'bg-white',
-      inputBorder: 'border-gray-300',
-      inputFocusRing: 'focus:ring-blue-500',
-      buttonBg: 'bg-blue-500',
-      buttonHover: 'hover:bg-blue-600',
-      buttonDisabled: 'disabled:bg-gray-200',
-      unreadBadgeBg: 'bg-red-500',
-      unreadBadgeText: 'text-white',
-      onlineIndicator: 'bg-green-500',
-      offlineIndicator: 'bg-gray-400',
-      loadingText: 'text-gray-500',
-      noMessagesText: 'text-gray-500',
-      placeholder: 'placeholder-gray-500',
-    }
-  };
+  
 
-  const classes = isDarkMode ? themeClasses.dark : themeClasses.light;
+
 
   return (
-    <div className={`fixed bottom-4 right-4 w-96 h-[600px] rounded-lg shadow-2xl flex flex-col z-50 ${classes.bg} ${classes.text} ${classes.border}`}>
-      <div className={`flex items-center justify-between p-4 border-b ${classes.headerBorder} ${classes.headerBg}`}>
+    <div className={`fixed bottom-4 right-4 w-96 h-[600px] rounded-lg shadow-2xl flex flex-col z-50 ${
+      isDarkMode ? 'bg-gray-600 text-white border-gray-700' : 'bg-blue-100 text-gray-900 border-blue-200'
+    }`}>
+      {/* Header */}
+      <div className={`flex items-center justify-between p-4 border-b ${
+        isDarkMode ? 'bg-yellow-500 border-yellow-500' : 'bg-blue-600 border-blue-600'
+      }`}>
         <div className="flex items-center gap-2">
-          <MessageCircle className="w-5 h-5 text-green-400" />
+          <MessageCircle className={`w-5 h-5 ${isDarkMode ? 'text-black' : 'text-white'}`} />
           <div className="flex flex-col">
             <h3 className="font-semibold">
               {selectedConversation ? selectedConversation.friend_name : t.messages}
@@ -483,7 +432,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
                     }`}
                     title={isUserActive(selectedConversation.friend_id) ? t.online : t.offline}
                   />
-                  <span className={`text-${classes.placeholder}`}>
+                  <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>
                     {isUserActive(selectedConversation.friend_id) ? t.online : t.offline}
                   </span>
                 </div>
@@ -498,7 +447,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
             )}
           </div>
           {unreadCount > 0 && !selectedConversation && (
-            <span className={`bg-red-500 text-white text-xs px-2 py-1 rounded-full`}>
+            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
               {unreadCount}
             </span>
           )}
@@ -519,14 +468,14 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
             onClick={onClose}
             className="p-1 hover:bg-gray-100 rounded transition-colors"
           >
-            <X className="w-4 h-4 text-gray-600" />
+            <X className={`w-4 h-4 ${isDarkMode ? 'text-black' : 'text-gray-600'}`} />
           </button>
         </div>
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col">
         {!selectedConversation ? (
-          <div className={`h-full overflow-y-auto ${classes.conversationBg}`}>
+          <div className={`h-full overflow-y-auto ${isDarkMode ? 'bg-gray-700' : 'bg-white'}`}>
             {conversations.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-gray-500 p-4">
                 <MessageCircle className="w-12 h-12 mb-2 text-gray-400" />
@@ -536,12 +485,15 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
             ) : (
               conversations.map(conv => {
                 const friendNationality = getFriendNationality(conv.friend_id);
-                
                 return (
                   <button
                     key={conv.conversation_id}
                     onClick={() => handleSelectConversation(conv)}
-                    className={`w-full p-4 border-b ${classes.border} text-left transition-colors ${classes.conversationHover} ${classes.conversationBg}`}
+                    className={`w-full p-4 border-b text-left transition-colors ${
+                      isDarkMode 
+                        ? 'bg-gray-700 hover:bg-gray-600 border-gray-700' 
+                        : 'bg-white hover:bg-blue-50 border-blue-200'
+                    }`}
                   >
                     <div className="flex justify-between items-start mb-1">
                       <div className="flex items-center gap-2">
@@ -560,12 +512,12 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
                           </span>
                         )}
                       </div>
-                      <span className={`text-xs ${classes.placeholder}`}>
+                      <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         {conv.last_message_time && formatTime(conv.last_message_time)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <p className={`text-sm truncate flex-1 ${classes.placeholder}`}>
+                      <p className={`text-sm truncate flex-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                         {conv.last_message || 'No messages yet'}
                       </p>
                       {conv.unread_count > 0 && (
@@ -581,14 +533,19 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
           </div>
         ) : (
           <>
+            {/* Messages Area */}
             <div 
               ref={messagesContainerRef}
-              className={`flex-1 overflow-y-auto p-4 space-y-3 ${classes.bg}`}
+              className={`flex-1 overflow-y-auto p-4 space-y-3 ${
+                isDarkMode ? 'bg-gray-600' : 'bg-blue-100'
+              }`}
             >
               {loading ? (
-                <div className={`text-center ${classes.loadingText}`}>{t.loadingMessages}</div>
+                <div className={`text-center ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                  {t.loadingMessages}
+                </div>
               ) : messages.length === 0 ? (
-                <div className={`text-center ${classes.noMessagesText}`}>
+                <div className={`text-center ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                   {t.noMessages}. {t.startConversation}
                 </div>
               ) : (
@@ -604,8 +561,12 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
                       <div
                         className={`max-w-[75%] rounded-lg p-3 relative ${
                           isOwn
-                            ? `${classes.messageOwnBg} ${classes.messageOwnText} shadow-sm`
-                            : `${classes.messageOtherBg} ${classes.messageOtherText} border ${classes.messageOtherBorder}`
+                            ? (isDarkMode 
+                                ? 'bg-yellow-500 text-black' 
+                                : 'bg-blue-600 text-white') + ' shadow-sm'
+                            : (isDarkMode 
+                                ? 'bg-gray-800 text-gray-200 border-gray-700' 
+                                : 'bg-white text-gray-800 border border-blue-200')
                         } ${
                           !isOwn && isSenderActive 
                             ? 'ring-2 ring-green-400 ring-opacity-50' 
@@ -613,7 +574,11 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
                         }`}
                       >
                         <p className="text-sm break-words">{msg.content}</p>
-                        <p className={`text-xs mt-1 ${isOwn ? 'text-blue-100' : classes.placeholder}`}>
+                        <p className={`text-xs mt-1 ${
+                          isOwn 
+                            ? (isDarkMode ? 'text-black/80' : 'text-blue-100') 
+                            : (isDarkMode ? 'text-gray-400' : 'text-gray-500')
+                        }`}>
                           {formatTime(msg.created_at)}
                         </p>
                         {!isOwn && isSenderActive && (
@@ -629,7 +594,8 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
               )}
             </div>
 
-            <div className={`p-4 border-t ${classes.border} ${classes.bg}`}>
+            {/* Input Area */}
+            <div className={`p-4 border-t ${isDarkMode ? 'border-gray-700 bg-gray-600' : 'border-blue-100 bg-blue-200'}`}>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -637,12 +603,20 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder={t.typeMessage}
-                  className={`flex-1 px-3 py-2 rounded border ${classes.inputBorder} ${classes.inputBg} ${classes.text} ${classes.placeholder} focus:outline-none focus:ring-2 ${classes.inputFocusRing} focus:border-transparent`}
+                  className={`flex-1 px-3 py-2 rounded border focus:outline-none focus:ring-2 focus:border-transparent ${
+                    isDarkMode
+                      ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-400 focus:ring-yellow-500'
+                      : 'bg-white text-gray-900 border-blue-300 placeholder-gray-500 focus:ring-blue-500'
+                  }`}
                 />
                 <button
                   onClick={sendMessage}
                   disabled={!newMessage.trim()}
-                  className={`px-4 py-2 rounded ${classes.buttonBg} ${classes.buttonHover} text-white ${classes.buttonDisabled} transition-colors flex items-center justify-center`}
+                  className={`px-4 py-2 rounded text-white transition-colors flex items-center justify-center ${
+                    isDarkMode
+                      ? 'bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-600'
+                      : 'bg-blue-600 hover:bg-blue-700 disabled:bg-blue-200'
+                  }`}
                 >
                   <Send className="w-4 h-4" />
                 </button>

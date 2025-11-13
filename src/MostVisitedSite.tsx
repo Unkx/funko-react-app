@@ -235,12 +235,12 @@ const MostVisitedSite: React.FC = () => {
   }
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"}`}>
+    <div className={`min-h-screen ${isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-black"}`}>
       <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
         <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
           <Link to="/" className="no-underline">
             <h1 className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
-              isDarkMode ? "text-yellow-400" : "text-green-600"
+              isDarkMode ? "text-yellow-400" : "text-blue-600"
             }`}>
               Pop&Go!
             </h1>
@@ -271,7 +271,7 @@ const MostVisitedSite: React.FC = () => {
             className={`px-4 py-2 ${
               isDarkMode
                 ? "bg-yellow-500 hover:bg-yellow-600"
-                : "bg-green-600 hover:bg-green-700"
+                : "bg-blue-600 hover:bg-blue-700"
             } text-white`}
             aria-label="Search"
           >
@@ -287,8 +287,8 @@ const MostVisitedSite: React.FC = () => {
               onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
               className={`p-2 rounded-full flex items-center gap-1 ${
                 isDarkMode
-                  ? "bg-gray-700 hover:bg-gray-600"
-                  : "bg-gray-200 hover:bg-neutral-600"
+                  ? "bg-gray-600 hover:bg-gray-500"
+                  : "bg-gray-200 hover:bg-neutral-300"
               }`}
               aria-label="Select language"
               aria-expanded={showLanguageDropdown}
@@ -317,10 +317,10 @@ const MostVisitedSite: React.FC = () => {
                       language === code
                         ? isDarkMode
                           ? "bg-yellow-500 text-black"
-                          : "bg-green-600 text-white"
+                          : "bg-blue-600 text-white"
                         : isDarkMode
-                        ? "hover:bg-gray-600"
-                        : "hover:bg-neutral-500"
+                        ? "hover:bg-gray-300"
+                        : "hover:bg-neutral-200"
                     }`}
                   >
                     <span className="w-5 h-5">{flag}</span>
@@ -353,7 +353,7 @@ const MostVisitedSite: React.FC = () => {
             className={`flex items-center gap-2 px-4 py-2 rounded ${
               isDarkMode
                 ? "bg-yellow-500 text-black hover:bg-yellow-600"
-                : "bg-green-600 text-white hover:bg-green-700"
+                : "bg-blue-600 text-white hover:bg-green-700"
             }`}
           >
             {t.goToDashboard || "Dashboard"}
@@ -509,7 +509,7 @@ const MostVisitedSite: React.FC = () => {
               className={`inline-block px-6 py-3 rounded-lg font-bold ${
                 isDarkMode 
                   ? "bg-gray-700 hover:bg-gray-600" 
-                  : "bg-gray-200 hover:bg-gray-300"
+                  : "bg-white hover:bg-gray-200"
               }`}
             >
               {t.browseAllItems?.replace("{count}", allItems.length.toString()) || `Browse All Items (${allItems.length})`}
@@ -519,7 +519,7 @@ const MostVisitedSite: React.FC = () => {
       </main>
 
       <footer className={`text-center py-4 ${
-        isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-300 text-gray-700"
+        isDarkMode ? "bg-gray-900 text-gray-400" : "bg-white text-gray-700"
       }`}>
         {t.copyright || "© 2024 Pop&Go! All rights reserved."}
       </footer>

@@ -590,7 +590,7 @@ const mostVisitedItems = useMemo(() => {
   return (
     <div
       className={`welcome-site min-h-screen flex flex-col ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
+        isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-black"
       }`}
     >
       {/* 🌍 First-Time World Map Popup */}
@@ -623,7 +623,7 @@ const mostVisitedItems = useMemo(() => {
           <Link to="/" className="no-underline">
             <h1
               className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
-                isDarkMode ? "text-yellow-400" : "text-green-600"
+                isDarkMode ? "text-yellow-400" : "text-blue-600"
               }`}
             >
               Pop&Go!
@@ -635,7 +635,7 @@ const mostVisitedItems = useMemo(() => {
         <form
           onSubmit={handleSearch}
           className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden ${
-            isDarkMode ? "bg-gray-700" : "bg-white-600"
+            isDarkMode ? "bg-gray-700" : "bg-white"
           }`}
         >
           <input
@@ -655,7 +655,7 @@ const mostVisitedItems = useMemo(() => {
             className={`px-4 py-2 ${
               isDarkMode
                 ? "bg-yellow-500 hover:bg-yellow-600"
-                : "bg-green-600 hover:bg-green-700"
+                : "bg-blue-600 hover:bg-blue-700"
             } text-white`}
             aria-label="Search"
           >
@@ -740,7 +740,7 @@ const mostVisitedItems = useMemo(() => {
             className={`flex items-center gap-2 px-4 py-2 rounded ${
               isDarkMode
                 ? "bg-yellow-500 text-black hover:bg-yellow-600"
-                : "bg-green-600 text-white hover:bg-green-700"
+                : "bg-blue-600 text-white hover:bg-blue-700"
             }`}
           >
             {t.goToDashboard || "Dashboard"}
@@ -790,7 +790,7 @@ const mostVisitedItems = useMemo(() => {
                   {item.exclusive && (
                     <span
                       className={`inline-block mt-1 px-2 py-1 rounded text-xs ${
-                        isDarkMode ? "bg-yellow-600" : "bg-green-600"
+                        isDarkMode ? "bg-yellow-600" : "bg-blue-600"
                       } text-white`}
                     >
                       {t.exclusive || "Exclusive"}
@@ -841,7 +841,7 @@ const mostVisitedItems = useMemo(() => {
                   {item.exclusive && (
                     <span
                       className={`inline-block mt-1 px-2 py-1 rounded text-xs ${
-                        isDarkMode ? "bg-yellow-600" : "bg-green-600"
+                        isDarkMode ? "bg-yellow-600" : "bg-blue-600"
                       } text-white`}
                     >
                       {t.exclusive || "Exclusive"}
@@ -869,18 +869,18 @@ const mostVisitedItems = useMemo(() => {
             onClick={() => setIsChatOpen(false)}
           >
             <div 
-              className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl flex flex-col h-[70vh] max-h-[600px] border border-gray-200 dark:border-gray-700"
+              className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl flex flex-col h-[70vh] max-h-[600px] border border-gray-300 dark:border-gray-600"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="p-4 bg-gradient-to-r from-green-600 to-emerald-600 dark:from-yellow-500 dark:to-amber-500 text-white font-bold rounded-t-xl flex justify-between items-center">
+              <div className="p-4 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-yellow-500 dark:to-amber-500 text-white font-bold rounded-t-xl flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <span>🤖 PopBot</span>
                   <span className="text-xs opacity-90">Your Funko Assistant</span>
                 </div>
                 <button
                   onClick={() => setIsChatOpen(false)}
-                  className="text-white hover:text-gray-200 text-xl"
+                  className="text-white hover:text-gray-200 text-xl transition-colors"
                   aria-label="Close chat"
                 >
                   ✕
@@ -890,10 +890,10 @@ const mostVisitedItems = useMemo(() => {
               {/* Messages */}
               <div 
                 ref={chatContainerRef}
-                className="flex-grow p-4 overflow-y-auto space-y-3"
+                className="flex-grow p-4 overflow-y-auto space-y-3 bg-gray-50 dark:bg-gray-900"
               >
                 {messages.length === 0 ? (
-                  <div className="text-gray-500 dark:text-gray-400 text-sm">
+                  <div className="text-gray-500 dark:text-gray-400 text-sm text-center">
                     {t.chatWelcome || "Hello! Ask me anything about Funko Pops. Try: \"Search for Marvel\""}
                   </div>
                 ) : (
@@ -905,8 +905,8 @@ const mostVisitedItems = useMemo(() => {
                       <div
                         className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
                           msg.sender === 'user'
-                            ? 'bg-green-600 text-white rounded-br-none'
-                            : 'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-bl-none'
+                            ? 'bg-blue-600 text-white rounded-br-none'
+                            : 'bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-600 rounded-bl-none'
                         }`}
                       >
                         {/* Text */}
@@ -932,9 +932,13 @@ const mostVisitedItems = useMemo(() => {
                                 key={idx}
                                 onClick={() => {
                                   btn.action();
-                                  setIsChatOpen(false); // Optional: close chat after click
+                                  setIsChatOpen(false);
                                 }}
-                                className="w-full bg-green-500 hover:bg-green-600 text-white text-sm font-medium py-2 px-3 rounded-lg transition-colors"
+                                className={`w-full text-sm font-medium py-2 px-3 rounded-lg transition-colors ${
+                                    isDarkMode
+                                      ? "bg-yellow-500 hover:bg-yellow-600 text-black"
+                                      : "bg-blue-600 hover:bg-blue-700 text-white"
+                                  }`}
                               >
                                 {btn.label}
                               </button>
@@ -949,79 +953,85 @@ const mostVisitedItems = useMemo(() => {
 
               {/* Input */}
               <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!inputValue.trim()) return;
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!inputValue.trim()) return;
 
-                const userMsg = inputValue.trim();
-                setMessages(prev => [...prev, { text: userMsg, sender: 'user' }]);
-                setInputValue("");
+                  const userMsg = inputValue.trim();
+                  setMessages(prev => [...prev, { text: userMsg, sender: 'user' }]);
+                  setInputValue("");
 
-                // Get bot response (now returns object with text + buttons)
-                setTimeout(() => {
-                  const botReply = getBotResponse(userMsg);
-                  setMessages(prev => [...prev, { ...botReply, sender: 'bot' }]);
-                }, 600);
-              }}
-              className="p-3 border-t border-gray-200 dark:border-gray-700"
-            >
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  placeholder={t.chatPlaceholder || "Ask about Funko Pops..."}
-                  className="flex-grow px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-black dark:text-white text-sm"
-                  aria-label="Chat input"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Escape') setIsChatOpen(false);
-                  }}
-                />
-                <button
-                  type="submit"
-                  className="bg-green-600 hover:bg-green-700 dark:bg-yellow-500 dark:hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
-                >
-                  Send
-                </button>
-              </div>
-            </form>
+                  setTimeout(() => {
+                    const botReply = getBotResponse(userMsg);
+                    setMessages(prev => [...prev, { ...botReply, sender: 'bot' }]);
+                  }, 600);
+                }}
+                className="p-3 border-t border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
+              >
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    placeholder={t.chatPlaceholder || "Ask about Funko Pops..."}
+                    className="flex-grow px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-black dark:text-white text-sm placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-yellow-500"
+                    aria-label="Chat input"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') setIsChatOpen(false);
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    className={`${
+                      isDarkMode
+                        ? "bg-yellow-500 hover:bg-yellow-600 text-black"
+                        : "bg-blue-600 hover:bg-blue-700 text-white"
+                    } px-4 py-2 rounded-lg text-sm font-medium transition-colors`}
+                  >
+                    Send
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
 
-        {/* 🤖 Chatbot Toggle Button */}
-        <button
-          onClick={() => {
-            setIsChatOpen(true);
-            if (messages.length === 0) {
-              setMessages([
-                { 
-                  text: t.chatWelcome || "Hello! Ask me anything about Funko Pops!", 
-                  sender: 'bot',
-                  buttons: [
-                    { label: t.buttonDashboard || "Take me to the dashboard!", action: () => navigate("/dashboardSite") },
-                    { label: t.buttonLogin || "Take me to the login page", action: () => navigate("/loginRegisterSite") },
-                    { label: t.buttonSearch || "Search for something", action: () => navigate("/searchsite") }
-                  ]
-                }
-              ]);
-            }
-          }}
-          className={`fixed bottom-4 right-4 w-14 h-14 rounded-full flex items-center justify-center shadow-lg z-50 transition-transform hover:scale-110 ${
-            isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"
-          }`}
-          aria-label="Open chat"
-        >
-          💬
-        </button>
-
+        {/* 🤖 Chatbot Toggle Button - Hidden when chat is open */}
+        {!isChatOpen && (
+          <button
+            onClick={() => {
+              setIsChatOpen(true);
+              if (messages.length === 0) {
+                setMessages([
+                  { 
+                    text: t.chatWelcome || "Hello! Ask me anything about Funko Pops!", 
+                    sender: 'bot',
+                    buttons: [
+                      { label: t.buttonDashboard || "Take me to the dashboard!", action: () => navigate("/dashboardSite") },
+                      { label: t.buttonLogin || "Take me to the login page", action: () => navigate("/loginRegisterSite") },
+                      { label: t.buttonSearch || "Search for something", action: () => navigate("/searchsite") }
+                    ]
+                  }
+                ]);
+              }
+            }}
+            className={`fixed bottom-4 right-4 w-14 h-14 rounded-full flex items-center justify-center shadow-lg z-40 transition-all duration-300 hover:scale-110 ${
+              isDarkMode 
+                ? "bg-yellow-500 hover:bg-yellow-600 text-black" 
+                : "bg-blue-600 hover:bg-blue-700 text-white"
+            }`}
+            aria-label="Open chat"
+          >
+            💬
+          </button>
+        )}
 
       </main>
 
       {/* 📝 Footer */}
       <footer
         className={`text-center py-4 ${
-          isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-300 text-gray-700"
+          isDarkMode ? "bg-gray-900 text-gray-400" : "bg-white text-gray-700"
         }`}
       >
         {t.copyright}

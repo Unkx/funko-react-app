@@ -1074,7 +1074,7 @@ const FunkoDetails: React.FC = () => {
   return (
     <div
       className={`min-h-screen flex flex-col ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-100 text-black"
+        isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-black"
       }`}
     >
       {/* Header */}
@@ -1083,7 +1083,7 @@ const FunkoDetails: React.FC = () => {
           <Link to="/" className="no-underline">
             <h1
               className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
-                isDarkMode ? "text-yellow-400" : "text-green-600"
+                isDarkMode ? "text-yellow-400" : "text-blue-600"
               }`}
             >
               Pop&Go!
@@ -1115,7 +1115,7 @@ const FunkoDetails: React.FC = () => {
             className={`px-4 py-2 ${
               isDarkMode
                 ? "bg-yellow-500 hover:bg-yellow-600"
-                : "bg-green-600 hover:bg-green-700"
+                : "bg-blue-600 hover:bg-blue-700"
             } text-white`}
             aria-label="Search"
           >
@@ -1162,7 +1162,7 @@ const FunkoDetails: React.FC = () => {
                       language === code
                         ? isDarkMode
                           ? "bg-yellow-500 text-black"
-                          : "bg-green-600 text-white"
+                          : "bg-blue-600 text-white"
                         : isDarkMode
                         ? "hover:bg-gray-600"
                         : "hover:bg-neutral-500"
@@ -1193,7 +1193,7 @@ const FunkoDetails: React.FC = () => {
             className={`flex items-center gap-2 px-4 py-2 rounded ${
               isDarkMode
                 ? "bg-yellow-500 text-black hover:bg-yellow-600"
-                : "bg-green-600 text-white hover:bg-green-700"
+                : "bg-blue-600 text-white hover:bg-blue-700"
             }`}
           >
             {loginButtonText}
@@ -1258,7 +1258,7 @@ const FunkoDetails: React.FC = () => {
                       ? "bg-red-600 text-white hover:bg-red-700"
                       : isDarkMode
                       ? "bg-gray-600 hover:bg-gray-500 text-white"
-                      : "bg-green-500 hover:bg-green-600 text-white"
+                      : "bg-purple-500 hover:bg-purple-600 text-white"
                   } ${isUpdatingWishlist ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   {isUpdatingWishlist ? "..." : (inWishlist ? t.removeFromWishlist : t.addToWishlist)}
@@ -1268,7 +1268,7 @@ const FunkoDetails: React.FC = () => {
                   disabled={isUpdatingCollection}
                   className={`px-6 py-3 rounded-lg flex-1 font-semibold transition-all ${
                     inCollection
-                      ? "bg-green-600 text-white hover:bg-green-700"
+                      ? "bg-red-600 text-white hover:bg-red-700"
                       : isDarkMode
                       ? "bg-gray-600 hover:bg-gray-500 text-white"
                       : "bg-blue-500 hover:bg-blue-600 text-white"
@@ -1553,8 +1553,8 @@ const FunkoDetails: React.FC = () => {
 
       {/* Footer */}
       <footer
-        className={`text-center py-6 ${
-          isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-800 text-gray-300"
+        className={`text-center text-1xl py-6 ${
+          isDarkMode ? "bg-gray-900 text-gray-400" : "bg-white text-gray-800"
         }`}
       >
         {t.copyright}

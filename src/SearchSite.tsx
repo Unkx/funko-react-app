@@ -725,7 +725,7 @@ const allItems = useMemo(() => {
   return (
     <div
       className={`search-site min-h-screen flex flex-col ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
+        isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-black"
       }`}
     >
       {/* Header */}
@@ -734,7 +734,7 @@ const allItems = useMemo(() => {
           <Link to="/" className="no-underline">
             <h1
               className={`text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
-                isDarkMode ? "text-yellow-400" : "text-green-600"
+                isDarkMode ? "text-yellow-400" : "text-blue-600"
               }`}
             >
               Pop&Go!
@@ -766,7 +766,7 @@ const allItems = useMemo(() => {
             className={`px-4 py-2 ${
               isDarkMode
                 ? "bg-yellow-500 hover:bg-yellow-600"
-                : "bg-green-600 hover:bg-green-700"
+                : "bg-blue-600 hover:bg-blue-700"
             }`}
             aria-label="Search"
           >
@@ -813,7 +813,7 @@ const allItems = useMemo(() => {
                       language === code
                         ? isDarkMode
                           ? "bg-yellow-500 text-black"
-                          : "bg-green-600 text-white"
+                          : "bg-blue-600 text-white"
                         : isDarkMode
                         ? "hover:bg-gray-600"
                         : "hover:bg-gray-200"
@@ -852,7 +852,7 @@ const allItems = useMemo(() => {
             className={`px-4 py-2 rounded ${
               isDarkMode
                 ? "bg-yellow-500 text-black hover:bg-yellow-600"
-                : "bg-green-600 text-white hover:bg-green-700"
+                : "bg-blue-600 text-white hover:bg-blue-700"
             }`}
           >
             {loginButtonText}
@@ -865,7 +865,7 @@ const allItems = useMemo(() => {
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className={`px-3 py-2 rounded ${isDarkMode ? "bg-gray-700" : "bg-white"}`}
+          className={`px-3 py-2 rounded ${isDarkMode ? "bg-gray-500" : "bg-white"}`}
         >
           <option value="">{t.allSeries}</option>
           {availableSeries.map((series, index) => (
@@ -881,7 +881,7 @@ const allItems = useMemo(() => {
             checked={showExclusiveOnly}
             onChange={() => setShowExclusiveOnly(!showExclusiveOnly)}
             className={`rounded ${
-              isDarkMode ? "accent-yellow-500" : "accent-green-600"
+              isDarkMode ? "accent-yellow-500" : "accent-blue-600"
             }`}
           />
           {t.exclusiveOnly}
@@ -921,7 +921,7 @@ const allItems = useMemo(() => {
                     <li
                       key={item.id}
                       className={`p-4 sm:px-6 sm:py-4 rounded-lg flex flex-col sm:flex-row gap-4 ${
-                        isDarkMode ? "bg-gray-700" : "bg-gray-200"
+                        isDarkMode ? "bg-gray-700" : "bg-white"
                       } cursor-pointer hover:opacity-90 transition-opacity relative`}
                       onClick={() => {
                         const properId = item.id.includes('-') 
@@ -986,7 +986,7 @@ const allItems = useMemo(() => {
                         setCurrentPage(1);
                       }}
                       className={`px-2 py-1 rounded ${
-                        isDarkMode ? "bg-gray-700" : "bg-gray-200"
+                        isDarkMode ? "bg-gray-700" : "bg-white"
                       }`}
                     >
                       <option value="5">5</option>
@@ -1005,7 +1005,7 @@ const allItems = useMemo(() => {
                           ? "opacity-50 cursor-not-allowed"
                           : isDarkMode
                           ? "bg-gray-700 hover:bg-gray-600"
-                          : "bg-gray-200 hover:bg-gray-300"
+                          : "bg-white hover:bg-gray-100"
                       }`}
                     >
                       {t.previous || "Previous"}
@@ -1023,10 +1023,10 @@ const allItems = useMemo(() => {
                             currentPage === page
                               ? isDarkMode
                                 ? "bg-yellow-500 text-black"
-                                : "bg-green-600 text-white"
+                                : "bg-blue-600 text-white"
                               : isDarkMode
                               ? "bg-gray-700 hover:bg-gray-600"
-                              : "bg-gray-200 hover:bg-gray-300"
+                              : "bg-white hover:bg-gray-100"
                           }`}
                         >
                           {page}
@@ -1041,7 +1041,7 @@ const allItems = useMemo(() => {
                           ? "opacity-50 cursor-not-allowed"
                           : isDarkMode
                           ? "bg-gray-700 hover:bg-gray-600"
-                          : "bg-gray-200 hover:bg-gray-300"
+                          : "bg-white hover:bg-gray-100"
                       }`}
                     >
                       {t.next || "Next"}
@@ -1073,7 +1073,7 @@ const allItems = useMemo(() => {
       {/* Footer */}
       <footer
         className={`text-center py-4 ${
-          isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-200 text-gray-700"
+          isDarkMode ? "bg-gray-900 text-gray-400" : "bg-white text-gray-700"
         }`}
       >
         {t.copyright}

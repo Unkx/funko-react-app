@@ -9,7 +9,8 @@ export const translations = {
     registerNow: "Register now",
     emptyFieldsError: "Please enter your login and password",
     searchPlaceholder: "Search for products...",
-    copyright: "© 2023 Pop&Go! All rights reserved"
+    copyright: "© 2023 Pop&Go! All rights reserved",
+    backToLogin:"Back"
   },
   PL: {
     goToLoginSite: "Zaloguj się na swoje konto",
@@ -20,7 +21,8 @@ export const translations = {
     registerNow: "Zarejestruj się",
     emptyFieldsError: "Proszę wprowadzić login i hasło",
     searchPlaceholder: "Szukaj produktów...",
-    copyright: "© 2023 Pop&Go! Wszystkie prawa zastrzeżone"
+    copyright: "© 2023 Pop&Go! Wszystkie prawa zastrzeżone",
+    backToLogin:"Powrót"
   },
   RU: {
     goToLoginSite: "Войдите в свой аккаунт",
@@ -31,7 +33,8 @@ export const translations = {
     registerNow: "Зарегистрироваться",
     emptyFieldsError: "Пожалуйста, введите логин и пароль",
     searchPlaceholder: "Поиск товаров...",
-    copyright: "© 2023 Pop&Go! Все права защищены"
+    copyright: "© 2023 Pop&Go! Все права защищены",
+    backToLogin:"Назад"
   },
   ES: {
     goToLoginSite: "Inicia sesión en tu cuenta",
@@ -42,7 +45,8 @@ export const translations = {
     registerNow: "Regístrate ahora",
     emptyFieldsError: "Por favor ingrese su usuario y contraseña",
     searchPlaceholder: "Buscar productos...",
-    copyright: "© 2023 Pop&Go! Todos los derechos reservados"
+    copyright: "© 2023 Pop&Go! Todos los derechos reservados",
+    backToLogin:"Volver"
   },
   FR: {
     goToLoginSite: "Connectez-vous à votre compte",
@@ -53,7 +57,8 @@ export const translations = {
     registerNow: "S'inscrire maintenant",
     emptyFieldsError: "Veuillez entrer votre identifiant et mot de passe",
     searchPlaceholder: "Rechercher des produits...",
-    copyright: "© 2023 Pop&Go! Tous droits réservés"
+    copyright: "© 2023 Pop&Go! Tous droits réservés",
+    backToLogin:"Retour"
   },
   DE: {
     goToLoginSite: "Melden Sie sich an",
@@ -64,6 +69,7 @@ export const translations = {
     registerNow: "Jetzt registrieren",
     emptyFieldsError: "Bitte geben Sie Ihren Benutzernamen und Ihr Passwort ein",
     searchPlaceholder: "Produkte suchen...",
-    copyright: "© 2023 Pop&Go! Alle Rechte vorbehalten"
+    copyright: "© 2023 Pop&Go! Alle Rechte vorbehalten",
+    backToLogin:"Zurück"
   }
 };

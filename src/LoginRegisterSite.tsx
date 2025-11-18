@@ -176,11 +176,11 @@ const LoginRegisterSite: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-indigo-200 text-black"}`}>
+    <div className={`min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-black"}`}>
       {/* Header */}
       <header className="py-4 px-8 flex justify-between items-center">
         <Link to="/" className="no-underline">
-          <h1 className={`text-3xl font-bold font-[Special_Gothic_Expanded_One] ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+          <h1 className={`text-3xl font-bold font-[Special_Gothic_Expanded_One] ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
             Pop&Go!
           </h1>
         </Link>
@@ -197,7 +197,7 @@ const LoginRegisterSite: React.FC = () => {
               <div ref={dropdownRef} className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
                 {Object.entries(languages).map(([code, { name, flag }]) => (
                   <button key={code} onClick={() => selectLanguage(code)}
-                    className={`w-full text-left px-4 py-2 flex items-center gap-2 ${language === code ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}>
+                    className={`w-full text-left px-4 py-2 flex items-center gap-2 ${language === code ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}>
                     {flag} <span>{name}</span>
                   </button>
                 ))}
@@ -230,7 +230,7 @@ const LoginRegisterSite: React.FC = () => {
                 isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
             }`}
             >
-            <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+            <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
                 {tLogin.goToLoginSite}
             </h2>
             {loginError && <p className="text-red-500">{loginError}</p>}
@@ -240,12 +240,12 @@ const LoginRegisterSite: React.FC = () => {
             <input type="password" placeholder={tLogin.password} value={password} onChange={(e) => setPassword(e.target.value)} className={`px-4 py-2 rounded ${
               isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
             }`} />
-            <button type="submit" className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : "bg-green-600 hover:bg-green-700 text-white"}`}>
+            <button type="submit" className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : "bg-blue-600 hover:bg-blue-700 text-white"}`}>
                 {tLogin.loginButton}
             </button>
             <p className="text-center mt-2">
                 {tLogin.registerLink}{" "}
-                <button type="button" onClick={() => setShowRegister(true)} className="underline text-green-600 dark:text-yellow-400">
+                <button type="button" onClick={() => setShowRegister(true)} className="underline text-green-600 dark:text-blue-400">
                 {tLogin.registerNow}
                 </button>
             </p>
@@ -306,10 +306,10 @@ const LoginRegisterSite: React.FC = () => {
             }`} />
 
             <div className="flex gap-2">
-                <button type="submit" className={`flex-1 px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : "bg-green-600 hover:bg-green-700 text-white"}`}>
+                <button type="submit" className={`flex-1 px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : "bg-blue-600 hover:bg-blue-700 text-white"}`}>
                 {tRegister.registerButton}
                 </button>
-                <button type="button" onClick={() => setShowRegister(false)} className={`flex-1 px-4 py-2 rounded border  ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : "bg-green-600 hover:bg-green-700 text-white"}`}>
+                <button type="button" onClick={() => setShowRegister(false)} className={`flex-1 px-4 py-2 rounded border  ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : "bg-red-600 hover:bg-red-700 text-white"}`}>
                 {tRegister.backToLogin || "Back"}
                 </button>
             </div>

@@ -1,0 +1,17 @@
+@startuml
+skinparam componentStyle rectangle
+
+package "Pages" {
+  class WelcomeSite {
+    - searchQuery: string
+    - isDarkMode: boolean
+    + toggleTheme(): void
+    + handleSearch(e): void
+  }
+  class LanguageContext
+  class ResponsiveUtils
+}
+
+WelcomeSite --> LanguageContext : uses
+WelcomeSite --> ResponsiveUtils : uses
+@enduml

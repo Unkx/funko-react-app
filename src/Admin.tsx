@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { translations } from "./Translations/TranslationAdmin";
+import useBreakpoints from "./useBreakpoints";
 import ItemList from "./ItemList.tsx";
 import { motion, AnimatePresence } from "framer-motion";
 import ChatComponent from './ChatComponent';
@@ -590,6 +591,7 @@ const Admin = () => {
 
   // Hooks
   const navigate = useNavigate();
+  const { isMobile, isTablet, isDesktop } = useBreakpoints();
 
   // State
   const [activeView, setActiveView] = useState<"users" | "items" | "analytics" | "social" | "requests">("users");
@@ -2027,7 +2029,7 @@ useEffect(() => {
             <button
               ref={buttonRef}
               onClick={toggleLanguageDropdown}
-              className={`p-2 rounded-full flex items-center gap-1 border border-gray-300 ${
+              className={`p-2 rounded-full flex items-center gap-1 min-w-0 border border-gray-300 ${
                 isDarkMode
                   ? "bg-gray-600 hover:bg-gray-500"
                   : "bg-white hover:bg-gray-100"
@@ -2036,7 +2038,7 @@ useEffect(() => {
               aria-expanded={showLanguageDropdown}
             >
               <GlobeIcon className="w-5 h-5" />
-              <span className="text-sm font-medium">{language}</span>
+              <span className="hidden sm:inline text-sm font-medium">{language}</span>
               <ChevronDownIcon
                 className={`w-4 h-4 transition-transform ${
                   showLanguageDropdown ? "rotate-180" : ""
@@ -2047,23 +2049,21 @@ useEffect(() => {
             {showLanguageDropdown && (
               <div
                 ref={dropdownRef}
-                className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 border border-gray-200 ${
-                  isDarkMode ? "bg-gray-700" : "bg-white"
-                }`}
+                className={`absolute mt-2 z-50 rounded-lg shadow-xl py-1 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto bg-gradient-to-b from-white to-slate-50 dark:from-slate-800 dark:to-slate-700 border border-slate-200 dark:border-slate-600`}
                 onClick={(e) => e.stopPropagation()}
               >
                 {Object.entries(languages).map(([code, { name, flag }]) => (
                   <button
                     key={code}
                     onClick={() => selectLanguage(code)}
-                    className={`w-full text-left px-4 py-2 flex items-center gap-2 ${
+                    className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${
                       language === code
                         ? isDarkMode
                           ? "bg-yellow-500 text-black"
                           : "bg-blue-600 text-white"
                         : isDarkMode
                         ? "hover:bg-gray-600"
-                        : "hover:bg-gray-100"
+                        : "hover:bg-gray-200"
                     }`}
                   >
                     <span className="w-5 h-5">{flag}</span>

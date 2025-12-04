@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import LanguageSelectorPopup from "./LanguageSelectorPopup";
+import useBreakpoints from "./useBreakpoints";
 import { translations as loginTranslations } from "./Translations/TranslationsLogIn";
 import { translations as registerTranslations } from "./Translations/TranslationRegistersite";
 
@@ -185,19 +186,19 @@ const LoginRegisterSite: React.FC = () => {
           </h1>
         </Link>
         {shouldShowPopup && <LanguageSelectorPopup onClose={() => setShouldShowPopup(false)} />}
-        <div className="flex gap-4">
+        <div className="flex gap-4 min-w-0 items-center">
           {/* Language */}
           <div className="relative">
             <button ref={buttonRef} onClick={() => setShowLanguageDropdown((p) => !p)}
-              className={`p-2 rounded-full flex items-center gap-1 ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}>
-              <GlobeIcon className="w-5 h-5" /> <span>{language}</span>
+              className={`p-2 rounded-full flex items-center gap-1 min-w-0 ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}>
+              <GlobeIcon className="w-5 h-5" /> <span className="hidden sm:inline">{language}</span>
               <ChevronDownIcon className={`w-4 h-4 transition-transform ${showLanguageDropdown ? "rotate-180" : ""}`} />
             </button>
-            {showLanguageDropdown && (
-              <div ref={dropdownRef} className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+              {showLanguageDropdown && (
+                <div ref={dropdownRef} className={`absolute mt-2 z-50 rounded-lg shadow-xl py-1 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto bg-gradient-to-b from-white to-slate-50 dark:from-slate-800 dark:to-slate-700 border border-slate-200 dark:border-slate-600`}>
                 {Object.entries(languages).map(([code, { name, flag }]) => (
                   <button key={code} onClick={() => selectLanguage(code)}
-                    className={`w-full text-left px-4 py-2 flex items-center gap-2 ${language === code ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}>
+                    className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${language === code ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}>
                     {flag} <span>{name}</span>
                   </button>
                 ))}

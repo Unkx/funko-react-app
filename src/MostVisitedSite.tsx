@@ -1,6 +1,7 @@
 // src/pages/MostVisitedSite.tsx
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate} from "react-router-dom";
+import useBreakpoints from "./useBreakpoints";
 import { translations } from "./Translations/TranslationsMostVisitedSite";
 import "./WelcomeSite.css";
 import MoonIcon from "/src/assets/moon.svg?react";
@@ -280,12 +281,12 @@ const MostVisitedSite: React.FC = () => {
         </form>
 
         {/* 🌐 Language, 🌙 Theme, 🔐 Dashboard */}
-        <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0">
+        <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0 min-w-0 items-center">
           {/* Language Dropdown */}
           <div className="relative">
             <button
               onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-              className={`p-2 rounded-full flex items-center gap-1 ${
+              className={`p-2 rounded-full flex items-center gap-1 min-w-0 ${
                 isDarkMode
                   ? "bg-gray-600 hover:bg-gray-500"
                   : "bg-gray-200 hover:bg-neutral-300"
@@ -294,7 +295,7 @@ const MostVisitedSite: React.FC = () => {
               aria-expanded={showLanguageDropdown}
             >
               <GlobeIcon className="w-5 h-5" />
-              <span className="text-sm font-medium">{language}</span>
+              <span className="hidden sm:inline text-sm font-medium">{language}</span>
               <ChevronDownIcon
                 className={`w-4 h-4 transition-transform ${
                   showLanguageDropdown ? "rotate-180" : ""
@@ -304,16 +305,14 @@ const MostVisitedSite: React.FC = () => {
 
             {showLanguageDropdown && (
               <div
-                className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 ${
-                  isDarkMode ? "bg-gray-700" : "bg-white"
-                }`}
+                className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-1 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto`} 
                 onClick={(e) => e.stopPropagation()}
               >
                 {Object.entries(languages).map(([code, { name, flag }]) => (
                   <button
                     key={code}
                     onClick={() => selectLanguage(code)}
-                    className={`w-full text-left px-4 py-2 flex items-center gap-2 ${
+                    className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${
                       language === code
                         ? isDarkMode
                           ? "bg-yellow-500 text-black"

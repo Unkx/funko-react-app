@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { FixedSizeList } from "react-window";
 import { useNavigate } from "react-router-dom";
+import useBreakpoints from "./useBreakpoints";
 import LeftArrow from "./assets/left-arrow.svg?react";
 import RightArrow from "./assets/right-arrow.svg?react";
 
@@ -29,6 +30,7 @@ const ITEMS_PER_PAGE = 50;
 
 const ItemList: React.FC<ItemListProps> = ({ token, currentUserRole, isDarkMode, t }) => {
   const navigate = useNavigate();
+  const { isMobile, isTablet, isDesktop } = useBreakpoints();
   const [items, setItems] = useState<Item[]>([]);
   const [itemsLoading, setItemsLoading] = useState(true);
   const [itemsError, setItemsError] = useState<string | null>(null);

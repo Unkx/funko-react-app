@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { translations } from "./Translations/TranslationsCategoriesSite";
+import useBreakpoints from "./useBreakpoints";
 import "./WelcomeSite.css";
 import { FunkoItems } from "./FunkoItems";
 
@@ -42,6 +43,7 @@ const languageNames = {
 };
 
 const CategoriesSite: React.FC = () => {
+  const { isMobile, isTablet, isDesktop } = useBreakpoints();
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem("preferredTheme") === "dark";
   });
@@ -383,13 +385,13 @@ const CategoriesSite: React.FC = () => {
         </form>
 
         {/* 🌐 Language, 🌙 Theme, 🔐 Login */}
-        <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0">
+        <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0 min-w-0 items-center">
           {/* Language Dropdown */}
           <div className="relative">
             <button
               ref={languageButtonRef}
               onClick={toggleLanguageDropdown}
-              className={`p-2 rounded-full flex items-center gap-1 border border-gray-300 ${
+              className={`p-2 rounded-full flex items-center gap-1 min-w-0 border border-gray-300 ${
                 isDarkMode
                   ? "bg-gray-700 hover:bg-gray-600"
                   : "bg-white hover:bg-gray-100"
@@ -398,7 +400,7 @@ const CategoriesSite: React.FC = () => {
               aria-expanded={showLanguageDropdown}
             >
               <GlobeIcon className="w-5 h-5" />
-              <span className="text-sm font-medium">{language}</span>
+              <span className="hidden sm:inline text-sm font-medium">{language}</span>
               <ChevronDownIcon
                 className={`w-4 h-4 transition-transform ${
                   showLanguageDropdown ? "rotate-180" : ""
@@ -409,16 +411,14 @@ const CategoriesSite: React.FC = () => {
             {showLanguageDropdown && (
               <div
                 ref={languageDropdownRef}
-                className={`absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 z-50 border border-gray-200 ${
-                  isDarkMode ? "bg-gray-700" : "bg-white"
-                }`}
+                className={`absolute mt-2 z-50 rounded-lg shadow-xl py-1 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto bg-gradient-to-b from-white to-slate-50 dark:from-slate-800 dark:to-slate-700 border border-slate-200 dark:border-slate-600`}
                 onClick={(e) => e.stopPropagation()}
               >
                 {Object.entries(languages).map(([code, { name, flag }]) => (
                   <button
                     key={code}
                     onClick={() => selectLanguage(code)}
-                    className={`w-full text-left px-4 py-2 flex items-center gap-2 ${
+                    className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${
                       language === code
                         ? isDarkMode
                           ? "bg-blue-500 text-white"

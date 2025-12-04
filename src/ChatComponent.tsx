@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageCircle, Send, X, Users } from 'lucide-react';
+import useBreakpoints from './useBreakpoints';
 import { translations } from './Translations/TranslationsChatComponent';
 
 interface ChatComponentProps {
@@ -49,6 +50,7 @@ interface UserProfile {
 }
 
 const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend, onClose }) => {
+  const { isMobile, isTablet, isDesktop } = useBreakpoints();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -408,9 +410,11 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
 
 
   return (
-    <div className={`fixed bottom-4 right-4 w-96 h-[600px] rounded-lg shadow-2xl flex flex-col z-50 ${
-      isDarkMode ? 'bg-gray-600 text-white border-gray-700' : 'bg-blue-100 text-gray-900 border-blue-200'
-    }`}>
+    <div className={`fixed bottom-4 right-4 rounded-lg shadow-2xl flex flex-col z-50 ${
+      isMobile ? 'w-[calc(100vw-2rem)] h-[calc(100vh-6rem)] inset-4' 
+      : isTablet ? 'w-80 h-96' 
+      : 'w-96 h-[600px]'
+    } ${isDarkMode ? 'bg-gray-600 text-white border-gray-700' : 'bg-blue-100 text-gray-900 border-blue-200'}`}>
       {/* Header */}
       <div className={`flex items-center justify-between p-4 border-b ${
         isDarkMode ? 'bg-yellow-500 border-yellow-500' : 'bg-blue-600 border-blue-600'

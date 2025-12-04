@@ -1,1 +1,34 @@
 /* src/index.css */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+	.lang-dropdown {
+		@apply rounded-lg shadow-xl py-1 max-h-[90vh] overflow-auto border;
+	}
+
+	/* Variant A: Neutral / subtle */
+	.lang-dropdown.variant-a {
+		@apply bg-gradient-to-b from-white to-slate-50 dark:from-slate-800 dark:to-slate-700 border-slate-200 dark:border-slate-600;
+	}
+
+	/* Variant B: Light = bg-blue-200 with black 1px border; Dark = bg-blue-700 with black 1px border */
+	.lang-dropdown.variant-b {
+		@apply bg-blue-200 border-black text-black;
+		@apply dark:bg-blue-700 dark:border-black dark:text-white;
+	}
+
+	.lang-item {
+		@apply w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap;
+	}
+
+	.lang-item.selected-light {
+		@apply bg-blue-600 text-white;
+	}
+
+	.lang-item.selected-dark {
+		@apply bg-yellow-500 text-black;
+	}
+}

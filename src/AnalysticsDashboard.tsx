@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import useBreakpoints from './useBreakpoints';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const AnalyticsDashboard = () => {
+  const { isMobile, isTablet, isDesktop } = useBreakpoints();
   const [stats, setStats] = useState(null);
   const [loyaltyData, setLoyaltyData] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);

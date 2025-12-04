@@ -1,0 +1,199 @@
+@startuml
+skinparam packageStyle rectangle
+
+package "Admin.tsx" as F1
+endpackage
+package "AnalysticsDashboard.tsx" as F2
+endpackage
+package "App.jsx" as F3
+endpackage
+package "breakpoints.ts" as F4
+endpackage
+package "CategoriesSite.tsx" as F5
+endpackage
+package "ChatComponent.tsx" as F6
+endpackage
+package "CollectionPage.tsx" as F7
+endpackage
+package "DashboardSite.tsx" as F8
+endpackage
+package "FriendProfileModal.tsx" as F9
+endpackage
+package "FunkoDetails.tsx" as F10
+endpackage
+package "FunkoItems.tsx" as F11
+endpackage
+package "ItemList.tsx" as F12
+endpackage
+package "LanguageContext.tsx" as F13
+endpackage
+package "LanguageSelectorPopup.tsx" as F14
+endpackage
+package "LoginRegisterSite.tsx" as F15
+endpackage
+package "LoginSite.tsx" as F16
+endpackage
+package "LoyaltyBadge.tsx" as F17
+endpackage
+package "LoyaltyDashboard.tsx" as F18
+endpackage
+package "LoyaltyLeaderboard.tsx" as F19
+endpackage
+package "LoyaltyWidget.tsx" as F20
+endpackage
+package "main.jsx" as F21
+endpackage
+package "MostVisitedSite.tsx" as F22
+endpackage
+package "NetworkContext.tsx" as F23
+endpackage
+package "NotFound.tsx" as F24
+endpackage
+package "RegisterSite.tsx" as F25
+endpackage
+package "Requests.tsx" as F26
+endpackage
+package "ResponsiveUtils.tsx" as F27
+endpackage
+package "SearchSite.tsx" as F28
+endpackage
+package "setupTests.ts" as F29
+endpackage
+package "useBreakpoints.ts" as F30
+endpackage
+package "WelcomeSite.tsx" as F31
+endpackage
+package "WishlistPage.tsx" as F32
+endpackage
+package "__tests__/CategoriesSite.test.tsx" as F33
+endpackage
+package "__tests__/FunkoDetails.test.tsx" as F34
+endpackage
+package "__tests__/LanguageContext.test.tsx" as F35
+endpackage
+package "__tests__/LoginRegisterSite.test.tsx" as F36
+endpackage
+package "__tests__/ResponsiveUtils.test.tsx" as F37
+endpackage
+package "__tests__/WelcomeSite.test.tsx" as F38
+endpackage
+package "assets/images.d.ts" as F39
+endpackage
+package "Maps/Countries.jsx" as F40
+endpackage
+package "Maps/WorldMap.tsx" as F41
+endpackage
+package "Translations/TranslationAdmin.tsx" as F42
+endpackage
+package "Translations/TranslationCollectionPage.tsx" as F43
+endpackage
+package "Translations/TranslationRegistersite.tsx" as F44
+endpackage
+package "Translations/TranslationsCategoriesSite.tsx" as F45
+endpackage
+package "Translations/TranslationsChatComponent.tsx" as F46
+endpackage
+package "Translations/TranslationsDashboard.tsx" as F47
+endpackage
+package "Translations/TranslationsFunkoDetails.tsx" as F48
+endpackage
+package "Translations/TranslationsItemList.tsx" as F49
+endpackage
+package "Translations/TranslationsLogIn.tsx" as F50
+endpackage
+package "Translations/TranslationsLoyalty.tsx" as F51
+endpackage
+package "Translations/TranslationsLoyaltyBadge.tsx" as F52
+endpackage
+package "Translations/TranslationsLoyaltyDashboard.tsx" as F53
+endpackage
+package "Translations/TranslationsMostVisitedSite.tsx" as F54
+endpackage
+package "Translations/TranslationsSearchSite.tsx" as F55
+endpackage
+package "Translations/TranslationsWelcomeSite.tsx" as F56
+endpackage
+package "types/svg.d.ts" as F57
+endpackage
+F1 --> F42
+F1 --> F30
+F1 --> F6
+F1 --> F9
+F1 --> F18
+F2 --> F30
+F3 --> F31
+F3 --> F23
+F3 --> F28
+F5 --> F45
+F5 --> F30
+F5 --> F11
+F6 --> F30
+F6 --> F46
+F7 --> F14
+F7 --> F30
+F7 --> F47
+F8 --> F14
+F8 --> F30
+F8 --> F47
+F8 --> F18
+F8 --> F19
+F8 --> F20
+F8 --> F6
+F8 --> F9
+F9 --> F30
+F10 --> F48
+F10 --> F30
+F12 --> F30
+F14 --> F30
+F15 --> F14
+F15 --> F30
+F15 --> F50
+F15 --> F44
+F16 --> F14
+F16 --> F30
+F16 --> F50
+F17 --> F30
+F18 --> F30
+F18 --> F53
+F19 --> F30
+F19 --> F17
+F21 --> F31
+F21 --> F28
+F21 --> F10
+F21 --> F15
+F21 --> F25
+F21 --> F8
+F21 --> F1
+F21 --> F24
+F21 --> F7
+F21 --> F32
+F21 --> F26
+F21 --> F6
+F21 --> F5
+F21 --> F22
+F21 --> F23
+F21 --> F13
+F21 --> F14
+F22 --> F30
+F22 --> F54
+F25 --> F14
+F25 --> F44
+F27 --> F30
+F28 --> F30
+F28 --> F55
+F30 --> F4
+F31 --> F56
+F31 --> F30
+F31 --> F41
+F32 --> F14
+F32 --> F30
+F32 --> F47
+F33 --> F5
+F34 --> F10
+F35 --> F13
+F36 --> F15
+F37 --> F27
+F38 --> F31
+F41 --> F40
+
+@enduml

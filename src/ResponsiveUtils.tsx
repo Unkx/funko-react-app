@@ -1,12 +1,34 @@
 // src/ResponsiveUtils.tsx
 import { useState, useEffect } from 'react';
+import useBreakpoints from './useBreakpoints';
 
-// Renamed and exported as ResponsiveUtils as per your import in Admin.tsx
+// ResponsiveUtils: legacy-compatible hook-like function.
+// - If `query` equals 'mobile'|'tablet'|'desktop' it returns the corresponding boolean
+//   from the centralized `useBreakpoints` hook.
+// - Otherwise it treats `query` as a raw CSS media query string and uses matchMedia.
 export const ResponsiveUtils = (query: string): boolean => {
+  const { isMobile, isTablet, isDesktop } = useBreakpoints();
   const [matches, setMatches] = useState(false);
 
   useEffect(() => {
-    const mediaQueryList = window.matchMedia(query);
+    // Shortcut for named breakpoints
+    if (query === 'mobile') {
+      setMatches(isMobile);
+      return;
+    }
+    if (query === 'tablet') {
+      setMatches(isTablet);
+      return;
+    }
+    if (query === 'desktop') {
+      setMatches(isDesktop);
+      return;
+    }
+
+    // Otherwise, treat `query` as a media query string
+    if (globalThis.window === undefined) return;
+
+    const mediaQueryList = globalThis.window.matchMedia(query);
     const listener = (event: MediaQueryListEvent) => {
       setMatches(event.matches);
     };
@@ -21,7 +43,7 @@ export const ResponsiveUtils = (query: string): boolean => {
     return () => {
       mediaQueryList.removeEventListener('change', listener);
     };
-  }, [query]); // Re-run effect if query changes
+  }, [query, isMobile, isTablet, isDesktop]); // Re-run effect if query or breakpoint flags change
 
   return matches;
 };

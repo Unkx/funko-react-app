@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import useBreakpoints from "./useBreakpoints";
 import LoyaltyBadge from './LoyaltyBadge';
 
 interface LeaderboardEntry {

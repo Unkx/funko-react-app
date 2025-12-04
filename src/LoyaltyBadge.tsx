@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import useBreakpoints from "./useBreakpoints";
 import BronzeBadge from "./assets/badges/bronze.svg?react";
 import SilverBadge from "./assets/badges/silver.svg?react";
 import GoldBadge from "./assets/badges/gold.svg?react";

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import useBreakpoints from "./useBreakpoints";
 import { motion, AnimatePresence } from "framer-motion";
 import StarIcon from "./assets/star.svg?react";
 import TrophyIcon from "./assets/trophy.svg?react";
@@ -270,13 +271,13 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-      <div className={`w-full max-w-6xl rounded-lg shadow-2xl ${isDarkMode ? "bg-gray-800" : "bg-gray-200"} max-h-[90vh] overflow-y-auto`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 md:p-4 overflow-y-auto">
+      <div className={`w-full max-w-6xl rounded-lg shadow-2xl ${isDarkMode ? "bg-gray-800" : "bg-gray-200"} max-h-[95vh] md:max-h-[90vh] overflow-y-auto`}>
         {/* Header */}
-        <div className={`sticky top-0 z-10 p-6 border-b ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-gray-100 border-gray-200"}`}>
+        <div className={`sticky top-0 z-10 p-4 md:p-6 border-b ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-gray-100 border-gray-200"}`}>
           <div className="flex justify-between items-center">
-            <h2 className="text-3xl font-bold flex items-center gap-2">
-              <TrophyIcon className="w-8 h-8 text-yellow-500" />
+            <h2 className="text-xl md:text-3xl font-bold flex items-center gap-2">
+              <TrophyIcon className="w-6 md:w-8 h-6 md:h-8 text-yellow-500" />
               {t.loyaltyRewards}
             </h2>
             <button

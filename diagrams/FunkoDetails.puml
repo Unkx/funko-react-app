@@ -1,0 +1,18 @@
+@startuml
+skinparam componentStyle rectangle
+
+package "Pages" {
+  class FunkoDetails {
+    - id: string
+    - funkoItem
+    - isLoading: boolean
+    + fetchData(): Promise<void>
+    + toggleWishlist(): Promise<void>
+  }
+  class FunkoItems
+  class API
+}
+
+FunkoDetails --> FunkoItems : reads data
+FunkoDetails --> API : calls
+@enduml

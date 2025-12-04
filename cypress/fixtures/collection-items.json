@@ -1,0 +1,25 @@
+[
+  {
+    "id": "1",
+    "title": "Funko A",
+    "number": "001",
+    "condition": "mint",
+    "purchase_price": 20,
+    "image_name": "https://via.placeholder.com/150"
+  },
+  {
+    "id": "2",
+    "title": "Funko B",
+    "number": "002",
+    "condition": "good",
+    "purchase_price": 15
+  },
+  {
+    "id": "3",
+    "title": "Funko C",
+    "number": "003",
+    "condition": "mint",
+    "purchase_price": 25,
+    "image_name": "https://via.placeholder.com/150"
+  }
+]

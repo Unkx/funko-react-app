@@ -23,6 +23,7 @@ import ShoppingCartIcon from "./assets/shopping-cart.svg?react";
 import FilterIcon from "./assets/filter.svg?react";
 import StarIcon from "./assets/star.svg?react";
 import PlusIcon from "./assets/plus.svg?react";
+import AdminInvites from "./AdminInvites";
 
 // Flag SVGs
 import UKFlag from "/src/assets/flags/uk.svg?react";
@@ -594,7 +595,7 @@ const Admin = () => {
   const { isMobile, isTablet, isDesktop } = useBreakpoints();
 
   // State
-  const [activeView, setActiveView] = useState<"users" | "items" | "analytics" | "social" | "requests">("users");
+  const [activeView, setActiveView] = useState<"users" | "items" | "analytics" | "social" | "requests" | "invites">("users");
   const [isDarkMode, setIsDarkMode] = useState(() =>
     localStorage.getItem("preferredTheme") === "dark"
   );
@@ -2132,6 +2133,14 @@ useEffect(() => {
             <UsersIcon className="w-4 h-4" /> {t.social || "Social"}
           </button>
 
+          <button onClick={() => setActiveView("invites")} className={`px-3 py-1 rounded border flex items-center gap-2 ${
+            activeView === "invites" 
+              ? (isDarkMode ? "bg-yellow-500 text-black border-yellow-500" : "bg-blue-600 text-white border-blue-600") 
+              : (isDarkMode ? "hover:bg-gray-600 border-gray-600" : "hover:bg-gray-100 border-gray-300")
+          }`}>
+            <StarIcon className="w-4 h-4" /> {t.invites || "Invites"}
+          </button>
+
           <button 
             onClick={() => setActiveView("requests")} 
             className={`px-3 py-1 rounded border flex items-center gap-2 ${
@@ -2727,6 +2736,12 @@ useEffect(() => {
           )}
 
           {/* 🔹 NEW VIEWS */}
+          {activeView === "invites" && (
+            <motion.div key="invites" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.5, ease: "easeInOut" }} className="w-full max-w-7xl">
+              <AdminInvites />
+            </motion.div>
+          )}
+
           {activeView === "analytics" && <motion.div key="analytics" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.5, ease: "easeInOut" }} className="w-full max-w-7xl">{renderAnalyticsView()}</motion.div>}
           {activeView === "social" && <motion.div key="social" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.5, ease: "easeInOut" }} className="w-full max-w-7xl">{renderSocialView()}</motion.div>}
           {activeView === "requests" && (

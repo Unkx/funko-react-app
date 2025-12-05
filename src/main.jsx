@@ -91,6 +91,7 @@ import LoginRegisterSite from "./LoginRegisterSite"
 import RegisterSite from "./RegisterSite"
 import DashboardSite from "./DashboardSite"
 import AdminSite from "./Admin"
+import AdminInvites from "./AdminInvites"
 import NotFound from './NotFound';
 import CollectionPage from "./CollectionPage";
 import WishlistPage from "./WishlistPage";
@@ -128,6 +129,7 @@ root.render(
             <Route path="/RegisterSite" element={<RegisterSite />} />
             <Route path="/DashboardSite" element={<DashboardSite />} />
             <Route path="/AdminSite" element={<AdminSite />} />
+            <Route path="/admin-management" element={<AdminInvites />} />
             <Route path="/requests" element={<Requests />} />
             <Route path="/categories" element={<CategoriesSite />} />
             <Route path="/mostVisited" element={<MostVisitedSite />} />

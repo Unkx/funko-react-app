@@ -5,6 +5,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
 import morgan from 'morgan';
+// (crypto imported at top)
 
 // ======================
 // INITIALIZATION
@@ -108,6 +109,85 @@ const seedDatabase = async () => {
   }
 };
 
+// Create an initial admin user if none exists and environment variables are provided.
+const createInitialAdminIfNeeded = async () => {
+  try {
+    const adminCountRes = await pool.query("SELECT COUNT(*) FROM users WHERE role = 'admin'");
+    const adminCount = parseInt(adminCountRes.rows[0].count || '0');
+    if (adminCount > 0) {
+      console.log('✅ Admin user(s) already present');
+      return;
+    }
+
+    const initEmail = process.env.INIT_ADMIN_EMAIL;
+    const initPassword = process.env.INIT_ADMIN_PASSWORD;
+    const initLogin = process.env.INIT_ADMIN_LOGIN || 'admin';
+    const initName = process.env.INIT_ADMIN_NAME || 'Administrator';
+    const initSurname = process.env.INIT_ADMIN_SURNAME || 'Account';
+
+    if (!initEmail || !initPassword) {
+      console.log('ℹ️ No initial admin credentials provided via environment variables');
+      return;
+    }
+
+    const hashed = await hashPassword(initPassword);
+    try {
+      const result = await pool.query(
+        `INSERT INTO users (email, login, name, surname, password_hash, gender, date_of_birth, nationality, role, created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW()) RETURNING id, email, login, role`,
+        [initEmail, initLogin, initName, initSurname, hashed, 'other', '1970-01-01', null, 'admin']
+      );
+      console.log('✅ Initial admin user created:', result.rows[0].email);
+    } catch (err) {
+      if (err.code === '23505') {
+        console.warn('⚠️ Could not create initial admin: user already exists');
+      } else {
+        console.error('❌ Error creating initial admin:', err);
+      }
+    }
+  } catch (err) {
+    console.error('❌ Error checking/creating initial admin:', err);
+  }
+};
+
+// Ensure admin_invites and admin_requests tables exist
+const ensureAdminTables = async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS admin_invites (
+        id SERIAL PRIMARY KEY,
+        token_hash TEXT NOT NULL,
+        display_code TEXT UNIQUE,
+        created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        expires_at TIMESTAMPTZ,
+        used_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        used_at TIMESTAMPTZ
+      );
+    `);
+
+    // For older DBs, ensure the column exists and has a unique index
+    await pool.query(`ALTER TABLE admin_invites ADD COLUMN IF NOT EXISTS display_code TEXT;`);
+    await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS admin_invites_display_code_idx ON admin_invites(display_code);`);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS admin_requests (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        message TEXT,
+        status TEXT DEFAULT 'pending',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        resolved_at TIMESTAMPTZ,
+        processed_by INTEGER REFERENCES users(id) ON DELETE SET NULL
+      );
+    `);
+
+    console.log('✅ Admin tables ensured');
+  } catch (err) {
+    console.error('❌ Error ensuring admin tables:', err);
+  }
+};
+
 // ======================
 // MIDDLEWARE
 // ======================
@@ -133,6 +213,129 @@ app.options('/api/admin/users/:id/role', cors());
 // ROUTES
 // ======================
 
+// Return current user from token
+app.get('/api/me', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, email, login, name, surname, gender, date_of_birth, nationality, role
+       FROM users WHERE id = $1`,
+      [req.user.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Error fetching /api/me:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Admin invites endpoints
+import crypto from 'crypto';
+
+app.post('/api/admin/invites', authenticateToken, isAdmin, async (req, res) => {
+  const { expiresInDays = 7 } = req.body;
+  try {
+    const token = crypto.randomBytes(16).toString('hex');
+    const tokenHash = await bcrypt.hash(token, 10);
+    const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString();
+    // generate a human-friendly persistent display code (stored in DB)
+    const displayCode = `INV-${Date.now().toString(36).toUpperCase().slice(-6)}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+
+    const result = await pool.query(
+      `INSERT INTO admin_invites (token_hash, display_code, created_by, expires_at) VALUES ($1, $2, $3, $4) RETURNING id, display_code, created_at, expires_at`,
+      [tokenHash, displayCode, req.user.id, expiresAt]
+    );
+
+    // Return the raw token only once (to the admin who created it)
+    res.status(201).json({ invite: result.rows[0], token });
+  } catch (err) {
+    console.error('Error creating invite:', err);
+    res.status(500).json({ error: 'Failed to create invite' });
+  }
+});
+
+app.get('/api/admin/invites', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`SELECT id, display_code, created_by, created_at, expires_at, used_by, used_at FROM admin_invites ORDER BY created_at DESC`);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error listing invites:', err);
+    res.status(500).json({ error: 'Failed to list invites' });
+  }
+});
+
+app.delete('/api/admin/invites/:id', authenticateToken, isAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query(`DELETE FROM admin_invites WHERE id = $1`, [id]);
+    res.json({ message: 'Invite revoked' });
+  } catch (err) {
+    console.error('Error revoking invite:', err);
+    res.status(500).json({ error: 'Failed to revoke invite' });
+  }
+});
+
+// User requests to become admin
+app.post('/api/request-admin', authenticateToken, async (req, res) => {
+  const { message } = req.body;
+  try {
+    const result = await pool.query(
+      `INSERT INTO admin_requests (user_id, message) VALUES ($1, $2) RETURNING id, created_at`,
+      [req.user.id, message || null]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error('Error creating admin request:', err);
+    res.status(500).json({ error: 'Failed to submit request' });
+  }
+});
+
+// Admin manage admin requests
+app.get('/api/admin/admin-requests', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT ar.id, ar.user_id, ar.message, ar.status, ar.created_at, u.login as user_login, u.email as user_email
+       FROM admin_requests ar JOIN users u ON ar.user_id = u.id WHERE ar.status = 'pending' ORDER BY ar.created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error listing admin requests:', err);
+    res.status(500).json({ error: 'Failed to list admin requests' });
+  }
+});
+
+app.patch('/api/admin/admin-requests/:id/approve', authenticateToken, isAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const reqRow = await pool.query(`SELECT user_id FROM admin_requests WHERE id = $1 AND status = 'pending'`, [id]);
+    if (reqRow.rows.length === 0) return res.status(404).json({ error: 'Request not found' });
+    const userId = reqRow.rows[0].user_id;
+
+    await pool.query('BEGIN');
+    await pool.query(`UPDATE users SET role = 'admin' WHERE id = $1`, [userId]);
+    await pool.query(`UPDATE admin_requests SET status = 'approved', resolved_at = NOW(), processed_by = $1 WHERE id = $2`, [req.user.id, id]);
+    await pool.query('COMMIT');
+
+    res.json({ message: 'User promoted to admin' });
+  } catch (err) {
+    await pool.query('ROLLBACK').catch(() => {});
+    console.error('Error approving admin request:', err);
+    res.status(500).json({ error: 'Failed to approve request' });
+  }
+});
+
+app.patch('/api/admin/admin-requests/:id/deny', authenticateToken, isAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(`UPDATE admin_requests SET status = 'denied', resolved_at = NOW(), processed_by = $1 WHERE id = $2 RETURNING id`, [req.user.id, id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Request not found' });
+    res.json({ message: 'Request denied' });
+  } catch (err) {
+    console.error('Error denying admin request:', err);
+    res.status(500).json({ error: 'Failed to deny request' });
+  }
+});
+
 // Health check
 app.get('/', (req, res) => {
   res.send('Welcome to the Funko React App Backend API!');
@@ -149,14 +352,62 @@ app.post('/api/register', async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
+  // Allow optional invite token for elevated roles (admin) using admin_invites
+  const { invite_token } = req.body;
+  let roleToSet = 'user';
+
   try {
+    if (invite_token) {
+      // find matching invite where not used and not expired
+      const inviteRes = await pool.query(
+        `SELECT id, token_hash, expires_at FROM admin_invites WHERE used_by IS NULL LIMIT 1`
+      );
+
+      let matchedInvite = null;
+      for (const row of inviteRes.rows) {
+        const ok = await bcrypt.compare(invite_token, row.token_hash);
+        if (ok) {
+          // check expiry
+          if (row.expires_at && new Date(row.expires_at) < new Date()) {
+            return res.status(400).json({ error: 'Invite token expired' });
+          }
+          matchedInvite = row;
+          break;
+        }
+      }
+
+      if (!matchedInvite) {
+        return res.status(400).json({ error: 'Invalid invite token' });
+      }
+
+      roleToSet = 'admin';
+    }
+
     const hashedPassword = await hashPassword(password);
     const newUser = await pool.query(
       `INSERT INTO users (email, login, name, surname, password_hash, gender, date_of_birth, nationality, role)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING id, email, login, name, surname, gender, date_of_birth, nationality, role`,
-      [email, login, name, surname, hashedPassword, gender, date_of_birth, nationality, 'user'] // ✅ add nationality
+      [email, login, name, surname, hashedPassword, gender, date_of_birth, nationality, roleToSet]
     );
+
+    // If an invite was used, mark it as used
+    if (invite_token && roleToSet === 'admin') {
+      try {
+        // find the invite again to update the specific row
+        const inviteRes2 = await pool.query(`SELECT id, token_hash FROM admin_invites WHERE used_by IS NULL`);
+        for (const row of inviteRes2.rows) {
+          const ok = await bcrypt.compare(invite_token, row.token_hash);
+          if (ok) {
+            await pool.query(`UPDATE admin_invites SET used_by = $1, used_at = NOW() WHERE id = $2`, [newUser.rows[0].id, row.id]);
+            break;
+          }
+        }
+      } catch (innerErr) {
+        console.error('Failed to mark invite used:', innerErr);
+      }
+    }
+
     res.status(201).json(newUser.rows[0]);
   } catch (err) {
     if (err.code === '23505') {
@@ -169,6 +420,29 @@ app.post('/api/register', async (req, res) => {
     }
     console.error('Registration error:', err);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Public endpoint to verify an invite token (used for client-side validation)
+app.post('/api/verify-invite', async (req, res) => {
+  const { token } = req.body || {};
+  if (!token) return res.status(400).json({ valid: false, error: 'Token required' });
+
+  try {
+    const inviteRes = await pool.query(`SELECT id, token_hash, expires_at FROM admin_invites WHERE used_by IS NULL`);
+    for (const row of inviteRes.rows) {
+      const ok = await bcrypt.compare(token, row.token_hash);
+      if (ok) {
+        if (row.expires_at && new Date(row.expires_at) < new Date()) {
+          return res.json({ valid: false, error: 'expired' });
+        }
+        return res.json({ valid: true, expires_at: row.expires_at || null });
+      }
+    }
+    return res.json({ valid: false });
+  } catch (err) {
+    console.error('Error verifying invite token:', err);
+    res.status(500).json({ valid: false, error: 'server_error' });
   }
 });
 
@@ -343,6 +617,32 @@ app.get('/api/users/:id/nationality', authenticateToken, async (req, res) => {
 // ======================
 // ITEMS ROUTES
 // ======================
+// Admin: change a user's role (promote/demote)
+app.put('/api/admin/users/:id/role', authenticateToken, isAdmin, async (req, res) => {
+  const userId = req.params.id;
+  const { role } = req.body;
+
+  if (!role || (role !== 'user' && role !== 'admin')) {
+    return res.status(400).json({ error: "Invalid role. Use 'user' or 'admin'." });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE users SET role = $1, updated_at = NOW() WHERE id = $2 RETURNING id, email, login, role`,
+      [role, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ message: 'Role updated', user: result.rows[0] });
+  } catch (err) {
+    console.error('Error updating user role:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.get('/api/items', async (req, res) => {
   try {
     const result = await pool.query(
@@ -3001,6 +3301,36 @@ const startServer = async () => {
     console.log('✅ Database connected successfully');
     
     await seedDatabase();
+    await ensureAdminTables();
+    // Ensure any existing invites have a persistent display_code
+    const backfillDisplayCodes = async () => {
+      try {
+        const rows = await pool.query(`SELECT id, created_at FROM admin_invites WHERE display_code IS NULL OR display_code = ''`);
+        if (rows.rows.length === 0) return;
+        console.log(`ℹ️ Backfilling ${rows.rows.length} invite display_code(s)`);
+
+        for (const r of rows.rows) {
+          let attempts = 0;
+          while (attempts < 5) {
+            attempts += 1;
+            const code = `INV-${String(r.id).padStart(3,'0')}-${Date.now().toString(36).toUpperCase().slice(-4)}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
+            try {
+              const upd = await pool.query(`UPDATE admin_invites SET display_code = $1 WHERE id = $2 AND (display_code IS NULL OR display_code = '') RETURNING id`, [code, r.id]);
+              if (upd.rows.length > 0) break; // success
+            } catch (err) {
+              // unique violation or other conflict, retry with a new code
+              console.warn(`Retrying display_code for invite ${r.id} (attempt ${attempts})`);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error backfilling display_code for invites:', err);
+      }
+    };
+
+    await backfillDisplayCodes();
+
+    await createInitialAdminIfNeeded();
     
     app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
   } catch (err) {

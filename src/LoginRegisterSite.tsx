@@ -65,7 +65,10 @@ const LoginRegisterSite: React.FC = () => {
   const [gender, setGender] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [nationality, setNationality] = useState("");
+  const [inviteToken, setInviteToken] = useState("");
   const [registerError, setRegisterError] = useState("");
+  const [inviteChecking, setInviteChecking] = useState(false);
+  const [inviteValid, setInviteValid] = useState<boolean | null>(null);
 
 
   // Save theme
@@ -137,6 +140,36 @@ const LoginRegisterSite: React.FC = () => {
     }
   };
 
+  // Debounced invite token validation
+  useEffect(() => {
+    if (!inviteToken || !inviteToken.trim()) {
+      setInviteValid(null);
+      setInviteChecking(false);
+      return;
+    }
+
+    setInviteChecking(true);
+    setInviteValid(null);
+    const id = setTimeout(async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/verify-invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: inviteToken.trim() })
+        });
+        const data = await res.json();
+        setInviteValid(Boolean(data && data.valid));
+      } catch (err) {
+        console.error('Error verifying invite token:', err);
+        setInviteValid(false);
+      } finally {
+        setInviteChecking(false);
+      }
+    }, 600);
+
+    return () => clearTimeout(id);
+  }, [inviteToken]);
+
   // --- REGISTER ---
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,6 +193,11 @@ const LoginRegisterSite: React.FC = () => {
       date_of_birth: new Date(dateOfBirth).toISOString().split("T")[0],
       // ❌ remove "role"
     };
+    if (inviteToken && inviteToken.trim()) {
+      // Include optional invite token so backend can elevate role when valid
+      // backend expects `invite_token`
+      (payload as any).invite_token = inviteToken.trim();
+    }
     try {
       const response = await fetch("http://localhost:5000/api/register", {
         method: "POST",
@@ -290,6 +328,14 @@ const LoginRegisterSite: React.FC = () => {
             <input type="password" placeholder={tRegister.confirmPassword} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={`px-4 py-2 rounded ${
               isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
             }`} />
+            <input type="text" placeholder={tRegister.inviteToken ?? "Invite token (optional)"} value={inviteToken} onChange={(e) => setInviteToken(e.target.value)} className={`px-4 py-2 rounded ${
+              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+            }`} />
+            <div className="text-sm h-5 mt-1">
+              {inviteChecking && <span className="text-gray-400">{tRegister.inviteTokenChecking}</span>}
+              {inviteValid === true && <span className="text-green-500">{tRegister.inviteTokenValid}</span>}
+              {inviteValid === false && <span className="text-red-500">{tRegister.inviteTokenInvalid}</span>}
+            </div>
             <input type="text" placeholder={tRegister.nationality} value={nationality} onChange={(e) => setNationality(e.target.value)} className={`px-4 py-2 rounded ${
               isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
             }`} />

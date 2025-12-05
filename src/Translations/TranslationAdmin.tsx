@@ -44,6 +44,7 @@ export const translations = {
     logout: "Logout",
     analytics: "Analytics",
     social: "Social",
+    invites: "Invites",
     requests: "Requests",
     adminPanel: "Admin Panel",
     
@@ -184,6 +185,7 @@ export const translations = {
     logout: "Wyloguj",
     analytics: "Analityka",
     social: "Społeczność",
+    invites: "Zaproszenia",
     requests: "Zapytania",
     adminPanel: "Panel Administratora",
     
@@ -324,6 +326,7 @@ export const translations = {
     logout: "Выйти",
     analytics: "Аналитика",
     social: "Сообщество",
+    invites: "Приглашения",
     requests: "Запросы",
     adminPanel: "Панель администратора",
     
@@ -464,6 +467,7 @@ export const translations = {
     logout: "Déconnexion",
     analytics: "Analytique",
     social: "Social",
+    invites: "Invitations",
     requests: "Demandes",
     adminPanel: "Panneau d'administration",
     
@@ -604,6 +608,7 @@ export const translations = {
     logout: "Abmelden",
     analytics: "Analytik",
     social: "Soziales",
+    invites: "Einladungen",
     requests: "Anfragen",
     adminPanel: "Administrator-Panel",
     
@@ -744,6 +749,7 @@ export const translations = {
     logout: "Cerrar sesión",
     analytics: "Analítica",
     social: "Social",
+    invites: "Invitaciones",
     requests: "Solicitudes",
     adminPanel: "Panel de administración",
     

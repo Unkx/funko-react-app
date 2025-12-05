@@ -54,7 +54,16 @@ const RegisterSite: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [gender, setGender] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
+  const [inviteToken, setInviteToken] = useState("");
+  const [inviteChecking, setInviteChecking] = useState(false);
+  const [inviteValid, setInviteValid] = useState<boolean | null>(null);
   const [registerError, setRegisterError] = useState("");
+
+  // Validation regexes
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  const usernameRegex = /^(?=.{3,20}$)(?![._])(?!.*[._]{2})[A-Za-z0-9._]+(?<![._])$/;
+  const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ' -]{2,50}$/;
+  const passwordRegex = /^(?=\S+$)(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
 
   // Save theme preference and apply globally
   useEffect(() => {
@@ -117,13 +126,51 @@ const RegisterSite: React.FC = () => {
       setRegisterError(t.allFieldsRequired || "All fields are required.");
       return;
     }
+
+    // Field-specific regex validation
+    if (!emailRegex.test(email)) {
+      setRegisterError(t.invalidEmail || "Please enter a valid email address.");
+      return;
+    }
+
+    if (!usernameRegex.test(login)) {
+      setRegisterError(
+        t.invalidUsername ||
+          "Username must be 3–20 characters, letters/numbers, no leading/trailing or consecutive ./_"
+      );
+      return;
+    }
+
+    if (!nameRegex.test(name) || !nameRegex.test(surname)) {
+      setRegisterError(t.invalidName || "Please enter a valid first and last name.");
+      return;
+    }
+
     if (password !== confirmPassword) {
       setRegisterError(t.passwordsDoNotMatch || "Passwords do not match.");
       return;
     }
 
+    if (!passwordRegex.test(password)) {
+      setRegisterError(
+        t.weakPassword ||
+          "Password must be at least 8 characters, include upper and lower case letters, a number, and a special character (no spaces)."
+      );
+      return;
+    }
+
+    // Optional: check minimum age (e.g., 13 years)
+    const birth = new Date(dateOfBirth);
+    const ageDifMs = Date.now() - birth.getTime();
+    const ageDate = new Date(ageDifMs);
+    const age = Math.abs(ageDate.getUTCFullYear() - 1970);
+    if (Number.isNaN(age) || age < 13) {
+      setRegisterError(t.invalidAge || "You must be at least 13 years old to register.");
+      return;
+    }
+
     // Prepare the payload for the backend
-    const payload = {
+    const payload: any = {
       email,
       login,
       name,
@@ -133,6 +180,11 @@ const RegisterSite: React.FC = () => {
       role: "user",
       date_of_birth: new Date(dateOfBirth).toISOString().split('T')[0] // Format for backend
     };
+
+    // Include invite token if provided (optional) so backend can elevate role
+    if (inviteToken?.trim()) {
+      payload.invite_token = inviteToken.trim();
+    }
 
     console.log("Sending registration payload:", payload); // Log the payload being sent
 
@@ -159,6 +211,36 @@ const RegisterSite: React.FC = () => {
       setRegisterError(error.message || 'Failed to connect to server. Please try again.');
     }
   };
+
+  // Debounced invite token validation
+  useEffect(() => {
+    if (!inviteToken || !inviteToken.trim()) {
+      setInviteValid(null);
+      setInviteChecking(false);
+      return;
+    }
+
+    setInviteChecking(true);
+    setInviteValid(null);
+    const id = setTimeout(async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/verify-invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: inviteToken.trim() })
+        });
+        const data = await res.json();
+        setInviteValid(Boolean(data && data.valid));
+      } catch (err) {
+        console.error('Error verifying invite token:', err);
+        setInviteValid(false);
+      } finally {
+        setInviteChecking(false);
+      }
+    }, 600);
+
+    return () => clearTimeout(id);
+  }, [inviteToken]);
 
 
   
@@ -394,6 +476,20 @@ const RegisterSite: React.FC = () => {
             }`}
             required
           />
+          <input
+            type="text"
+            placeholder={t.inviteToken ?? "Invite token (optional)"}
+            value={inviteToken}
+            onChange={(e) => setInviteToken(e.target.value)}
+            className={`px-4 py-2 rounded ${
+              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+            }`}
+          />
+          <div className="text-sm h-5 mt-1">
+            {inviteChecking && <span className="text-gray-400">{t.inviteTokenChecking}</span>}
+            {inviteValid === true && <span className="text-green-500">{t.inviteTokenValid}</span>}
+            {inviteValid === false && <span className="text-red-500">{t.inviteTokenInvalid}</span>}
+          </div>
           <input
             type="date"
             value={dateOfBirth}

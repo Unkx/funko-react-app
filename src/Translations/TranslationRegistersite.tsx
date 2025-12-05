@@ -22,6 +22,11 @@ export const translations = {
     registerButton: "Register",
     searchPlaceholder: "Search for products...",
     copyright: "© 2023 Pop&Go! All rights reserved"
+    ,
+    inviteToken: "Invite token (optional)",
+    inviteTokenChecking: "Checking token...",
+    inviteTokenValid: "Invite token valid",
+    inviteTokenInvalid: "Invalid invite token"
   },
   PL: {
     registerTitle: "Utwórz konto",
@@ -45,6 +50,11 @@ export const translations = {
     searchPlaceholder: "Szukaj produktów...",
     registerButton: "Zarejestruj się",
     copyright: "© 2023 Pop&Go! Wszystkie prawa zastrzeżone"
+    ,
+    inviteToken: "Token zaproszenia (opcjonalnie)",
+    inviteTokenChecking: "Sprawdzanie tokenu...",
+    inviteTokenValid: "Token jest prawidłowy",
+    inviteTokenInvalid: "Nieprawidłowy token zaproszenia"
   },
   RU: {
     registerTitle: "Создать учетную запись", 
@@ -68,6 +78,11 @@ export const translations = {
     searchPlaceholder: "Поиск товаров...",
     registerButton: "Регистрация",
     copyright: "© 2023 Pop&Go! Все права защищены"
+    ,
+    inviteToken: "Токен приглашения (необязательно)",
+    inviteTokenChecking: "Проверка токена...",
+    inviteTokenValid: "Токен действителен",
+    inviteTokenInvalid: "Недействительный токен приглашения"
   },
   ES: {
     registerTitle: "Crear una cuenta",
@@ -91,6 +106,11 @@ export const translations = {
     searchPlaceholder: "Buscar productos...",
     registerButton: "Regístrese en",
     copyright: "© 2023 Pop&Go! Todos los derechos reservados"
+    ,
+    inviteToken: "Token de invitación (opcional)",
+    inviteTokenChecking: "Comprobando token...",
+    inviteTokenValid: "Token válido",
+    inviteTokenInvalid: "Token de invitación inválido"
   },
   FR: {
     registerTitle: "Créer un compte",
@@ -114,6 +134,11 @@ export const translations = {
     searchPlaceholder: "Rechercher des produits...",
     registerButton: "Registre",
     copyright: "© 2023 Pop&Go! Tous droits réservés"
+    ,
+    inviteToken: "Jeton d'invitation (optionnel)",
+    inviteTokenChecking: "Vérification du jeton...",
+    inviteTokenValid: "Jeton valide",
+    inviteTokenInvalid: "Jeton d'invitation invalide"
   },
   DE: {
     registerTitle: "Konto erstellen",
@@ -137,5 +162,10 @@ export const translations = {
     searchPlaceholder: "Produkte suchen...",
     registerButton: "Register",
     copyright: "© 2023 Pop&Go! Alle Rechte vorbehalten"
+    ,
+    inviteToken: "Einladungstoken (optional)",
+    inviteTokenChecking: "Token wird überprüft...",
+    inviteTokenValid: "Token gültig",
+    inviteTokenInvalid: "Ungültiges Einladungstoken"
   }
 };

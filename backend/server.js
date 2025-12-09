@@ -344,6 +344,7 @@ app.get('/', (req, res) => {
 // ======================
 // AUTH ROUTES
 // ======================
+// Fixed /api/register endpoint
 app.post('/api/register', async (req, res) => {
   const { email, login, name, surname, password, gender, date_of_birth, nationality } = req.body;
 
@@ -355,34 +356,58 @@ app.post('/api/register', async (req, res) => {
   // Allow optional invite token for elevated roles (admin) using admin_invites
   const { invite_token } = req.body;
   let roleToSet = 'user';
+  let matchedInviteId = null;
 
   try {
-    if (invite_token) {
-      // find matching invite where not used and not expired
+    if (invite_token && invite_token.trim()) {
+      // ✅ FIXED: Get ALL unused, non-expired invites
       const inviteRes = await pool.query(
-        `SELECT id, token_hash, expires_at FROM admin_invites WHERE used_by IS NULL LIMIT 1`
+        `SELECT id, token_hash, expires_at 
+         FROM admin_invites 
+         WHERE used_by IS NULL 
+         AND (expires_at IS NULL OR expires_at > NOW())`
       );
 
+      if (inviteRes.rows.length === 0) {
+        return res.status(400).json({ 
+          error: 'No valid invite tokens available' 
+        });
+      }
+
+      // Try to match the provided token against all valid invites
       let matchedInvite = null;
       for (const row of inviteRes.rows) {
-        const ok = await bcrypt.compare(invite_token, row.token_hash);
-        if (ok) {
-          // check expiry
-          if (row.expires_at && new Date(row.expires_at) < new Date()) {
-            return res.status(400).json({ error: 'Invite token expired' });
+        try {
+          const isMatch = await bcrypt.compare(invite_token.trim(), row.token_hash);
+          if (isMatch) {
+            matchedInvite = row;
+            break;
           }
-          matchedInvite = row;
-          break;
+        } catch (compareErr) {
+          console.error('Error comparing invite token:', compareErr);
+          continue;
         }
       }
 
       if (!matchedInvite) {
-        return res.status(400).json({ error: 'Invalid invite token' });
+        return res.status(400).json({ 
+          error: 'Invalid invite token' 
+        });
       }
 
+      // ✅ Check if invite has expired
+      if (matchedInvite.expires_at && new Date(matchedInvite.expires_at) < new Date()) {
+        return res.status(400).json({ 
+          error: 'Invite token has expired' 
+        });
+      }
+
+      // ✅ Set role to admin and save invite ID
       roleToSet = 'admin';
+      matchedInviteId = matchedInvite.id;
     }
 
+    // Hash password and create user
     const hashedPassword = await hashPassword(password);
     const newUser = await pool.query(
       `INSERT INTO users (email, login, name, surname, password_hash, gender, date_of_birth, nationality, role)
@@ -391,24 +416,26 @@ app.post('/api/register', async (req, res) => {
       [email, login, name, surname, hashedPassword, gender, date_of_birth, nationality, roleToSet]
     );
 
-    // If an invite was used, mark it as used
-    if (invite_token && roleToSet === 'admin') {
+    // ✅ If an invite was used, mark it as used
+    if (matchedInviteId) {
       try {
-        // find the invite again to update the specific row
-        const inviteRes2 = await pool.query(`SELECT id, token_hash FROM admin_invites WHERE used_by IS NULL`);
-        for (const row of inviteRes2.rows) {
-          const ok = await bcrypt.compare(invite_token, row.token_hash);
-          if (ok) {
-            await pool.query(`UPDATE admin_invites SET used_by = $1, used_at = NOW() WHERE id = $2`, [newUser.rows[0].id, row.id]);
-            break;
-          }
-        }
-      } catch (innerErr) {
-        console.error('Failed to mark invite used:', innerErr);
+        await pool.query(
+          `UPDATE admin_invites 
+           SET used_by = $1, used_at = NOW() 
+           WHERE id = $2`,
+          [newUser.rows[0].id, matchedInviteId]
+        );
+        console.log(`✅ Invite token marked as used by user ${newUser.rows[0].login}`);
+      } catch (updateErr) {
+        console.error('Failed to mark invite as used:', updateErr);
+        // Don't fail registration if this fails
       }
     }
 
-    res.status(201).json(newUser.rows[0]);
+    res.status(201).json({
+      ...newUser.rows[0],
+      message: roleToSet === 'admin' ? 'Admin account created successfully' : 'Account created successfully'
+    });
   } catch (err) {
     if (err.code === '23505') {
       if (err.detail && err.detail.includes('email')) {
@@ -419,30 +446,178 @@ app.post('/api/register', async (req, res) => {
       }
     }
     console.error('Registration error:', err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server error during registration' });
   }
 });
 
+
 // Public endpoint to verify an invite token (used for client-side validation)
+// Fixed /api/verify-invite endpoint
 app.post('/api/verify-invite', async (req, res) => {
   const { token } = req.body || {};
-  if (!token) return res.status(400).json({ valid: false, error: 'Token required' });
+  
+  if (!token || !token.trim()) {
+    return res.status(400).json({ 
+      valid: false, 
+      error: 'Token required' 
+    });
+  }
 
   try {
-    const inviteRes = await pool.query(`SELECT id, token_hash, expires_at FROM admin_invites WHERE used_by IS NULL`);
+    const inviteRes = await pool.query(
+      `SELECT id, token_hash, expires_at 
+       FROM admin_invites 
+       WHERE used_by IS NULL 
+       AND (expires_at IS NULL OR expires_at > NOW())`
+    );
+
+    if (inviteRes.rows.length === 0) {
+      return res.json({ 
+        valid: false, 
+        error: 'no_invites_available' 
+      });
+    }
+
+    // Try to match against all valid invites
     for (const row of inviteRes.rows) {
-      const ok = await bcrypt.compare(token, row.token_hash);
-      if (ok) {
-        if (row.expires_at && new Date(row.expires_at) < new Date()) {
-          return res.json({ valid: false, error: 'expired' });
+      try {
+        const isMatch = await bcrypt.compare(token.trim(), row.token_hash);
+        if (isMatch) {
+          // Check expiry
+          if (row.expires_at && new Date(row.expires_at) < new Date()) {
+            return res.json({ 
+              valid: false, 
+              error: 'expired' 
+            });
+          }
+          return res.json({ 
+            valid: true, 
+            expires_at: row.expires_at || null 
+          });
         }
-        return res.json({ valid: true, expires_at: row.expires_at || null });
+      } catch (compareErr) {
+        console.error('Error comparing token:', compareErr);
+        continue;
       }
     }
-    return res.json({ valid: false });
+
+    // No match found
+    return res.json({ 
+      valid: false, 
+      error: 'invalid_token' 
+    });
   } catch (err) {
     console.error('Error verifying invite token:', err);
-    res.status(500).json({ valid: false, error: 'server_error' });
+    res.status(500).json({ 
+      valid: false, 
+      error: 'server_error' 
+    });
+  }
+});
+
+// Fixed /api/register endpoint
+app.post('/api/register', async (req, res) => {
+  const { email, login, name, surname, password, gender, date_of_birth, nationality } = req.body;
+
+  // ✅ nationality is now optional — only require the rest
+  if (!email || !login || !name || !surname || !password || !gender || !date_of_birth) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  // Allow optional invite token for elevated roles (admin) using admin_invites
+  const { invite_token } = req.body;
+  let roleToSet = 'user';
+  let matchedInviteId = null;
+
+  try {
+    if (invite_token && invite_token.trim()) {
+      // ✅ FIXED: Get ALL unused, non-expired invites
+      const inviteRes = await pool.query(
+        `SELECT id, token_hash, expires_at 
+         FROM admin_invites 
+         WHERE used_by IS NULL 
+         AND (expires_at IS NULL OR expires_at > NOW())`
+      );
+
+      if (inviteRes.rows.length === 0) {
+        return res.status(400).json({ 
+          error: 'No valid invite tokens available' 
+        });
+      }
+
+      // Try to match the provided token against all valid invites
+      let matchedInvite = null;
+      for (const row of inviteRes.rows) {
+        try {
+          const isMatch = await bcrypt.compare(invite_token.trim(), row.token_hash);
+          if (isMatch) {
+            matchedInvite = row;
+            break;
+          }
+        } catch (compareErr) {
+          console.error('Error comparing invite token:', compareErr);
+          continue;
+        }
+      }
+
+      if (!matchedInvite) {
+        return res.status(400).json({ 
+          error: 'Invalid invite token' 
+        });
+      }
+
+      // ✅ Check if invite has expired
+      if (matchedInvite.expires_at && new Date(matchedInvite.expires_at) < new Date()) {
+        return res.status(400).json({ 
+          error: 'Invite token has expired' 
+        });
+      }
+
+      // ✅ Set role to admin and save invite ID
+      roleToSet = 'admin';
+      matchedInviteId = matchedInvite.id;
+    }
+
+    // Hash password and create user
+    const hashedPassword = await hashPassword(password);
+    const newUser = await pool.query(
+      `INSERT INTO users (email, login, name, surname, password_hash, gender, date_of_birth, nationality, role)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING id, email, login, name, surname, gender, date_of_birth, nationality, role`,
+      [email, login, name, surname, hashedPassword, gender, date_of_birth, nationality, roleToSet]
+    );
+
+    // ✅ If an invite was used, mark it as used
+    if (matchedInviteId) {
+      try {
+        await pool.query(
+          `UPDATE admin_invites 
+           SET used_by = $1, used_at = NOW() 
+           WHERE id = $2`,
+          [newUser.rows[0].id, matchedInviteId]
+        );
+        console.log(`✅ Invite token marked as used by user ${newUser.rows[0].login}`);
+      } catch (updateErr) {
+        console.error('Failed to mark invite as used:', updateErr);
+        // Don't fail registration if this fails
+      }
+    }
+
+    res.status(201).json({
+      ...newUser.rows[0],
+      message: roleToSet === 'admin' ? 'Admin account created successfully' : 'Account created successfully'
+    });
+  } catch (err) {
+    if (err.code === '23505') {
+      if (err.detail && err.detail.includes('email')) {
+        return res.status(409).json({ error: 'Email already registered' });
+      }
+      if (err.detail && err.detail.includes('login')) {
+        return res.status(409).json({ error: 'Login name already taken' });
+      }
+    }
+    console.error('Registration error:', err);
+    res.status(500).json({ error: 'Server error during registration' });
   }
 });
 

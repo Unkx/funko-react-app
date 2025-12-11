@@ -339,7 +339,7 @@ const CategoriesSite: React.FC = () => {
   return (
     <div className={`min-h-screen ${isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-gray-800"}`}>
       {/* 🔝 Header */}
-      <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4 dark:bg-blue-100  border-gray-200: dark:border-gray-700">
+      <header className={`py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4 ${isDarkMode ? "bg-gray-800" : "bg-blue-100"}`}>
         <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
           <Link to="/" className="no-underline">
             <h1
@@ -373,9 +373,9 @@ const CategoriesSite: React.FC = () => {
           />
           <button
             type="submit"
-            className={`px-4 py-2 border-l border-gray-300 ${
+            className={`px-4 py-2 ${
               isDarkMode
-                ? "bg-blue-500 hover:bg-blue-600"
+                ? "bg-yellow-500 hover:bg-yellow-600"
                 : "bg-blue-600 hover:bg-blue-700"
             } text-white`}
             aria-label="Search"
@@ -408,12 +408,16 @@ const CategoriesSite: React.FC = () => {
               />
             </button>
 
-            {showLanguageDropdown && (
-              <div
-                ref={languageDropdownRef}
-                className={`absolute mt-2 z-50 rounded-lg shadow-xl py-1 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto bg-gradient-to-b from-white to-slate-50 dark:from-slate-800 dark:to-slate-700 border border-slate-200 dark:border-slate-600`}
-                onClick={(e) => e.stopPropagation()}
-              >
+                                {showLanguageDropdown && (
+                          <div
+                            ref={languageDropdownRef}
+                            className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-2 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${
+                              isDarkMode 
+                                ? 'border-yellow-500 bg-gray-800' 
+                                : 'border-blue-500 bg-white'
+                            }`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
                 {Object.entries(languages).map(([code, { name, flag }]) => (
                   <button
                     key={code}
@@ -421,7 +425,7 @@ const CategoriesSite: React.FC = () => {
                     className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${
                       language === code
                         ? isDarkMode
-                          ? "bg-blue-500 text-white"
+                          ? "bg-yellow-500 text-white"
                           : "bg-blue-600 text-white"
                         : isDarkMode
                         ? "hover:bg-gray-600"
@@ -457,7 +461,7 @@ const CategoriesSite: React.FC = () => {
             }}
             className={`flex items-center gap-2 px-4 py-2 rounded border ${
               isDarkMode
-                ? "bg-blue-500 text-white hover:bg-blue-600 border-blue-500"
+                ? "bg-yellow-500 text-black hover:bg-yellow-600 border-yellow-500"
                 : "bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
             }`}
           >
@@ -576,7 +580,7 @@ const CategoriesSite: React.FC = () => {
                       className={`w-full py-2 rounded font-bold transition-colors border ${
                         itemCount > 0
                           ? isDarkMode 
-                            ? "bg-blue-500 text-white hover:bg-blue-600 border-blue-500" 
+                            ? "bg-yellow-500 text-black hover:bg-yellow-600 border-yellow-500" 
                             : "bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
                           : isDarkMode
                             ? "bg-gray-600 text-gray-400 border-gray-600 cursor-not-allowed"
@@ -650,7 +654,7 @@ const CategoriesSite: React.FC = () => {
                     onClick={() => setSelectedCategory("")}
                     className={`px-6 py-2 rounded font-bold border ${
                       isDarkMode 
-                        ? "bg-blue-500 text-white hover:bg-blue-600 border-blue-500" 
+                        ? "bg-yellow-500 text-black hover:bg-yellow-600 border-yellow-500" 
                         : "bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
                     }`}
                   >

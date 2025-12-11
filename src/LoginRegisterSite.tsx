@@ -47,7 +47,7 @@ const LoginRegisterSite: React.FC = () => {
   const tLogin = loginTranslations[language] || loginTranslations["EN"];
   const tRegister = registerTranslations[language] || registerTranslations["EN"];
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const languageDropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Login form state
@@ -93,9 +93,9 @@ const LoginRegisterSite: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         showLanguageDropdown &&
-        dropdownRef.current &&
+        languageDropdownRef.current &&
         buttonRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
+        !languageDropdownRef.current.contains(event.target as Node) &&
         !buttonRef.current.contains(event.target as Node)
       ) {
         setShowLanguageDropdown(false);
@@ -280,7 +280,7 @@ const LoginRegisterSite: React.FC = () => {
               <ChevronDownIcon className={`w-4 h-4 transition-transform ${showLanguageDropdown ? "rotate-180" : ""}`} />
             </button>
               {showLanguageDropdown && (
-                <div ref={dropdownRef} className={`absolute mt-2 z-50 rounded-lg shadow-xl py-1 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto bg-gradient-to-b from-white to-slate-50 dark:from-slate-800 dark:to-slate-700 border border-slate-200 dark:border-slate-600`}>
+                <div ref={languageDropdownRef} className={`absolute mt-2 z-50 rounded-lg shadow-xl py-1 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto bg-gradient-to-b from-white to-slate-50 dark:from-slate-800 dark:to-slate-700 border border-slate-200 dark:border-slate-600`}>
                 {Object.entries(languages).map(([code, { name, flag }]) => (
                   <button key={code} onClick={() => selectLanguage(code)}
                     className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${language === code ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}>

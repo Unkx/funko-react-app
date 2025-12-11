@@ -973,9 +973,9 @@ const FunkoDetails: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         showLanguageDropdown &&
-        languageDropdownRef.current &&
+        languageDropdownRefopdownRef.current &&
         languageButtonRef.current &&
-        !languageDropdownRef.current.contains(event.target as Node) &&
+        !languageDropdownRefopdownRef.current.contains(event.target as Node) &&
         !languageButtonRef.current.contains(event.target as Node)
       ) {
         setShowLanguageDropdown(false);
@@ -1148,12 +1148,16 @@ const FunkoDetails: React.FC = () => {
               />
             </button>
 
-            {showLanguageDropdown && (
-              <div
-                ref={languageDropdownRef}
-                className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-2 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto`}
-                onClick={(e) => e.stopPropagation()}
-              >
+           {showLanguageDropdown && (
+                          <div
+                            ref={languageDropdownRef}
+                            className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-2 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${
+                              isDarkMode 
+                                ? 'border-yellow-500 bg-gray-800' 
+                                : 'border-blue-500 bg-white'
+                            }`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
                 {Object.entries(languages).map(([code, { name, flag }]) => (
                   <button
                     key={code}

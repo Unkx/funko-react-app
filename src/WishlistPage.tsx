@@ -73,7 +73,7 @@ const WishlistPage: React.FC = () => {
   const [wishlistSearch, setWishlistSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const languageDropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
 
@@ -137,9 +137,9 @@ const WishlistPage: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         showLanguageDropdown &&
-        dropdownRef.current &&
+        languageDropdownRef.current &&
         buttonRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
+        !languageDropdownRef.current.contains(event.target as Node) &&
         !buttonRef.current.contains(event.target as Node)
       ) {
         setShowLanguageDropdown(false);
@@ -430,7 +430,7 @@ const WishlistPage: React.FC = () => {
               <ChevronDownIcon className={`w-4 h-4 transition-transform ${showLanguageDropdown ? "rotate-180" : ""}`} />
             </button>
             {showLanguageDropdown && (
-              <div ref={dropdownRef} className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-2 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto`}>
+              <div ref={languageDropdownRef} className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-2 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto`}>
                 {Object.entries(languages).map(([code, { name, flag }]) => (
                   <button
                     key={code}

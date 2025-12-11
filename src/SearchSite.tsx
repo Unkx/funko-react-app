@@ -296,7 +296,7 @@ const SearchSite = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const dropdownRef = useRef(null);
+  const languageDropdownRef = useRef(null);
   const buttonRef = useRef(null);
 
   const queryParams = new URLSearchParams(location.search);
@@ -474,9 +474,9 @@ const allItems = useMemo(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         showLanguageDropdown &&
-        dropdownRef.current &&
+        languageDropdownRef.current &&
         buttonRef.current &&
-        !(dropdownRef.current as Node).contains(event.target as Node) &&
+        !(languageDropdownRef.current as Node).contains(event.target as Node) &&
         !(buttonRef.current as Node).contains(event.target as Node)
       ) {
         setShowLanguageDropdown(false);
@@ -801,11 +801,15 @@ const allItems = useMemo(() => {
             </button>
 
             {showLanguageDropdown && (
-              <div
-                ref={dropdownRef}
-                className={`absolute mt-2 z-50 lang-dropdown rounded-lg shadow-xl py-2 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto bg-gradient-to-b from-white to-slate-50`}
-                onClick={(e) => e.stopPropagation()}
-              >
+                          <div
+                            ref={languageDropdownRef}
+                            className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-2 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${
+                              isDarkMode 
+                                ? 'border-yellow-500 bg-gray-800' 
+                                : 'border-blue-500 bg-white'
+                            }`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
                 {Object.entries(languages).map(([code, { name, flag }]) => (
                   <button
                     key={code}

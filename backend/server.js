@@ -232,25 +232,66 @@ app.get('/api/me', authenticateToken, async (req, res) => {
 // Admin invites endpoints
 import crypto from 'crypto';
 
+// Generate invite code with security
 app.post('/api/admin/invites', authenticateToken, isAdmin, async (req, res) => {
   const { expiresInDays = 7 } = req.body;
+  
   try {
-    const token = crypto.randomBytes(16).toString('hex');
-    const tokenHash = await bcrypt.hash(token, 10);
-    const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000).toISOString();
-    // generate a human-friendly persistent display code (stored in DB)
-    const displayCode = `INV-${Date.now().toString(36).toUpperCase().slice(-6)}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
-
+    // Generate unique invite code
+    const token = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    
+    // Generate display code for listing
+    const displayCode = `INV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+    
+    const expiresAt = expiresInDays 
+      ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
+      : null;
+    
+    // Store hashed token in database
     const result = await pool.query(
-      `INSERT INTO admin_invites (token_hash, display_code, created_by, expires_at) VALUES ($1, $2, $3, $4) RETURNING id, display_code, created_at, expires_at`,
+      `INSERT INTO admin_invites (token_hash, display_code, created_by, expires_at) 
+       VALUES ($1, $2, $3, $4) 
+       RETURNING id, display_code, created_by, created_at, expires_at`,
       [tokenHash, displayCode, req.user.id, expiresAt]
     );
-
-    // Return the raw token only once (to the admin who created it)
-    res.status(201).json({ invite: result.rows[0], token });
+    
+    // Return raw token ONLY to creator
+    res.status(201).json({
+      invite: result.rows[0],
+      token: token // Only returned here, not stored
+    });
+    
   } catch (err) {
     console.error('Error creating invite:', err);
     res.status(500).json({ error: 'Failed to create invite' });
+  }
+});
+
+// Get invites - show different data based on creator
+app.get('/api/admin/invites', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        ai.id,
+        ai.display_code,
+        ai.created_by,
+        uc.login as created_by_username,
+        ai.created_at,
+        ai.expires_at,
+        ai.used_by,
+        uu.login as used_by_username,
+        ai.used_at
+      FROM admin_invites ai
+      LEFT JOIN users uc ON ai.created_by = uc.id
+      LEFT JOIN users uu ON ai.used_by = uu.id
+      ORDER BY ai.created_at DESC
+    `);
+    
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching invites:', err);
+    res.status(500).json({ error: 'Failed to fetch invites' });
   }
 });
 
@@ -454,64 +495,40 @@ app.post('/api/register', async (req, res) => {
 // Public endpoint to verify an invite token (used for client-side validation)
 // Fixed /api/verify-invite endpoint
 app.post('/api/verify-invite', async (req, res) => {
-  const { token } = req.body || {};
+  const { token } = req.body;
   
-  if (!token || !token.trim()) {
-    return res.status(400).json({ 
-      valid: false, 
-      error: 'Token required' 
-    });
+  if (!token) {
+    return res.status(400).json({ valid: false, error: 'Token required' });
   }
-
+  
   try {
-    const inviteRes = await pool.query(
-      `SELECT id, token_hash, expires_at 
+    // Hash the provided token for comparison
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    
+    const result = await pool.query(
+      `SELECT id, expires_at, used_by
        FROM admin_invites 
-       WHERE used_by IS NULL 
-       AND (expires_at IS NULL OR expires_at > NOW())`
+       WHERE token_hash = $1 
+       AND (expires_at IS NULL OR expires_at > NOW())
+       AND used_by IS NULL`,
+      [tokenHash]
     );
-
-    if (inviteRes.rows.length === 0) {
+    
+    if (result.rows.length === 0) {
       return res.json({ 
         valid: false, 
-        error: 'no_invites_available' 
+        error: 'invalid_or_used' 
       });
     }
-
-    // Try to match against all valid invites
-    for (const row of inviteRes.rows) {
-      try {
-        const isMatch = await bcrypt.compare(token.trim(), row.token_hash);
-        if (isMatch) {
-          // Check expiry
-          if (row.expires_at && new Date(row.expires_at) < new Date()) {
-            return res.json({ 
-              valid: false, 
-              error: 'expired' 
-            });
-          }
-          return res.json({ 
-            valid: true, 
-            expires_at: row.expires_at || null 
-          });
-        }
-      } catch (compareErr) {
-        console.error('Error comparing token:', compareErr);
-        continue;
-      }
-    }
-
-    // No match found
-    return res.json({ 
-      valid: false, 
-      error: 'invalid_token' 
+    
+    res.json({ 
+      valid: true, 
+      expires_at: result.rows[0].expires_at 
     });
+    
   } catch (err) {
-    console.error('Error verifying invite token:', err);
-    res.status(500).json({ 
-      valid: false, 
-      error: 'server_error' 
-    });
+    console.error('Error verifying invite:', err);
+    res.status(500).json({ valid: false, error: 'server_error' });
   }
 });
 

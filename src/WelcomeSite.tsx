@@ -91,9 +91,9 @@ const WelcomeSite: React.FC = () => {
   const t = translations[language] || translations["EN"];
 
   // Refs for dropdowns
-  const countryDropdownRef = useRef<HTMLDivElement>(null);
+  const countrylanguageDropdownRef = useRef<HTMLDivElement>(null);
   const countryButtonRef = useRef<HTMLButtonElement>(null);
-  const languageDropdownRef = useRef<HTMLDivElement>(null);
+  const languageDropdownRefopdownRef = useRef<HTMLDivElement>(null);
   const languageButtonRef = useRef<HTMLButtonElement>(null);
 
   // Toggle language dropdown
@@ -690,11 +690,15 @@ const mostVisitedItems = useMemo(() => {
                     </button>
         
                     {showLanguageDropdown && (
-                      <div
-                          ref={languageDropdownRef}
-                          className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-2 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto`}
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                          <div
+                            ref={languageDropdownRef}
+                            className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-2 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${
+                              isDarkMode 
+                                ? 'border-yellow-500 bg-gray-800' 
+                                : 'border-blue-500 bg-white'
+                            }`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
                         {Object.entries(languages).map(([code, { name, flag }]) => (
                           <button
                             key={code}

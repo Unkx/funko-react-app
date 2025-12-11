@@ -702,7 +702,7 @@ const Admin = () => {
   const [showWishlistFilters, setShowWishlistFilters] = useState(false);
 
   // Refs
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const languageDropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -1075,9 +1075,9 @@ useEffect(() => {
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
-        dropdownRef.current &&
+        languageDropdownRef.current &&
         buttonRef.current &&
-        !dropdownRef.current.contains(e.target as Node) &&
+        !languageDropdownRef.current.contains(e.target as Node) &&
         !buttonRef.current.contains(e.target as Node)
       ) {
         if (showCountryDropdown) setShowCountryDropdown(false);
@@ -2050,26 +2050,30 @@ useEffect(() => {
               />
             </button>
 
-            {showLanguageDropdown && (
-              <div
-                ref={dropdownRef}
-                className={`absolute mt-2 z-50 rounded-lg shadow-xl py-1 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto bg-gradient-to-b from-white to-slate-50 dark:from-slate-800 dark:to-slate-700 border border-slate-200 dark:border-slate-600`}
-                onClick={(e) => e.stopPropagation()}
-              >
-                {Object.entries(languages).map(([code, { name, flag }]) => (
-                  <button
-                    key={code}
-                    onClick={() => selectLanguage(code)}
-                    className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${
-                      language === code
-                        ? isDarkMode
-                          ? "bg-yellow-500 text-black"
-                          : "bg-blue-600 text-white"
-                        : isDarkMode
-                        ? "hover:bg-gray-600"
-                        : "hover:bg-gray-200"
-                    }`}
-                  >
+                    {showLanguageDropdown && (
+                          <div
+                            ref={languageDropdownRef}
+                            className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-2 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${
+                              isDarkMode 
+                                ? 'border-yellow-500 bg-gray-800' 
+                                : 'border-blue-500 bg-white'
+                            }`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                        {Object.entries(languages).map(([code, { name, flag }]) => (
+                          <button
+                            key={code}
+                            onClick={() => selectLanguage(code)}
+                            className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${
+                              language === code
+                                ? isDarkMode
+                                  ? "bg-yellow-500 text-black"
+                                  : "bg-green-600 text-white"
+                                : isDarkMode
+                                ? "hover:bg-gray-600"
+                                : "hover:bg-neutral-500"
+                            }`}
+                          >
                     <span className="w-5 h-5">{flag}</span>
                     <span>{name}</span>
                   </button>

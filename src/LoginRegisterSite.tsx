@@ -171,11 +171,58 @@ const LoginRegisterSite: React.FC = () => {
   }, [inviteToken]);
 
   // --- REGISTER ---
+  // Validation regexes (copied from RegisterSite)
+  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+  const usernameRegex = /^(?=.{3,20}$)(?![._])(?!.*[._]{2})[A-Za-z0-9._]+(?<![._])$/;
+  const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ' -]{2,50}$/;
+  const passwordRegex = /^(?=\S+$)(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>\/?]).{8,}$/;
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegisterError("");
     if (!email || !regLogin || !name || !surname || !regPassword || !confirmPassword || !gender || !dateOfBirth) {
       setRegisterError(tRegister.allFieldsRequired || "All fields are required.");
+      return;
+    }
+    // Field-specific validation
+    if (!emailRegex.test(email)) {
+      setRegisterError(tRegister.invalidEmail || "Please enter a valid email address.");
+      return;
+    }
+
+    if (!usernameRegex.test(regLogin)) {
+      setRegisterError(
+        tRegister.invalidUsername ||
+          "Username must be 3–20 characters, letters/numbers, no leading/trailing or consecutive ./_"
+      );
+      return;
+    }
+
+    if (!nameRegex.test(name) || !nameRegex.test(surname)) {
+      setRegisterError(tRegister.invalidName || "Please enter a valid first and last name.");
+      return;
+    }
+
+    if (regPassword !== confirmPassword) {
+      setRegisterError(tRegister.passwordsDoNotMatch || "Passwords do not match.");
+      return;
+    }
+
+    if (!passwordRegex.test(regPassword)) {
+      setRegisterError(
+        tRegister.weakPassword ||
+          "Password must be at least 8 characters, include upper and lower case letters, a number, and a special character (no spaces)."
+      );
+      return;
+    }
+
+    // Age check (minimum 13)
+    const birth = new Date(dateOfBirth);
+    const ageDifMs = Date.now() - birth.getTime();
+    const ageDate = new Date(ageDifMs);
+    const age = Math.abs(ageDate.getUTCFullYear() - 1970);
+    if (Number.isNaN(age) || age < 13) {
+      setRegisterError(tRegister.invalidAge || "You must be at least 13 years old to register.");
       return;
     }
     if (regPassword !== confirmPassword) {

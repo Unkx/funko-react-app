@@ -987,8 +987,8 @@ const handleRemoveFriend = async (friendId: string) => {
   useEffect(() => {
     if (!token || !currentUser || currentUser.role !== "admin") {
       const timer = setTimeout(() => {
-        navigate("/LoginRegisterSite", { replace: true });
-      }, 500);
+        navigate("/", { replace: true }); // ✅ Przekierowanie do WelcomeSite
+      }, 2000); 
       return () => clearTimeout(timer);
     }
   }, [currentUser, token, navigate]);
@@ -1959,6 +1959,9 @@ useEffect(() => {
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-800 text-center px-4">
         <p className="text-red-600 text-3xl font-semibold mb-4">
           {t.accessRestricted || "You have no access here."}
+        </p>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">
+          {t.redirectingIn || "Redirecting to main site in 2 seconds..."}
         </p>
         <Link
           to="/"

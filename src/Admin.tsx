@@ -9,8 +9,8 @@ import FriendProfileModal from './FriendProfileModal';
 import LoyaltyDashboard from './LoyaltyDashboard';
 
 // SVG Icons
-import MoonIcon from "./assets/moon.svg?react";
-import SunIcon from "./assets/sun.svg?react";
+import MoonIcon from "/src/assets/moon.svg?react";
+import SunIcon from "/src/assets/sun.svg?react";
 import SearchIcon from "/src/assets/search.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
@@ -18,16 +18,16 @@ import UsersIcon from "/src/assets/users.svg?react";
 import EyeIcon from "/src/assets/eye.svg?react";
 import ChartIcon from "/src/assets/chart.svg?react";
 import CalendarIcon from "/src/assets/calendar.svg?react";
-import HeartIcon from "./assets/heart.svg?react";
-import ShoppingCartIcon from "./assets/shopping-cart.svg?react";
-import FilterIcon from "./assets/filter.svg?react";
-import StarIcon from "./assets/star.svg?react";
-import PlusIcon from "./assets/plus.svg?react";
+import HeartIcon from "/src/assets/heart.svg?react";
+import ShoppingCartIcon from "/src/assets/shopping-cart.svg?react";
+import FilterIcon from "/src/assets/filter.svg?react";
+import StarIcon from "/src/assets/star.svg?react";
+import PlusIcon from "/src/assets/plus.svg?react";
 import AdminInvites from "./AdminInvites";
 
 // Flag SVGs
 import UKFlag from "/src/assets/flags/uk.svg?react";
-import USAFlag from "/src/assets/flags/usa.svg?react";
+import USAFlag from "/src/assets/flags/usa.svg";
 import PolandFlag from "/src/assets/flags/poland.svg?react";
 import RussiaFlag from "/src/assets/flags/russia.svg?react";
 import FranceFlag from "/src/assets/flags/france.svg?react";

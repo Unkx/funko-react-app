@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import useBreakpoints from "./useBreakpoints";
 import { motion, AnimatePresence } from "framer-motion";
-import StarIcon from "./assets/star.svg?react";
-import TrophyIcon from "./assets/trophy.svg?react";
-import FireIcon from "./assets/fire.svg?react";
-import GiftIcon from "./assets/gift.svg?react";
+import StarIcon from "/src/assets/star.svg?react";
+import TrophyIcon from "/src/assets/trophy.svg?react";
+import FireIcon from "/src/assets/fire.svg?react";
+import GiftIcon from "/src/assets/gift.svg?react";
 import { translations } from "./Translations/TranslationsLoyaltyDashboard";
 
 // =============== INTERFACES ===============

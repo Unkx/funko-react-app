@@ -95,20 +95,55 @@ const isAdmin = (req, res, next) => {
 // ======================
 const seedDatabase = async () => {
   try {
+    console.log('🔍 Checking funko_items table...');
+    
+    // First, let's see what tables exist
+    const tableCheck = await pool.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_name = 'funko_items'
+    `);
+    
+    console.log('Table exists check:', tableCheck.rows);
+    
+    // Now try the COUNT query
     const countRes = await pool.query("SELECT COUNT(*) FROM funko_items");
+    console.log('Count query result:', countRes.rows);
+    
     if (parseInt(countRes.rows[0].count) > 0) {
       console.log("✅ Database already seeded");
       return;
     }
 
     console.log("🌱 Seeding database with Funko items...");
-    // Add your funko items here if needed
+    // Add your seed data here if needed
     console.log("✅ Database seeded successfully");
+    
   } catch (err) {
-    console.error("❌ Database seeding error:", err);
+    console.error("❌ Database seeding error DETAILS:");
+    console.error("Error code:", err.code);
+    console.error("Error message:", err.message);
+    console.error("Full error:", err);
+    
+    // If table doesn't exist, create it
+    if (err.code === '42P01') {
+      console.log('Creating funko_items table...');
+      await pool.query(`
+        CREATE TABLE funko_items (
+          id VARCHAR(255) PRIMARY KEY,
+          title VARCHAR(255) NOT NULL,
+          number VARCHAR(50) NOT NULL,
+          category VARCHAR(100),
+          series JSONB,
+          exclusive BOOLEAN DEFAULT FALSE,
+          image_name VARCHAR(255),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+    }
   }
 };
-
 // Create an initial admin user if none exists and environment variables are provided.
 const createInitialAdminIfNeeded = async () => {
   try {

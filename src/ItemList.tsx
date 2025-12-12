@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { FixedSizeList } from "react-window";
 import { useNavigate } from "react-router-dom";
 import useBreakpoints from "./useBreakpoints";
-import LeftArrow from "./assets/left-arrow.svg?react";
-import RightArrow from "./assets/right-arrow.svg?react";
+import LeftArrow from "/src/assets/left-arrow.svg?react";
+import RightArrow from "/src/assets/right-arrow.svg?react";
 
 interface Item {
   id: number | string;

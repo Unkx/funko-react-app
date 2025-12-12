@@ -1,18 +1,18 @@
-# Multi-stage Dockerfile to build the Vite React app and serve with nginx
-FROM node:18-alpine AS builder
+FROM node:18-alpine
+
 WORKDIR /app
 
+# Copy package files (no "backend/" prefix since context is already ./backend)
+COPY package*.json ./
+
 # Install dependencies
-COPY package.json package-lock.json* ./
 RUN npm install --legacy-peer-deps
 
-# Copy source and build
+# Copy source code (no "backend/" prefix)
 COPY . .
-RUN npm run build
 
-# Nginx stage
-FROM nginx:stable-alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+ENV PORT=5000
+
+EXPOSE 5173
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

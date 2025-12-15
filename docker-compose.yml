@@ -1,7 +1,7 @@
 services:
   backend:
     build:
-      context: ./backend  # ← This tells Docker to use backend folder as context
+      context: ./backend
       dockerfile: Dockerfile
     environment:
       - PORT=5000
@@ -10,25 +10,43 @@ services:
       - DB_PASSWORD=postgres
       - DB_NAME=webappdb
       - DB_PORT=5432
+      # Add retry environment variables
+      - DB_MAX_RETRIES=10
+      - DB_RETRY_DELAY=5000
     ports:
       - "5000:5000"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+    # Add restart policy for auto-recovery
+    restart: unless-stopped
+    # Optional: Add healthcheck for backend
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   frontend:
     build:
-      context: .
+      context: .  # Frontend is in root directory
       dockerfile: Dockerfile
     ports:
-      - "5173:5173"
+      - "5175:5175"
     volumes:
-      - ./src:/app/src  # ← This should mount src
+      - ./src:/app/src
       - ./public:/app/public
       - /app/node_modules
     environment:
       - CHOKIDAR_USEPOLLING=true
+      # Add Vite env variables
+      - VITE_API_URL=http://localhost:5000
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    # Add restart policy
+    restart: unless-stopped
 
   postgres:
     image: postgres:15-alpine
@@ -38,6 +56,20 @@ services:
       POSTGRES_DB: webappdb
     volumes:
       - pgdata:/var/lib/postgresql/data
+      # Add init scripts directory
+      - ./init-db:/docker-entrypoint-initdb.d
+    # Add healthcheck for PostgreSQL
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d webappdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    # Optional: Expose port for local tools
+    ports:
+      - "5432:5432"
+    # Add restart policy
+    restart: unless-stopped
 
 volumes:
   pgdata:

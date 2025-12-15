@@ -8,14 +8,15 @@ export default defineConfig({
     react(),
     tailwindcss(),
     svgr({
-      // Add these options
+      // This config works with ?react imports
       svgrOptions: {
         exportType: 'default',
         ref: true,
         svgo: false,
         titleProp: true,
       },
-      include: '**/*.svg',
+      // Explicitly enable default export
+      exportAsDefault: true,
     }),
   ],
   resolve: {

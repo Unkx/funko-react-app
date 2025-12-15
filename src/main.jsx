@@ -93,11 +93,12 @@ import DashboardSite from "./DashboardSite"
 import AdminSite from "./Admin"
 import AdminInvites from "./AdminInvites"
 import NotFound from './NotFound';
+import AboutUsSite from "./AboutUsSite";
 import CollectionPage from "./CollectionPage";
 import WishlistPage from "./WishlistPage";
 import Requests from "./Requests";
 import ChatComponent from "./ChatComponent";
-
+import FeaturesSite from "./Features";
 import CategoriesSite from './CategoriesSite';
 import MostVisitedSite from './MostVisitedSite';
 
@@ -133,6 +134,8 @@ root.render(
             <Route path="/requests" element={<Requests />} />
             <Route path="/categories" element={<CategoriesSite />} />
             <Route path="/mostVisited" element={<MostVisitedSite />} />
+            <Route path="/about" element={<AboutUsSite />} />
+            <Route path="/features" element={<FeaturesSite />} />
             {/* <Route path="/chat" element={<ChatComponent />} /> */}
             <Route path="/404" element={<NotFound />} />
             <Route path="*" element={<NotFound />} />

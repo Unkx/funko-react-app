@@ -186,8 +186,41 @@ const createInitialAdminIfNeeded = async () => {
 };
 
 // Ensure admin_invites and admin_requests tables exist
-const ensureAdminTables = async () => {
+async function ensureAdminTables() {
   try {
+    // 1. Tabela users (bez dependencies)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        login VARCHAR(100) UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        name VARCHAR(100),
+        surname VARCHAR(100),
+        gender VARCHAR(20),
+        date_of_birth DATE,
+        role VARCHAR(50) DEFAULT 'user',
+        nationality VARCHAR(100),
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    console.log('✅ Users table ready');
+
+    // 2. Tabela funko_items (bez dependencies)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS funko_items (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        series VARCHAR(255),
+        number VARCHAR(50),
+        image_url TEXT,
+        category VARCHAR(100),
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    console.log('✅ Funko items table ready');
+
+    // 3. Tabela admin_invites (wymaga users)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS admin_invites (
         id SERIAL PRIMARY KEY,
@@ -200,29 +233,13 @@ const ensureAdminTables = async () => {
         used_at TIMESTAMPTZ
       );
     `);
+    console.log('✅ Admin invites table ready');
 
-    // For older DBs, ensure the column exists and has a unique index
-    await pool.query(`ALTER TABLE admin_invites ADD COLUMN IF NOT EXISTS display_code TEXT;`);
-    await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS admin_invites_display_code_idx ON admin_invites(display_code);`);
-
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS admin_requests (
-        id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-        message TEXT,
-        status TEXT DEFAULT 'pending',
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        resolved_at TIMESTAMPTZ,
-        processed_by INTEGER REFERENCES users(id) ON DELETE SET NULL
-      );
-    `);
-
-    console.log('✅ Admin tables ensured');
-  } catch (err) {
-    console.error('❌ Error ensuring admin tables:', err);
+  } catch (error) {
+    console.error('❌ Error ensuring tables:', error);
+    throw error;
   }
-};
-
+}
 // ======================
 // MIDDLEWARE
 // ======================
@@ -3527,9 +3544,13 @@ const startServer = async () => {
     await pool.query('SELECT NOW()');
     console.log('✅ Database connected successfully');
     
-    await seedDatabase();
+    // 1. NAJPIERW utwórz wszystkie tabele
     await ensureAdminTables();
-    // Ensure any existing invites have a persistent display_code
+    
+    // 2. POTEM zaseeduj dane
+    await seedDatabase();
+    
+    // 3. Backfill display codes
     const backfillDisplayCodes = async () => {
       try {
         const rows = await pool.query(`SELECT id, created_at FROM admin_invites WHERE display_code IS NULL OR display_code = ''`);
@@ -3557,6 +3578,7 @@ const startServer = async () => {
 
     await backfillDisplayCodes();
 
+    // 4. Utwórz początkowego admina
     await createInitialAdminIfNeeded();
     
     app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
@@ -3565,6 +3587,5 @@ const startServer = async () => {
     process.exit(1);
   }
 };
-
 
 startServer();

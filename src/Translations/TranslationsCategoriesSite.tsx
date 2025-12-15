@@ -66,7 +66,7 @@ export const translations: { [key: string]: { [key: string]: string } } = {
     funkoCategories: "Kategorie Funko",
     exploringCategory: "Eksplorujesz",
     browseCategories: "Przeglądaj kategorie z",
-    totalItems: "łącznie przedmiotów",
+    totalItems: "przedmiotami w nich zawartych",
     searchInCategory: "Szukaj w",
     back: "Wstecz",
     items: "przedmiotów",

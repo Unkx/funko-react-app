@@ -93,7 +93,7 @@ const WelcomeSite: React.FC = () => {
   // Refs for dropdowns
   const countrylanguageDropdownRef = useRef<HTMLDivElement>(null);
   const countryButtonRef = useRef<HTMLButtonElement>(null);
-  const languageDropdownRefopdownRef = useRef<HTMLDivElement>(null);
+  const languageDropdownRef = useRef<HTMLDivElement>(null);
   const languageButtonRef = useRef<HTMLButtonElement>(null);
 
   // Toggle language dropdown
@@ -390,6 +390,34 @@ const WelcomeSite: React.FC = () => {
   }
 }, [isDarkMode]);
 
+const incrementVisitCount = (id: string) => {
+  const today = new Date().toDateString();
+  const globalClickKey = `global_click_${id}_${today}`;
+  
+  // Sprawdź czy już dzisiaj zwiększono licznik
+  if (!localStorage.getItem(globalClickKey)) {
+    const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
+    visitCount[id] = (visitCount[id] || 0) + 1;
+    localStorage.setItem("funkoVisitCount", JSON.stringify(visitCount));
+    localStorage.setItem(globalClickKey, "true");
+    
+    // Poinformuj inne komponenty
+    window.dispatchEvent(new CustomEvent('funkoVisitUpdated'));
+    window.dispatchEvent(new CustomEvent('globalFunkoVisit', { detail: { id } }));
+    
+    // Ustaw wygaśnięcie na północ
+    const midnight = new Date();
+    midnight.setHours(24, 0, 0, 0);
+    const timeUntilMidnight = midnight.getTime() - Date.now();
+    
+    setTimeout(() => {
+      localStorage.removeItem(globalClickKey);
+    }, timeUntilMidnight);
+    
+    return true;
+  }
+  return false;
+};
 
   // 🌙 Theme sync
   useEffect(() => {

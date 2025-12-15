@@ -498,27 +498,44 @@ const FunkoDetails: React.FC = () => {
 
   const extractSearchParamsFromId = (id: string) => {
     const parts = id.replace(/[^a-zA-Z0-9\s-]/g, '').split('-').filter(p => p.length > 0);
-    const numberPart = parts.find(part => /^\d+$/.test(part)) || '';
-    const titleParts = parts.filter(part => !/^\d+$/.test(part) && part.length > 0);
+    
+    // Znajdź część numeryczną, ale pomiń "null"
+    const numberPart = parts.find(part => /^\d+$/.test(part) && part !== "null") || '';
+    
+    // Filtruj części, które nie są numerami ani "null"
+    const titleParts = parts.filter(part => 
+      !/^\d+$/.test(part) && 
+      part.toLowerCase() !== "null" && 
+      part.toLowerCase() !== "undefined" &&
+      part.length > 0
+    );
+    
     return {
       title: titleParts.join(' ') || id.replace(/-/g, ' '),
       number: numberPart
     };
   };
 
-  const fetchData = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      if (!id) {
-        throw new Error("No ID provided");
-      }
-      
-      const cleanId = id.replace(/[^\w\s-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
-      console.log("🔍 Original ID:", id);
-      console.log("🔍 Clean ID:", cleanId);
-      
+const fetchData = async () => {
+  try {
+    setIsLoading(true);
+    setError(null);
+    
+    if (!id) {
+      throw new Error("No ID provided");
+    }
+    
+    const cleanId = id.replace(/[^\w\s-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    console.log("🔍 Original ID:", id);
+    console.log("🔍 Clean ID:", cleanId);
+    
+    const searchParams = extractSearchParamsFromId(cleanId);
+    console.log("🔍 Extracted params:", searchParams);
+    console.log("🔍 Number valid?", 
+      searchParams.number && 
+      searchParams.number !== "null" && 
+      /^\d+$/.test(searchParams.number)
+    );
       try {
         const response = await api.get(`/api/items/${encodeURIComponent(cleanId)}`);
         console.log("✅ Found item in database:", response.data);
@@ -613,34 +630,75 @@ const FunkoDetails: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+};
+
+const generateDescription = async (title: string, number: string, category: string = "", targetLang: string): Promise<string> => {
+  const apiKey = import.meta.env.VITE_AI_API_KEY;
+  if (!apiKey) throw new Error("Brak klucza API (VITE_AI_API_KEY w .env)");
+
+  const langNames: Record<string, string> = {
+    PL: "polski",
+    EN: "English",
+    FR: "français",
+    DE: "Deutsch",
+    ES: "español",
+    RU: "русский",
   };
 
-  const generateDescription = async (title: string, number: string, targetLang: string): Promise<string> => {
-    const apiKey = import.meta.env.VITE_AI_API_KEY;
-    if (!apiKey) throw new Error("Brak klucza API (VITE_AI_API_KEY w .env)");
+  const isValidNumber = number && 
+                       number.trim() !== "" && 
+                       number.toLowerCase() !== "null" && 
+                       number.toLowerCase() !== "undefined" &&
+                       number.toLowerCase() !== "n/a" &&
+                       /^[\d#\-]+$/.test(number.trim());
 
-    const langNames: Record<string, string> = {
-      PL: "polish",
-      EN: "english",
-      US: "english",
-      CA: "english",
-      FR: "french",
-      DE: "german",
-      ES: "spanish",
-      RU: "russian",
-    };
+  const itemType = determineItemType(title, category);
+  
+  const itemTypeLabels: Record<string, string> = {
+    funko_pop: 'Funko Pop! vinyl figure',
+    blind_bag: 'blind bag collectible',
+    my_moji: 'MyMoji collectible figure',
+    action_figure: 'action figure',
+    plush_toy: 'plush toy',
+    vinyl_figure: 'vinyl figure',
+    collectible: 'collectible item'
+  };
 
-    const prompt = `Write a comprehensive, engaging product description in ${langNames[targetLang] || targetLang.toLowerCase()} for a Funko Pop! titled "${title}" with number ${number}. 
-    
-    Include details about:
-    - Character background and pop culture significance
-    - Design features and unique characteristics
-    - Collectibility and rarity
-    - Why it's a must-have for collectors
-    - Any special features or exclusive elements
-    
-    Make it detailed but engaging, around 4-6 sentences. Write in a natural, enthusiastic tone.`;
+  const itemTypeLabel = itemTypeLabels[itemType] || 'collectible item';
 
+  const prompt = `Jesteś ekspertem od przedmiotów kolekcjonerskich. Napisz szczegółowy, wciągający opis produktu w języku ${langNames[targetLang] || targetLang.toLowerCase()} dla ${itemTypeLabel}.
+
+PRODUKT: "${title}" ${isValidNumber ? `(numer przedmiotu: ${number})` : ''}
+${category ? `KATEGORIA: ${category}` : ''}
+
+=== WYMAGANIA CO DO DŁUGOŚCI I JAKOŚCI ===
+1. Napisz 5-8 PEŁNYCH, dobrze rozwiniętych zdań
+2. Każde zdanie musi mieć przynajmniej 8-15 słów
+3. Opis musi być szczegółowy i informacyjny
+4. Zawsze kończ zdania właściwą interpunkcją (. ! ?)
+5. NIGDY nie przerywaj w połowie myśli
+
+=== STRUKTURA OPISU ===
+1. Wprowadzenie: Przedstaw przedmiot i jego znaczenie w kulturze/fandomie
+2. Opis wyglądu: Szczegóły designu, kolory, detale
+3. Specjalne cechy: Co wyróżnia ten przedmiot (metallic, glow-in-the-dark, exclusive)
+4. Kolekcjonerskość: Rzadkość, limitowane wydanie, numeracja
+5. Wartość: Dlaczego kolekcjonerzy tego chcą
+6. Zakończenie: Podsumowanie i zachęta dla kolekcjonerów
+
+=== PRZYKŁAD DOBREGO OPISU ===
+"The T-1000 Officer (Metallic) Funko Pop! figure is a stunning representation of the iconic liquid metal assassin from Terminator 2: Judgment Day. This exceptional collectible features a brilliant metallic silver finish that perfectly captures the character's shapeshifting abilities and futuristic aesthetic. The detailed sculpting showcases the police uniform with remarkable accuracy, from the badge to the perfectly replicated facial features. As part of the exclusive Metallic series, this figure is highly sought after by both Terminator enthusiasts and serious Funko collectors alike. Its limited production run and special finish make it a standout piece that commands attention in any display. The figure's substantial weight and premium paint application demonstrate the quality craftsmanship that fans have come to expect from these collectibles. Owning this metallic variant represents a significant milestone for collectors pursuing complete Terminator sets. This is undoubtedly a centerpiece item that would elevate any science fiction collection to new heights."
+
+=== INSTRUKCJE SPECJALNE ===
+- Bądź entuzjastyczny ale precyzyjny
+- Wymień konkretne detale designu
+- Opisz uczucia kolekcjonera posiadającego ten przedmiot
+- Dodaj kontekst z uniwersum/franczyzy
+- Zakończ mocnym, przekonującym zdaniem
+
+Teraz napisz szczegółowy opis dla "${title}". Pamiętaj: 5-8 PEŁNYCH zdań, szczegółowy, bogaty w informacje!`;
+
+  try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -649,9 +707,23 @@ const FunkoDetails: React.FC = () => {
       },
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 250,
-        temperature: 0.7,
+        messages: [{ 
+          role: "system", 
+          content: `Jesteś pisarzem specjalizującym się w opisach przedmiotów kolekcjonerskich. Twoje opisy są zawsze:
+1. Szczegółowe i informacyjne (5-8 pełnych zdań)
+2. Entuzjastyczne ale precyzyjne
+3. Zawsze kończysz zdania właściwą interpunkcją
+4. Dodajesz kontekst kulturowy/franczyzowy
+5. Wspominasz o szczegółach designu i kolekcjonerskości`
+        }, { 
+          role: "user", 
+          content: prompt 
+        }],
+        max_tokens: 600, // Zwiększono na 600 tokenów dla dłuższych opisów
+        temperature: 0.8, // Nieco wyższa temperatura dla bardziej kreatywnych opisów
+        top_p: 0.9,
+        frequency_penalty: 0.2, // Zmniejsza powtarzanie
+        presence_penalty: 0.1, // Zachęca do różnorodności
       }),
     });
 
@@ -662,8 +734,210 @@ const FunkoDetails: React.FC = () => {
     }
 
     const data = await response.json();
-    return data.choices[0].message.content.trim();
+    let description = data.choices[0].message.content.trim();
+    
+    // Sprawdź i popraw kompletność
+    description = ensureCompleteDescription(description, title, itemTypeLabel, category);
+    
+    return description;
+  } catch (error) {
+    console.error("AI generation error:", error);
+    // Dłuższy, bardziej szczegółowy fallback
+    return createDetailedFallback(title, itemTypeLabel, category, isValidNumber ? number : '');
+  }
+};
+
+// Funkcja pomocnicza do zapewnienia kompletności
+const ensureCompleteDescription = (description: string, title: string, itemTypeLabel: string, category: string): string => {
+  if (!description) {
+    return createDetailedFallback(title, itemTypeLabel, category, '');
+  }
+  
+  // Sprawdź czy opis kończy się kropką
+  if (!/[.!?]$/.test(description.trim())) {
+    description = description.trim() + ".";
+  }
+  
+  // Sprawdź liczbę zdań
+  const sentences = description.split(/[.!?]+/).filter(s => s.trim().length > 10);
+  
+  // Jeśli mniej niż 4 zdania, rozszerz opis
+  if (sentences.length < 4) {
+    const extensions = [
+      ` ${title} features exceptional attention to detail that collectors truly appreciate.`,
+      ` The craftsmanship and quality of this ${itemTypeLabel} make it a standout piece in any collection.`,
+      ` Displaying this item would add significant value and visual appeal to any collector's showcase.`,
+      ` Its design perfectly captures the essence of what makes collectibles so desirable to enthusiasts.`,
+      ` This piece represents not just a purchase, but an investment in pop culture history.`
+    ];
+    
+    // Dodaj 1-2 rozszerzenia losowo
+    const randomExtensions = [...extensions]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 2);
+    
+    description += randomExtensions.join('');
+  }
+  
+  // Upewnij się, że ostatnie zdanie jest mocne
+  const lastSentence = sentences[sentences.length - 1];
+  const strongEndings = [
+    "This is undoubtedly a must-have centerpiece for any serious collector.",
+    "Every collector would be proud to display this exceptional piece in their collection.",
+    "Acquiring this item represents a significant achievement for any collecting enthusiast.",
+    "This collectible stands as a testament to fine craftsmanship and pop culture significance."
+  ];
+  
+  if (!lastSentence || lastSentence.length < 15) {
+    const randomEnding = strongEndings[Math.floor(Math.random() * strongEndings.length)];
+    description = description.replace(/[.!?]*$/, '. ' + randomEnding);
+  }
+  
+  return description;
+};
+
+// Funkcja tworząca szczegółowy fallback
+const createDetailedFallback = (title: string, itemTypeLabel: string, category: string, number: string): string => {
+  const baseDescription = `${title} is an exceptional ${itemTypeLabel} that commands attention with its detailed design and premium craftsmanship. `;
+  
+  const details = [
+    `The figure showcases intricate sculpting and vibrant colors that bring the character to life in stunning detail. `,
+    `As ${number ? `item #${number} ` : ''}${category ? `in the ${category} series, ` : ''}this collectible represents a significant piece for any enthusiast. `,
+    `Its substantial weight and high-quality materials demonstrate the care put into its production. `,
+    `Collectors will appreciate both the aesthetic appeal and investment potential of this remarkable piece. `,
+    `Displaying this item would elevate any collection and serve as a conversation starter among fellow enthusiasts. `,
+    `The attention to detail in every aspect of this ${itemTypeLabel} makes it a true standout in the world of collectibles. `
+  ];
+  
+  // Wybierz 4-5 losowych szczegółów
+  const selectedDetails = [...details]
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 4 + Math.floor(Math.random() * 2));
+  
+  const ending = `This is undoubtedly a must-have acquisition for any serious collector seeking to enhance their curated collection with a piece of exceptional quality and cultural significance.`;
+  
+  return baseDescription + selectedDetails.join('') + ending;
+};
+
+// W useEffect dodaj sprawdzanie długości
+useEffect(() => {
+  const generateIfNeeded = async () => {
+    if (!funkoItem || !language) return;
+    
+    const cacheKey = `ai_desc_${funkoItem.id}_${language}`;
+    const cached = localStorage.getItem(cacheKey);
+    
+    // Sprawdź czy zapisany opis jest wystarczająco długi
+    if (cached && isDescriptionSufficient(cached)) {
+      setAiDescription(cached);
+      return;
+    }
+    
+    // Jeśli zapisany opis jest za krótki, usuń go
+    if (cached && !isDescriptionSufficient(cached)) {
+      localStorage.removeItem(cacheKey);
+    }
+
+    setIsGenerating(true);
+    try {
+      const isValidNumber = funkoItem.number && 
+                           funkoItem.number.trim() !== "" && 
+                           funkoItem.number.toLowerCase() !== "null" && 
+                           funkoItem.number.toLowerCase() !== "undefined" &&
+                           funkoItem.number.toLowerCase() !== "n/a" &&
+                           /^[\d#\-]+$/.test(funkoItem.number.trim());
+      
+      const numberToUse = isValidNumber ? funkoItem.number : "";
+      const desc = await generateDescription(
+        funkoItem.title, 
+        numberToUse, 
+        funkoItem.category || "", 
+        language
+      );
+      
+      // Sprawdź czy wygenerowany opis jest wystarczający
+      if (isDescriptionSufficient(desc)) {
+        setAiDescription(desc);
+        localStorage.setItem(cacheKey, desc);
+      } else {
+        // Jeśli nie, użyj rozszerzonego fallbacka
+        console.warn("Generated description too short, using enhanced fallback");
+        const itemType = determineItemType(funkoItem.title, funkoItem.category || "");
+        const itemTypeLabel = {
+          funko_pop: 'Funko Pop! vinyl figure',
+          blind_bag: 'blind bag collectible',
+          my_moji: 'MyMoji collectible figure',
+          action_figure: 'action figure',
+          plush_toy: 'plush toy',
+          vinyl_figure: 'vinyl figure',
+          collectible: 'collectible item'
+        }[itemType] || 'collectible item';
+        
+        const enhancedDesc = createDetailedFallback(
+          funkoItem.title, 
+          itemTypeLabel, 
+          funkoItem.category || "", 
+          numberToUse
+        );
+        setAiDescription(enhancedDesc);
+        localStorage.setItem(cacheKey, enhancedDesc);
+      }
+    } catch (err) {
+      console.error("Nie udało się wygenerować opisu:", err);
+      // Użyj rozszerzonego fallbacka
+      const itemType = determineItemType(funkoItem.title, funkoItem.category || "");
+      const itemTypeLabel = {
+        funko_pop: 'Funko Pop! vinyl figure',
+        blind_bag: 'blind bag collectible',
+        my_moji: 'MyMoji collectible figure',
+        action_figure: 'action figure',
+        plush_toy: 'plush toy',
+        vinyl_figure: 'vinyl figure',
+        collectible: 'collectible item'
+      }[itemType] || 'collectible item';
+      
+      setAiDescription(createDetailedFallback(
+        funkoItem.title, 
+        itemTypeLabel, 
+        funkoItem.category || "", 
+        ''
+      ));
+    } finally {
+      setIsGenerating(false);
+    }
   };
+
+  generateIfNeeded();
+}, [funkoItem, language]);
+
+// Funkcja sprawdzająca czy opis jest wystarczająco długi
+const isDescriptionSufficient = (description: string): boolean => {
+  if (!description) return false;
+  
+  // Sprawdź czy kończy się znakiem interpunkcyjnym
+  const endsWithPunctuation = /[.!?]$/.test(description.trim());
+  
+  // Sprawdź czy ma przynajmniej 5 zdań
+  const sentences = description.split(/[.!?]+/).filter(s => s.trim().length > 8);
+  
+  // Sprawdź całkowitą długość (przynajmniej 400 znaków)
+  const totalLength = description.length;
+  
+  return endsWithPunctuation && sentences.length >= 5 && totalLength >= 400;
+};
+
+// Dodaj funkcję sprawdzającą czy opis jest kompletny
+const isDescriptionComplete = (description: string): boolean => {
+  if (!description) return false;
+  
+  // Sprawdź czy kończy się znakiem interpunkcyjnym
+  const endsWithPunctuation = /[.!?]$/.test(description.trim());
+  
+  // Sprawdź czy ma przynajmniej 3 zdania
+  const sentences = description.split(/[.!?]+/).filter(s => s.trim().length > 5);
+  
+  return endsWithPunctuation && sentences.length >= 3;
+};
 
   const scrapePrices = async () => {
     if (!funkoItem) return;
@@ -973,9 +1247,9 @@ const FunkoDetails: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         showLanguageDropdown &&
-        languageDropdownRefopdownRef.current &&
+        languageDropdownRef.current && // POPRAWIONE: było languageDropdownRefopdownRef
         languageButtonRef.current &&
-        !languageDropdownRefopdownRef.current.contains(event.target as Node) &&
+        !languageDropdownRef.current.contains(event.target as Node) && // POPRAWIONE
         !languageButtonRef.current.contains(event.target as Node)
       ) {
         setShowLanguageDropdown(false);
@@ -985,31 +1259,119 @@ const FunkoDetails: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showLanguageDropdown]);
 
-  useEffect(() => {
-    const generateIfNeeded = async () => {
-      if (!funkoItem || !language) return;
-      const cacheKey = `ai_desc_${funkoItem.id}_${language}`;
-      const cached = localStorage.getItem(cacheKey);
-      if (cached) {
-        setAiDescription(cached);
-        return;
-      }
+// W useEffect dodaj sprawdzanie długości
+useEffect(() => {
+  const generateIfNeeded = async () => {
+    if (!funkoItem || !language) return;
+    
+    const cacheKey = `ai_desc_${funkoItem.id}_${language}`;
+    const cached = localStorage.getItem(cacheKey);
+    
+    // Sprawdź czy zapisany opis jest wystarczająco długi
+    if (cached && isDescriptionSufficient(cached)) {
+      setAiDescription(cached);
+      return;
+    }
+    
+    // Jeśli zapisany opis jest za krótki, usuń go
+    if (cached && !isDescriptionSufficient(cached)) {
+      localStorage.removeItem(cacheKey);
+    }
 
-      setIsGenerating(true);
-      try {
-        const desc = await generateDescription(funkoItem.title, funkoItem.number, language);
+    setIsGenerating(true);
+    try {
+      const isValidNumber = funkoItem.number && 
+                           funkoItem.number.trim() !== "" && 
+                           funkoItem.number.toLowerCase() !== "null" && 
+                           funkoItem.number.toLowerCase() !== "undefined" &&
+                           funkoItem.number.toLowerCase() !== "n/a" &&
+                           /^[\d#\-]+$/.test(funkoItem.number.trim());
+      
+      const numberToUse = isValidNumber ? funkoItem.number : "";
+      const desc = await generateDescription(
+        funkoItem.title, 
+        numberToUse, 
+        funkoItem.category || "", 
+        language
+      );
+      
+      // Sprawdź czy wygenerowany opis jest wystarczający
+      if (isDescriptionSufficient(desc)) {
         setAiDescription(desc);
         localStorage.setItem(cacheKey, desc);
-      } catch (err) {
-        console.error("Nie udało się wygenerować opisu:", err);
-        setAiDescription(null);
-      } finally {
-        setIsGenerating(false);
+      } else {
+        // Jeśli nie, użyj rozszerzonego fallbacka
+        console.warn("Generated description too short, using enhanced fallback");
+        const itemType = determineItemType(funkoItem.title, funkoItem.category || "");
+        const itemTypeLabel = {
+          funko_pop: 'Funko Pop! vinyl figure',
+          blind_bag: 'blind bag collectible',
+          my_moji: 'MyMoji collectible figure',
+          action_figure: 'action figure',
+          plush_toy: 'plush toy',
+          vinyl_figure: 'vinyl figure',
+          collectible: 'collectible item'
+        }[itemType] || 'collectible item';
+        
+        const enhancedDesc = createDetailedFallback(
+          funkoItem.title, 
+          itemTypeLabel, 
+          funkoItem.category || "", 
+          numberToUse
+        );
+        setAiDescription(enhancedDesc);
+        localStorage.setItem(cacheKey, enhancedDesc);
       }
-    };
+    } catch (err) {
+      console.error("Nie udało się wygenerować opisu:", err);
+      // Użyj rozszerzonego fallbacka
+      const itemType = determineItemType(funkoItem.title, funkoItem.category || "");
+      const itemTypeLabel = {
+        funko_pop: 'Funko Pop! vinyl figure',
+        blind_bag: 'blind bag collectible',
+        my_moji: 'MyMoji collectible figure',
+        action_figure: 'action figure',
+        plush_toy: 'plush toy',
+        vinyl_figure: 'vinyl figure',
+        collectible: 'collectible item'
+      }[itemType] || 'collectible item';
+      
+      setAiDescription(createDetailedFallback(
+        funkoItem.title, 
+        itemTypeLabel, 
+        funkoItem.category || "", 
+        ''
+      ));
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
-    generateIfNeeded();
-  }, [funkoItem, language]);
+  generateIfNeeded();
+}, [funkoItem, language]);
+
+// Helper function poza komponentem
+const determineItemType = (title: string, category?: string) => {
+  const lowerTitle = title.toLowerCase();
+  const lowerCategory = category ? category.toLowerCase() : "";
+  
+  if (lowerTitle.includes('funko') || lowerTitle.includes('pop!') || lowerCategory.includes('funko')) {
+    return 'funko_pop';
+  }
+  if (lowerTitle.includes('blind bag') || lowerTitle.includes('mystery box') || lowerCategory.includes('blind')) {
+    return 'blind_bag';
+  }
+  if (lowerTitle.includes('my moji') || lowerCategory.includes('mymoji')) {
+    return 'my_moji';
+  }
+  if (lowerTitle.includes('action figure') || lowerCategory.includes('figure')) {
+    return 'action_figure';
+  }
+  if (lowerTitle.includes('plush') || lowerCategory.includes('plush')) {
+    return 'plush_toy';
+  }
+  return 'collectible';
+};
 
   if (isLoading) {
     return (
@@ -1327,11 +1689,11 @@ const FunkoDetails: React.FC = () => {
         {/* AI Description Section */}
         {(isGenerating || aiDescription) && (
           <div className={`p-6 rounded-lg shadow-lg mb-8 ${
-            isDarkMode ? "bg-gray-700 border-l-4 border-green-400" : "bg-white border-l-4 border-green-500"
+            isDarkMode ? "bg-gray-700 border-l-4 border-purple-400" : "bg-white border-l-4 border-purple-500"
           }`}>
             <div className="flex items-center gap-3 mb-4">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                isDarkMode ? "bg-green-400" : "bg-green-500"
+                isDarkMode ? "bg-purple-400" : "bg-purple-500"
               }`}>
                 <span className="text-white font-bold text-sm">AI</span>
               </div>
@@ -1345,9 +1707,9 @@ const FunkoDetails: React.FC = () => {
                 isDarkMode ? "bg-gray-600" : "bg-blue-50 border border-blue-200"
               }`}>
                 <div className="flex items-center gap-3">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                  <p className="text-blue-600 dark:text-blue-300">
-                    Crafting a detailed description for this collectible...
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500"></div>
+                  <p className="text-purple-600 dark:text-purple-300">
+                    Analyzing collectible information...
                   </p>
                 </div>
               </div>
@@ -1362,7 +1724,7 @@ const FunkoDetails: React.FC = () => {
                 </p>
                 <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-500">
                   <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                    🤖 AI-generated description • Refresh page to regenerate
+                    🤖 AI-generated description for collectors • Refresh page to regenerate
                   </p>
                 </div>
               </div>

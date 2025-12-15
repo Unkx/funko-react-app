@@ -1,6 +1,6 @@
 // src/pages/MostVisitedSite.tsx
 import React, { useState, useEffect, useMemo } from "react";
-import { Link, useNavigate} from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import useBreakpoints from "./useBreakpoints";
 import { translations } from "./Translations/TranslationsMostVisitedSite";
 import "./WelcomeSite.css";
@@ -81,7 +81,7 @@ const MostVisitedSite: React.FC = () => {
         // Generate IDs for items (same logic as WelcomeSite)
         const itemsWithIds = items.map(item => ({
           ...item,
-          id: `${item.title?.trim() || ""}-${item.number?.trim() || ""}`.replace(/\s+/g, "-")
+          id: generateItemId(item.title, item.number)
         }));
         
         setAllItems(itemsWithIds);
@@ -159,6 +159,18 @@ const MostVisitedSite: React.FC = () => {
       document.documentElement.classList.remove("dark");
     }
   }, [isDarkMode]);
+
+  // Helper function to generate consistent item IDs
+  const generateItemId = (title: string, number: string): string => {
+    const safeTitle = title ? title.trim() : "";
+    const safeNumber = number ? number.trim() : "";
+    return `${safeTitle}-${safeNumber}`
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .toLowerCase()
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  };
   
   // ✅ Compute visited items from localStorage
   const mostVisitedItems = useMemo(() => {
@@ -190,14 +202,37 @@ const MostVisitedSite: React.FC = () => {
     return { text: t.gettingViews || "👀 Getting views", color: "bg-green-500" };
   };
 
-  // Track item clicks on this page too
+  // ✅ Track item clicks - tylko zwiększ licznik, jeśli nie był dzisiaj kliknięty
   const handleItemClick = (id: string) => {
-    const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
-    visitCount[id] = (visitCount[id] || 0) + 1;
-    localStorage.setItem("funkoVisitCount", JSON.stringify(visitCount));
+    // Sprawdź czy już dzisiaj kliknięto ten przedmiot
+    const today = new Date().toDateString();
+    const dailyClickKey = `daily_click_${id}_${today}`;
+    const alreadyClickedToday = localStorage.getItem(dailyClickKey);
     
-    // Dispatch custom event to notify other components
-    window.dispatchEvent(new CustomEvent('funkoVisitUpdated'));
+    // Jeśli jeszcze dzisiaj nie kliknięto, zwiększ licznik
+    if (!alreadyClickedToday) {
+      const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
+      visitCount[id] = (visitCount[id] || 0) + 1;
+      localStorage.setItem("funkoVisitCount", JSON.stringify(visitCount));
+      
+      // Zapisz że dzisiaj już kliknięto
+      localStorage.setItem(dailyClickKey, "true");
+      
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new CustomEvent('funkoVisitUpdated'));
+      
+      // Usuń dzienne kliki po północy (opcjonalnie)
+      const midnight = new Date();
+      midnight.setHours(24, 0, 0, 0);
+      const timeUntilMidnight = midnight.getTime() - Date.now();
+      
+      setTimeout(() => {
+        localStorage.removeItem(dailyClickKey);
+      }, timeUntilMidnight);
+    }
+    
+    // Log dla debugowania
+    console.log("Item clicked:", id, "Already clicked today:", alreadyClickedToday);
   };
 
   // 🌙 Toggle theme
@@ -224,6 +259,48 @@ const MostVisitedSite: React.FC = () => {
     e.preventDefault();
     navigate(`/searchsite?q=${encodeURIComponent(searchQuery.trim())}`);
   };
+
+  // Dodaj także funkcję synchronizującą z FunkoDetails
+  const syncVisitWithFunkoDetails = (id: string) => {
+    // Ta sama logika co w FunkoDetails
+    const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
+    const currentCount = visitCount[id] || 0;
+    
+    // Zwiększ tylko jeśli różne komponenty nie zwiększyły już dzisiaj
+    const today = new Date().toDateString();
+    const globalClickKey = `global_click_${id}_${today}`;
+    
+    if (!localStorage.getItem(globalClickKey)) {
+      visitCount[id] = currentCount + 1;
+      localStorage.setItem("funkoVisitCount", JSON.stringify(visitCount));
+      localStorage.setItem(globalClickKey, "true");
+      
+      // Ustaw wygaśnięcie na północ
+      const midnight = new Date();
+      midnight.setHours(24, 0, 0, 0);
+      const timeUntilMidnight = midnight.getTime() - Date.now();
+      
+      setTimeout(() => {
+        localStorage.removeItem(globalClickKey);
+      }, timeUntilMidnight);
+    }
+  };
+
+  // Dodaj efekt który synchronizuje z innymi stronami
+  useEffect(() => {
+    // Nasłuchuj zdarzeń z innych komponentów
+    const handleGlobalVisit = (e: CustomEvent) => {
+      if (e.detail && e.detail.id) {
+        setVisitCountVersion(prev => prev + 1);
+      }
+    };
+
+    window.addEventListener('globalFunkoVisit', handleGlobalVisit as EventListener);
+
+    return () => {
+      window.removeEventListener('globalFunkoVisit', handleGlobalVisit as EventListener);
+    };
+  }, []);
 
   if (isLoading) {
     return (

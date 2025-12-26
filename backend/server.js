@@ -19,7 +19,7 @@ const PORT = process.env.PORT || 5000;
 const pool = new Pool({
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'Web-AppDB',
+  database: process.env.DB_NAME || 'Web_AppDB',
   password: process.env.DB_PASSWORD || '',
   port: parseInt(process.env.DB_PORT || '5432'),
 });
@@ -206,16 +206,18 @@ async function ensureAdminTables() {
     `);
     console.log('✅ Users table ready');
 
-    // 2. Tabela funko_items (bez dependencies)
+
+    // 2. Tabela funko_items (bez dependencies) - FIXED to use 'title' not 'name'
     await pool.query(`
       CREATE TABLE IF NOT EXISTS funko_items (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        series VARCHAR(255),
-        number VARCHAR(50),
-        image_url TEXT,
+        id VARCHAR(255) PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        number VARCHAR(50) NOT NULL,
         category VARCHAR(100),
-        created_at TIMESTAMPTZ DEFAULT NOW()
+        series JSONB,
+        exclusive BOOLEAN DEFAULT FALSE,
+        image_name VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     `);
     console.log('✅ Funko items table ready');
@@ -264,7 +266,162 @@ app.options('/api/admin/users/:id/role', cors());
 // ======================
 // ROUTES
 // ======================
+// ======================
+// HEALTH CHECKS
+// ======================
 
+// Basic health check
+app.get('/', (req, res) => {
+  res.send('Welcome to the Funko React App Backend API!');
+});
+
+// Comprehensive health check endpoint
+app.get('/health', async (req, res) => {
+  const health = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    services: {
+      api: 'ok',
+      database: 'pending',
+      memory: 'ok',
+      cpu: 'ok'
+    },
+    version: process.env.npm_package_version || '1.0.0'
+  };
+
+  try {
+    // Check database connection
+    await pool.query('SELECT NOW()');
+    health.services.database = 'ok';
+    
+    // Check memory usage
+    const usedMemory = process.memoryUsage();
+    health.memory = {
+      rss: Math.round(usedMemory.rss / 1024 / 1024) + 'MB',
+      heapTotal: Math.round(usedMemory.heapTotal / 1024 / 1024) + 'MB',
+      heapUsed: Math.round(usedMemory.heapUsed / 1024 / 1024) + 'MB',
+      external: Math.round(usedMemory.external / 1024 / 1024) + 'MB'
+    };
+    
+    // Add database stats if available
+    try {
+      const dbStats = await pool.query(`
+        SELECT 
+          (SELECT COUNT(*) FROM users) as user_count,
+          (SELECT COUNT(*) FROM funko_items) as item_count,
+          (SELECT COUNT(*) FROM collection) as collection_count,
+          (SELECT COUNT(*) FROM wishlist) as wishlist_count
+      `);
+      health.database_stats = dbStats.rows[0];
+    } catch (dbErr) {
+      // Ignore if stats query fails
+    }
+    
+    res.status(200).json(health);
+    
+  } catch (err) {
+    health.status = 'degraded';
+    health.services.database = 'error';
+    health.error = err.message;
+    
+    res.status(503).json(health);
+  }
+});
+
+// Simple ping endpoint for load balancers
+app.get('/ping', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok', 
+    message: 'pong',
+    timestamp: new Date().toISOString() 
+  });
+});
+
+// Deep health check with dependency verification
+app.get('/health/deep', async (req, res) => {
+  const checks = [];
+  const startTime = Date.now();
+  
+  // Check 1: Database connection
+  try {
+    const dbStart = Date.now();
+    await pool.query('SELECT NOW()');
+    checks.push({
+      name: 'database_connection',
+      status: 'ok',
+      duration: Date.now() - dbStart + 'ms'
+    });
+  } catch (err) {
+    checks.push({
+      name: 'database_connection',
+      status: 'error',
+      error: err.message
+    });
+  }
+  
+  // Check 2: Database tables
+  try {
+    const tables = ['users', 'funko_items', 'collection', 'wishlist'];
+    for (const table of tables) {
+      const tableStart = Date.now();
+      await pool.query(`SELECT 1 FROM ${table} LIMIT 1`);
+      checks.push({
+        name: `table_${table}`,
+        status: 'ok',
+        duration: Date.now() - tableStart + 'ms'
+      });
+    }
+  } catch (err) {
+    checks.push({
+      name: 'database_tables',
+      status: 'error',
+      error: err.message
+    });
+  }
+  
+  // Check 3: Environment variables
+  checks.push({
+    name: 'environment',
+    status: 'ok',
+    details: {
+      node_env: process.env.NODE_ENV || 'development',
+      port: process.env.PORT || 5000,
+      db_host: process.env.DB_HOST ? 'set' : 'not set'
+    }
+  });
+  
+  // Check 4: Memory usage
+  const memoryUsage = process.memoryUsage();
+  checks.push({
+    name: 'memory_usage',
+    status: memoryUsage.heapUsed / memoryUsage.heapTotal > 0.9 ? 'warning' : 'ok',
+    details: {
+      heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024) + 'MB',
+      heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024) + 'MB',
+      usagePercentage: Math.round((memoryUsage.heapUsed / memoryUsage.heapTotal) * 100) + '%'
+    }
+  });
+  
+  // Check 5: Disk space (simulated - would need fs module)
+  checks.push({
+    name: 'disk_space',
+    status: 'ok',
+    note: 'Disk check requires additional modules'
+  });
+  
+  const overallStatus = checks.every(c => c.status === 'ok') ? 'healthy' : 
+                       checks.some(c => c.status === 'error') ? 'unhealthy' : 'degraded';
+  
+  res.json({
+    status: overallStatus,
+    timestamp: new Date().toISOString(),
+    response_time: Date.now() - startTime + 'ms',
+    checks: checks,
+    uptime: process.uptime(),
+    version: process.env.npm_package_version || '1.0.0'
+  });
+});
 // Return current user from token
 app.get('/api/me', authenticateToken, async (req, res) => {
   try {
@@ -584,111 +741,6 @@ app.post('/api/verify-invite', async (req, res) => {
   }
 });
 
-// Fixed /api/register endpoint
-app.post('/api/register', async (req, res) => {
-  const { email, login, name, surname, password, gender, date_of_birth, nationality } = req.body;
-
-  // ✅ nationality is now optional — only require the rest
-  if (!email || !login || !name || !surname || !password || !gender || !date_of_birth) {
-    return res.status(400).json({ error: 'Missing required fields' });
-  }
-
-  // Allow optional invite token for elevated roles (admin) using admin_invites
-  const { invite_token } = req.body;
-  let roleToSet = 'user';
-  let matchedInviteId = null;
-
-  try {
-    if (invite_token && invite_token.trim()) {
-      // ✅ FIXED: Get ALL unused, non-expired invites
-      const inviteRes = await pool.query(
-        `SELECT id, token_hash, expires_at 
-         FROM admin_invites 
-         WHERE used_by IS NULL 
-         AND (expires_at IS NULL OR expires_at > NOW())`
-      );
-
-      if (inviteRes.rows.length === 0) {
-        return res.status(400).json({ 
-          error: 'No valid invite tokens available' 
-        });
-      }
-
-      // Try to match the provided token against all valid invites
-      let matchedInvite = null;
-      for (const row of inviteRes.rows) {
-        try {
-          const isMatch = await bcrypt.compare(invite_token.trim(), row.token_hash);
-          if (isMatch) {
-            matchedInvite = row;
-            break;
-          }
-        } catch (compareErr) {
-          console.error('Error comparing invite token:', compareErr);
-          continue;
-        }
-      }
-
-      if (!matchedInvite) {
-        return res.status(400).json({ 
-          error: 'Invalid invite token' 
-        });
-      }
-
-      // ✅ Check if invite has expired
-      if (matchedInvite.expires_at && new Date(matchedInvite.expires_at) < new Date()) {
-        return res.status(400).json({ 
-          error: 'Invite token has expired' 
-        });
-      }
-
-      // ✅ Set role to admin and save invite ID
-      roleToSet = 'admin';
-      matchedInviteId = matchedInvite.id;
-    }
-
-    // Hash password and create user
-    const hashedPassword = await hashPassword(password);
-    const newUser = await pool.query(
-      `INSERT INTO users (email, login, name, surname, password_hash, gender, date_of_birth, nationality, role)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING id, email, login, name, surname, gender, date_of_birth, nationality, role`,
-      [email, login, name, surname, hashedPassword, gender, date_of_birth, nationality, roleToSet]
-    );
-
-    // ✅ If an invite was used, mark it as used
-    if (matchedInviteId) {
-      try {
-        await pool.query(
-          `UPDATE admin_invites 
-           SET used_by = $1, used_at = NOW() 
-           WHERE id = $2`,
-          [newUser.rows[0].id, matchedInviteId]
-        );
-        console.log(`✅ Invite token marked as used by user ${newUser.rows[0].login}`);
-      } catch (updateErr) {
-        console.error('Failed to mark invite as used:', updateErr);
-        // Don't fail registration if this fails
-      }
-    }
-
-    res.status(201).json({
-      ...newUser.rows[0],
-      message: roleToSet === 'admin' ? 'Admin account created successfully' : 'Account created successfully'
-    });
-  } catch (err) {
-    if (err.code === '23505') {
-      if (err.detail && err.detail.includes('email')) {
-        return res.status(409).json({ error: 'Email already registered' });
-      }
-      if (err.detail && err.detail.includes('login')) {
-        return res.status(409).json({ error: 'Login name already taken' });
-      }
-    }
-    console.error('Registration error:', err);
-    res.status(500).json({ error: 'Server error during registration' });
-  }
-});
 
 // app.post('/api/login', async (req, res) => {
 //   const { login, password } = req.body;

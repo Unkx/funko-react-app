@@ -1,7 +1,18 @@
-FROM node:20-alpine
-WORKDIR /backend
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
 COPY package*.json ./
-RUN npm install --omit=dev
+
+# Install dependencies
+RUN npm install --legacy-peer-deps
+
+# Copy source code
 COPY . .
+
+# Expose backend port
 EXPOSE 5000
-CMD ["node", "server.js"]  
+
+# Start the server
+CMD ["node", "server.js"]

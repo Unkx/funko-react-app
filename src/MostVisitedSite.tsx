@@ -342,7 +342,7 @@ const MostVisitedSite: React.FC = () => {
                 ? "bg-gray-700 text-white placeholder-gray-400"
                 : "bg-white text-black placeholder-gray-500"
             }`}
-            aria-label="Search for Funko Pops"
+            aria-label="Search for Funkos"
           />
           <button
             type="submit"

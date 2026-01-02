@@ -32,7 +32,7 @@ const LoyaltyWidget: React.FC<Props> = ({ isDarkMode, onOpenFull }) => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/loyalty/dashboard", {
+      const response = await fetch("http://192.168.0.162:5000/api/loyalty/dashboard", {
         headers: { Authorization: `Bearer ${token}` }
       });
 

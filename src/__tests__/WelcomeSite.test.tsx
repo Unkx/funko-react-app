@@ -49,7 +49,7 @@ describe('WelcomeSite page', () => {
     expect(screen.getByText('Pop&Go!')).toBeInTheDocument();
 
     // Search input by aria-label
-    expect(screen.getByLabelText('Search for Funko Pops')).toBeInTheDocument();
+    expect(screen.getByLabelText('Search for Funkos')).toBeInTheDocument();
 
     // Wait for fetch effect to finish
     await waitFor(() => expect((global as any).fetch).toHaveBeenCalled());

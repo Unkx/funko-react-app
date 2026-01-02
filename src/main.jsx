@@ -8,9 +8,8 @@
 // import WelcomeSite from "./WelcomeSite";
 // import SearchSite from "./SearchSite";
 // import FunkoDetails from "./FunkoDetails";
-// import LoginSite from "./loginregistersite";
 // import LoginRegisterSite from "./LoginRegisterSite";
-// import RegisterSite from "./RegisterSite";
+
 // import DashboardSite from "./DashboardSite";
 // import AdminSite from "./Admin";
 // import NotFound from "./NotFound";
@@ -86,7 +85,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import WelcomeSite from "./WelcomeSite";
 import SearchSite from "./SearchSite";
 import FunkoDetails from "./FunkoDetails";
-import LoginSite from "./loginregistersite"
+
 import LoginRegisterSite from "./LoginRegisterSite"
 import RegisterSite from "./RegisterSite"
 import DashboardSite from "./DashboardSite"
@@ -125,8 +124,8 @@ root.render(
             <Route path="/" element={<WelcomeSite />} />
             <Route path="/SearchSite" element={<SearchSite />} />
             <Route path="/funko/:id" element={<FunkoDetails />} />
-            <Route path="/loginregistersite" element={<LoginSite />} />
-            <Route path="/LoginRegisterSite" element={<LoginRegisterSite />} />
+
+            <Route path="/loginregistersite" element={<LoginRegisterSite />} />
             <Route path="/RegisterSite" element={<RegisterSite />} />
             <Route path="/DashboardSite" element={<DashboardSite />} />
             <Route path="/AdminSite" element={<AdminSite />} />

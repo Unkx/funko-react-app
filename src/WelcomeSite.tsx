@@ -10,6 +10,7 @@ import SunIcon from "/src/assets/sun.svg?react";
 import SearchIcon from "/src/assets/search.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
+import QuickLinks from "./QuickLinks"
 
 // Flags
 import UKFlag from "/src/assets/flags/uk.svg?react";
@@ -442,7 +443,7 @@ const incrementVisitCount = (id: string) => {
         
         if (token) {
           try {
-            const backendResponse = await fetch("http://localhost:5000/api/items", {
+            const backendResponse = await fetch("http://192.168.0.162:5000/api/items?limit=30", {
               headers: {
                 "Authorization": `Bearer ${token}`
               }
@@ -678,7 +679,7 @@ const mostVisitedItems = useMemo(() => {
                 ? "bg-gray-700 text-white placeholder-gray-400"
                 : "bg-white text-black placeholder-gray-500"
             }`}
-            aria-label="Search for Funko Pops"
+            aria-label="Search for Funkos"
           />
           <button
             type="submit"
@@ -788,6 +789,7 @@ const mostVisitedItems = useMemo(() => {
             {languageNames[t.language] || "Unknown"} • {region}
           </p>
         </div> */}
+
 
         {/* 🎲 Random Items */}
         <section className="w-full max-w-4xl mt-10 mb-10">

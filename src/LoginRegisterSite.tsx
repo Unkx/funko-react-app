@@ -122,7 +122,7 @@ const LoginRegisterSite: React.FC = () => {
       return;
     }
     try {
-      const response = await fetch("http://localhost:5000/api/login", {
+      const response = await fetch("http://192.168.0.162:5000/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ login, password }),
@@ -152,7 +152,7 @@ const LoginRegisterSite: React.FC = () => {
     setInviteValid(null);
     const id = setTimeout(async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/verify-invite', {
+        const res = await fetch('http://192.168.0.162:5000/api/verify-invite', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token: inviteToken.trim() })
@@ -246,7 +246,7 @@ const LoginRegisterSite: React.FC = () => {
       (payload as any).invite_token = inviteToken.trim();
     }
     try {
-      const response = await fetch("http://localhost:5000/api/register", {
+      const response = await fetch("http://192.168.0.162:5000/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

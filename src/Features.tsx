@@ -198,7 +198,7 @@ const FeaturesSite: React.FC = () => {
                 ? "bg-gray-700 text-white placeholder-gray-400"
                 : "bg-white text-black placeholder-gray-500"
             }`}
-            aria-label="Search for Funko Pops"
+            aria-label="Search for Funkos"
           />
           <button
             type="submit"
@@ -489,7 +489,7 @@ const FeaturesSite: React.FC = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              to="/register"
+              to="/loginregistersite"
               className={`px-8 py-3 rounded-full font-bold text-lg transition-transform hover:scale-105 ${
                 isDarkMode
                   ? "bg-yellow-500 text-black hover:bg-yellow-400"

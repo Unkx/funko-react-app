@@ -100,7 +100,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
   const fetchUserProfile = async (userId: number): Promise<UserProfile | null> => {
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -131,7 +131,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
   const fetchConversations = async () => {
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch('http://localhost:5000/api/chat/conversations', {
+      const response = await fetch('http://192.168.0.162:5000/api/chat/conversations', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -153,7 +153,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
     if (!token) return;
     
     try {
-      await fetch('http://localhost:5000/api/loyalty/award-points', {
+      await fetch('http://192.168.0.162:5000/api/loyalty/award-points', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -169,7 +169,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
   const fetchActiveUsers = async () => {
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch('http://localhost:5000/api/chat/active-users', {
+      const response = await fetch('http://192.168.0.162:5000/api/chat/active-users', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -185,7 +185,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
     const token = localStorage.getItem('token');
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/chat/conversation/${conversationId}/messages`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/chat/conversation/${conversationId}/messages`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -195,7 +195,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
         );
         setMessages(sortedMessages);
         
-        await fetch(`http://localhost:5000/api/chat/conversation/${conversationId}/read`, {
+        await fetch(`http://192.168.0.162:5000/api/chat/conversation/${conversationId}/read`, {
           method: 'PATCH',
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -230,7 +230,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
     const token = localStorage.getItem('token');
     try {
       const response = await fetch(
-        `http://localhost:5000/api/chat/conversation/${selectedConversation.conversation_id}/messages`,
+        `http://192.168.0.162:5000/api/chat/conversation/${selectedConversation.conversation_id}/messages`,
         {
           method: 'POST',
           headers: {
@@ -351,7 +351,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
       try {
         const profile = await fetchUserProfile(friend.id);
         
-        const convResponse = await fetch(`http://localhost:5000/api/chat/conversation/${friend.id}`, {
+        const convResponse = await fetch(`http://192.168.0.162:5000/api/chat/conversation/${friend.id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 

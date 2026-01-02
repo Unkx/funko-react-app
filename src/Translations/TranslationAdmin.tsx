@@ -40,7 +40,7 @@ export const translations = {
     exclusive: "Exclusive",
     imageName: "Image Name",
     cancel: "Cancel",
-    searchPlaceholder: "Search for Funko Pops...",
+    searchPlaceholder: "Search for Funkos...",
     logout: "Logout",
     analytics: "Analytics",
     social: "Social",

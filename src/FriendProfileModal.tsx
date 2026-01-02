@@ -79,7 +79,7 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
         console.log("✅ Using validated friendId:", validatedFriendId);
 
         // Fetch friend's basic profile
-        const profileUrl = `http://localhost:5000/api/users/public/${validatedFriendId}`;
+        const profileUrl = `http://192.168.0.162:5000/api/users/public/${validatedFriendId}`;
         console.log("📡 Fetching profile from:", profileUrl);
         
         const profileResponse = await fetch(profileUrl, {
@@ -107,7 +107,7 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
         setFriendData(profileData);
 
         // Fetch collection with detailed error handling
-        const collectionUrl = `http://localhost:5000/api/collection/public/${validatedFriendId}`;
+        const collectionUrl = `http://192.168.0.162:5000/api/collection/public/${validatedFriendId}`;
         console.log("📡 Fetching collection from:", collectionUrl);
         
         try {
@@ -145,7 +145,7 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
         }
 
         // Fetch wishlist with detailed error handling
-        const wishlistUrl = `http://localhost:5000/api/wishlist/public/${validatedFriendId}`;
+        const wishlistUrl = `http://192.168.0.162:5000/api/wishlist/public/${validatedFriendId}`;
         console.log("📡 Fetching wishlist from:", wishlistUrl);
         
         try {

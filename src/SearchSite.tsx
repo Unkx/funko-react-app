@@ -396,7 +396,7 @@ const allItems = useMemo(() => {
 
         // FIRST: Try to fetch from your local API (Database)
         try {
-          const apiResponse = await fetch("http://localhost:5000/api/items");
+          const apiResponse = await fetch("http://192.168.0.162:5000/api/items?limit=30");
           if (!apiResponse.ok) {
             throw new Error(`API error! Status: ${apiResponse.status}`);
           }
@@ -431,7 +431,7 @@ const allItems = useMemo(() => {
   useEffect(() => {
     const fetchAdminItems = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/items");
+        const response = await fetch("http://192.168.0.162:5000/api/items?limit=30");
         if (response.ok) {
           const data = await response.json();
           setAdminItems(data);
@@ -694,7 +694,7 @@ const allItems = useMemo(() => {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch("http://localhost:5000/api/requests", {
+      const res = await fetch("http://192.168.0.162:5000/api/requests", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

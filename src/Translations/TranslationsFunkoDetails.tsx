@@ -1,7 +1,7 @@
 export const translations = {
   EN: {
     // Header & Navigation
-    searchPlaceholder: "Search for Funko Pops...",
+    searchPlaceholder: "Search for Funkos...",
     goToDashboard: "Dashboard",
     goToLoginSite: "Log In",
     backButton: "Go Back",
@@ -259,7 +259,7 @@ export const translations = {
   },
   US: {
     // Same as EN
-    searchPlaceholder: "Search for Funko Pops...",
+    searchPlaceholder: "Search for Funkos...",
     goToDashboard: "Dashboard",
     goToLoginSite: "Log In",
     backButton: "Go Back",
@@ -290,7 +290,7 @@ export const translations = {
   },
   CA: {
     // Same as EN
-    searchPlaceholder: "Search for Funko Pops...",
+    searchPlaceholder: "Search for Funkos...",
     goToDashboard: "Dashboard",
     goToLoginSite: "Log In",
     backButton: "Go Back",

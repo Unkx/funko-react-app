@@ -18,7 +18,7 @@ import PlusIcon from "/src/assets/plus.svg?react";
 import FilterIcon from "/src/assets/filter.svg?react";
 
 // Flags
-import UKFlag from "/src/assets/flags/UK.svg?react";
+import UKFlag from "/src/assets/flags/uk.svg?react";
 import PolandFlag from "/src/assets/flags/poland.svg?react";
 import RussiaFlag from "/src/assets/flags/russia.svg?react";
 import FranceFlag from "/src/assets/flags/france.svg?react";
@@ -158,7 +158,7 @@ const CollectionPage: React.FC = () => {
       }
 
       try {
-        const response = await fetch("http://localhost:5000/api/collection", {
+        const response = await fetch("http://192.168.0.162:5000/api/collection", {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -267,7 +267,7 @@ const CollectionPage: React.FC = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/collection/${editingItem}`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/collection/${editingItem}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -296,7 +296,7 @@ const CollectionPage: React.FC = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/collection/${itemId}`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/collection/${itemId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`

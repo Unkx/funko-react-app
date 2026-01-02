@@ -1,7 +1,7 @@
 export const translations: { [key: string]: { [key: string]: string } } = {
   EN: {
     // General
-    searchPlaceholder: "Search for Funko Pops...",
+    searchPlaceholder: "Search for Funkos...",
     goToDashboard: "Dashboard",
     clear: "Clear",
     loading: "Loading...",

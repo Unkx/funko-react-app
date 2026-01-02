@@ -1,7 +1,7 @@
 export const translations = {
   EN: {
     // General
-    searchPlaceholder: "Search for Funko Pops...",
+    searchPlaceholder: "Search for Funkos...",
     copyright: "© 2024 Pop&Go! All rights reserved.",
     
     // Navigation

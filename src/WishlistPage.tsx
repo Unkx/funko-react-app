@@ -20,7 +20,7 @@ import FilterIcon from "/src/assets/filter.svg?react";
 import StarIcon from "/src/assets/star.svg?react";
 
 // Flags
-import UKFlag from "/src/assets/flags/UK.svg?react";
+import UKFlag from "/src/assets/flags/uk.svg?react";
 import PolandFlag from "/src/assets/flags/poland.svg?react";
 import RussiaFlag from "/src/assets/flags/russia.svg?react";
 import FranceFlag from "/src/assets/flags/france.svg?react";
@@ -160,7 +160,7 @@ const WishlistPage: React.FC = () => {
       }
 
       try {
-        const response = await fetch("http://localhost:5000/api/wishlist", {
+        const response = await fetch("http://192.168.0.162:5000/api/wishlist", {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -270,7 +270,7 @@ const WishlistPage: React.FC = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/wishlist/${editingItem}`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/wishlist/${editingItem}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -299,7 +299,7 @@ const WishlistPage: React.FC = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/wishlist/${itemId}`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/wishlist/${itemId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`
@@ -320,7 +320,7 @@ const WishlistPage: React.FC = () => {
 
     try {
       // Add to collection
-      const response = await fetch("http://localhost:5000/api/collection", {
+      const response = await fetch("http://192.168.0.162:5000/api/collection", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

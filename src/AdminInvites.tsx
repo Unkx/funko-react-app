@@ -41,7 +41,7 @@ const AdminInvites = () => {
     
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/admin/invites", {
+      const response = await fetch("http://192.168.0.162:5000/api/admin/invites", {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -80,7 +80,7 @@ const AdminInvites = () => {
     
     setProcessing(true);
     try {
-      const response = await fetch("http://localhost:5000/api/admin/invites", {
+      const response = await fetch("http://192.168.0.162:5000/api/admin/invites", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -132,7 +132,7 @@ const AdminInvites = () => {
     }
     
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/invites/${inviteId}`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/admin/invites/${inviteId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

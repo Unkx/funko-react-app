@@ -2,7 +2,7 @@
 export const translations: { [key: string]: { [key: string]: string } } = {
   EN: {
     // Existing translations
-    searchPlaceholder: "Search for Funko Pops...",
+    searchPlaceholder: "Search for Funkos...",
     goToDashboard: "Dashboard",
     copyright: "© 2024 Pop&Go! All rights reserved.",
     switchToLight: "Switch to light mode",
@@ -31,7 +31,7 @@ export const translations: { [key: string]: { [key: string]: string } } = {
     gettingViews: "👀 Getting views"
   },
   US: {
-    searchPlaceholder: "Search for Funko Pops...",
+    searchPlaceholder: "Search for Funkos...",
     goToDashboard: "Dashboard", 
     copyright: "© 2024 Pop&Go! All rights reserved.",
     switchToLight: "Switch to light mode",
@@ -199,7 +199,7 @@ export const translations: { [key: string]: { [key: string]: string } } = {
     gettingViews: "👀 En crecimiento"
   },
   CA: {
-    searchPlaceholder: "Search for Funko Pops...",
+    searchPlaceholder: "Search for Funkos...",
     goToDashboard: "Dashboard",
     copyright: "© 2024 Pop&Go! All rights reserved.",
     switchToLight: "Switch to light mode",

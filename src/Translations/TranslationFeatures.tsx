@@ -72,7 +72,7 @@ export const translations = {
     
     // Footer
     copyright: "© 2024 Pop&Go! All rights reserved.",
-    searchPlaceholder: "Search for Funko Pops...",
+    searchPlaceholder: "Search for Funkos...",
     switchToDark: "Switch to dark mode",
     switchToLight: "Switch to light mode",
     goToDashboard: "Dashboard",

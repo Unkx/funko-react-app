@@ -5,7 +5,7 @@ export class DashboardPage {
     themeToggle: 'div.welcome-site header button[aria-label*="mode"]',
     languageSelector: 'div.welcome-site header button[aria-label="Select language"]',
     // search input has aria-label
-    searchInput: 'div.welcome-site header input[aria-label="Search for Funko Pops"]'
+    searchInput: 'div.welcome-site header input[aria-label="Search for Funkos"]'
   };
 
   // Actions

@@ -1,7 +1,7 @@
 // Translations.tsx
 export const translations = {
   EN: {
-    searchPlaceholder: "Search for Funko Pops...",
+    searchPlaceholder: "Search for Funkos...",
     allSeries: "All Series",
     exclusiveOnly: "Exclusive Only",
     sortByTitleAsc: "Title A-Z",

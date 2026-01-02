@@ -27,7 +27,7 @@ import UsersIcon from "/src/assets/users.svg?react";
 import ChatComponent from "./ChatComponent";
 import FriendProfileModal from './FriendProfileModal';
 // Flags
-import UKFlag from "/src/assets/flags/UK.svg?react";
+import UKFlag from "/src/assets/flags/uk.svg?react";
 import PolandFlag from "/src/assets/flags/poland.svg?react";
 import RussiaFlag from "/src/assets/flags/russia.svg?react";
 import FranceFlag from "/src/assets/flags/france.svg?react";
@@ -142,7 +142,7 @@ const DashboardSite: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      await fetch("http://localhost:5000/api/loyalty/award-points", {
+      await fetch("http://192.168.0.162:5000/api/loyalty/award-points", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -160,7 +160,7 @@ const DashboardSite: React.FC = () => {
       const token = localStorage.getItem("token");
       if (!token) return;
       try {
-        const response = await fetch("http://localhost:5000/api/loyalty/achievements", {
+        const response = await fetch("http://192.168.0.162:5000/api/loyalty/achievements", {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (response.ok) {
@@ -238,7 +238,7 @@ const DashboardSite: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      const response = await fetch("http://localhost:5000/api/friends/requests/incoming", {
+      const response = await fetch("http://192.168.0.162:5000/api/friends/requests/incoming", {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -254,7 +254,7 @@ const DashboardSite: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      const response = await fetch("http://localhost:5000/api/friends/requests/outgoing", {
+      const response = await fetch("http://192.168.0.162:5000/api/friends/requests/outgoing", {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -270,7 +270,7 @@ const DashboardSite: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/friends/accept/${senderId}`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/friends/accept/${senderId}`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -288,7 +288,7 @@ const DashboardSite: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/friends/request/${friendshipId}`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/friends/request/${friendshipId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -307,7 +307,7 @@ const DashboardSite: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/friends/${friendId}`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/friends/${friendId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -324,7 +324,7 @@ const DashboardSite: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/chat/conversation/${friend.id}`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/chat/conversation/${friend.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -397,7 +397,7 @@ const DashboardSite: React.FC = () => {
         navigate("/loginregistersite");
         return;
       }
-      const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/users/${userId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -540,7 +540,7 @@ const DashboardSite: React.FC = () => {
         return;
       }
       try {
-        const response = await fetch("http://localhost:5000/api/collection", {
+        const response = await fetch("http://192.168.0.162:5000/api/collection", {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (response.ok) {
@@ -593,7 +593,7 @@ const DashboardSite: React.FC = () => {
         return;
       }
       try {
-        const response = await fetch("http://localhost:5000/api/wishlist", {
+        const response = await fetch("http://192.168.0.162:5000/api/wishlist", {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (response.ok) {
@@ -653,7 +653,7 @@ const DashboardSite: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      await fetch("http://localhost:5000/api/activity/log", {
+      await fetch("http://192.168.0.162:5000/api/activity/log", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -676,10 +676,10 @@ const DashboardSite: React.FC = () => {
     setAnalyticsLoading(true);
     try {
       const [statsRes, loyaltyRes, friendsRes, leaderboardRes] = await Promise.all([
-        fetch("http://localhost:5000/api/activity/stats", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("http://localhost:5000/api/loyalty/calculate", { method: "POST", headers: { Authorization: `Bearer ${token}` } }),
-        fetch("http://localhost:5000/api/friends", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("http://localhost:5000/api/loyalty/leaderboard", { headers: { Authorization: `Bearer ${token}` } })
+        fetch("http://192.168.0.162:5000/api/activity/stats", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("http://192.168.0.162:5000/api/loyalty/calculate", { method: "POST", headers: { Authorization: `Bearer ${token}` } }),
+        fetch("http://192.168.0.162:5000/api/friends", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("http://192.168.0.162:5000/api/loyalty/leaderboard", { headers: { Authorization: `Bearer ${token}` } })
       ]);
       if (statsRes.ok) setUserStats(await statsRes.json());
       if (loyaltyRes.ok) setLoyaltyData(await loyaltyRes.json());
@@ -740,7 +740,7 @@ const DashboardSite: React.FC = () => {
     setError("");
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:5000/api/users/${user.id}`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/users/${user.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -779,7 +779,7 @@ const DashboardSite: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/collection/${editingCollectionItem}`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/collection/${editingCollectionItem}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify(editCollectionForm)
@@ -800,7 +800,7 @@ const DashboardSite: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/collection/${itemId}`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/collection/${itemId}`, {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -832,7 +832,7 @@ const DashboardSite: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/wishlist/${editingWishlistItem}`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/wishlist/${editingWishlistItem}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify(editWishlistForm)
@@ -853,7 +853,7 @@ const DashboardSite: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/wishlist/${itemId}`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/wishlist/${itemId}`, {
         method: "DELETE",
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -879,7 +879,7 @@ const DashboardSite: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      const response = await fetch("http://localhost:5000/api/collection", {
+      const response = await fetch("http://192.168.0.162:5000/api/collection", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify({
@@ -1064,7 +1064,7 @@ const DashboardSite: React.FC = () => {
               const token = localStorage.getItem("token");
               if (!token) return;
               try {
-                const response = await fetch("http://localhost:5000/api/friends/request", {
+                const response = await fetch("http://192.168.0.162:5000/api/friends/request", {
                   method: "POST",
                   headers: { 
                     "Content-Type": "application/json", 
@@ -2000,7 +2000,7 @@ const DashboardSite: React.FC = () => {
                 ? "bg-gray-700 text-white placeholder-gray-400"
                 : "bg-white text-black placeholder-gray-500"
             }`}
-            aria-label="Search for Funko Pops"
+            aria-label="Search for Funkos"
           />
           <button
             type="submit"

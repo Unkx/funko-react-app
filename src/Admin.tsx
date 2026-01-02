@@ -209,7 +209,7 @@ const Requests = () => {
         return;
       }
       try {
-        const res = await fetch("http://localhost:5000/api/admin/requests", {
+        const res = await fetch("http://192.168.0.162:5000/api/admin/requests", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -273,7 +273,7 @@ const Requests = () => {
     setProcessingId(id);
     
     try {
-      const res = await fetch(`http://localhost:5000/api/admin/requests/${id}/status`, {
+      const res = await fetch(`http://192.168.0.162:5000/api/admin/requests/${id}/status`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -751,7 +751,7 @@ const Admin = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      await fetch("http://localhost:5000/api/activity/log", {
+      await fetch("http://192.168.0.162:5000/api/activity/log", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -780,10 +780,10 @@ const Admin = () => {
     setDashboardAnalyticsLoading(true);
     try {
       const [statsRes, loyaltyRes, friendsRes, leaderboardRes] = await Promise.all([
-        fetch("http://localhost:5000/api/activity/stats", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("http://localhost:5000/api/loyalty/calculate", { method: "POST", headers: { Authorization: `Bearer ${token}` } }),
-        fetch("http://localhost:5000/api/friends", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("http://localhost:5000/api/loyalty/leaderboard", { headers: { Authorization: `Bearer ${token}` } })
+        fetch("http://192.168.0.162:5000/api/activity/stats", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("http://192.168.0.162:5000/api/loyalty/calculate", { method: "POST", headers: { Authorization: `Bearer ${token}` } }),
+        fetch("http://192.168.0.162:5000/api/friends", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("http://192.168.0.162:5000/api/loyalty/leaderboard", { headers: { Authorization: `Bearer ${token}` } })
       ]);
       if (statsRes.ok) setUserStats(await statsRes.json());
       if (loyaltyRes.ok) setLoyaltyData(await loyaltyRes.json());
@@ -801,7 +801,7 @@ const fetchIncomingRequests = async () => {
   const token = localStorage.getItem("token");
   if (!token) return;
   try {
-    const response = await fetch("http://localhost:5000/api/friends/requests/incoming", {
+    const response = await fetch("http://192.168.0.162:5000/api/friends/requests/incoming", {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (response.ok) {
@@ -817,7 +817,7 @@ const fetchOutgoingRequests = async () => {
   const token = localStorage.getItem("token");
   if (!token) return;
   try {
-    const response = await fetch("http://localhost:5000/api/friends/requests/outgoing", {
+    const response = await fetch("http://192.168.0.162:5000/api/friends/requests/outgoing", {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (response.ok) {
@@ -833,7 +833,7 @@ const handleAcceptRequest = async (senderId: string, friendshipId: string) => {
   const token = localStorage.getItem("token");
   if (!token) return;
   try {
-    const response = await fetch(`http://localhost:5000/api/friends/accept/${senderId}`, {
+    const response = await fetch(`http://192.168.0.162:5000/api/friends/accept/${senderId}`, {
       method: "PATCH",
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -851,7 +851,7 @@ const handleRejectRequest = async (friendshipId: string) => {
   const token = localStorage.getItem("token");
   if (!token) return;
   try {
-    const response = await fetch(`http://localhost:5000/api/friends/request/${friendshipId}`, {
+    const response = await fetch(`http://192.168.0.162:5000/api/friends/request/${friendshipId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -870,7 +870,7 @@ const handleRemoveFriend = async (friendId: string) => {
   const token = localStorage.getItem("token");
   if (!token) return;
   try {
-    const response = await fetch(`http://localhost:5000/api/friends/${friendId}`, {
+    const response = await fetch(`http://192.168.0.162:5000/api/friends/${friendId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -889,7 +889,7 @@ const handleRemoveFriend = async (friendId: string) => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/chat/conversation/${friend.id}`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/chat/conversation/${friend.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -914,7 +914,7 @@ const handleRemoveFriend = async (friendId: string) => {
     if (!token) return;
     
     try {
-      await fetch("http://localhost:5000/api/loyalty/award-points", {
+      await fetch("http://192.168.0.162:5000/api/loyalty/award-points", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -934,7 +934,7 @@ const handleRemoveFriend = async (friendId: string) => {
     
     setAnalyticsLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/admin/analytics", {
+      const response = await fetch("http://192.168.0.162:5000/api/admin/analytics", {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -1045,7 +1045,7 @@ useEffect(() => {
     if (!token || currentUser?.role !== "admin") return;
     const fetchCount = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/admin/requests/count", {
+        const res = await fetch("http://192.168.0.162:5000/api/admin/requests/count", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -1095,7 +1095,7 @@ useEffect(() => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch("http://localhost:5000/api/admin/users", {
+        const response = await fetch("http://192.168.0.162:5000/api/admin/users", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) {
@@ -1125,7 +1125,7 @@ useEffect(() => {
       if (!token || !(currentUser?.role === "admin")) return;
       setStatsLoading(true);
       try {
-        const response = await fetch("http://localhost:5000/api/admin/stats", {
+        const response = await fetch("http://192.168.0.162:5000/api/admin/stats", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) {
@@ -1251,7 +1251,7 @@ useEffect(() => {
   const handleMakeAdmin = async (userId: number, userLogin: string) => {
     if (!window.confirm(`${t.confirmMakeAdmin} ${userLogin}?`)) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/users/${userId}/role`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/admin/users/${userId}/role`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -1281,7 +1281,7 @@ useEffect(() => {
     }
     if (!window.confirm(`${t.confirmDeleteUser} ${userLogin}?`)) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/users/${userId}`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/admin/users/${userId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -1299,7 +1299,7 @@ useEffect(() => {
       return;
     }
     try {
-      const response = await fetch("http://localhost:5000/api/admin/items", {
+      const response = await fetch("http://192.168.0.162:5000/api/admin/items", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1339,7 +1339,7 @@ useEffect(() => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/admin/users", {
+      const response = await fetch("http://192.168.0.162:5000/api/admin/users", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1363,7 +1363,7 @@ useEffect(() => {
           role: "user"
         });
         // Refresh user list
-        const usersRes = await fetch("http://localhost:5000/api/admin/users", {
+        const usersRes = await fetch("http://192.168.0.162:5000/api/admin/users", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (usersRes.ok) {
@@ -1384,7 +1384,7 @@ useEffect(() => {
     if (searchTerm.trim().length < 2 || !token) return;
     setSearchLoading(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/items/search?q=${encodeURIComponent(searchTerm)}`, {
+      const response = await fetch(`http://192.168.0.162:5000/api/admin/items/search?q=${encodeURIComponent(searchTerm)}`, {
         headers: { 
           Authorization: `Bearer ${token}`,
         },
@@ -1550,7 +1550,7 @@ useEffect(() => {
               const token = localStorage.getItem("token");
               if (!token) return;
               try {
-                const response = await fetch("http://localhost:5000/api/friends/request", {
+                const response = await fetch("http://192.168.0.162:5000/api/friends/request", {
                   method: "POST",
                   headers: { 
                     "Content-Type": "application/json", 
@@ -2003,7 +2003,7 @@ useEffect(() => {
         >
           <input
             type="text"
-            placeholder={t.searchPlaceholder || "Search for Funko Pops..."}
+            placeholder={t.searchPlaceholder || "Search for Funkos..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className={`flex-grow px-4 py-2 outline-none ${
@@ -2011,7 +2011,7 @@ useEffect(() => {
                 ? "bg-gray-700 text-white placeholder-gray-400"
                 : "bg-white text-gray-800 placeholder-gray-500"
             }`}
-            aria-label="Search for Funko Pops"
+            aria-label="Search for Funkos"
           />
           <button
             type="submit"

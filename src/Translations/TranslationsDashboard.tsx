@@ -2,7 +2,7 @@
 export const translations = {
   EN: {
     // Header & Navigation
-    searchPlaceholder: "Search for Funko Pops...",
+    searchPlaceholder: "Search for Funkos...",
     logout: "Logout",
     dashboard: "Dashboard",
     collection: "Collection",

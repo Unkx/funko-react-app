@@ -48,7 +48,7 @@ const AnalyticsDashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center w-full max-w-full overflow-x-hidden min-h-screen">
         <div className="text-xl">Loading analytics...</div>
       </div>
     );
@@ -67,7 +67,7 @@ const AnalyticsDashboard = () => {
   }));
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-6">
+    <div className="w-full max-w-full overflow-x-hidden min-h-screen bg-gray-100 dark:bg-gray-900 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
@@ -80,7 +80,7 @@ const AnalyticsDashboard = () => {
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             title="Total Actions"
             value={stats?.overall?.total_actions || 0}
@@ -191,7 +191,7 @@ const AnalyticsDashboard = () => {
                   <tr key={user.login} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                       {idx < 3 ? (
-                        <span className="text-2xl">{['🥇', '🥈', '🥉'][idx]}</span>
+                        <span className="text-xl sm:text-2xl">{['🥇', '🥈', '🥉'][idx]}</span>
                       ) : (
                         <span>#{idx + 1}</span>
                       )}
@@ -223,7 +223,7 @@ const AnalyticsDashboard = () => {
             👥 Your Friends
           </h2>
           {friends.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {friends.map(friend => (
                 <div
                   key={friend.id}

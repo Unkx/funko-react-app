@@ -84,7 +84,7 @@ const LoyaltyWidget: React.FC<Props> = ({ isDarkMode, onOpenFull }) => {
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-3xl" aria-hidden="true">{data.badgeEmoji}</span>
+          <span className="text-2xl sm:text-3xl lg:text-4xl" aria-hidden="true">{data.badgeEmoji}</span>
           <div>
             <h3 className="font-bold">{data.levelName}</h3>
             <p className="text-xs opacity-75">Level {data.level}</p>

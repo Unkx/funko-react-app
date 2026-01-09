@@ -1,0 +1,70 @@
+/* ResponsiveHelpers.css */
+
+/* Mobile-first responsive utilities */
+@media (max-width: 639px) {
+  .xs\:hidden { display: none !important; }
+  .xs\:block { display: block !important; }
+  .xs\:inline { display: inline !important; }
+  .xs\:flex { display: flex !important; }
+  .xs\:grid { display: grid !important; }
+  
+  .xs\:text-xs { font-size: 0.75rem !important; }
+  .xs\:text-sm { font-size: 0.875rem !important; }
+  .xs\:text-base { font-size: 1rem !important; }
+  .xs\:text-lg { font-size: 1.125rem !important; }
+  .xs\:text-xl { font-size: 1.25rem !important; }
+  .xs\:text-2xl { font-size: 1.5rem !important; }
+  
+  .xs\:px-2 { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+  .xs\:px-3 { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+  .xs\:px-4 { padding-left: 1rem !important; padding-right: 1rem !important; }
+  
+  .xs\:py-1 { padding-top: 0.25rem !important; padding-bottom: 0.25rem !important; }
+  .xs\:py-2 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+  .xs\:py-3 { padding-top: 0.75rem !important; padding-bottom: 0.75rem !important; }
+  
+  .xs\:gap-1 { gap: 0.25rem !important; }
+  .xs\:gap-2 { gap: 0.5rem !important; }
+  .xs\:gap-3 { gap: 0.75rem !important; }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+  button,
+  [role="button"],
+  a {
+    min-height: 44px !important;
+    min-width: 44px !important;
+  }
+  
+  input,
+  select,
+  textarea {
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+  }
+}
+
+/* Prevent horizontal scroll */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Better scroll on mobile */
+@media (max-width: 768px) {
+  .overflow-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Loading states for mobile */
+@media (max-width: 768px) {
+  .skeleton-loading {
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+  }
+  
+  @keyframes skeleton-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+}

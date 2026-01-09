@@ -7,6 +7,7 @@ import SunIcon from "/src/assets/sun.svg?react";
 import SearchIcon from "/src/assets/search.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
+import QuickLinks from "./QuickLinks";
 
 // Flags
 import UKFlag from "/src/assets/flags/uk.svg?react";
@@ -167,8 +168,8 @@ const AboutUsSite: React.FC = () => {
 
   return (
     <div className={`min-h-screen ${isDarkMode ? "bg-gray-900 text-white" : "bg-gradient-to-br from-blue-50 to-green-50 text-gray-800"}`}>
-      {/* Header */}
-      <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4 sticky top-0 z-50 backdrop-blur-md bg-opacity-90">
+  {/* Header (standardized) */}
+  <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
         <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
           <Link to="/" className="no-underline">
             <h1 className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
@@ -291,6 +292,7 @@ const AboutUsSite: React.FC = () => {
             {t.goToDashboard}
           </button>
         </div>
+        	      <QuickLinks isDarkMode={isDarkMode} language={language as any} />
       </header>
 
       {/* Hero Section */}
@@ -403,7 +405,7 @@ const AboutUsSite: React.FC = () => {
       <section className={`py-16 ${isDarkMode ? "bg-gray-900" : "bg-gradient-to-br from-blue-50 to-green-50"}`}>
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold mb-12 text-center">{t.featuresTitle}</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
               <div
                 key={index}
@@ -438,7 +440,7 @@ const AboutUsSite: React.FC = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {teamMembers.map((member, index) => (
               <div
                 key={index}
@@ -472,7 +474,7 @@ const AboutUsSite: React.FC = () => {
       <section className={`py-16 ${isDarkMode ? "bg-gray-900" : "bg-gradient-to-br from-blue-50 to-green-50"}`}>
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold mb-12 text-center">{t.testimonialsTitle}</h2>
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {testimonials.map((testimonial, index) => (
               <div
                 key={index}

@@ -161,7 +161,7 @@ const LoginSite: React.FC = () => {
       }`}
     >
       {/* Header */}
-      <header className="py-4 px-8 flex flex-wrap md:flex-nowrap justify-between items-center gap-4 relative">
+      <header className="py-4 px-8 flex flex-wrap md:flex-nowrap justify-between items-center gap-4 relative w-full max-w-full overflow-x-hidden">
         <div className="flex-shrink-0">
           <Link to="/" className="no-underline">
             <h1

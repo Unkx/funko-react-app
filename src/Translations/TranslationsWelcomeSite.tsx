@@ -2,6 +2,10 @@
 
 import { Home } from "lucide-react";
 import { homedir } from "os";
+import MostVisitedSite from "../MostVisitedSite";
+import LoginRegisterSite from "../LoginRegisterSite";
+import AboutUsSite from "../AboutUsSite";
+import QuickLinks from "../QuickLinks";
 
 export const translations = {
   EN: {
@@ -11,11 +15,13 @@ export const translations = {
     copyright: "© 2025 Pop&Go! - All rights reserved.",
     goToLoginSite: "Log in",
     randomItems: "Random Items",
-    mostVisited: "Most Visited Items",
+    mostVisited: "Most visited",
     noVisitsYet: "No items visited yet.",
     exclusive: "Exclusive",
     home: "Home",
     search: "Search",
+    MostVisitedSite: "Most Visited",
+    LoginRegister: "Log in/Register",
     categories: "Categories",
     about: "About Us",
     features: "Features",
@@ -68,7 +74,7 @@ export const translations = {
     features: "Funkcje",
     goToCategories: "Przejdź do kategorii",
     goToMostVisited: "Przejdź do najczęściej odwiedzanych elementów",
-    goToDashboard: "Panel sterowania",
+    goToDashboard: "Panel",
     TargetCondition: "Warunek docelowy",
     Remove: "Usuń",
     Edit: "Edytuj",
@@ -115,7 +121,7 @@ export const translations = {
     features: "Функции",
     goToCategories: "Перейти к категориям",
     goToMostVisited: "Перейти к наиболее посещаемым элементам",
-    goToDashboard: "Панель управления",
+    goToDashboard: "Панель",
     TargetCondition: "Условие цели",
     Remove: "Удалить",
     Edit: "Редактировать",

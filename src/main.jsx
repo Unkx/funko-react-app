@@ -30,7 +30,7 @@
 //     animate="animate"
 //     exit="exit"
 //     transition={{ duration: 0.4, ease: "easeInOut" }}
-//     className="min-h-screen"
+//     className="w-full max-w-full overflow-x-hidden min-h-screen"
 //   >
 //     {children}
 //   </motion.div>
@@ -124,6 +124,7 @@ root.render(
             <Route path="/" element={<WelcomeSite />} />
             <Route path="/SearchSite" element={<SearchSite />} />
             <Route path="/funko/:id" element={<FunkoDetails />} />
+            <Route path="/item/:id" element={<FunkoDetails />} />
 
             <Route path="/loginregistersite" element={<LoginRegisterSite />} />
             <Route path="/RegisterSite" element={<RegisterSite />} />

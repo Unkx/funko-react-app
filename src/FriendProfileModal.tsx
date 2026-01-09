@@ -261,7 +261,7 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
           </div>
         )}
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+        <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-center">
           <div>
             <p className="text-2xl font-bold text-blue-500">{collection.length}</p>
             <p className="text-sm">{t.totalItems || "Total Items"}</p>
@@ -391,7 +391,7 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
             {t.noItemsInCollection || "No items in collection"}
           </p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {collection.map((item) => (
               <CollectionItemCard key={item.id} item={item} />
             ))}
@@ -416,7 +416,7 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
             {t.noItemsInWishlist || "No items in wishlist"}
           </p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {wishlist.map((item) => (
               <WishlistItemCard key={item.id} item={item} />
             ))}

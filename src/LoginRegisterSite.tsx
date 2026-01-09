@@ -5,6 +5,7 @@ import LanguageSelectorPopup from "./LanguageSelectorPopup";
 import useBreakpoints from "./useBreakpoints";
 import { translations as loginTranslations } from "./Translations/TranslationsLogIn";
 import { translations as registerTranslations } from "./Translations/TranslationRegistersite";
+import QuickLinks from "./QuickLinks";
 
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -264,7 +265,7 @@ const LoginRegisterSite: React.FC = () => {
   return (
     <div className={`min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-black"}`}>
       {/* Header */}
-      <header className="py-4 px-8 flex justify-between items-center">
+      <header className="py-4 px-8 flex justify-between items-center w-full max-w-full overflow-x-hidden">
         <Link to="/" className="no-underline">
           <h1 className={`text-3xl font-bold font-[Special_Gothic_Expanded_One] ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
             Pop&Go!
@@ -296,6 +297,7 @@ const LoginRegisterSite: React.FC = () => {
           </button>
         </div>
       </header>
+      {/* 	      <QuickLinks isDarkMode={isDarkMode} language={language as any} /> */}
 
 
     <main className="flex-grow p-8 flex flex-col items-center justify-center">

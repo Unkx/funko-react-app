@@ -19,6 +19,7 @@ export default defineConfig({
       exportAsDefault: true,
     }),
   ],
+  assetsInclude: ['**/*.svg'],
   resolve: {
     alias: {
       '@': '/src',

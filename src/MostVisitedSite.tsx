@@ -1,5 +1,5 @@
 // src/pages/MostVisitedSite.tsx
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useBreakpoints from "./useBreakpoints";
 import { translations } from "./Translations/TranslationsMostVisitedSite";
@@ -9,6 +9,7 @@ import SunIcon from "/src/assets/sun.svg?react";
 import SearchIcon from "/src/assets/search.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
+import QuickLinks from "./QuickLinks";
 
 // Flags
 import UKFlag from "/src/assets/flags/uk.svg?react";
@@ -68,6 +69,38 @@ const MostVisitedSite: React.FC = () => {
   const t = translations[language] || translations["EN"];
 
   const navigate = useNavigate();
+  const languageDropdownRef = useRef<HTMLDivElement>(null);
+  const languageButtonRef = useRef<HTMLButtonElement>(null);
+
+  const toggleLanguageDropdown = () => setShowLanguageDropdown(prev => !prev);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        showLanguageDropdown &&
+        languageDropdownRef.current &&
+        languageButtonRef.current &&
+        !languageDropdownRef.current.contains(event.target as Node) &&
+        !languageButtonRef.current.contains(event.target as Node)
+      ) {
+        setShowLanguageDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showLanguageDropdown]);
+
+  const loginButtonTo = useMemo(() => {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (user?.role === "admin") return "/adminSite";
+    if (user?.role === "user") return "/dashboardSite";
+    return "/loginregistersite";
+  }, []);
+
+  const loginButtonText = useMemo(() => {
+    return localStorage.getItem("user") ? t.goToDashboard || "Dashboard" : t.goToLoginSite || "Log In";
+  }, [t]);
   
   // Fetch all items from your backend
   useEffect(() => {
@@ -314,22 +347,24 @@ const MostVisitedSite: React.FC = () => {
 
   return (
     <div className={`min-h-screen ${isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-black"}`}>
+      {/* Unified header (copied from WelcomeSite/SearchSite and adapted) */}
       <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
         <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
           <Link to="/" className="no-underline">
-            <h1 className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
-              isDarkMode ? "text-yellow-400" : "text-blue-600"
-            }`}>
+            <h1
+              className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
+                isDarkMode ? "text-yellow-400" : "text-blue-600"
+              }`}
+            >
               Pop&Go!
             </h1>
           </Link>
         </div>
 
-        {/* 🔍 Search */}
         <form
           onSubmit={handleSearch}
           className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden ${
-            isDarkMode ? "bg-gray-700" : "bg-gray-100"
+            isDarkMode ? "bg-gray-700" : "bg-white"
           }`}
         >
           <input
@@ -347,9 +382,7 @@ const MostVisitedSite: React.FC = () => {
           <button
             type="submit"
             className={`px-4 py-2 ${
-              isDarkMode
-                ? "bg-yellow-500 hover:bg-yellow-600"
-                : "bg-blue-600 hover:bg-blue-700"
+              isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-600 hover:bg-blue-700"
             } text-white`}
             aria-label="Search"
           >
@@ -357,32 +390,28 @@ const MostVisitedSite: React.FC = () => {
           </button>
         </form>
 
-        {/* 🌐 Language, 🌙 Theme, 🔐 Dashboard */}
         <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0 min-w-0 items-center">
-          {/* Language Dropdown */}
           <div className="relative">
             <button
-              onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+              ref={languageButtonRef}
+              onClick={toggleLanguageDropdown}
               className={`p-2 rounded-full flex items-center gap-1 min-w-0 ${
-                isDarkMode
-                  ? "bg-gray-600 hover:bg-gray-500"
-                  : "bg-gray-200 hover:bg-neutral-300"
+                isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-neutral-600"
               }`}
               aria-label="Select language"
               aria-expanded={showLanguageDropdown}
             >
               <GlobeIcon className="w-5 h-5" />
               <span className="hidden sm:inline text-sm font-medium">{language}</span>
-              <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${
-                  showLanguageDropdown ? "rotate-180" : ""
-                }`}
-              />
+              <ChevronDownIcon className={`w-4 h-4 transition-transform ${showLanguageDropdown ? "rotate-180" : ""}`} />
             </button>
 
             {showLanguageDropdown && (
               <div
-                className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-1 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto`} 
+                ref={languageDropdownRef}
+                className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-2 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${
+                  isDarkMode ? 'border-yellow-500 bg-gray-800' : 'border-blue-500 bg-white'
+                }`}
                 onClick={(e) => e.stopPropagation()}
               >
                 {Object.entries(languages).map(([code, { name, flag }]) => (
@@ -393,10 +422,10 @@ const MostVisitedSite: React.FC = () => {
                       language === code
                         ? isDarkMode
                           ? "bg-yellow-500 text-black"
-                          : "bg-blue-600 text-white"
+                          : "bg-green-600 text-white"
                         : isDarkMode
-                        ? "hover:bg-gray-300"
-                        : "hover:bg-neutral-200"
+                        ? "hover:bg-gray-600"
+                        : "hover:bg-neutral-500"
                     }`}
                   >
                     <span className="w-5 h-5">{flag}</span>
@@ -407,37 +436,28 @@ const MostVisitedSite: React.FC = () => {
             )}
           </div>
 
-          {/* 🌙 Theme Toggle */}
           <button
             onClick={toggleTheme}
-            className={`p-2 rounded-full ${
-              isDarkMode
-                ? "bg-gray-700 hover:bg-gray-600"
-                : "bg-gray-200 hover:bg-gray-600"
-            }`}
-            aria-label={isDarkMode ? t.switchToLight || "Switch to light mode" : t.switchToDark || "Switch to dark mode"}
+            className={`p-2 rounded-full ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-600"}`}
+            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
 
-          {/* 🔐 Dashboard/Login */}
-          <button
-            onClick={() => {
-              const user = JSON.parse(localStorage.getItem("user") || "{}");
-              navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginRegisterSite");
-            }}
+          <Link
+            to={loginButtonTo}
             className={`flex items-center gap-2 px-4 py-2 rounded ${
-              isDarkMode
-                ? "bg-yellow-500 text-black hover:bg-yellow-600"
-                : "bg-blue-600 text-white hover:bg-green-700"
+              isDarkMode ? "bg-yellow-500 text-black hover:bg-yellow-600" : "bg-blue-600 text-white hover:bg-blue-700"
             }`}
           >
-            {t.goToDashboard || "Dashboard"}
-          </button>
+            {loginButtonText}
+          </Link>
         </div>
-      </header>
+  </header>
 
-      <main className="p-4 md:p-8 max-w-6xl mx-auto">
+  <QuickLinks isDarkMode={isDarkMode} language={language as any} />
+
+  <main className="p-4 md:p-8 max-w-6xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-4">{t.mostVisited || "Most Visited Items"}</h1>
           <p className="text-lg opacity-80">
@@ -449,7 +469,7 @@ const MostVisitedSite: React.FC = () => {
         </div>
 
         {mostVisitedItems.length > 0 && (
-          <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 p-4 rounded-lg ${
+          <div className={`grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8 p-4 rounded-lg ${
             isDarkMode ? "bg-gray-700" : "bg-white"
           }`}>
             <div className="text-center">
@@ -513,7 +533,7 @@ const MostVisitedSite: React.FC = () => {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedItems.map((item, index) => {
               const popularity = getPopularityBadge(item.visits);
               return (
@@ -597,7 +617,7 @@ const MostVisitedSite: React.FC = () => {
       <footer className={`text-center py-4 ${
         isDarkMode ? "bg-gray-900 text-gray-400" : "bg-white text-gray-700"
       }`}>
-        {t.copyright || "© 2024 Pop&Go! All rights reserved."}
+        {t.copyright || "© 2026 Pop&Go! All rights reserved."}
       </footer>
     </div>
   );

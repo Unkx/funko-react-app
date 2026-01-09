@@ -324,7 +324,7 @@ const CollectionPage: React.FC = () => {
   return (
     <div className={`min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"}`}>
       {/* Header */}
-      <header className="py-4 px-8 flex flex-wrap md:flex-nowrap justify-between items-center gap-4 relative">
+      <header className="py-4 px-8 flex flex-wrap md:flex-nowrap justify-between items-center gap-4 relative w-full max-w-full overflow-x-hidden">
         <div className="flex-shrink-0">
           <Link to="/" className="no-underline">
             <h1 className={`text-3xl font-bold font-[Special_Gothic_Expanded_One] tracking-wide ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
@@ -434,7 +434,7 @@ const CollectionPage: React.FC = () => {
           {/* Filters */}
           {showFilters && (
             <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">{t.searchCollection}</label>
                   <input
@@ -491,7 +491,7 @@ const CollectionPage: React.FC = () => {
 
           {/* Collection Stats */}
           <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="grid grid-cols-2 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
               <div>
                 <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
                   {collection.length}
@@ -539,7 +539,7 @@ const CollectionPage: React.FC = () => {
                   )}
                 </div>
               ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {filteredCollection.map(item => (
                 <div key={item.id} className={`rounded-lg shadow-lg overflow-hidden ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
                   {item.image_name && (

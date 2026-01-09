@@ -124,7 +124,7 @@ const LoyaltyLeaderboard: React.FC<Props> = ({ isDarkMode, currentUserId }) => {
 
                 {/* User Info */}
                 <div className="flex-1 flex items-center gap-3">
-                  <div className="text-3xl">{entry.badge_emoji}</div>
+                  <div className="text-2xl sm:text-3xl lg:text-4xl">{entry.badge_emoji}</div>
                   <div>
                     <div className="flex items-center gap-2">
                       <span className={`font-bold ${isCurrentUser ? "text-lg" : ""}`}>

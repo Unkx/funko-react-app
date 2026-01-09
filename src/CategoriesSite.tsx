@@ -11,6 +11,7 @@ import SunIcon from "/src/assets/sun.svg?react";
 import SearchIcon from "/src/assets/search.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
+import QuickLinks from "./QuickLinks";
 
 // Flag imports
 import UKFlag from "/src/assets/flags/uk.svg?react";
@@ -468,6 +469,7 @@ const CategoriesSite: React.FC = () => {
             {t.goToDashboard || "Dashboard"}
           </button>
         </div>
+        	      <QuickLinks isDarkMode={isDarkMode} language={language as any} />
       </header>
 
       <main className="p-4 md:p-8">
@@ -513,7 +515,7 @@ const CategoriesSite: React.FC = () => {
         {/* Content */}
         {!selectedCategory ? (
           /* Categories Grid View */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {FUNKO_CATEGORIES.map(category => {
               const featuredItems = getFeaturedItems(category.id);
               const itemCount = items.filter(item => matchesCategory(item, category.id)).length;
@@ -528,7 +530,7 @@ const CategoriesSite: React.FC = () => {
                   <div className="p-6">
                     {/* Category Header */}
                     <div className="flex items-center gap-3 mb-4">
-                      <span className="text-3xl">{category.icon}</span>
+                      <span className="text-2xl sm:text-3xl lg:text-4xl">{category.icon}</span>
                       <div className="flex-grow">
                         <h2 className="text-xl font-bold">{category.name}</h2>
                         <p className="text-sm opacity-75">{category.description}</p>
@@ -663,7 +665,7 @@ const CategoriesSite: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {filteredItems.map(item => (
                   <Link
                     key={item.id}
@@ -707,7 +709,7 @@ const CategoriesSite: React.FC = () => {
       <footer className={`text-center py-4 mt-8 border-t border-gray-200 ${
         isDarkMode ? "bg-gray-900 text-gray-400" : "bg-white text-gray-700"
       }`}>
-        © 2024 Pop&Go! All rights reserved.
+        © 2026 Pop&Go! All rights reserved.
       </footer>
     </div>
   );

@@ -374,7 +374,7 @@ const AdminInvites = () => {
       {/* Stats Summary */}
       {invites.length > 0 && (
         <div className={`mt-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-gray-50"}`}>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="text-center">
               <p className="text-2xl font-bold">{invites.length}</p>
               <p className="text-sm">{t.totalInvites || "Total Invites"}</p>

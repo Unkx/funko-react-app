@@ -37,3 +37,20 @@
 		@apply bg-yellow-500 text-black;
 	}
 }
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Prevent images and media from overflowing */
+img, video, canvas, svg {
+  max-width: 100%;
+  height: auto;
+}

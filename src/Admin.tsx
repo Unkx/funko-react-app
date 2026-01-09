@@ -1460,7 +1460,7 @@ useEffect(() => {
           </div>
           <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white border border-gray-200"}`}>
             <h3 className="text-xl font-semibold mb-4">{t.yourActivity || "Your Activity"}</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="text-center">
                 <p className="text-2xl font-bold">{userStats?.overall?.total_actions || 0}</p>
                 <p className="text-sm text-gray-500">{t.totalActions || "Total Actions"}</p>
@@ -1669,7 +1669,7 @@ useEffect(() => {
             {t.noFriends || "You don't have any friends yet. Start connecting!"}
           </p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {friends.filter((f: any) => f.status === "accepted").map((friend: any) => (
               <div 
                 key={friend.id}
@@ -1956,7 +1956,7 @@ useEffect(() => {
   // Early return if not authorized
   if (!token || !currentUser || currentUser.role !== "admin") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-800 text-center px-4">
+      <div className="flex flex-col items-center justify-center w-full max-w-full overflow-x-hidden min-h-screen bg-gray-50 dark:bg-gray-800 text-center px-4">
         <p className="text-red-600 text-3xl font-semibold mb-4">
           {t.accessRestricted || "You have no access here."}
         </p>
@@ -2200,7 +2200,7 @@ useEffect(() => {
                         <h4 className="font-semibold text-lg mb-4">
                           {t.userEngagement || "User Engagement (Last 30 Days)"}
                         </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           <div>
                             <p className="text-sm text-gray-600 dark:text-gray-400">Active Users</p>
                             <p className="text-2xl font-bold">{adminAnalytics.engagement?.active_users || 0}</p>
@@ -2253,7 +2253,7 @@ useEffect(() => {
                         <h4 className="font-semibold text-lg mb-4">
                           {t.socialEngagement || "Social Engagement"}
                         </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           <div>
                             <p className="text-sm text-gray-600 dark:text-gray-400">Friendships</p>
                             <p className="text-2xl font-bold">{adminAnalytics.social?.total_friendships || 0}</p>
@@ -2298,7 +2298,7 @@ useEffect(() => {
                 {statsLoading ? (
                   <p className="text-center text-lg">{t.loadingStatistics || "Loading statistics..."}</p>
                 ) : siteStats ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Total Users */}
                     <div className={`p-4 rounded-lg flex flex-col items-center border ${isDarkMode ? "bg-gray-600 border-gray-500" : "bg-blue-50 border-blue-100"}`}>
                       <div className="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 text-blue-600 mb-2">

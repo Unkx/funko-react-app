@@ -970,7 +970,7 @@ const DashboardSite: React.FC = () => {
           </div>
           <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
             <h3 className="text-xl font-semibold mb-4">{t.yourActivity || "Your Activity"}</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="text-center">
                 <p className="text-2xl font-bold">{userStats?.overall?.total_actions || 0}</p>
                 <p className="text-sm text-gray-500">{t.totalActions || "Total Actions"}</p>
@@ -1177,7 +1177,7 @@ const DashboardSite: React.FC = () => {
             {t.noFriends || "You don't have any friends yet. Start connecting!"}
           </p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {friends.filter((f: any) => f.status === "accepted").map((friend: any) => (
               <div 
                 key={friend.id}
@@ -1466,7 +1466,7 @@ const DashboardSite: React.FC = () => {
           </button>
         </div>
         {collectionLoading ? <p>Loading...</p> : collection.length === 0 ? <p>{t.emptyCollection}</p> :
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {collection.slice(0, 3).map(item => (
               <CollectionItemCard key={item.id} item={item} />
             ))}
@@ -1484,7 +1484,7 @@ const DashboardSite: React.FC = () => {
           </button>
         </div>
         {wishlistLoading ? <p>Loading...</p> : wishlist.length === 0 ? <p>{t.noItemsInWishlist}</p> :
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {wishlist.slice(0, 3).map(item => (
               <WishlistItemCard key={item.id} item={item} />
             ))}
@@ -1510,7 +1510,7 @@ const DashboardSite: React.FC = () => {
       </div>
       {showCollectionFilters && (
         <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Search Collection</label>
               <input
@@ -1565,7 +1565,7 @@ const DashboardSite: React.FC = () => {
         </div>
       )}
       <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div className="grid grid-cols-2 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
           <div>
             <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
               {collection.length}
@@ -1611,7 +1611,7 @@ const DashboardSite: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredCollection.map(item => (
             <div key={item.id} className={`rounded-lg shadow-lg overflow-hidden ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
               {item.image_name && (
@@ -1733,7 +1733,7 @@ const DashboardSite: React.FC = () => {
       </div>
       {showWishlistFilters && (
         <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Search Wishlist</label>
               <input
@@ -1788,7 +1788,7 @@ const DashboardSite: React.FC = () => {
         </div>
       )}
       <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+        <div className="grid grid-cols-2 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
           <div>
             <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
               {wishlist.length}
@@ -1834,7 +1834,7 @@ const DashboardSite: React.FC = () => {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredWishlist.map(item => (
             <div key={item.id} className={`rounded-lg shadow-lg overflow-hidden ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
               {item.image_name && (
@@ -1972,7 +1972,7 @@ const DashboardSite: React.FC = () => {
 
   return (
     <div className={`welcome-site min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-gray-900"}`}>  
-      <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
+      <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4 w-full max-w-full overflow-x-hidden">
         <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
           <Link to="/" className="no-underline">
             <h1

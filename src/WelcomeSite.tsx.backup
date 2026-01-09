@@ -1077,9 +1077,10 @@
 // export default WelcomeSite ;
 
 
-import React, { useState, useEffect, useRef, useMemo, Suspense } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { translations } from "./Translations/TranslationsWelcomeSite";
+import { useMemo } from "react";
 import useBreakpoints from "./useBreakpoints";
 
 import "./WelcomeSite.css";
@@ -1088,6 +1089,7 @@ import SunIcon from "/src/assets/sun.svg?react";
 import SearchIcon from "/src/assets/search.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
+import QuickLinks from "./QuickLinks";
 
 // Flags
 import UKFlag from "/src/assets/flags/uk.svg?react";
@@ -1099,7 +1101,8 @@ import GermanyFlag from "/src/assets/flags/germany.svg?react";
 import SpainFlag from "/src/assets/flags/spain.svg?react";
 import CanadaFlag from "/src/assets/flags/canada.svg?react";
 
-// (lazy components declared above)
+// Map import
+import WorldMap from "./Maps/WorldMap"; // ✅ Import map
 
 interface FunkoItem {
   title: string;
@@ -1139,10 +1142,6 @@ const generateId = (title: string, number: string): string => {
     .replace(/-+/g, '-')        // Replace multiple hyphens with single hyphen
     .replace(/^-|-$/g, '');     // Remove leading/trailing hyphens
 };
-// Lazy-load heavier components to improve initial bundle size and startup time
-const QuickLinks = React.lazy(() => import('./QuickLinks'));
-const WorldMap = React.lazy(() => import('./Maps/WorldMap'));
-
 const WelcomeSite: React.FC = () => {
   // ✅ MOVED: All state declarations inside the component
   const { isMobile, isTablet, isDesktop } = useBreakpoints();
@@ -1518,75 +1517,59 @@ const incrementVisitCount = (id: string) => {
       try {
         setIsLoading(true);
 
-        // 1) Try cached copy (24h)
-        try {
-          const cached = localStorage.getItem('funkoCache');
-          if (cached) {
-            const parsed = JSON.parse(cached);
-            const age = Date.now() - (parsed.ts || 0);
-            if (age < 24 * 60 * 60 * 1000 && parsed.data && parsed.data.length) {
-              setFunkoData(parsed.data);
-              setIsLoading(false);
-              return;
-            }
-          }
-        } catch (e) {
-          // ignore cache parse errors
-        }
-
-        // 2) Try backend (if token)
+        // Try to fetch from backend first
         const token = localStorage.getItem("token");
+
         if (token) {
           try {
             const backendResponse = await fetch("http://192.168.0.162:5000/api/items?limit=30", {
-              headers: { Authorization: `Bearer ${token}` },
+              headers: {
+                "Authorization": `Bearer ${token}`
+              }
             });
+
             if (backendResponse.ok) {
               const backendData = await backendResponse.json();
+
+              // Only use backend data if it has items
               if (backendData && backendData.length > 0) {
                 const dataWithIds = backendData.map((item: any) => ({
                   ...item,
+                  // Use the ID from database, but ensure consistency
                   id: item.id || generateId(item.title, item.number),
-                  series: Array.isArray(item.series)
-                    ? item.series
-                    : typeof item.series === 'string'
-                    ? JSON.parse(item.series)
-                    : [],
+                  series: Array.isArray(item.series) ? item.series :
+                        (typeof item.series === 'string' ? JSON.parse(item.series) : [])
                 }));
+
+                console.log("✅ Loaded items from database:", dataWithIds.length);
                 setFunkoData(dataWithIds);
-                localStorage.setItem(
-                  'funkoCache',
-                  JSON.stringify({ ts: Date.now(), data: dataWithIds })
-                );
                 setIsLoading(false);
-                return;
+                return; // Success! Exit here
               }
             }
           } catch (backendErr) {
-            // backend not available, fall through to external
+            console.warn("⚠️ Backend unavailable, using external data");
           }
         }
 
-        // 3) Fallback: external JSON
+        // Fallback: Fetch from external JSON
+        console.log("📡 Fetching from external JSON...");
         const response = await fetch(
           "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
         );
         if (!response.ok) throw new Error("Failed to fetch data");
         const rawData: FunkoItem[] = await response.json();
-        const dataWithIds = rawData.map((item) => ({ ...item, id: generateId(item.title, item.number) }));
-        // Do not store or render the full huge dataset on the welcome page to improve startup on mobile.
-        // Keep a small initial slice and cache that slice only.
-        const DISPLAY_LIMIT = 50;
-        const initialSlice = dataWithIds.slice(0, DISPLAY_LIMIT);
-        setFunkoData(initialSlice);
-        try {
-          localStorage.setItem('funkoCache', JSON.stringify({ ts: Date.now(), data: initialSlice }));
-        } catch (e) {
-          // ignore localStorage set errors
-        }
+
+        const dataWithIds = rawData.map((item) => ({
+          ...item,
+          id: generateId(item.title, item.number),
+        }));
+
+        console.log("✅ Loaded items from external JSON:", dataWithIds.length);
+        setFunkoData(dataWithIds);
+
       } catch (err) {
-        // keep quiet; show minimal console output only when needed
-        console.warn('Failed to load Funko data', err);
+        console.error("Error loading Funko data:", err);
       } finally {
         setIsLoading(false);
       }
@@ -1723,7 +1706,7 @@ const mostVisitedItems = useMemo(() => {
       {/* 🌍 First-Time World Map Popup */}
       {showWorldMapFirstTime && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-      <div className="relative bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-4xl w-full">
+          <div className="relative bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-4xl w-full">
             <button
               onClick={() => setShowWorldMapFirstTime(false)}
               className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 text-2xl"
@@ -1734,20 +1717,18 @@ const mostVisitedItems = useMemo(() => {
             <h2 className="text-2xl font-bold mb-4 text-center">
               {t.regionMapTitle || "Explore by Region"}
             </h2>
-            <React.Suspense fallback={<div style={{height:300}}/>}>
-              <WorldMap
-                onSelectCountry={(code) => {
-                  handleMapCountryClick(code);
-                  setShowWorldMapFirstTime(false);
-                }}
-              />
-            </React.Suspense>
+            <WorldMap
+              onSelectCountry={(code) => {
+                handleMapCountryClick(code);
+                setShowWorldMapFirstTime(false);
+              }}
+            />
           </div>
         </div>
       )}
       {/* 🔝 Header */}
-      <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
-        <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
+      <header className="py-4 px-4 md:px-8 w-full max-w-full overflow-x-hidden">
+        <div className="flex flex-col sm:flex-row flex-wrap justify-between items-center gap-4">
           <Link to="/" className="no-underline">
             <h1
               className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
@@ -1876,9 +1857,7 @@ const mostVisitedItems = useMemo(() => {
             {t.goToDashboard || "Dashboard"}
           </button>
         </div>
-              <React.Suspense fallback={<div style={{width:80,height:20}}/>}>
-                <QuickLinks isDarkMode={isDarkMode} language={language as any} />
-              </React.Suspense>
+              <QuickLinks isDarkMode={isDarkMode} language={language as any} />
       </header>
 
       {/* 🧭 Main Content */}
@@ -1913,8 +1892,6 @@ const mostVisitedItems = useMemo(() => {
                     src={item.imageName || "/src/assets/placeholder.png"}
                     alt={item.title}
                     className="w-full h-48 object-contain rounded-md mb-3"
-                    loading="lazy"
-                    decoding="async"
                     onError={(e) => {
                       e.currentTarget.src = "/src/assets/placeholder.png";
                     }}
@@ -1966,8 +1943,6 @@ const mostVisitedItems = useMemo(() => {
                     src={item.imageName || "/src/assets/placeholder.png"}
                     alt={item.title}
                     className="w-full h-48 object-contain rounded-md mb-3"
-                    loading="lazy"
-                    decoding="async"
                     onError={(e) => {
                       e.currentTarget.src = "/src/assets/placeholder.png";
                     }}

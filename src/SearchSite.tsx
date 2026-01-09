@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import useBreakpoints from "./useBreakpoints";
+import QuickLinks from "./QuickLinks";
 import { translations } from "./Translations/TranslationsSearchSite";
 
 // Icons
@@ -26,11 +27,66 @@ const CloseIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 // Flags
 import UKFlag from "/src/assets/flags/uk.svg?react";
+import CanadaFlag from "/src/assets/flags/canada.svg?react";
 import PolandFlag from "/src/assets/flags/poland.svg?react";
 import RussiaFlag from "/src/assets/flags/russia.svg?react";
 import FranceFlag from "/src/assets/flags/france.svg?react";
 import GermanyFlag from "/src/assets/flags/germany.svg?react";
 import SpainFlag from "/src/assets/flags/spain.svg?react";
+
+// --- Module-level cached fetch to speed up initial load ---
+let cachedItemsPromise: Promise<any[]> | null = null;
+
+const moduleGenerateId = (title: string, number: string): string => {
+  const safeTitle = title ? title.trim() : "";
+  const safeNumber = number ? number.trim() : "";
+  return `${safeTitle}-${safeNumber}`
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .toLowerCase()
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+};
+
+const fetchAllItemsOnce = async (): Promise<any[]> => {
+  if (cachedItemsPromise) return cachedItemsPromise;
+
+  cachedItemsPromise = (async () => {
+    try {
+      // Try backend first
+      try {
+        const apiResponse = await fetch("http://192.168.0.162:5000/api/items?limit=200");
+        if (apiResponse.ok) {
+          const backendData = await apiResponse.json();
+          return backendData.map((item: any) => ({
+            ...item,
+            id: item.id || moduleGenerateId(item.title, item.number),
+          }));
+        }
+      } catch (e) {
+        // ignore and fallback
+      }
+
+      // Fallback to GitHub static JSON
+      const githubResponse = await fetch(
+        "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
+      );
+      if (!githubResponse.ok) throw new Error(`GitHub error: ${githubResponse.status}`);
+      const githubData = await githubResponse.json();
+      return githubData.map((item: any) => ({ ...item, id: moduleGenerateId(item.title, item.number) }));
+    } catch (err) {
+      // propagate
+      throw err;
+    }
+  })();
+
+  return cachedItemsPromise;
+};
+
+// Start prefetch immediately when module loads to reduce perceived latency
+fetchAllItemsOnce().catch(() => {
+  /* ignore prefetch errors */
+});
 
 // --- IMAGE MODAL COMPONENT ---
 interface ImageModalProps {
@@ -90,14 +146,14 @@ interface RequestModalProps {
   t: any;
 }
 
-const RequestModal: React.FC<RequestModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  isDarkMode, 
-  onSubmit, 
-  isSubmitting, 
+const RequestModal: React.FC<RequestModalProps> = ({
+  isOpen,
+  onClose,
+  isDarkMode,
+  onSubmit,
+  isSubmitting,
   submitSuccess,
-  t 
+  t
 }) => {
   const [formData, setFormData] = useState({ title: "", number: "", reason: "" });
 
@@ -174,8 +230,8 @@ const RequestModal: React.FC<RequestModalProps> = ({
                 onChange={handleChange}
                 required
                 className={`w-full px-3 py-2 rounded border ${
-                  isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
+                  isDarkMode
+                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
                     : "bg-white border-gray-300 text-black"
                 }`}
                 placeholder={t.titlePlaceholder || "Enter item title"}
@@ -193,8 +249,8 @@ const RequestModal: React.FC<RequestModalProps> = ({
                 value={formData.number}
                 onChange={handleChange}
                 className={`w-full px-3 py-2 rounded border ${
-                  isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
+                  isDarkMode
+                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
                     : "bg-white border-gray-300 text-black"
                 }`}
                 placeholder={t.numberPlaceholder || "Enter item number (optional)"}
@@ -213,8 +269,8 @@ const RequestModal: React.FC<RequestModalProps> = ({
                 required
                 rows={4}
                 className={`w-full px-3 py-2 rounded border ${
-                  isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400" 
+                  isDarkMode
+                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
                     : "bg-white border-gray-300 text-black"
                 }`}
                 placeholder={t.reasonPlaceholder || "Why are you requesting this item?"}
@@ -226,8 +282,8 @@ const RequestModal: React.FC<RequestModalProps> = ({
                 type="button"
                 onClick={onClose}
                 className={`flex-1 px-4 py-2 rounded ${
-                  isDarkMode 
-                    ? "bg-gray-600 hover:bg-gray-500 text-white" 
+                  isDarkMode
+                    ? "bg-gray-600 hover:bg-gray-500 text-white"
                     : "bg-gray-300 hover:bg-gray-400 text-black"
                 }`}
                 disabled={isSubmitting}
@@ -238,8 +294,8 @@ const RequestModal: React.FC<RequestModalProps> = ({
                 type="submit"
                 disabled={isSubmitting}
                 className={`flex-1 px-4 py-2 rounded ${
-                  isDarkMode 
-                    ? "bg-blue-600 hover:bg-blue-500 text-white" 
+                  isDarkMode
+                    ? "bg-blue-600 hover:bg-blue-500 text-white"
                     : "bg-blue-500 hover:bg-blue-600 text-white"
                 } disabled:opacity-50`}
               >
@@ -274,18 +330,50 @@ const SearchSite = () => {
   const [language, setLanguage] = useState(() => {
     return localStorage.getItem("preferredLanguage") || "EN";
   });
-  
+
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [funkoData, setFunkoData] = useState<FunkoItem[]>([]);
-  const [adminItems, setAdminItems] = useState([]);
-  const [filteredAndSortedResults, setFilteredAndSortedResults] = useState([]);
+  const [adminItems, setAdminItems] = useState<any[]>([]);
+  const [filteredAndSortedResults, setFilteredAndSortedResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Adaptive display limits
+  const DEFAULT_DESKTOP_LIMIT = 50;
+  const DEFAULT_MOBILE_LIMIT = 20;
+  const INITIAL_DISPLAY_LIMIT = isMobile ? DEFAULT_MOBILE_LIMIT : DEFAULT_DESKTOP_LIMIT;
+  const [displayLimit, setDisplayLimit] = useState(INITIAL_DISPLAY_LIMIT);
   const [categoryFilter, setCategoryFilter] = useState("");
   const [showExclusiveOnly, setShowExclusiveOnly] = useState(false);
   const [sortOption, setSortOption] = useState("titleAsc");
+
+  // Local cache settings for faster repeat loads
+  const CACHE_KEY = "funkoItemsCache_v1";
+  const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
+
+  // Load cached items synchronously on mount (via effect) so returning users see content instantly
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (
+          parsed &&
+          parsed.timestamp &&
+          Date.now() - parsed.timestamp < CACHE_TTL_MS &&
+          Array.isArray(parsed.items)
+        ) {
+          setFunkoData(parsed.items);
+          // mark initial loading as finished so spinner doesn't block cached view
+          setIsLoading(false);
+        }
+      }
+    } catch (e) {
+      // ignore parse errors and continue
+    }
+  }, []);
 
   // Modal states
   const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
@@ -315,64 +403,63 @@ const SearchSite = () => {
   };
 
   // Combine funkoData and adminItems for processing
-const allItems = useMemo(() => {
-  const transformedAdminItems = adminItems.map((item: any) => ({
-    ...item,
-    title: item.title || "",
-    number: item.number || "",
-    series: Array.isArray(item.series)
-      ? item.series
-      : item.category
-      ? [item.category]
-      : ["Unknown"],
-    exclusive: item.exclusive || false,
-    id: `admin-${item.id}`,
-    isAdmin: true,
-  }));
+  const allItems = useMemo(() => {
+    const transformedAdminItems = adminItems.map((item: any) => ({
+      ...item,
+      title: item.title || "",
+      number: item.number || "",
+      series: Array.isArray(item.series)
+        ? item.series
+        : item.category
+        ? [item.category]
+        : ["Unknown"],
+      exclusive: item.exclusive || false,
+      id: `admin-${item.id}`,
+      isAdmin: true,
+    }));
 
-  const transformedFunkoData = funkoData.map((item: any) => ({
-    ...item,
-    title: item.title || "",
-    number: item.number || "",
-    series: Array.isArray(item.series)
-      ? item.series
-      : item.series
-      ? [item.series]
-      : ["Unknown"],
-    exclusive: item.exclusive || false,
-    id: item.id || generateId(item.title, item.number),
-    isAdmin: false,
-  }));
+    const transformedFunkoData = funkoData.map((item: any) => ({
+      ...item,
+      title: item.title || "",
+      number: item.number || "",
+      series: Array.isArray(item.series)
+        ? item.series
+        : item.series
+        ? [item.series]
+        : ["Unknown"],
+      exclusive: item.exclusive || false,
+      id: item.id || generateId(item.title, item.number),
+      isAdmin: false,
+    }));
 
-  // Merge both lists
-  const merged = [...transformedFunkoData, ...transformedAdminItems];
+    const merged = [...transformedFunkoData, ...transformedAdminItems];
 
-    // ✅ Remove admin duplicates if a matching non-admin exists
-  const funkoKeySet = new Set(
-    transformedFunkoData.map(
-      (i) => `${i.title.toLowerCase()}|${(i.number || "").toLowerCase()}`
-    )
-  );
+    const funkoKeySet = new Set(
+      transformedFunkoData.map(
+        (i) => `${i.title.toLowerCase()}|${(i.number || "").toLowerCase()}`
+      )
+    );
 
-  const unique = merged.filter((item) => {
-    if (item.isAdmin) {
-      const key = `${item.title.toLowerCase()}|${(item.number || "").toLowerCase()}`;
-      return !funkoKeySet.has(key); // remove only admin duplicates
-    }
-    return true;
-  });
+    const unique = merged.filter((item) => {
+      if (item.isAdmin) {
+        const key = `${item.title.toLowerCase()}|${(item.number || "").toLowerCase()}`;
+        return !funkoKeySet.has(key);
+      }
+      return true;
+    });
 
+    return unique;
+  }, [funkoData, adminItems]);
 
-  return unique;
-}, [funkoData, adminItems]);
-
-  const totalPages = Math.ceil(filteredAndSortedResults.length / itemsPerPage);
+  const totalDisplayed = Math.min(filteredAndSortedResults.length, displayLimit);
+  const totalPages = Math.max(1, Math.ceil(totalDisplayed / itemsPerPage));
 
   const currentItems = useMemo(() => {
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    return filteredAndSortedResults.slice(indexOfFirstItem, indexOfLastItem);
-  }, [currentPage, itemsPerPage, filteredAndSortedResults]);
+    const lastIndex = Math.min(indexOfLastItem, displayLimit);
+    return filteredAndSortedResults.slice(indexOfFirstItem, lastIndex);
+  }, [currentPage, itemsPerPage, filteredAndSortedResults, displayLimit]);
 
   const availableSeries = useMemo(() => {
     return [...new Set(allItems.flatMap((item: any) => item.series))];
@@ -380,6 +467,7 @@ const allItems = useMemo(() => {
 
   const languages = {
     EN: { name: "English", flag: <UKFlag className="w-5 h-5" /> },
+    CA: { name: "Canada", flag: <CanadaFlag className="w-5 h-5" /> },
     PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
     RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
     ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
@@ -387,44 +475,58 @@ const allItems = useMemo(() => {
     DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
   };
 
-  // Fetch data from API (DB) first, fallback to GitHub
+  // Fetch data: first perform a quick, small backend fetch to show initial items fast,
+  // then update/replace with the full dataset returned by fetchAllItemsOnce().
   useEffect(() => {
-    const fetchData = async () => {
+    let mounted = true;
+    setIsLoading(true);
+
+    // Quick fetch: small limit for initial render (fast response expected)
+    (async () => {
       try {
-        setIsLoading(true);
-        let data: FunkoItem[] = [];
-
-        // FIRST: Try to fetch from your local API (Database)
-        try {
-          const apiResponse = await fetch("http://192.168.0.162:5000/api/items?limit=30");
-          if (!apiResponse.ok) {
-            throw new Error(`API error! Status: ${apiResponse.status}`);
-          }
-          data = await apiResponse.json();
-          console.log("Fetched data from API:", data);
-        } catch (apiError) {
-          console.warn("Failed to fetch from local API, falling back to GitHub:", apiError.message);
-          // FALLBACK: Fetch from the static GitHub file if API fails
-          const githubResponse = await fetch(
-            "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
-          );
-          if (!githubResponse.ok) throw new Error(`GitHub error! Status: ${githubResponse.status}`);
-          const githubData = await githubResponse.json();
-          data = githubData.map((item: any) => ({
+        const resp = await fetch("http://192.168.0.162:5000/api/items?limit=30");
+        if (resp.ok) {
+          const quickData = await resp.json();
+          if (!mounted) return;
+          const mapped = quickData.map((item: any) => ({
             ...item,
-            id: generateId(item.title, item.number),
+            id: item.id || moduleGenerateId(item.title, item.number),
           }));
+          // Show quick results immediately to improve perceived load on mobile
+          setFunkoData(mapped);
+          setError(null);
         }
+      } catch (e) {
+        // ignore quick fetch failure; full fetch will be attempted below
+      }
+    })();
 
+    // Full fetch (cached) - when ready replace/merge the data
+    fetchAllItemsOnce()
+      .then((data) => {
+        if (!mounted) return;
         setFunkoData(data);
         setError(null);
-      } catch (err) {
-        setError(err.message || "An error occurred while fetching data.");
-      } finally {
+        try {
+          // persist the full dataset for faster subsequent loads
+          localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), items: data }));
+        } catch (e) {
+          // ignore storage errors (quota, private mode)
+        }
+      })
+      .catch((err: any) => {
+        if (!mounted) return;
+        console.warn("Failed to load full items:", err);
+        setError(err?.message || "An error occurred while fetching data.");
+      })
+      .finally(() => {
+        if (!mounted) return;
         setIsLoading(false);
-      }
+      });
+
+    return () => {
+      mounted = false;
     };
-    fetchData();
   }, []);
 
   // Fetch admin items from backend
@@ -438,14 +540,13 @@ const allItems = useMemo(() => {
         } else {
           console.warn("Failed to fetch admin items, continuing with GitHub data only");
         }
-      } catch (err) {
+      } catch (err: any) {
         console.warn("Error fetching admin items:", err);
       }
     };
     fetchAdminItems();
   }, []);
 
-  // Set loading to false once both data sources are attempted
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -462,14 +563,12 @@ const allItems = useMemo(() => {
     }
   }, [isDarkMode]);
 
-  // Initialize search query from URL
   useEffect(() => {
     if (queryParam) {
       setSearchQuery(queryParam);
     }
   }, [queryParam]);
 
-  // Close language dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -487,7 +586,6 @@ const allItems = useMemo(() => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showLanguageDropdown]);
 
-  // Effect for filtering and sorting the combined data
   useEffect(() => {
     if (allItems.length === 0) {
       setFilteredAndSortedResults([]);
@@ -495,14 +593,14 @@ const allItems = useMemo(() => {
     }
 
     const normalizedQuery = queryParam.toLowerCase().trim();
-    
+
     let currentProcessedResults = allItems.filter((item: any) => {
       const titleMatch = item.title?.toLowerCase().includes(normalizedQuery);
       const numberMatch = item.number?.toLowerCase().includes(normalizedQuery);
-      const seriesMatch = item.series?.some((series: string) => 
+      const seriesMatch = item.series?.some((series: string) =>
         series.toLowerCase().includes(normalizedQuery)
       );
-      
+
       return titleMatch || numberMatch || seriesMatch;
     });
 
@@ -544,42 +642,37 @@ const allItems = useMemo(() => {
 
     setFilteredAndSortedResults(currentProcessedResults);
     setCurrentPage(1);
-  }, [queryParam, categoryFilter, showExclusiveOnly, sortOption, allItems]);
+    setDisplayLimit(isMobile ? DEFAULT_MOBILE_LIMIT : DEFAULT_DESKTOP_LIMIT);
+  }, [queryParam, categoryFilter, showExclusiveOnly, sortOption, allItems, isMobile]);
 
-  // Save language preference
+  useEffect(() => {
+    setDisplayLimit(isMobile ? DEFAULT_MOBILE_LIMIT : DEFAULT_DESKTOP_LIMIT);
+  }, [isMobile]);
+
   useEffect(() => {
     localStorage.setItem("preferredLanguage", language);
   }, [language]);
 
-  
-  
-
-  // Auto-logout after 10 minutes of inactivity
   useEffect(() => {
     let timer: NodeJS.Timeout;
 
     const resetTimer = () => {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
-        // Perform logout
         localStorage.removeItem("user");
         localStorage.removeItem("token");
         navigate("/loginregistersite");
-      }, 10 * 60 * 1000); // 10 minutes = 600,000 ms
+      }, 10 * 60 * 1000);
     };
 
-    // Initial setup
     resetTimer();
 
-    // List of events to consider as "user activity"
     const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click", "wheel"];
 
-    // Attach event listeners
     events.forEach((event) => {
       window.addEventListener(event, resetTimer, true);
     });
 
-    // Cleanup on unmount
     return () => {
       clearTimeout(timer);
       events.forEach((event) => {
@@ -588,7 +681,7 @@ const allItems = useMemo(() => {
     };
   }, [navigate]);
 
-  const t = translations[language] || translations["EN"];
+  const t = (translations as any)[language] || translations["EN"];
 
   const selectLanguage = (lang: string) => {
     setLanguage(lang);
@@ -673,7 +766,6 @@ const allItems = useMemo(() => {
       : t.goToLoginSite || "Log In";
   }, [t]);
 
-  // Image modal handlers
   const openImageModal = (imageUrl: string, altText: string) => {
     setModalImageUrl(imageUrl);
     setModalImageAlt(altText);
@@ -684,7 +776,6 @@ const allItems = useMemo(() => {
     setModalImageAlt(null);
   };
 
-  // Request modal handlers
   const handleRequestSubmit = async (formData: { title: string; number: string; reason: string }) => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -721,7 +812,6 @@ const allItems = useMemo(() => {
     setSubmitSuccess(false);
   };
 
-  // Helper function to determine if item is from admin
   const isAdminItem = (itemId: string) => itemId.startsWith('admin-');
 
   return (
@@ -730,12 +820,11 @@ const allItems = useMemo(() => {
         isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-black"
       }`}
     >
-      {/* Header */}
-      <header className="py-4 px-4 sm:px-8 flex flex-wrap md:flex-nowrap justify-between items-center gap-4 relative">
-        <div className="flex-shrink-0">
+      <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
+        <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
           <Link to="/" className="no-underline">
             <h1
-              className={`text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
+              className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
                 isDarkMode ? "text-yellow-400" : "text-blue-600"
               }`}
             >
@@ -744,11 +833,10 @@ const allItems = useMemo(() => {
           </Link>
         </div>
 
-        {/* Search Form */}
         <form
           onSubmit={handleSearch}
-          className={`flex-grow max-w-lg w-full md:w-auto mx-auto flex rounded-lg overflow-hidden ${
-            isDarkMode ? "bg-gray-700" : "bg-gray-100"
+          className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden ${
+            isDarkMode ? "bg-gray-700" : "bg-white"
           }`}
         >
           <input
@@ -761,7 +849,7 @@ const allItems = useMemo(() => {
                 ? "bg-gray-700 text-white placeholder-gray-400"
                 : "bg-white text-black placeholder-gray-500"
             }`}
-            aria-label="Search input"
+            aria-label="Search for Funkos"
           />
           <button
             type="submit"
@@ -776,9 +864,7 @@ const allItems = useMemo(() => {
           </button>
         </form>
 
-        {/* Language, Theme, Login Controls */}
         <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0 min-w-0 items-center">
-          {/* Language Dropdown */}
           <div className="relative">
             <button
               ref={buttonRef}
@@ -786,7 +872,7 @@ const allItems = useMemo(() => {
               className={`p-2 rounded-full flex items-center gap-1 min-w-0 ${
                 isDarkMode
                   ? "bg-gray-700 hover:bg-gray-600"
-                  : "bg-gray-200 hover:bg-gray-300"
+                  : "bg-gray-200 hover:bg-neutral-600"
               }`}
               aria-label="Select language"
               aria-expanded={showLanguageDropdown}
@@ -801,15 +887,15 @@ const allItems = useMemo(() => {
             </button>
 
             {showLanguageDropdown && (
-                          <div
-                            ref={languageDropdownRef}
-                            className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-2 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${
-                              isDarkMode 
-                                ? 'border-yellow-500 bg-gray-800' 
-                                : 'border-blue-500 bg-white'
-                            }`}
-                            onClick={(e) => e.stopPropagation()}
-                          >
+              <div
+                ref={languageDropdownRef}
+                className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-2 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${
+                  isDarkMode
+                    ? 'border-yellow-500 bg-gray-800'
+                    : 'border-blue-500 bg-white'
+                }`}
+                onClick={(e) => e.stopPropagation()}
+              >
                 {Object.entries(languages).map(([code, { name, flag }]) => (
                   <button
                     key={code}
@@ -818,10 +904,10 @@ const allItems = useMemo(() => {
                       language === code
                         ? isDarkMode
                           ? "bg-yellow-500 text-black"
-                          : "bg-blue-600 text-white"
+                          : "bg-green-600 text-white"
                         : isDarkMode
                         ? "hover:bg-gray-600"
-                        : "hover:bg-gray-200"
+                        : "hover:bg-neutral-500"
                     }`}
                   >
                     <span className="w-5 h-5">{flag}</span>
@@ -832,29 +918,21 @@ const allItems = useMemo(() => {
             )}
           </div>
 
-          {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
             className={`p-2 rounded-full ${
               isDarkMode
                 ? "bg-gray-700 hover:bg-gray-600"
-                : "bg-gray-200 hover:bg-gray-300"
+                : "bg-gray-200 hover:bg-gray-600"
             }`}
-            aria-label="Toggle theme"
+            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
-            {isDarkMode ? (
-              <SunIcon className="w-6 h-6" />
-            ) : (
-              <MoonIcon className="w-6 h-6" />
-            )}
+            {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
-        </div>
 
-        {/* Login Button */}
-        <div>
           <Link
             to={loginButtonTo}
-            className={`px-4 py-2 rounded ${
+            className={`flex items-center gap-2 px-4 py-2 rounded ${
               isDarkMode
                 ? "bg-yellow-500 text-black hover:bg-yellow-600"
                 : "bg-blue-600 text-white hover:bg-blue-700"
@@ -865,12 +943,14 @@ const allItems = useMemo(() => {
         </div>
       </header>
 
-      {/* Filters */}
-      <div className="p-4 flex flex-wrap gap-4 justify-center">
+      <QuickLinks isDarkMode={isDarkMode} language={language as any} />
+
+  <div className="p-4 flex flex-col sm:flex-row flex-wrap gap-4 justify-center items-center">
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className={`px-3 py-2 rounded ${isDarkMode ? "bg-gray-500" : "bg-white"}`}
+          aria-label="Filter by series"
+          className={`w-full sm:w-64 md:w-80 lg:w-96 px-3 py-2 rounded text-sm min-w-0 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}
         >
           <option value="">{t.allSeries}</option>
           {availableSeries.map((series, index) => (
@@ -904,14 +984,13 @@ const allItems = useMemo(() => {
         </select>
       </div>
 
-      {/* Main Content */}
       <main className="flex-grow p-4 sm:p-8 flex flex-col items-center justify-center">
         {error ? (
           <p className="text-red-500">{error}</p>
         ) : isLoading ? (
           <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-yellow-500"></div>
         ) : (
-          <>
+          <div>
             {queryParam && (
               <h2 className="text-xl sm:text-2xl font-bold mb-4 text-center">
                 {t.searchingResults}
@@ -920,66 +999,82 @@ const allItems = useMemo(() => {
             )}
 
             {filteredAndSortedResults.length > 0 ? (
-              <>
-                <ul className="w-full max-w-4xl space-y-4">
-                  {currentItems.map((item: any) => (
-                    <li
-                      key={item.id}
-                      className={`p-4 sm:px-6 sm:py-4 rounded-lg flex flex-col sm:flex-row gap-4 ${
-                        isDarkMode ? "bg-gray-700" : "bg-white"
-                      } cursor-pointer hover:opacity-90 transition-opacity relative`}
-                      onClick={() => {
-                        const properId = item.id.includes('-') 
-                          ? item.id 
-                          : generateId(item.title, item.number || '');
-                        navigate(`/funko/${encodeURIComponent(properId)}`);
-                      }}
-                    >
-                      {/* Admin Item Badge */}
-                      {isAdminItem(item.id) && (
-                        <div className="absolute top-2 right-2 px-2 py-1 text-xs rounded bg-blue-500 text-white font-semibold">
-                          ADMIN
-                        </div>
-                      )}
-                      
-                      <div className="flex-shrink-0 mx-auto sm:mx-0">
-                        <img
-                          src={item.imageName || "/src/assets/placeholder.png"}
-                          alt={item.title}
-                          className="w-24 h-24 object-contain rounded-md cursor-zoom-in"
-                          onError={(e) => {
-                            e.currentTarget.src = "/src/assets/placeholder.png";
-                            e.currentTarget.onerror = null;
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openImageModal(item.imageName || "/src/assets/placeholder.png", item.title);
-                          }}
-                        />
-                      </div>
-                      <div className="flex-grow text-center sm:text-left">
-                        <h3 className="text-lg font-bold">{item.title}</h3>
-                        <p className="text-sm">
-                          {t.series}: {Array.isArray(item.series) ? item.series.join(", ") : item.series}
-                        </p>
-                        <p className="text-sm">
-                          {t.number}: {item.number}
-                        </p>
-                        {item.exclusive && (
-                          <span
-                            className={`text-xs px-2 py-1 rounded ${
-                              isDarkMode ? "bg-yellow-600" : "bg-green-600"
-                            }`}
-                          >
-                            {t.exclusive}
-                          </span>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+              <div>
+                <div className="w-full max-w-4xl">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-sm text-gray-500">
+                      Showing {Math.min(filteredAndSortedResults.length, displayLimit)} of {filteredAndSortedResults.length} results
+                    </div>
+                    {filteredAndSortedResults.length > displayLimit && (
+                      <button
+                        onClick={() => setDisplayLimit((d) => Math.min(filteredAndSortedResults.length, d + (isMobile ? DEFAULT_MOBILE_LIMIT : DEFAULT_DESKTOP_LIMIT)))}
+                        className={`px-3 py-1 rounded text-sm ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-black'} border`}
+                      >
+                        Load more
+                      </button>
+                    )}
+                  </div>
 
-                {/* Pagination */}
+                  <ul className="space-y-4">
+                    {currentItems.map((item: any) => (
+                      <li
+                        key={item.id}
+                        className={`p-3 sm:px-6 sm:py-4 rounded-lg flex flex-col sm:flex-row gap-4 ${
+                          isDarkMode ? "bg-gray-700" : "bg-white"
+                        } cursor-pointer hover:opacity-90 transition-opacity relative`}
+                        onClick={() => {
+                          const properId = item.id.includes('-')
+                            ? item.id
+                            : generateId(item.title, item.number || '');
+                          navigate(`/funko/${encodeURIComponent(properId)}`);
+                        }}
+                      >
+                        {isAdminItem(item.id) && (
+                          <div className="absolute top-2 right-2 px-2 py-1 text-xs rounded bg-blue-500 text-white font-semibold">
+                            ADMIN
+                          </div>
+                        )}
+
+                        <div className="flex-shrink-0 mx-auto sm:mx-0">
+                          <img
+                            src={item.imageName || "/src/assets/placeholder.png"}
+                            alt={item.title}
+                            loading="lazy"
+                            className="w-16 h-16 sm:w-24 sm:h-24 object-contain rounded-md cursor-zoom-in"
+                            onError={(e) => {
+                              e.currentTarget.src = "/src/assets/placeholder.png";
+                              e.currentTarget.onerror = null;
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openImageModal(item.imageName || "/src/assets/placeholder.png", item.title);
+                            }}
+                          />
+                        </div>
+
+                        <div className="flex-grow text-center sm:text-left">
+                          <h3 className="text-lg font-bold">{item.title}</h3>
+                          <p className="text-sm">
+                            {t.series}: {Array.isArray(item.series) ? item.series.join(", ") : item.series}
+                          </p>
+                          <p className="text-sm">
+                            {t.number}: {item.number}
+                          </p>
+                          {item.exclusive && (
+                            <span
+                              className={`text-xs px-2 py-1 rounded ${
+                                isDarkMode ? "bg-yellow-600" : "bg-green-600"
+                              }`}
+                            >
+                              {t.exclusive}
+                            </span>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
                 <div className="flex flex-col items-center gap-4 mt-8">
                   <div className="flex items-center gap-2">
                     <label htmlFor="itemsPerPage">{t.itemsPerPage}</label>
@@ -1057,7 +1152,7 @@ const allItems = useMemo(() => {
                     {t.page} {currentPage} {t.of} {totalPages}
                   </div>
                 </div>
-              </>
+              </div>
             ) : (
               <div className="text-center">
                 <p className="mb-4">{t.noResult}</p>
@@ -1071,11 +1166,10 @@ const allItems = useMemo(() => {
                 </button>
               </div>
             )}
-          </>
+          </div>
         )}
       </main>
 
-      {/* Footer */}
       <footer
         className={`text-center py-4 ${
           isDarkMode ? "bg-gray-900 text-gray-400" : "bg-white text-gray-700"
@@ -1084,7 +1178,6 @@ const allItems = useMemo(() => {
         {t.copyright}
       </footer>
 
-      {/* Modals */}
       {modalImageUrl && (
         <ImageModal
           imageUrl={modalImageUrl}
@@ -1107,4 +1200,4 @@ const allItems = useMemo(() => {
   );
 };
 
-export default SearchSite;
+export default SearchSite

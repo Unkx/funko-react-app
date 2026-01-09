@@ -1,0 +1,72 @@
+/* WorldMap.css */
+
+.responsive-world-map {
+  touch-action: pan-x pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Poprawki dla urządzeń dotykowych */
+@media (max-width: 768px) {
+  .responsive-world-map {
+    padding: 0.25rem;
+  }
+  
+  /* Zwiększenie obszaru dotykowego */
+  .rsm-geography {
+    pointer-events: auto !important;
+  }
+  
+  /* Lepsze przyciski kontroli */
+  .responsive-world-map button {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.75rem 1rem !important;
+  }
+}
+
+/* Zapobieganie podwójnemu tap zoom na iOS */
+@media (hover: none) and (pointer: coarse) {
+  .responsive-world-map * {
+    touch-action: manipulation;
+  }
+  
+  .rsm-zoomable-group {
+    touch-action: pan-x pan-y;
+  }
+}
+
+/* Animacje dla lepszego UX */
+.rsm-geography {
+  transition: fill 0.2s ease, stroke-width 0.2s ease;
+}
+
+/* Poprawki dla tooltipa */
+.react-tooltip {
+  font-size: 0.75rem !important;
+  padding: 0.5rem 0.75rem !important;
+  max-width: 200px !important;
+  text-align: center !important;
+  z-index: 9999 !important;
+}
+
+@media (min-width: 640px) {
+  .react-tooltip {
+    font-size: 0.875rem !important;
+    padding: 0.75rem 1rem !important;
+  }
+}
+
+/* Poprawki dla kontenera mapy */
+.responsive-world-map > div:last-child {
+  position: relative;
+}
+
+/* Zapobieganie scrollowaniu podczas przeciągania mapy */
+.responsive-world-map:active {
+  cursor: grab;
+}
+
+.responsive-world-map:active .rsm-geography {
+  cursor: grabbing;
+}

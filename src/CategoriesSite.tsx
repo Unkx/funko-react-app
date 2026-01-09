@@ -409,7 +409,7 @@ const CategoriesSite: React.FC = () => {
               />
             </button>
 
-                                {showLanguageDropdown && (
+                  {showLanguageDropdown && (
                           <div
                             ref={languageDropdownRef}
                             className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-2 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${

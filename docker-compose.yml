@@ -1,3 +1,11 @@
+## LAN access tips:
+# - Use your Linux host's LAN IP to access the app from other devices on the network.
+#   Example (Linux host IP used by this project): 192.168.0.162
+# - If you need an alternate IP for a Windows machine (example only), you can
+#   add or uncomment a hosts entry on the Windows PC or use the IP below as a
+#   reference. Do not commit real Windows host entries here; this is just a hint:
+#   # 192.168.0.50  windows-hostname.example
+
 services:
   postgres:
     image: postgres:17-alpine

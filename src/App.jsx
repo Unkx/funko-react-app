@@ -1,57 +1,58 @@
 // src/App.jsx
 import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import reactLogo from '/src/assets/react.svg';
-import viteLogo from '/vite.svg';
-import './App.css';
+import ReactDOM from "react-dom/client";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
 import WelcomeSite from "./WelcomeSite";
-import { NetworkProvider } from './NetworkContext';
 import SearchSite from "./SearchSite";
+import FunkoDetails from "./FunkoDetails";
+import LoginRegisterSite from "./LoginRegisterSite";
+import RegisterSite from "./RegisterSite";
+import DashboardSite from "./DashboardSite";
+import AdminSite from "./Admin";
+import AdminInvites from "./AdminInvites";
+import NotFound from './NotFound';
+import AboutUsSite from "./AboutUsSite";
+import CollectionPage from "./CollectionPage";
+import WishlistPage from "./WishlistPage";
+import Requests from "./Requests";
+import FeaturesSite from "./Features";
+import CategoriesSite from './CategoriesSite';
+import MostVisitedSite from './MostVisitedSite';
+
+import { NetworkProvider } from './NetworkContext';
+import { LanguageProvider } from "./LanguageContext";
 
 function App() {
-  const [count, setCount] = React.useState(0);
-  
   return (
-    <BrowserRouter>
-      {/* Mobile-responsive wrapper */}
-      <div className="w-full max-w-full overflow-x-hidden min-h-screen">
-        {/* Header */}
-        <div className="flex justify-center gap-4 p-4">
-          <a href="https://vite.dev" target="_blank" rel="noopener noreferrer">
-            <img src={viteLogo} className="logo w-16 h-16" alt="Vite logo" />
-          </a>
-          <a href="https://react.dev" target="_blank" rel="noopener noreferrer">
-            <img src={reactLogo} className="logo react w-16 h-16" alt="React logo" />
-          </a>
-        </div>
-        
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl text-center px-4">Vite + React</h1>
-        
-        <div className="card p-4 max-w-full">
-          <button 
-            onClick={() => setCount((count) => count + 1)}
-            className="px-4 py-2 bg-blue-600 text-white rounded"
-          >
-            count is {count}
-          </button>
-          <p className="mt-4">
-            Edit <code>src/App.jsx</code> and save to test HMR
-          </p>
-        </div>
-        
-        <p className="read-the-docs text-center px-4">
-          Click on the Vite and React logos to learn more
-        </p>
-        
-        {/* Define routes */}
-        <Routes>
-          <Route path="/" element={<Layout />} />
-          <Route path="/welcome" element={<WelcomeSite />} />
-          <Route path="/searchsite" element={<SearchSite />} />
-          <Route path="/loginregistersite" element={<LoginSite/>} />
-        </Routes>
-      </div>
-    </BrowserRouter>
+    <React.StrictMode>
+      <NetworkProvider>
+        <LanguageProvider>
+          <Router>
+            <Routes>
+              <Route path="/" element={<WelcomeSite />} />
+              <Route path="/SearchSite" element={<SearchSite />} />
+              <Route path="/funko/:id" element={<FunkoDetails />} />
+              <Route path="/item/:id" element={<FunkoDetails />} />
+              <Route path="/loginregistersite" element={<LoginRegisterSite />} />
+              <Route path="/RegisterSite" element={<RegisterSite />} />
+              <Route path="/DashboardSite" element={<DashboardSite />} />
+              <Route path="/AdminSite" element={<AdminSite />} />
+              <Route path="/admin-management" element={<AdminInvites />} />
+              <Route path="/requests" element={<Requests />} />
+              <Route path="/categories" element={<CategoriesSite />} />
+              <Route path="/mostVisited" element={<MostVisitedSite />} />
+              <Route path="/about" element={<AboutUsSite />} />
+              <Route path="/features" element={<FeaturesSite />} />
+              <Route path="/collection" element={<CollectionPage />} />
+              <Route path="/wishlist" element={<WishlistPage />} />
+              <Route path="/404" element={<NotFound />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Router>
+        </LanguageProvider>
+      </NetworkProvider>
+    </React.StrictMode>
   );
 }
 

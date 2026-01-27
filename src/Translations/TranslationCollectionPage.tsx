@@ -1,7 +1,7 @@
 export const translations = {
   EN: {
     // General
-    searchPlaceholder: "Search for Funkos...",
+    searchPlaceholder: "Search for Figurines...",
     copyright: "© 2024 Pop&Go! All rights reserved.",
     
     // Navigation
@@ -64,7 +64,7 @@ export const translations = {
 
   PL: {
     // General
-    searchPlaceholder: "Wyszukaj Funko Popy...",
+    searchPlaceholder: "Szukaj figurek...",
     copyright: "© 2024 Pop&Go! Wszelkie prawa zastrzeżone.",
     
     // Navigation
@@ -127,7 +127,7 @@ export const translations = {
 
   RU: {
     // General
-    searchPlaceholder: "Поиск Funko Pop...",
+    searchPlaceholder: "Поиск фигурок...",
     copyright: "© 2024 Pop&Go! Все права защищены.",
     
     // Navigation
@@ -254,7 +254,7 @@ export const translations = {
 
   DE: {
     // General
-    searchPlaceholder: "Nach Funko Pops suchen...",
+    searchPlaceholder: "Figuren suchen...",
     copyright: "© 2024 Pop&Go! Alle Rechte vorbehalten.",
     
     // Navigation
@@ -317,7 +317,7 @@ export const translations = {
 
   ES: {
     // General
-    searchPlaceholder: "Buscar Funko Pops...",
+    searchPlaceholder: "Buscar figuras...",
     copyright: "© 2024 Pop&Go! Todos los derechos reservados.",
     
     // Navigation

@@ -158,7 +158,7 @@ const CollectionPage: React.FC = () => {
       }
 
       try {
-        const response = await fetch("http://192.168.0.162:5000/api/collection", {
+        const response = await fetch("http://localhost:5000/api/collection", {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -267,7 +267,7 @@ const CollectionPage: React.FC = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://192.168.0.162:5000/api/collection/${editingItem}`, {
+      const response = await fetch(`http://localhost:5000/api/collection/${editingItem}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -296,7 +296,7 @@ const CollectionPage: React.FC = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://192.168.0.162:5000/api/collection/${itemId}`, {
+      const response = await fetch(`http://localhost:5000/api/collection/${itemId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`

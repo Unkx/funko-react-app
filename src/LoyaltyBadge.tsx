@@ -40,7 +40,7 @@ const LoyaltyBadge: React.FC<Props> = ({ userId, size = "medium", showLevel = tr
     setError(null);
 
     try {
-      const response = await fetch(`http://192.168.0.162:5000/api/users/${userId}`, {
+      const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

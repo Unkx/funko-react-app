@@ -1,27 +1,35 @@
-import { defineConfig } from "cypress";
+import { defineConfig } from 'cypress';
 
 export default defineConfig({
   e2e: {
-    // ensure the support file is loaded
-    supportFile: 'cypress/support/e2e.ts',
-    specPattern: 'cypress/e2e/**/*.cy.{js,ts,jsx,tsx}',
-    baseUrl: 'http://localhost:5173',
-    setupNodeEvents(on, config) {
-      // ...existing node event handlers (if any)...
-      return config;
-    },
-    viewportWidth: 1280,
-    viewportHeight: 720,
-    video: false,
-    screenshotOnRunFailure: true,
+    // Ustaw baseUrl na twój lokalny serwer React
+    baseUrl: 'http://localhost:5173', // aktualny port Vite
+    
+    // Zwiększ timeouty
     defaultCommandTimeout: 10000,
     requestTimeout: 10000,
-    responseTimeout: 10000,
-  },
-  component: {
-    devServer: {
-      framework: "react",
-      bundler: "vite",
+    responseTimeout: 30000,
+    
+    // Włącz video i screenshots dla debugowania
+    video: true,
+    screenshotOnRunFailure: true,
+    
+    // Support file
+    supportFile: 'cypress/support/e2e.ts',
+    
+    // Spec pattern
+    specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',
+    
+    setupNodeEvents(on, config) {
+      // Możesz dodać event listeners tutaj
+      on('task', {
+        log(message) {
+          console.log(message);
+          return null;
+        },
+      });
+      
+      return config;
     },
   },
 });

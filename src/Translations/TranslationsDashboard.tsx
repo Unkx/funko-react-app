@@ -2,7 +2,7 @@
 export const translations = {
   EN: {
     // Header & Navigation
-    searchPlaceholder: "Search for Funkos...",
+    searchPlaceholder: "Search for Figurines...",
     logout: "Logout",
     dashboard: "Dashboard",
     collection: "Collection",
@@ -84,7 +84,7 @@ export const translations = {
   },
   PL: {
     // Header & Navigation
-    searchPlaceholder: "Wyszukaj Funko Pop...",
+    searchPlaceholder: "WySzukaj figurek...",
     logout: "Wyloguj",
     dashboard: "Pulpit",
     collection: "Kolekcja",
@@ -166,7 +166,7 @@ export const translations = {
   },
   RU: {
     // Header & Navigation
-    searchPlaceholder: "Поиск Funko Pop...",
+    searchPlaceholder: "Поиск фигурок...",
     logout: "Выйти",
     dashboard: "Панель",
     collection: "Коллекция",
@@ -248,7 +248,7 @@ export const translations = {
   },
   FR: {
     // Header & Navigation
-    searchPlaceholder: "Rechercher des Funko Pop...",
+    searchPlaceholder: "Rechercher des figurines...",
     logout: "Déconnexion",
     dashboard: "Tableau de bord",
     collection: "Collection",
@@ -330,7 +330,7 @@ export const translations = {
   },
   DE: {
     // Header & Navigation
-    searchPlaceholder: "Suche nach Funko Pops...",
+    searchPlaceholder: "Figuren suchen...",
     logout: "Abmelden",
     dashboard: "Dashboard",
     collection: "Sammlung",
@@ -411,7 +411,7 @@ export const translations = {
     copyright: "© 2024 Pop&Go! Alle Rechte vorbehalten."
   },ES: {
     // Header & Navigation
-    searchPlaceholder: "Buscar Funko Pops...",
+    searchPlaceholder: "Buscar figuras...",
     logout: "Cerrar sesión",
     dashboard: "Panel",
     collection: "Colección",

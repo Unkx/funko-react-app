@@ -2,7 +2,7 @@
 export const translations: { [key: string]: { [key: string]: string } } = {
   EN: {
     // Existing translations
-    searchPlaceholder: "Search for Funkos...",
+    searchPlaceholder: "Search for Figurines...",
     goToDashboard: "Dashboard",
     copyright: "© 2024 Pop&Go! All rights reserved.",
     switchToLight: "Switch to light mode",
@@ -31,7 +31,7 @@ export const translations: { [key: string]: { [key: string]: string } } = {
     gettingViews: "👀 Getting views"
   },
   US: {
-    searchPlaceholder: "Search for Funkos...",
+    searchPlaceholder: "Search for Figurines...",
     goToDashboard: "Dashboard", 
     copyright: "© 2024 Pop&Go! All rights reserved.",
     switchToLight: "Switch to light mode",
@@ -59,7 +59,7 @@ export const translations: { [key: string]: { [key: string]: string } } = {
     gettingViews: "👀 Getting views"
   },
   PL: {
-    searchPlaceholder: "Szukaj Funko Pop...",
+    searchPlaceholder: "Szukaj figurek...",
     goToDashboard: "Panel",
     copyright: "© 2024 Pop&Go! Wszelkie prawa zastrzeżone.",
     switchToLight: "Przełącz na tryb jasny",
@@ -87,7 +87,7 @@ export const translations: { [key: string]: { [key: string]: string } } = {
     gettingViews: "👀 Zyskujące popularność"
   },
   RU: {
-    searchPlaceholder: "Поиск Funko Pop...",
+    searchPlaceholder: "Поиск фигурок...",
     goToDashboard: "Панель",
     copyright: "© 2024 Pop&Go! Все права защищены.",
     switchToLight: "Переключить на светлый режим",
@@ -143,7 +143,7 @@ export const translations: { [key: string]: { [key: string]: string } } = {
     gettingViews: "👀 En croissance"
   },
   DE: {
-    searchPlaceholder: "Nach Funko Pops suchen...",
+    searchPlaceholder: "Figuren suchen...",
     goToDashboard: "Dashboard",
     copyright: "© 2024 Pop&Go! Alle Rechte vorbehalten.",
     switchToLight: "Zum Hellmodus wechseln",
@@ -171,7 +171,7 @@ export const translations: { [key: string]: { [key: string]: string } } = {
     gettingViews: "👀 Im Aufwind"
   },
   ES: {
-    searchPlaceholder: "Buscar Funko Pops...",
+    searchPlaceholder: "Buscar figuras...",
     goToDashboard: "Panel de control",
     copyright: "© 2024 Pop&Go! Todos los derechos reservados.",
     switchToLight: "Cambiar a modo claro",
@@ -199,7 +199,7 @@ export const translations: { [key: string]: { [key: string]: string } } = {
     gettingViews: "👀 En crecimiento"
   },
   CA: {
-    searchPlaceholder: "Search for Funkos...",
+    searchPlaceholder: "Search for Figurines...",
     goToDashboard: "Dashboard",
     copyright: "© 2024 Pop&Go! All rights reserved.",
     switchToLight: "Switch to light mode",

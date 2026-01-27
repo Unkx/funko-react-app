@@ -443,7 +443,7 @@
         
 //         if (token) {
 //           try {
-//             const backendResponse = await fetch("http://192.168.0.162:5000/api/items?limit=30", {
+//             const backendResponse = await fetch("http://localhost:5000/api/items?limit=30", {
 //               headers: {
 //                 "Authorization": `Bearer ${token}`
 //               }
@@ -1076,7 +1076,6 @@
 
 // export default WelcomeSite ;
 
-
 import React, { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { translations } from "./Translations/TranslationsWelcomeSite";
@@ -1099,6 +1098,8 @@ import GermanyFlag from "/src/assets/flags/germany.svg?react";
 import SpainFlag from "/src/assets/flags/spain.svg?react";
 import CanadaFlag from "/src/assets/flags/canada.svg?react";
 
+
+import AuthButton from "./AuthButton";
 // (lazy components declared above)
 
 interface FunkoItem {
@@ -1188,156 +1189,473 @@ const WelcomeSite: React.FC = () => {
   const [inputValue, setInputValue] = useState("");
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // 💬 Smart bot response logic (enhanced)
-  const getBotResponse = (userInput: string): { text: string; buttons?: Array<{ label: string; action: () => void }> } => {
-    const lower = userInput.toLowerCase().trim();
-
-    // Greetings
-    if (/^(hi|hello|hey|howdy)/i.test(lower)) {
-      return {
-        text: t.chatGreeting || "Hi there! 😊 I'm PopBot! Ask me to search, browse categories, or find popular items!",
-        buttons: [
-          { label: t.buttonDashboard || "Take me to the dashboard!", action: () => navigate("/dashboardSite") },
-          { label: t.buttonLogin || "Take me to the login page", action: () => navigate("/loginRegisterSite") },
-          { label: t.buttonSearch || "Search for something", action: () => {
-            setIsChatOpen(false);
-            navigate("/searchsite");
-          } }
-        ]
-      };
-    }
-
-    // Help
-    if (/(help|what can you do)/i.test(lower)) {
-      return {
-        text: t.chatHelp || "I can help you:\n• Search for any Funko Pop\n• Go to Dashboard or Login\n• Browse Categories\n• Find Popular Items",
-        buttons: [
-          { label: t.buttonDashboard || "Go to Dashboard", action: () => navigate("/dashboardSite") },
-          { label: t.buttonLogin || "Login/Register", action: () => navigate("/loginRegisterSite") },
-          { label: t.buttonCategories || "Browse Categories", action: () => navigate("/categories") },
-          { label: t.buttonPopular || "See Most Visited", action: () => navigate("/mostVisited") }
-        ]
-      };
-    }
-
-    // Search intent
-    const searchMatch = lower.match(/(?:search|find|show me|look for)\s+(?:for\s+)?(.+)/i);
-    if (searchMatch) {
-      const query = searchMatch[1].trim();
-      if (query) {
-        navigate(`/searchsite?q=${encodeURIComponent(query)}`);
-        setIsChatOpen(false);
-        return {
-          text: t.chatSearching?.replace("{query}", query) || `Searching for "${query}"...`,
-          buttons: []
-        };
-      }
-    }
-
+  // 💬 Smart bot response logic (ENHANCED with multilingual support)
+// 💬 Smart bot response logic (ENHANCED with multilingual support)
+const getBotResponse = (userInput: string): { text: string; buttons?: Array<{ label: string; action: () => void }> } => {
+  const lower = userInput.toLowerCase().trim();
+  const currentT = translations[language] || translations["EN"];
+  
+  // === MULTILINGUAL QUICK ACTIONS ===
+  const quickActions = {
+    // Search Batman
+    'search batman': { action: 'search', query: 'batman' },
+    'szukaj batmana': { action: 'search', query: 'batman' },
+    'найти batman': { action: 'search', query: 'batman' },
+    'chercher batman': { action: 'search', query: 'batman' },
+    'suche batman': { action: 'search', query: 'batman' },
+    'buscar batman': { action: 'search', query: 'batman' },
+    
+    // Show Categories
+    'show categories': { action: 'categories' },
+    'pokaż kategorie': { action: 'categories' },
+    'показать категории': { action: 'categories' },
+    'montrer catégories': { action: 'categories' },
+    'kategorien zeigen': { action: 'categories' },
+    'mostrar categorías': { action: 'categories' },
+    
+    // Popular
+    'popular': { action: 'popular' },
+    'popularne': { action: 'popular' },
+    'популярные': { action: 'popular' },
+    'populaire': { action: 'popular' },
+    'beliebt': { action: 'popular' },
+    
     // Dashboard
-    if (/(dashboard|admin|profile|account)/i.test(lower)) {
-      navigate("/dashboardSite");
-      setIsChatOpen(false);
-      return {
-        text: t.chatGoingToDashboard || "Taking you to your dashboard!",
-        buttons: []
-      };
-    }
+    'dashboard': { action: 'dashboard' },
+    'panel': { action: 'dashboard' },
+    'панель': { action: 'dashboard' },
+    'tableau de bord': { action: 'dashboard' },
+    
+    // Login
+    'login': { action: 'login' },
+    'zaloguj': { action: 'login' },
+    'войти': { action: 'login' },
+    'connexion': { action: 'login' },
+    'anmelden': { action: 'login' },
+    'iniciar sesión': { action: 'login' }
+  };
 
-    // Login/Register
-    if (/(login|register|sign in|sign up)/i.test(lower)) {
-      navigate("/loginRegisterSite");
-      setIsChatOpen(false);
-      return {
-        text: t.chatGoingToLogin || "Taking you to the login page!",
-        buttons: []
-      };
-    }
-
-    // Categories
-    if (/(category|browse|list|show.*categories)/i.test(lower)) {
-      navigate("/categories");
-      setIsChatOpen(false);
-      return {
-        text: t.chatGoingToCategories || "Taking you to categories!",
-        buttons: []
-      };
-    }
-
-    // Most visited / popular
-    if (/(popular|most visited|trending|hot)/i.test(lower)) {
-      navigate("/mostVisited");
-      setIsChatOpen(false);
-      return {
-        text: t.chatGoingToPopular || "Showing the most popular Funko Pops!",
-        buttons: []
-      };
-    }
-
-    // Exclusive items
-    if (/(exclusive|limited|special)/i.test(lower)) {
-      const exclusives = funkoData.filter(item => item.exclusive);
-      if (exclusives.length > 0) {
-        const sample = exclusives.slice(0, 2).map(i => i.title).join(", ");
-        return {
-          text: t.chatExclusivesFound?.replace("{count}", exclusives.length.toString()).replace("{examples}", sample) ||
-              `I found ${exclusives.length} exclusive Pops! Examples: ${sample}. View them in search.`,
-          buttons: [
-            { label: t.buttonSearchExclusives || "Show All Exclusives", action: () => {
-              setIsChatOpen(false);
-              navigate("/searchsite?q=exclusive");
-            } }
-          ]
-        };
+  // Check if input matches any quick action
+  if (quickActions[lower]) {
+    const action = quickActions[lower];
+    
+    // Response texts for each action in all languages
+    const responseTexts = {
+      search: {
+        EN: `Searching for "${action.query}"...`,
+        PL: `Szukam "${action.query}"...`,
+        RU: `Ищу "${action.query}"...`,
+        FR: `Recherche de "${action.query}"...`,
+        DE: `Suche nach "${action.query}"...`,
+        ES: `Buscando "${action.query}"...`
+      },
+      categories: {
+        EN: "Going to categories...",
+        PL: "Przechodzę do kategorii...",
+        RU: "Перехожу к категориям...",
+        FR: "Aller aux catégories...",
+        DE: "Gehe zu Kategorien...",
+        ES: "Yendo a categorías..."
+      },
+      popular: {
+        EN: "Showing popular items...",
+        PL: "Pokazuję popularne...",
+        RU: "Показываю популярные...",
+        FR: "Afficher les articles populaires...",
+        DE: "Zeige beliebte Artikel...",
+        ES: "Mostrando artículos populares..."
+      },
+      dashboard: {
+        EN: "Going to dashboard...",
+        PL: "Przechodzę do panelu...",
+        RU: "Перехожу на панель...",
+        FR: "Aller au tableau de bord...",
+        DE: "Gehe zum Dashboard...",
+        ES: "Yendo al panel..."
+      },
+      login: {
+        EN: "Going to login page...",
+        PL: "Przechodzę do logowania...",
+        RU: "Перехожу на страницу входа...",
+        FR: "Aller à la page de connexion...",
+        DE: "Gehe zur Login-Seite...",
+        ES: "Yendo a la página de inicio de sesión..."
       }
-      return {
-        text: t.chatNoExclusives || "No exclusive items found right now.",
-        buttons: []
-      };
-    }
-
-    // Item-specific search (e.g., "Open the rapunzel funko")
-    const itemNameMatch = lower.match(/(?:open|show me|find|search for)\s+(.+?)(?:\s+funko|\s+pop|$)/i);
-    if (itemNameMatch) {
-      const itemName = itemNameMatch[1].trim();
-      if (itemName) {
-        // Try to find exact match first
-        const exactMatch = funkoData.find(item =>
-          item.title.toLowerCase().includes(itemName.toLowerCase())
-        );
-        if (exactMatch) {
-          navigate(`/funko/${exactMatch.id}`);
-          setIsChatOpen(false);
-          return {
-            text: t.chatFoundItem?.replace("{item}", itemName) || `Found "${itemName}"! Taking you there...`,
-            buttons: []
-          };
-        }
-
-        // Fallback: search for it
-        navigate(`/searchsite?q=${encodeURIComponent(itemName)}`);
+    };
+    
+    // Perform the action
+    switch(action.action) {
+      case 'search':
+        navigate(`/searchsite?q=${encodeURIComponent(action.query)}`);
         setIsChatOpen(false);
         return {
-          text: t.chatSearching?.replace("{query}", itemName) || `Searching for "${itemName}"...`,
+          text: responseTexts.search[language as keyof typeof responseTexts.search] || responseTexts.search.EN,
           buttons: []
         };
+        
+      case 'categories':
+        navigate("/categories");
+        setIsChatOpen(false);
+        return {
+          text: responseTexts.categories[language as keyof typeof responseTexts.categories] || responseTexts.categories.EN,
+          buttons: []
+        };
+        
+      case 'popular':
+        navigate("/mostVisited");
+        setIsChatOpen(false);
+        return {
+          text: responseTexts.popular[language as keyof typeof responseTexts.popular] || responseTexts.popular.EN,
+          buttons: []
+        };
+        
+      case 'dashboard':
+        navigate("/dashboardSite");
+        setIsChatOpen(false);
+        return {
+          text: responseTexts.dashboard[language as keyof typeof responseTexts.dashboard] || responseTexts.dashboard.EN,
+          buttons: []
+        };
+        
+      case 'login':
+        navigate("/loginRegisterSite");
+        setIsChatOpen(false);
+        return {
+          text: responseTexts.login[language as keyof typeof responseTexts.login] || responseTexts.login.EN,
+          buttons: []
+        };
+    }
+  }
+  
+  // ========== HELPER FUNCTIONS ==========
+  
+  // Helper function to find search queries in multiple languages
+  const extractSearchQuery = (text: string): string | null => {
+    // English patterns
+    const enPatterns = [
+      /(?:search|find|show me|look for|find me|i want to see)\s+(?:for\s+)?(?:a\s+)?(?:the\s+)?(.+)/i,
+      /(?:i'm looking for|i need|i want)\s+(?:a\s+)?(?:the\s+)?(.+)/i,
+      /(.+?)(?:\s+(?:funko|pop|figure|toy))$/i
+    ];
+    
+    // Polish patterns
+    const plPatterns = [
+      /(?:szukaj|znajdź|pokaż|znajdź mi|chcę zobaczyć)\s+(?:dla\s+)?(?:jakiegoś\s+)?(.+)/i,
+      /(?:szukam|potrzebuję|chcę)\s+(?:jakiegoś\s+)?(.+)/i,
+      /(.+?)(?:\s+(?:funkopop|figurkę|figurka))$/i
+    ];
+    
+    // Russian patterns
+    const ruPatterns = [
+      /(?:найти|поиск|покажи|ищи|ищу)\s+(?:для\s+)?(.+)/i,
+      /(?:я ищу|мне нужно|хочу)\s+(?:какой-то\s+)?(.+)/i
+    ];
+    
+    // French patterns
+    const frPatterns = [
+      /(?:chercher|trouver|montre|recherche)\s+(?:pour\s+)?(?:un\s+)?(?:le\s+)?(.+)/i,
+      /(?:je cherche|j'ai besoin|je veux)\s+(?:un\s+)?(.+)/i
+    ];
+    
+    // German patterns
+    const dePatterns = [
+      /(?:suche|finde|zeig mir|suchen)\s+(?:für\s+)?(?:ein\s+)?(?:das\s+)?(.+)/i,
+      /(?:ich suche|ich brauche|ich möchte)\s+(?:ein\s+)?(.+)/i
+    ];
+    
+    // Spanish patterns
+    const esPatterns = [
+      /(?:buscar|encontrar|muéstrame|buscando)\s+(?:para\s+)?(?:un\s+)?(?:el\s+)?(.+)/i,
+      /(?:estoy buscando|necesito|quiero)\s+(?:un\s+)?(.+)/i
+    ];
+    
+    // Combine patterns based on current language
+    let patterns = enPatterns;
+    switch(language) {
+      case 'PL': patterns = plPatterns; break;
+      case 'RU': patterns = ruPatterns; break;
+      case 'FR': patterns = frPatterns; break;
+      case 'DE': patterns = dePatterns; break;
+      case 'ES': patterns = esPatterns; break;
+      default: patterns = enPatterns;
+    }
+    
+    // Try all patterns
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        return match[1].trim();
       }
     }
+    
+    // If no pattern matches, check if it's just a single word/noun (like "batman")
+    const words = text.split(/\s+/);
+    if (words.length === 1 || words.length === 2) {
+      // Check if it's not a command word
+      const commandWords = [
+        'hi', 'hello', 'hey', 'help', 'dashboard', 'login', 'register',
+        'categories', 'popular', 'exclusive', 'search', 'find',
+        'cześć', 'witaj', 'pomoc', 'kategorie', 'popularne',
+        'привет', 'помощь', 'категории',
+        'bonjour', 'aide', 'catégories',
+        'hallo', 'hilfe', 'kategorien',
+        'hola', 'ayuda', 'categorías'
+      ];
+      
+      if (!commandWords.includes(words[0].toLowerCase())) {
+        return text; // Assume it's a search query
+      }
+    }
+    
+    return null;
+  };
 
-    // Default fallback
+  // Helper to check for greetings in multiple languages
+  const isGreeting = (text: string): boolean => {
+    const greetings = {
+      EN: ['hi', 'hello', 'hey', 'howdy', 'greetings', 'good morning', 'good afternoon', 'good evening'],
+      PL: ['cześć', 'witaj', 'hej', 'dzień dobry', 'siema'],
+      RU: ['привет', 'здравствуйте', 'добрый день', 'хай'],
+      FR: ['bonjour', 'salut', 'coucou', 'bonsoir'],
+      DE: ['hallo', 'guten tag', 'servus', 'moin'],
+      ES: ['hola', 'buenos días', 'buenas tardes', 'qué tal']
+    };
+    
+    const langGreetings = greetings[language as keyof typeof greetings] || greetings.EN;
+    return langGreetings.some(greet => text.toLowerCase().includes(greet));
+  };
+
+  // Helper to check for help requests
+  const isHelpRequest = (text: string): boolean => {
+    const helpPhrases = {
+      EN: ['help', 'what can you do', 'what do you do', 'assist', 'support'],
+      PL: ['pomoc', 'pomóż', 'co potrafisz', 'co umiesz'],
+      RU: ['помощь', 'помоги', 'что ты умеешь'],
+      FR: ['aide', 'aider', 'que peux-tu faire'],
+      DE: ['hilfe', 'hilf', 'was kannst du'],
+      ES: ['ayuda', 'ayudar', 'qué puedes hacer']
+    };
+    
+    const langHelp = helpPhrases[language as keyof typeof helpPhrases] || helpPhrases.EN;
+    return langHelp.some(phrase => text.toLowerCase().includes(phrase));
+  };
+
+  // Helper to check for dashboard requests
+  const isDashboardRequest = (text: string): boolean => {
+    const dashboardPhrases = {
+      EN: ['dashboard', 'profile', 'account', 'my page', 'admin'],
+      PL: ['panel', 'profil', 'konto', 'moja strona'],
+      RU: ['панель', 'профиль', 'аккаунт', 'админ'],
+      FR: ['tableau de bord', 'profil', 'compte'],
+      DE: ['dashboard', 'profil', 'konto'],
+      ES: ['panel', 'perfil', 'cuenta']
+    };
+    
+    const langDashboard = dashboardPhrases[language as keyof typeof dashboardPhrases] || dashboardPhrases.EN;
+    return langDashboard.some(phrase => text.toLowerCase().includes(phrase));
+  };
+
+  // Helper to check for login requests
+  const isLoginRequest = (text: string): boolean => {
+    const loginPhrases = {
+      EN: ['login', 'log in', 'sign in', 'register', 'sign up', 'create account'],
+      PL: ['zaloguj', 'logowanie', 'rejestracja', 'załóż konto'],
+      RU: ['войти', 'логин', 'регистрация', 'зарегистрироваться'],
+      FR: ['connexion', 'se connecter', 'inscription'],
+      DE: ['anmelden', 'login', 'registrieren'],
+      ES: ['iniciar sesión', 'registrarse', 'crear cuenta']
+    };
+    
+    const langLogin = loginPhrases[language as keyof typeof loginPhrases] || loginPhrases.EN;
+    return langLogin.some(phrase => text.toLowerCase().includes(phrase));
+  };
+
+  // Helper to check for categories requests
+  const isCategoriesRequest = (text: string): boolean => {
+    const categoriesPhrases = {
+      EN: ['categories', 'category', 'browse', 'list', 'show categories', 'types'],
+      PL: ['kategorie', 'kategoria', 'przeglądaj', 'lista', 'rodzaje'],
+      RU: ['категории', 'категория', 'просмотреть', 'список'],
+      FR: ['catégories', 'catégorie', 'parcourir', 'liste'],
+      DE: ['kategorien', 'kategorie', 'durchsuchen', 'liste'],
+      ES: ['categorías', 'categoría', 'explorar', 'lista']
+    };
+    
+    const langCategories = categoriesPhrases[language as keyof typeof categoriesPhrases] || categoriesPhrases.EN;
+    return langCategories.some(phrase => text.toLowerCase().includes(phrase));
+  };
+
+  // Helper to check for popular requests
+  const isPopularRequest = (text: string): boolean => {
+    const popularPhrases = {
+      EN: ['popular', 'most visited', 'trending', 'hot', 'top', 'best'],
+      PL: ['popularne', 'najczęściej odwiedzane', 'trendy', 'top', 'najlepsze'],
+      RU: ['популярные', 'трендовые', 'топ', 'лучшие'],
+      FR: ['populaire', 'tendance', 'meilleur', 'top'],
+      DE: ['beliebt', 'trend', 'top', 'besten'],
+      ES: ['popular', 'tendencia', 'top', 'mejor']
+    };
+    
+    const langPopular = popularPhrases[language as keyof typeof popularPhrases] || popularPhrases.EN;
+    return langPopular.some(phrase => text.toLowerCase().includes(phrase));
+  };
+
+  // Helper to check for exclusive requests
+  const isExclusiveRequest = (text: string): boolean => {
+    const exclusivePhrases = {
+      EN: ['exclusive', 'limited', 'special edition', 'rare', 'collector'],
+      PL: ['ekskluzywne', 'limitowane', 'specjalne', 'kolekcjonerskie'],
+      RU: ['эксклюзивные', 'ограниченные', 'коллекционные'],
+      FR: ['exclusif', 'limitée', 'édition spéciale'],
+      DE: ['exklusiv', 'limitiert', 'sonderausgabe'],
+      ES: ['exclusivo', 'limitado', 'edición especial']
+    };
+    
+    const langExclusive = exclusivePhrases[language as keyof typeof exclusivePhrases] || exclusivePhrases.EN;
+    return langExclusive.some(phrase => text.toLowerCase().includes(phrase));
+  };
+
+  // ========== MAIN LOGIC ==========
+  
+  // Greetings in multiple languages
+  if (isGreeting(lower)) {
     return {
-      text: t.chatFallback || "I can help you search, browse categories, or find popular Funko Pops! Try saying \"Search for Batman\" or \"Take me to dashboard\".",
+      text: currentT.chatGreeting || "Hi there! 😊 I'm PopBot! Ask me to search, browse categories, or find popular items!",
       buttons: [
-        { label: t.buttonDashboard || "Take me to dashboard", action: () => navigate("/dashboardSite") },
-        { label: t.buttonLogin || "Login/Register", action: () => navigate("/loginRegisterSite") },
-        { label: t.buttonSearch || "Search for something", action: () => {
+        { label: currentT.buttonDashboard || "Take me to the dashboard!", action: () => navigate("/dashboardSite") },
+        { label: currentT.buttonLogin || "Take me to the login page", action: () => navigate("/loginRegisterSite") },
+        { label: currentT.buttonSearch || "Search for something", action: () => {
           setIsChatOpen(false);
           navigate("/searchsite");
         } }
       ]
     };
+  }
+
+  // Help in multiple languages
+  if (isHelpRequest(lower)) {
+    return {
+      text: currentT.chatHelp || "I can help you:\n• Search for any Funko Pop\n• Go to Dashboard or Login\n• Browse Categories\n• Find Popular Items",
+      buttons: [
+        { label: currentT.buttonDashboard || "Go to Dashboard", action: () => navigate("/dashboardSite") },
+        { label: currentT.buttonLogin || "Login/Register", action: () => navigate("/loginRegisterSite") },
+        { label: currentT.buttonCategories || "Browse Categories", action: () => navigate("/categories") },
+        { label: currentT.buttonPopular || "See Most Visited", action: () => navigate("/mostVisited") }
+      ]
+    };
+  }
+
+  // Search intent (improved with multilingual support)
+  const searchQuery = extractSearchQuery(userInput);
+  if (searchQuery) {
+    navigate(`/searchsite?q=${encodeURIComponent(searchQuery)}`);
+    setIsChatOpen(false);
+    return {
+      text: currentT.chatSearching?.replace("{query}", searchQuery) || `Searching for "${searchQuery}"...`,
+      buttons: []
+    };
+  }
+
+  // Dashboard in multiple languages
+  if (isDashboardRequest(lower)) {
+    navigate("/dashboardSite");
+    setIsChatOpen(false);
+    return {
+      text: currentT.chatGoingToDashboard || "Taking you to your dashboard!",
+      buttons: []
+    };
+  }
+
+  // Login/Register in multiple languages
+  if (isLoginRequest(lower)) {
+    navigate("/loginRegisterSite");
+    setIsChatOpen(false);
+    return {
+      text: currentT.chatGoingToLogin || "Taking you to the login page!",
+      buttons: []
+    };
+  }
+
+  // Categories in multiple languages
+  if (isCategoriesRequest(lower)) {
+    navigate("/categories");
+    setIsChatOpen(false);
+    return {
+      text: currentT.chatGoingToCategories || "Taking you to categories!",
+      buttons: []
+    };
+  }
+
+  // Most visited / popular in multiple languages
+  if (isPopularRequest(lower)) {
+    navigate("/mostVisited");
+    setIsChatOpen(false);
+    return {
+      text: currentT.chatGoingToPopular || "Showing the most popular Funko Pops!",
+      buttons: []
+    };
+  }
+
+  // Exclusive items in multiple languages
+  if (isExclusiveRequest(lower)) {
+    const exclusives = funkoData.filter(item => item.exclusive);
+    if (exclusives.length > 0) {
+      const sample = exclusives.slice(0, 2).map(i => i.title).join(", ");
+      return {
+        text: currentT.chatExclusivesFound?.replace("{count}", exclusives.length.toString()).replace("{examples}", sample) ||
+            `I found ${exclusives.length} exclusive Pops! Examples: ${sample}. View them in search.`,
+        buttons: [
+          { label: currentT.buttonSearchExclusives || "Show All Exclusives", action: () => {
+            setIsChatOpen(false);
+            navigate("/searchsite?q=exclusive");
+          } }
+        ]
+      };
+    }
+    return {
+      text: currentT.chatNoExclusives || "No exclusive items found right now.",
+      buttons: []
+    };
+  }
+
+  // Try direct item match
+  const directMatch = funkoData.find(item =>
+    item.title.toLowerCase().includes(lower) ||
+    item.series.some(s => s.toLowerCase().includes(lower))
+  );
+  if (directMatch) {
+    navigate(`/funko/${directMatch.id}`);
+    setIsChatOpen(false);
+    return {
+      text: currentT.chatFoundItem?.replace("{item}", directMatch.title) || `Found "${directMatch.title}"! Taking you there...`,
+      buttons: []
+    };
+  }
+
+  // Default fallback with language-specific suggestions
+  const fallbackTexts = {
+    EN: "I can help you search, browse categories, or find popular Funko Pops! Try saying \"Search for Batman\" or \"Take me to dashboard\".",
+    PL: "Mogę pomóc Ci wyszukać, przeglądać kategorie lub znaleźć popularne Funko Popy! Spróbuj powiedzieć \"Szukaj Batmana\" lub \"Pokaż mi panel\".",
+    RU: "Я могу помочь вам найти, просмотреть категории или найти популярные Funko Pops! Попробуйте сказать \"Найти Бэтмена\" или \"Перейти в панель управления\".",
+    FR: "Je peux vous aider à rechercher, parcourir les catégories ou trouver des Funko Pops populaires! Essayez de dire \"Rechercher Batman\" ou \"Aller au tableau de bord\".",
+    DE: "Ich kann Ihnen helfen, zu suchen, Kategorien zu durchsuchen или beliebte Funko Pops zu finden! Versuchen Sie, \"Suche nach Batman\" oder \"Zum Dashboard gehen\" zu sagen.",
+    ES: "¡Puedo ayudarte a buscar, explorar categorías o encontrar Funko Pops populares! Intenta decir \"Buscar Batman\" o \"Ir al panel de control\"."
   };
 
+  return {
+    text: currentT.chatFallback || fallbackTexts[language as keyof typeof fallbackTexts] || fallbackTexts.EN,
+    buttons: [
+      { label: currentT.buttonDashboard || "Take me to dashboard", action: () => navigate("/dashboardSite") },
+      { label: currentT.buttonLogin || "Login/Register", action: () => navigate("/loginRegisterSite") },
+      { label: currentT.buttonSearch || "Search for something", action: () => {
+        setIsChatOpen(false);
+        navigate("/searchsite");
+      } }
+    ]
+  };
+};
+
+  
   // 🌐 Centralized country configuration
   const countries = {
     USA: {
@@ -1538,7 +1856,7 @@ const incrementVisitCount = (id: string) => {
         const token = localStorage.getItem("token");
         if (token) {
           try {
-            const backendResponse = await fetch("http://192.168.0.162:5000/api/items?limit=30", {
+            const backendResponse = await fetch("http://localhost:5000/api/items?limit=30", {
               headers: { Authorization: `Bearer ${token}` },
             });
             if (backendResponse.ok) {
@@ -1791,6 +2109,7 @@ const mostVisitedItems = useMemo(() => {
           </button>
         </form>
 
+
         {/* 🌐 Country, 🌙 Theme, 🔐 Login */}
           <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0 min-w-0 items-center">
                   {/* Language Dropdown */}
@@ -1862,7 +2181,7 @@ const mostVisitedItems = useMemo(() => {
           </button>
 
           {/* 🔐 Dashboard/Login */}
-          <button
+          {/* <button
             onClick={() => {
               const user = JSON.parse(localStorage.getItem("user") || "{}");
               navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginRegisterSite");
@@ -1874,7 +2193,8 @@ const mostVisitedItems = useMemo(() => {
             }`}
           >
             {t.goToDashboard || "Dashboard"}
-          </button>
+          </button> */}
+          <AuthButton isDarkMode={isDarkMode} translations={t} />
         </div>
               <React.Suspense fallback={<div style={{width:80,height:20}}/>}>
                 <QuickLinks isDarkMode={isDarkMode} language={language as any} />
@@ -2000,7 +2320,8 @@ const mostVisitedItems = useMemo(() => {
         </section>
 
 
-        {/* 💬 Enhanced Chatbot */}
+
+        {/* 💬 Enhanced Chatbot - MULTILINGUAL DIRECT ACTIONS */}
         {isChatOpen && (
           <div
             className="fixed inset-0 z-50 flex items-end justify-end p-4 sm:p-6"
@@ -2015,6 +2336,9 @@ const mostVisitedItems = useMemo(() => {
                 <div className="flex items-center gap-2">
                   <span>🤖 PopBot</span>
                   <span className="text-xs opacity-90">Your Funko Assistant</span>
+                  <span className="text-xs bg-white/20 px-2 py-0.5 rounded">
+                    {language}
+                  </span>
                 </div>
                 <button
                   onClick={() => setIsChatOpen(false)}
@@ -2089,7 +2413,7 @@ const mostVisitedItems = useMemo(() => {
                 )}
               </div>
 
-              {/* Input */}
+              {/* Input - MULTILINGUAL DIRECT ACTION BUTTONS */}
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -2129,12 +2453,356 @@ const mostVisitedItems = useMemo(() => {
                     Send
                   </button>
                 </div>
+                
+                {/* MULTILINGUAL: Direct action buttons */}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {/* 🔍 Search Batman - ALL LANGUAGES */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Get text based on language
+                      const searchTexts = {
+                        EN: 'search batman',
+                        PL: 'szukaj batmana',
+                        RU: 'найти batman',
+                        FR: 'chercher batman',
+                        DE: 'suche batman',
+                        ES: 'buscar batman'
+                      };
+                      const searchTerm = 'batman';
+                      const searchText = searchTexts[language as keyof typeof searchTexts] || searchTexts.EN;
+                      
+                      // Response texts
+                      const responseTexts = {
+                        EN: `Searching for "batman"...`,
+                        PL: `Szukam "batman"...`,
+                        RU: `Ищу "batman"...`,
+                        FR: `Recherche de "batman"...`,
+                        DE: `Suche nach "batman"...`,
+                        ES: `Buscando "batman"...`
+                      };
+                      
+                      // Show user message
+                      setMessages(prev => [...prev, { text: searchText, sender: 'user' }]);
+                      
+                      // Show bot response before redirecting
+                      setTimeout(() => {
+                        setMessages(prev => [...prev, { 
+                          text: responseTexts[language as keyof typeof responseTexts] || responseTexts.EN,
+                          sender: 'bot' 
+                        }]);
+                        
+                        // Redirect to search after short delay
+                        setTimeout(() => {
+                          navigate(`/searchsite?q=${encodeURIComponent(searchTerm)}`);
+                          setIsChatOpen(false);
+                        }, 800);
+                      }, 600);
+                    }}
+                    className={`text-xs px-3 py-1.5 rounded transition-colors flex items-center gap-1 ${
+                      isDarkMode
+                        ? "bg-blue-700 hover:bg-blue-600 text-white"
+                        : "bg-blue-100 hover:bg-blue-200 text-blue-800 border border-blue-300"
+                    }`}
+                    aria-label={
+                      language === 'PL' ? 'Szukaj batmana' :
+                      language === 'RU' ? 'Найти batman' :
+                      language === 'FR' ? 'Chercher batman' :
+                      language === 'DE' ? 'Suche batman' :
+                      language === 'ES' ? 'Buscar batman' :
+                      'Search batman'
+                    }
+                  >
+                    <span>🔍</span>
+                    <span>
+                      {language === 'PL' ? 'szukaj batmana' :
+                      language === 'RU' ? 'найти batman' :
+                      language === 'FR' ? 'chercher batman' :
+                      language === 'DE' ? 'suche batman' :
+                      language === 'ES' ? 'buscar batman' :
+                      'search batman'}
+                    </span>
+                  </button>
+                  
+                  {/* 📁 Show Categories - ALL LANGUAGES */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Get text based on language
+                      const categoryTexts = {
+                        EN: 'show categories',
+                        PL: 'pokaż kategorie',
+                        RU: 'показать категории',
+                        FR: 'montrer catégories',
+                        DE: 'kategorien zeigen',
+                        ES: 'mostrar categorías'
+                      };
+                      
+                      // Response texts
+                      const responseTexts = {
+                        EN: 'Going to categories...',
+                        PL: 'Przechodzę do kategorii...',
+                        RU: 'Перехожу к категориям...',
+                        FR: 'Aller aux catégories...',
+                        DE: 'Gehe zu Kategorien...',
+                        ES: 'Yendo a categorías...'
+                      };
+                      
+                      const categoryText = categoryTexts[language as keyof typeof categoryTexts] || categoryTexts.EN;
+                      
+                      // Show user message
+                      setMessages(prev => [...prev, { text: categoryText, sender: 'user' }]);
+                      
+                      // Show bot response before redirecting
+                      setTimeout(() => {
+                        setMessages(prev => [...prev, { 
+                          text: responseTexts[language as keyof typeof responseTexts] || responseTexts.EN,
+                          sender: 'bot' 
+                        }]);
+                        
+                        // Redirect to categories after short delay
+                        setTimeout(() => {
+                          navigate("/categories");
+                          setIsChatOpen(false);
+                        }, 800);
+                      }, 600);
+                    }}
+                    className={`text-xs px-3 py-1.5 rounded transition-colors flex items-center gap-1 ${
+                      isDarkMode
+                        ? "bg-green-700 hover:bg-green-600 text-white"
+                        : "bg-green-100 hover:bg-green-200 text-green-800 border border-green-300"
+                    }`}
+                    aria-label={
+                      language === 'PL' ? 'Pokaż kategorie' :
+                      language === 'RU' ? 'Показать категории' :
+                      language === 'FR' ? 'Montrer catégories' :
+                      language === 'DE' ? 'Kategorien zeigen' :
+                      language === 'ES' ? 'Mostrar categorías' :
+                      'Show categories'
+                    }
+                  >
+                    <span>📁</span>
+                    <span>
+                      {language === 'PL' ? 'pokaż kategorie' :
+                      language === 'RU' ? 'показать категории' :
+                      language === 'FR' ? 'montrer catégories' :
+                      language === 'DE' ? 'kategorien zeigen' :
+                      language === 'ES' ? 'mostrar categorías' :
+                      'show categories'}
+                    </span>
+                  </button>
+                  
+                  {/* 🔥 Popular Items - ALL LANGUAGES */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Get text based on language
+                      const popularTexts = {
+                        EN: 'popular',
+                        PL: 'popularne',
+                        RU: 'популярные',
+                        FR: 'populaire',
+                        DE: 'beliebt',
+                        ES: 'popular'
+                      };
+                      
+                      // Response texts
+                      const responseTexts = {
+                        EN: 'Showing popular items...',
+                        PL: 'Pokazuję popularne...',
+                        RU: 'Показываю популярные...',
+                        FR: 'Afficher les articles populaires...',
+                        DE: 'Zeige beliebte Artikel...',
+                        ES: 'Mostrando artículos populares...'
+                      };
+                      
+                      const popularText = popularTexts[language as keyof typeof popularTexts] || popularTexts.EN;
+                      
+                      // Show user message
+                      setMessages(prev => [...prev, { text: popularText, sender: 'user' }]);
+                      
+                      // Show bot response before redirecting
+                      setTimeout(() => {
+                        setMessages(prev => [...prev, { 
+                          text: responseTexts[language as keyof typeof responseTexts] || responseTexts.EN,
+                          sender: 'bot' 
+                        }]);
+                        
+                        // Redirect to most visited after short delay
+                        setTimeout(() => {
+                          navigate("/mostVisited");
+                          setIsChatOpen(false);
+                        }, 800);
+                      }, 600);
+                    }}
+                    className={`text-xs px-3 py-1.5 rounded transition-colors flex items-center gap-1 ${
+                      isDarkMode
+                        ? "bg-purple-700 hover:bg-purple-600 text-white"
+                        : "bg-purple-100 hover:bg-purple-200 text-purple-800 border border-purple-300"
+                    }`}
+                    aria-label={
+                      language === 'PL' ? 'Popularne itemy' :
+                      language === 'RU' ? 'Популярные товары' :
+                      language === 'FR' ? 'Articles populaires' :
+                      language === 'DE' ? 'Beliebte Artikel' :
+                      language === 'ES' ? 'Artículos populares' :
+                      'Popular items'
+                    }
+                  >
+                    <span>🔥</span>
+                    <span>
+                      {language === 'PL' ? 'popularne' :
+                      language === 'RU' ? 'популярные' :
+                      language === 'FR' ? 'populaire' :
+                      language === 'DE' ? 'beliebt' :
+                      language === 'ES' ? 'popular' :
+                      'popular'}
+                    </span>
+                  </button>
+                  
+                  {/* 📊 Dashboard - ALL LANGUAGES */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Get text based on language
+                      const dashboardTexts = {
+                        EN: 'dashboard',
+                        PL: 'panel',
+                        RU: 'панель',
+                        FR: 'tableau de bord',
+                        DE: 'dashboard',
+                        ES: 'panel'
+                      };
+                      
+                      // Response texts
+                      const responseTexts = {
+                        EN: 'Going to dashboard...',
+                        PL: 'Przechodzę do panelu...',
+                        RU: 'Перехожу на панель...',
+                        FR: 'Aller au tableau de bord...',
+                        DE: 'Gehe zum Dashboard...',
+                        ES: 'Yendo al panel...'
+                      };
+                      
+                      const dashboardText = dashboardTexts[language as keyof typeof dashboardTexts] || dashboardTexts.EN;
+                      
+                      // Show user message
+                      setMessages(prev => [...prev, { text: dashboardText, sender: 'user' }]);
+                      
+                      // Show bot response before redirecting
+                      setTimeout(() => {
+                        setMessages(prev => [...prev, { 
+                          text: responseTexts[language as keyof typeof responseTexts] || responseTexts.EN,
+                          sender: 'bot' 
+                        }]);
+                        
+                        // Redirect to dashboard after short delay
+                        setTimeout(() => {
+                          const user = JSON.parse(localStorage.getItem("user") || "{}");
+                          navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginRegisterSite");
+                          setIsChatOpen(false);
+                        }, 800);
+                      }, 600);
+                    }}
+                    className={`text-xs px-3 py-1.5 rounded transition-colors flex items-center gap-1 ${
+                      isDarkMode
+                        ? "bg-amber-700 hover:bg-amber-600 text-white"
+                        : "bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300"
+                    }`}
+                    aria-label={
+                      language === 'PL' ? 'Panel użytkownika' :
+                      language === 'RU' ? 'Панель управления' :
+                      language === 'FR' ? 'Tableau de bord' :
+                      language === 'DE' ? 'Dashboard' :
+                      language === 'ES' ? 'Panel de control' :
+                      'User dashboard'
+                    }
+                  >
+                    <span>📊</span>
+                    <span>
+                      {language === 'PL' ? 'panel' :
+                      language === 'RU' ? 'панель' :
+                      language === 'FR' ? 'tableau de bord' :
+                      language === 'DE' ? 'dashboard' :
+                      language === 'ES' ? 'panel' :
+                      'dashboard'}
+                    </span>
+                  </button>
+                  
+                  {/* 🔐 Login/Register - ALL LANGUAGES */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Get text based on language
+                      const loginTexts = {
+                        EN: 'login',
+                        PL: 'zaloguj',
+                        RU: 'войти',
+                        FR: 'connexion',
+                        DE: 'anmelden',
+                        ES: 'iniciar sesión'
+                      };
+                      
+                      // Response texts
+                      const responseTexts = {
+                        EN: 'Going to login page...',
+                        PL: 'Przechodzę do logowania...',
+                        RU: 'Перехожу на страницу входа...',
+                        FR: 'Aller à la page de connexion...',
+                        DE: 'Gehe zur Login-Seite...',
+                        ES: 'Yendo a la página de inicio de sesión...'
+                      };
+                      
+                      const loginText = loginTexts[language as keyof typeof loginTexts] || loginTexts.EN;
+                      
+                      // Show user message
+                      setMessages(prev => [...prev, { text: loginText, sender: 'user' }]);
+                      
+                      // Show bot response before redirecting
+                      setTimeout(() => {
+                        setMessages(prev => [...prev, { 
+                          text: responseTexts[language as keyof typeof responseTexts] || responseTexts.EN,
+                          sender: 'bot' 
+                        }]);
+                        
+                        // Redirect to login after short delay
+                        setTimeout(() => {
+                          navigate("/loginRegisterSite");
+                          setIsChatOpen(false);
+                        }, 800);
+                      }, 600);
+                    }}
+                    className={`text-xs px-3 py-1.5 rounded transition-colors flex items-center gap-1 ${
+                      isDarkMode
+                        ? "bg-red-700 hover:bg-red-600 text-white"
+                        : "bg-red-100 hover:bg-red-200 text-red-800 border border-red-300"
+                    }`}
+                    aria-label={
+                      language === 'PL' ? 'Zaloguj się' :
+                      language === 'RU' ? 'Войти' :
+                      language === 'FR' ? 'Se connecter' :
+                      language === 'DE' ? 'Anmelden' :
+                      language === 'ES' ? 'Iniciar sesión' :
+                      'Login'
+                    }
+                  >
+                    <span>🔐</span>
+                    <span>
+                      {language === 'PL' ? 'zaloguj' :
+                      language === 'RU' ? 'войти' :
+                      language === 'FR' ? 'connexion' :
+                      language === 'DE' ? 'anmelden' :
+                      language === 'ES' ? 'iniciar sesión' :
+                      'login'}
+                    </span>
+                  </button>
+                </div>
               </form>
             </div>
           </div>
         )}
 
-        {/* 🤖 Chatbot Toggle Button - Hidden when chat is open */}
+
         {!isChatOpen && (
           <button
             onClick={() => {

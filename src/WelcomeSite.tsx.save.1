@@ -443,7 +443,7 @@ const incrementVisitCount = (id: string) => {
         
         if (token) {
           try {
-            const backendResponse = await fetch("http://192.168.0.162:5000/api/items", {
+            const backendResponse = await fetch("http://localhost:5000/api/items", {
               headers: {
                 "Authorization": `Bearer ${token}`
               }

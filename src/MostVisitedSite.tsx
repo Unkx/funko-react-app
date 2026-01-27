@@ -20,6 +20,7 @@ import FranceFlag from "/src/assets/flags/france.svg?react";
 import GermanyFlag from "/src/assets/flags/germany.svg?react";
 import SpainFlag from "/src/assets/flags/spain.svg?react";
 import CanadaFlag from "/src/assets/flags/canada.svg?react";
+import AuthButton from "./AuthButton";
 
 // Match your backend item shape (without visits)
 interface FunkoItem {
@@ -444,14 +445,15 @@ const MostVisitedSite: React.FC = () => {
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
 
-          <Link
+          {/* <Link
             to={loginButtonTo}
             className={`flex items-center gap-2 px-4 py-2 rounded ${
               isDarkMode ? "bg-yellow-500 text-black hover:bg-yellow-600" : "bg-blue-600 text-white hover:bg-blue-700"
             }`}
           >
             {loginButtonText}
-          </Link>
+          </Link> */}
+          <AuthButton isDarkMode={isDarkMode} translations={t} />
         </div>
   </header>
 

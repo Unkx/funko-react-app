@@ -72,7 +72,7 @@ export const translations = {
     
     // Footer
     copyright: "© 2024 Pop&Go! All rights reserved.",
-    searchPlaceholder: "Search for Funkos...",
+    searchPlaceholder: "Search for Figurines...",
     switchToDark: "Switch to dark mode",
     switchToLight: "Switch to light mode",
     goToDashboard: "Dashboard",
@@ -150,7 +150,7 @@ export const translations = {
     
     // Footer
     copyright: "© 2024 Pop&Go! Wszelkie prawa zastrzeżone.",
-    searchPlaceholder: "Szukaj Funko Pop...",
+    searchPlaceholder: "Szukaj figurek...",
     switchToDark: "Przełącz na tryb ciemny",
     switchToLight: "Przełącz na tryb jasny",
     goToDashboard: "Panel",
@@ -211,7 +211,7 @@ export const translations = {
     seeCollectionsButton: "Просмотреть коллекции",
     // Footer
     copyright: "© 2024 Pop&Go! Все права защищены.",
-    searchPlaceholder: "Поиск Funko Pop...",
+    searchPlaceholder: "Поиск фигурок...",
     switchToDark: "Переключиться на темный режим",
     switchToLight: "Переключиться на светлый режим",
     goToDashboard: "Панель управления",
@@ -273,7 +273,7 @@ export const translations = {
     // Footer
     footer: "Footer content here",
     copyright: "© 2024 Pop&Go! Tous droits réservés.",
-    searchPlaceholder: "Rechercher des Funkos...",
+    searchPlaceholder: "Figuren suchen...",
     switchToDark: "Passer en mode sombre",
     switchToLight: "Passer en mode clair",
     goToDashboard: "Tableau de bord",
@@ -333,7 +333,7 @@ export const translations = {
     // Footer
     footer: "Footer content here",
     copyright: "© 2024 Pop&Go! Tous droits réservés.",
-    searchPlaceholder: "Rechercher des Funkos...",
+    searchPlaceholder: "Figuren suchen...",
     switchToDark: "Passer en mode sombre",
     switchToLight: "Passer en mode clair",
     goToDashboard: "Tableau de bord",
@@ -395,7 +395,7 @@ export const translations = {
     seeCollectionsButton: "Ver Colecciones",
     // Footer
     copyright: "© 2024 Pop&Go! Todos los derechos reservados.",
-    searchPlaceholder: "Buscar Funkos...",
+    searchPlaceholder: "Buscar figuras...",
     switchToDark: "Cambiar a modo oscuro",
     switchToLight: "Cambiar a modo claro",
     goToDashboard: "Panel de control",

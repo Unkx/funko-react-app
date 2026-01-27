@@ -20,6 +20,7 @@ import CanadaFlag from "/src/assets/flags/canada.svg?react";
 
 import { translations } from "./Translations/TranslationFeatures";
 import QuickLinks from "./QuickLinks";
+import AuthButton from "./AuthButton";
 // Feature categories data
 const featureCategories = [
   {
@@ -168,8 +169,8 @@ const FeaturesSite: React.FC = () => {
     navigate(`/searchsite?q=${encodeURIComponent(searchQuery.trim())}`);
   };
 
-  return (
-    <div className={`min-h-screen ${isDarkMode ? "bg-gray-900 text-white" : "bg-gradient-to-b from-blue-50 to-green-50 text-gray-800"}`}>
+  return ( 
+  <div className={`min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-black"}`}>
   {/* Header (standardized) */}
   <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
         <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
@@ -280,7 +281,7 @@ const FeaturesSite: React.FC = () => {
           </button>
 
           {/* 🔐 Dashboard/Login */}
-          <button
+          {/* <button
             onClick={() => {
               const user = JSON.parse(localStorage.getItem("user") || "{}");
               navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginRegisterSite");
@@ -292,7 +293,8 @@ const FeaturesSite: React.FC = () => {
             }`}
           >
             {t.goToDashboard}
-          </button>
+          </button> */}
+          <AuthButton isDarkMode={isDarkMode} translations={t} />
         </div>
          	      <QuickLinks isDarkMode={isDarkMode} language={language as any} />
       </header>

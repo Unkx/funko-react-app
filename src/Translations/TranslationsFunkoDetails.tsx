@@ -1,7 +1,7 @@
 export const translations = {
   EN: {
     // Header & Navigation
-    searchPlaceholder: "Search for Funkos...",
+    searchPlaceholder: "Search for Figurines...",
     goToDashboard: "Dashboard",
     goToLoginSite: "Log In",
     backButton: "Go Back",
@@ -44,7 +44,7 @@ export const translations = {
   },
   PL: {
     // Header & Navigation
-    searchPlaceholder: "Wyszukaj Funko Pop...",
+    searchPlaceholder: "WySzukaj figurek...",
     goToDashboard: "Panel",
     goToLoginSite: "Zaloguj się",
     backButton: "Wróć",
@@ -87,7 +87,7 @@ export const translations = {
   },
   RU: {
     // Header & Navigation
-    searchPlaceholder: "Поиск Funko Pop...",
+    searchPlaceholder: "Поиск фигурок...",
     goToDashboard: "Панель",
     goToLoginSite: "Войти",
     backButton: "Назад",
@@ -130,7 +130,7 @@ export const translations = {
   },
   FR: {
     // Header & Navigation
-    searchPlaceholder: "Rechercher des Funko Pop...",
+    searchPlaceholder: "Rechercher des figurines...",
     goToDashboard: "Tableau de bord",
     goToLoginSite: "Se connecter",
     backButton: "Retour",
@@ -173,7 +173,7 @@ export const translations = {
   },
   DE: {
     // Header & Navigation
-    searchPlaceholder: "Suche nach Funko Pops...",
+    searchPlaceholder: "Figuren suchen...",
     goToDashboard: "Dashboard",
     goToLoginSite: "Anmelden",
     backButton: "Zurück",
@@ -216,7 +216,7 @@ export const translations = {
   },
   ES: {
     // Header & Navigation
-    searchPlaceholder: "Buscar Funko Pops...",
+    searchPlaceholder: "Buscar figuras...",
     goToDashboard: "Panel",
     goToLoginSite: "Iniciar sesión",
     backButton: "Volver",
@@ -259,7 +259,7 @@ export const translations = {
   },
   US: {
     // Same as EN
-    searchPlaceholder: "Search for Funkos...",
+    searchPlaceholder: "Search for Figurines...",
     goToDashboard: "Dashboard",
     goToLoginSite: "Log In",
     backButton: "Go Back",
@@ -290,7 +290,7 @@ export const translations = {
   },
   CA: {
     // Same as EN
-    searchPlaceholder: "Search for Funkos...",
+    searchPlaceholder: "Search for Figurines...",
     goToDashboard: "Dashboard",
     goToLoginSite: "Log In",
     backButton: "Go Back",

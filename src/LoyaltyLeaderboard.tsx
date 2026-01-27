@@ -33,7 +33,7 @@ const LoyaltyLeaderboard: React.FC<Props> = ({ isDarkMode, currentUserId }) => {
 
     setLoading(true);
     try {
-      const response = await fetch(`http://192.168.0.162:5000/api/loyalty/leaderboard?filter=${filter}`, {
+      const response = await fetch(`http://localhost:5000/api/loyalty/leaderboard?filter=${filter}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

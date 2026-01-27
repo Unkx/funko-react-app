@@ -22,6 +22,7 @@ import FranceFlag from "/src/assets/flags/france.svg?react";
 import GermanyFlag from "/src/assets/flags/germany.svg?react";
 import SpainFlag from "/src/assets/flags/spain.svg?react";
 import CanadaFlag from "/src/assets/flags/canada.svg?react";
+import AuthButton from "./AuthButton";
 
 interface FunkoItem {
   id: string;
@@ -455,7 +456,7 @@ const CategoriesSite: React.FC = () => {
           </button>
 
           {/* 🔐 Dashboard/Login */}
-          <button
+          {/* <button
             onClick={() => {
               const user = JSON.parse(localStorage.getItem("user") || "{}");
               navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginRegisterSite");
@@ -467,7 +468,8 @@ const CategoriesSite: React.FC = () => {
             }`}
           >
             {t.goToDashboard || "Dashboard"}
-          </button>
+          </button> */}
+          <AuthButton isDarkMode={isDarkMode} translations={t} />
         </div>
         	      <QuickLinks isDarkMode={isDarkMode} language={language as any} />
       </header>

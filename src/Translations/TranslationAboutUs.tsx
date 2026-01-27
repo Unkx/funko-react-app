@@ -42,10 +42,11 @@ export const translations = {
     startButton: "Start Collecting",
     exploreButton: "Explore Features",
     copyright: "© 2024 Pop&Go! All rights reserved.",
-    searchPlaceholder: "Search for Funkos...",
+    searchPlaceholder: "Search for Figurines...",
     switchToDark: "Switch to dark mode",
     switchToLight: "Switch to light mode",
     goToDashboard: "Dashboard",
+    
   },
   PL: {
     pageTitle: "O Pop&Go!",
@@ -89,7 +90,7 @@ export const translations = {
     startButton: "Rozpocznij Kolekcjonowanie",
     exploreButton: "Poznaj Funkcje",
     copyright: "© 2024 Pop&Go! Wszelkie prawa zastrzeżone.",
-    searchPlaceholder: "Szukaj Funko Pop...",
+    searchPlaceholder: "Szukaj figurek...",
     switchToDark: "Przełącz na tryb ciemny",
     switchToLight: "Przełącz na tryb jasny",
     goToDashboard: "Panel",

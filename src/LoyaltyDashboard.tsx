@@ -121,13 +121,13 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
 
     try {
       // First, trigger achievement check
-      await fetch("http://192.168.0.162:5000/api/loyalty/achievements/check", {
+      await fetch("http://localhost:5000/api/loyalty/achievements/check", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` }
       });
 
       // Then fetch updated data
-      const response = await fetch("http://192.168.0.162:5000/api/loyalty/dashboard", {
+      const response = await fetch("http://localhost:5000/api/loyalty/dashboard", {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -153,7 +153,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
     if (!token) return;
 
     try {
-      const response = await fetch("http://192.168.0.162:5000/api/loyalty/rewards", {
+      const response = await fetch("http://localhost:5000/api/loyalty/rewards", {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -178,7 +178,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
     if (!token) return;
 
     try {
-      await fetch(`http://192.168.0.162:5000/api/loyalty/achievements/${achievementId}/mark-seen`, {
+      await fetch(`http://localhost:5000/api/loyalty/achievements/${achievementId}/mark-seen`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -194,7 +194,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
     if (!token) return;
 
     try {
-      const response = await fetch("http://192.168.0.162:5000/api/loyalty/rewards/activate", {
+      const response = await fetch("http://localhost:5000/api/loyalty/rewards/activate", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

@@ -26,6 +26,7 @@ const CloseIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 // Flags
+import USAFlag from "/src/assets/flags/usa.svg?react";
 import UKFlag from "/src/assets/flags/uk.svg?react";
 import CanadaFlag from "/src/assets/flags/canada.svg?react";
 import PolandFlag from "/src/assets/flags/poland.svg?react";
@@ -33,6 +34,7 @@ import RussiaFlag from "/src/assets/flags/russia.svg?react";
 import FranceFlag from "/src/assets/flags/france.svg?react";
 import GermanyFlag from "/src/assets/flags/germany.svg?react";
 import SpainFlag from "/src/assets/flags/spain.svg?react";
+import AuthButton from "./AuthButton";
 
 // --- Module-level cached fetch to speed up initial load ---
 let cachedItemsPromise: Promise<any[]> | null = null;
@@ -55,7 +57,7 @@ const fetchAllItemsOnce = async (): Promise<any[]> => {
     try {
       // Try backend first
       try {
-        const apiResponse = await fetch("http://192.168.0.162:5000/api/items?limit=200");
+        const apiResponse = await fetch("http://localhost:5000/api/items?limit=200");
         if (apiResponse.ok) {
           const backendData = await apiResponse.json();
           return backendData.map((item: any) => ({
@@ -466,7 +468,8 @@ const SearchSite = () => {
   }, [allItems]);
 
   const languages = {
-    EN: { name: "English", flag: <UKFlag className="w-5 h-5" /> },
+    US: { name: "USA", flag: <USAFlag className="w-5 h-5" /> },
+    EN: { name: "UK", flag: <UKFlag className="w-5 h-5" /> },
     CA: { name: "Canada", flag: <CanadaFlag className="w-5 h-5" /> },
     PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
     RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
@@ -484,7 +487,7 @@ const SearchSite = () => {
     // Quick fetch: small limit for initial render (fast response expected)
     (async () => {
       try {
-        const resp = await fetch("http://192.168.0.162:5000/api/items?limit=30");
+        const resp = await fetch("http://localhost:5000/api/items?limit=30");
         if (resp.ok) {
           const quickData = await resp.json();
           if (!mounted) return;
@@ -533,7 +536,7 @@ const SearchSite = () => {
   useEffect(() => {
     const fetchAdminItems = async () => {
       try {
-        const response = await fetch("http://192.168.0.162:5000/api/items?limit=30");
+        const response = await fetch("http://localhost:5000/api/items?limit=30");
         if (response.ok) {
           const data = await response.json();
           setAdminItems(data);
@@ -785,7 +788,7 @@ const SearchSite = () => {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch("http://192.168.0.162:5000/api/requests", {
+      const res = await fetch("http://localhost:5000/api/requests", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -930,7 +933,7 @@ const SearchSite = () => {
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
 
-          <Link
+          {/* <Link
             to={loginButtonTo}
             className={`flex items-center gap-2 px-4 py-2 rounded ${
               isDarkMode
@@ -939,7 +942,8 @@ const SearchSite = () => {
             }`}
           >
             {loginButtonText}
-          </Link>
+          </Link> */}
+          <AuthButton isDarkMode={isDarkMode} translations={t} />
         </div>
       </header>
 

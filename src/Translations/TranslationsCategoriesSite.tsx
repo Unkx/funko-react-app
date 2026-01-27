@@ -1,7 +1,7 @@
 export const translations: { [key: string]: { [key: string]: string } } = {
   EN: {
     // General
-    searchPlaceholder: "Search for Funkos...",
+    searchPlaceholder: "Search for Figurines...",
     goToDashboard: "Dashboard",
     clear: "Clear",
     loading: "Loading...",
@@ -57,7 +57,7 @@ export const translations: { [key: string]: { [key: string]: string } } = {
 
   PL: {
     // General
-    searchPlaceholder: "Wyszukaj Funko Popy...",
+    searchPlaceholder: "Szukaj figurek...",
     goToDashboard: "Panel",
     clear: "Wyczyść",
     loading: "Ładowanie...",
@@ -113,7 +113,7 @@ export const translations: { [key: string]: { [key: string]: string } } = {
 
   RU: {
     // General
-    searchPlaceholder: "Поиск Funko Pop...",
+    searchPlaceholder: "Поиск фигурок...",
     goToDashboard: "Панель",
     clear: "Очистить",
     loading: "Загрузка...",
@@ -225,7 +225,7 @@ export const translations: { [key: string]: { [key: string]: string } } = {
 
   DE: {
     // General
-    searchPlaceholder: "Nach Funko Pops suchen...",
+    searchPlaceholder: "Figuren suchen...",
     goToDashboard: "Dashboard",
     clear: "Löschen",
     loading: "Laden...",
@@ -281,7 +281,7 @@ export const translations: { [key: string]: { [key: string]: string } } = {
 
   ES: {
     // General
-    searchPlaceholder: "Buscar Funko Pops...",
+    searchPlaceholder: "Buscar figuras...",
     goToDashboard: "Panel",
     clear: "Limpiar",
     loading: "Cargando...",

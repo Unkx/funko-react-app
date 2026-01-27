@@ -67,7 +67,7 @@ const Requests = () => {
         return;
       }
       try {
-        const res = await fetch("http://192.168.0.162:5000/api/admin/requests", {
+        const res = await fetch("http://localhost:5000/api/admin/requests", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -131,7 +131,7 @@ const Requests = () => {
     setProcessingId(id);
     
     try {
-      const res = await fetch(`http://192.168.0.162:5000/api/admin/requests/${id}/status`, {
+      const res = await fetch(`http://localhost:5000/api/admin/requests/${id}/status`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` },
       });

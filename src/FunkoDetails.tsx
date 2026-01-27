@@ -21,6 +21,7 @@ import FranceFlag from "/src/assets/flags/france.svg?react";
 import GermanyFlag from "/src/assets/flags/germany.svg?react";
 import SpainFlag from "/src/assets/flags/spain.svg?react";
 import CanadaFlag from "/src/assets/flags/canada.svg?react";
+import AuthButton from "./AuthButton";
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
 if (!baseURL) {
@@ -1553,7 +1554,7 @@ const determineItemType = (title: string, category?: string) => {
                         {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
                       </button>
 
-                      <button
+                      {/* <button
                         onClick={() => navigate(loginButtonTo)}
                         className={`flex items-center gap-2 px-4 py-2 rounded ${
                           isDarkMode
@@ -1562,7 +1563,8 @@ const determineItemType = (title: string, category?: string) => {
                         }`}
                       >
                         {loginButtonText}
-                      </button>
+                      </button> */}
+                      <AuthButton isDarkMode={isDarkMode} translations={t} />
                     </div>
           </header>
 

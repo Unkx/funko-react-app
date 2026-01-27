@@ -13,5 +13,5 @@
     "noEmit": true,
     "lib": ["ES2020", "DOM"]
   },
-  "include": ["src/**/*", "tools/**/*"]
+  "include": ["frontend/src/**/*", "tools/**/*"]
 }

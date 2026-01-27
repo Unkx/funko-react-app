@@ -1,7 +1,7 @@
 // Translations.tsx
 export const translations = {
   EN: {
-    searchPlaceholder: "Search for Funkos...",
+    searchPlaceholder: "Search for Figurines...",
     allSeries: "All Series",
     exclusiveOnly: "Exclusive Only",
     sortByTitleAsc: "Title A-Z",
@@ -37,7 +37,7 @@ export const translations = {
     loginRequired: "Please log in to submit a request."
   },
   PL: {
-    searchPlaceholder: "Wyszukaj Funko Popy...",
+    searchPlaceholder: "Szukaj figurek...",
     allSeries: "Wszystkie serie",
     exclusiveOnly: "Tylko ekskluzywne",
     sortByTitleAsc: "Tytuł A-Z",
@@ -109,7 +109,7 @@ export const translations = {
     loginRequired: "Пожалуйста, войдите, чтобы отправить запрос."
   },
   ES: {
-    searchPlaceholder: "Buscar Funko Pops...",
+    searchPlaceholder: "Buscar figuras...",
     allSeries: "Todas las series",
     exclusiveOnly: "Solo exclusivos",
     sortByTitleAsc: "Título A-Z", 
@@ -181,7 +181,7 @@ export const translations = {
     loginRequired: "Veuillez vous connecter pour soumettre une demande."
   },
   DE: {
-    searchPlaceholder: "Suche nach Funko Pops...",
+    searchPlaceholder: "Figuren suchen...",
     allSeries: "Alle Serien",
     exclusiveOnly: "Nur Exklusive",
     sortByTitleAsc: "Titel A-Z",

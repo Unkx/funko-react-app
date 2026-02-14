@@ -667,33 +667,33 @@ const generateDescription = async (title: string, number: string, category: stri
 
   const prompt = `Jesteś ekspertem od przedmiotów kolekcjonerskich. Napisz szczegółowy, wciągający opis produktu w języku ${langNames[targetLang] || targetLang.toLowerCase()} dla ${itemTypeLabel}.
 
-PRODUKT: "${title}" ${isValidNumber ? `(numer przedmiotu: ${number})` : ''}
-${category ? `KATEGORIA: ${category}` : ''}
+  PRODUKT: "${title}" ${isValidNumber ? `(numer przedmiotu: ${number})` : ''}
+  ${category ? `KATEGORIA: ${category}` : ''}
 
-=== WYMAGANIA CO DO DŁUGOŚCI I JAKOŚCI ===
-1. Napisz 5-8 PEŁNYCH, dobrze rozwiniętych zdań
-2. Każde zdanie musi mieć przynajmniej 8-15 słów
-3. Opis musi być szczegółowy i informacyjny
-4. Zawsze kończ zdania właściwą interpunkcją (. ! ?)
-5. NIGDY nie przerywaj w połowie myśli
+  === WYMAGANIA CO DO DŁUGOŚCI I JAKOŚCI ===
+  1. Napisz 5-8 PEŁNYCH, dobrze rozwiniętych zdań
+  2. Każde zdanie musi mieć przynajmniej 8-15 słów
+  3. Opis musi być szczegółowy i informacyjny
+  4. Zawsze kończ zdania właściwą interpunkcją (. ! ?)
+  5. NIGDY nie przerywaj w połowie myśli
 
-=== STRUKTURA OPISU ===
-1. Wprowadzenie: Przedstaw przedmiot i jego znaczenie w kulturze/fandomie
-2. Opis wyglądu: Szczegóły designu, kolory, detale
-3. Specjalne cechy: Co wyróżnia ten przedmiot (metallic, glow-in-the-dark, exclusive)
-4. Kolekcjonerskość: Rzadkość, limitowane wydanie, numeracja
-5. Wartość: Dlaczego kolekcjonerzy tego chcą
-6. Zakończenie: Podsumowanie i zachęta dla kolekcjonerów
+  === STRUKTURA OPISU ===
+  1. Wprowadzenie: Przedstaw przedmiot i jego znaczenie w kulturze/fandomie
+  2. Opis wyglądu: Szczegóły designu, kolory, detale
+  3. Specjalne cechy: Co wyróżnia ten przedmiot (metallic, glow-in-the-dark, exclusive)
+  4. Kolekcjonerskość: Rzadkość, limitowane wydanie, numeracja
+  5. Wartość: Dlaczego kolekcjonerzy tego chcą
+  6. Zakończenie: Podsumowanie i zachęta dla kolekcjonerów
 
-=== PRZYKŁAD DOBREGO OPISU ===
-"The T-1000 Officer (Metallic) Funko Pop! figure is a stunning representation of the iconic liquid metal assassin from Terminator 2: Judgment Day. This exceptional collectible features a brilliant metallic silver finish that perfectly captures the character's shapeshifting abilities and futuristic aesthetic. The detailed sculpting showcases the police uniform with remarkable accuracy, from the badge to the perfectly replicated facial features. As part of the exclusive Metallic series, this figure is highly sought after by both Terminator enthusiasts and serious Funko collectors alike. Its limited production run and special finish make it a standout piece that commands attention in any display. The figure's substantial weight and premium paint application demonstrate the quality craftsmanship that fans have come to expect from these collectibles. Owning this metallic variant represents a significant milestone for collectors pursuing complete Terminator sets. This is undoubtedly a centerpiece item that would elevate any science fiction collection to new heights."
+  === PRZYKŁAD DOBREGO OPISU ===
+  "The T-1000 Officer (Metallic) Funko Pop! figure is a stunning representation of the iconic liquid metal assassin from Terminator 2: Judgment Day. This exceptional collectible features a brilliant metallic silver finish that perfectly captures the character's shapeshifting abilities and futuristic aesthetic. The detailed sculpting showcases the police uniform with remarkable accuracy, from the badge to the perfectly replicated facial features. As part of the exclusive Metallic series, this figure is highly sought after by both Terminator enthusiasts and serious Funko collectors alike. Its limited production run and special finish make it a standout piece that commands attention in any display. The figure's substantial weight and premium paint application demonstrate the quality craftsmanship that fans have come to expect from these collectibles. Owning this metallic variant represents a significant milestone for collectors pursuing complete Terminator sets. This is undoubtedly a centerpiece item that would elevate any science fiction collection to new heights."
 
-=== INSTRUKCJE SPECJALNE ===
-- Bądź entuzjastyczny ale precyzyjny
-- Wymień konkretne detale designu
-- Opisz uczucia kolekcjonera posiadającego ten przedmiot
-- Dodaj kontekst z uniwersum/franczyzy
-- Zakończ mocnym, przekonującym zdaniem
+  === INSTRUKCJE SPECJALNE ===
+  - Bądź entuzjastyczny ale precyzyjny
+  - Wymień konkretne detale designu
+  - Opisz uczucia kolekcjonera posiadającego ten przedmiot
+  - Dodaj kontekst z uniwersum/franczyzy
+  - Zakończ mocnym, przekonującym zdaniem
 
 Teraz napisz szczegółowy opis dla "${title}". Pamiętaj: 5-8 PEŁNYCH zdań, szczegółowy, bogaty w informacje!`;
 

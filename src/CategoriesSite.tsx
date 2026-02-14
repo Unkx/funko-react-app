@@ -160,6 +160,24 @@ const CategoriesSite: React.FC = () => {
     setShowLanguageDropdown((prev) => !prev);
   };
 
+  // Handle click outside language dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        showLanguageDropdown &&
+        languageDropdownRef.current &&
+        languageButtonRef.current &&
+        !languageDropdownRef.current.contains(event.target as Node) &&
+        !languageButtonRef.current.contains(event.target as Node)
+      ) {
+        setShowLanguageDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showLanguageDropdown]);
+
   // Select language
   const selectLanguage = (lang: string) => {
     setLanguage(lang);

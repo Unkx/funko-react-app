@@ -43,6 +43,8 @@ const LoginRegisterSite: React.FC = () => {
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [shouldShowPopup, setShouldShowPopup] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [passwordResetStep, setPasswordResetStep] = useState<'email' | 'code' | 'password'>('email');
 
   const navigate = useNavigate();
   const tLogin = loginTranslations[language] || loginTranslations["EN"];
@@ -70,6 +72,14 @@ const LoginRegisterSite: React.FC = () => {
   const [registerError, setRegisterError] = useState("");
   const [inviteChecking, setInviteChecking] = useState(false);
   const [inviteValid, setInviteValid] = useState<boolean | null>(null);
+
+  // Password Reset form state
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetCode, setResetCode] = useState("");
+  const [resetNewPassword, setResetNewPassword] = useState("");
+  const [resetConfirmPassword, setResetConfirmPassword] = useState("");
+  const [passwordResetError, setPasswordResetError] = useState("");
+  const [passwordResetMessage, setPasswordResetMessage] = useState("");
 
 
   // Save theme
@@ -181,16 +191,15 @@ const LoginRegisterSite: React.FC = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegisterError("");
-    if (!email || !regLogin || !name || !surname || !regPassword || !confirmPassword || !gender || !dateOfBirth) {
+    if (!email || !regLogin || !name || !surname || !regPassword || !confirmPassword || 
+      !gender || !dateOfBirth) {
       setRegisterError(tRegister.allFieldsRequired || "All fields are required.");
       return;
     }
-    // Field-specific validation
     if (!emailRegex.test(email)) {
       setRegisterError(tRegister.invalidEmail || "Please enter a valid email address.");
       return;
     }
-
     if (!usernameRegex.test(regLogin)) {
       setRegisterError(
         tRegister.invalidUsername ||
@@ -226,10 +235,6 @@ const LoginRegisterSite: React.FC = () => {
       setRegisterError(tRegister.invalidAge || "You must be at least 13 years old to register.");
       return;
     }
-    if (regPassword !== confirmPassword) {
-      setRegisterError(tRegister.passwordsDoNotMatch || "Passwords do not match.");
-      return;
-    }
     const payload = {
       email,
       login: regLogin,
@@ -261,6 +266,132 @@ const LoginRegisterSite: React.FC = () => {
       setRegisterError(err.message || "Failed to connect to server.");
     }
   };
+
+  // --- PASSWORD RESET ---
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordResetError("");
+    setPasswordResetMessage("");
+
+    if (!resetEmail) {
+      setPasswordResetError(tLogin.enterEmail || "Please enter your email");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:5000/api/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resetEmail }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setPasswordResetError(data.error || "Error sending reset code");
+        return;
+      }
+      setPasswordResetMessage(data.message || "Reset code sent to your email");
+      setPasswordResetStep('code');
+    } catch (err: any) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      console.error(err);
+      setPasswordResetError("Connection error. Please try again.");
+    }
+  };
+
+  const handleVerifyResetCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordResetError("");
+    setPasswordResetMessage("");
+
+    if (!resetCode) {
+      setPasswordResetError(tLogin.enterResetCode || "Please enter reset code");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:5000/api/verify-reset-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: resetCode }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setPasswordResetError(data.error || "Invalid or expired code");
+        return;
+      }
+      setPasswordResetStep('password');
+    } catch (err: any) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      console.error(err);
+      setPasswordResetError("Connection error. Please try again.");
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordResetError("");
+    setPasswordResetMessage("");
+
+    if (!resetNewPassword || !resetConfirmPassword) {
+      setPasswordResetError(tLogin.confirmPassword || "Please enter password");
+      return;
+    }
+
+    if (resetNewPassword !== resetConfirmPassword) {
+      setPasswordResetError(tLogin.passwordMismatch || "Passwords do not match");
+      return;
+    }
+
+    if (resetNewPassword.length < 6) {
+      setPasswordResetError("Password must be at least 6 characters");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:5000/api/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: resetCode,
+          newPassword: resetNewPassword,
+          confirmPassword: resetConfirmPassword,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setPasswordResetError(data.error || "Error resetting password");
+        return;
+      }
+      setPasswordResetMessage(tLogin.passwordReset || data.message);
+      setTimeout(() => {
+        setShowPasswordReset(false);
+        setPasswordResetStep('email');
+        setResetEmail("");
+        setResetCode("");
+        setResetNewPassword("");
+        setResetConfirmPassword("");
+      }, 2000);
+    } catch (err: any) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      console.error(err);
+      setPasswordResetError("Connection error. Please try again.");
+    }
+  };
+
+  const getPasswordResetFormSubmit = () => {
+    switch (passwordResetStep) {
+      case 'email':
+        return handleForgotPasswordSubmit;
+      case 'code':
+        return handleVerifyResetCode;
+      default:
+        return handleResetPassword;
+    }
+  };
+
+  const getShouldShowLoginForm = () => !showRegister && !showPasswordReset;
+  const getShouldShowPasswordResetForm = () => showPasswordReset;
+  const getShouldShowRegisterForm = () => showRegister && !showPasswordReset;
 
   return (
     <div className={`min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-black"}`}>
@@ -302,7 +433,7 @@ const LoginRegisterSite: React.FC = () => {
 
     <main className="flex-grow p-8 flex flex-col items-center justify-center">
     <AnimatePresence mode="wait">
-        {!showRegister ? (
+        {getShouldShowLoginForm() && (
         <motion.div
             key="login"
             initial={{ opacity: 0, x: -50 }}
@@ -331,6 +462,9 @@ const LoginRegisterSite: React.FC = () => {
             <button type="submit" className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : "bg-blue-600 hover:bg-blue-700 text-white"}`}>
                 {tLogin.loginButton}
             </button>
+            <button type="button" onClick={() => setShowPasswordReset(true)} className="text-sm text-blue-500 hover:underline text-center">
+                {tLogin.forgotPassword}
+            </button>
             <p className="text-center mt-2">
                 {tLogin.registerLink}{" "}
                 <button type="button" onClick={() => setShowRegister(true)} className="underline text-green-600 dark:text-blue-400">
@@ -339,7 +473,111 @@ const LoginRegisterSite: React.FC = () => {
             </p>
             </form>
         </motion.div>
-        ) : (
+        )}
+        {getShouldShowPasswordResetForm() && (
+        <motion.div
+            key="passwordReset"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+            className="w-full flex justify-center"
+        >
+            {/* PASSWORD RESET FORM */}
+            <form
+            onSubmit={getPasswordResetFormSubmit()}
+            className={`max-w-md w-full flex flex-col gap-4 p-6 rounded-lg shadow-md ${
+                isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
+            }`}
+            >
+            <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
+                {tLogin.forgotPasswordTitle}
+            </h2>
+            {passwordResetError && <p className="text-red-500">{passwordResetError}</p>}
+            {passwordResetMessage && <p className="text-green-500">{passwordResetMessage}</p>}
+
+            {passwordResetStep === 'email' && (
+              <>
+                <input
+                  type="email"
+                  placeholder={tLogin.enterEmail}
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  className={`px-4 py-2 rounded ${
+                    isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+                  }`}
+                />
+                <button type="submit" className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : "bg-blue-600 hover:bg-blue-700 text-white"}`}>
+                  {tLogin.sendCode}
+                </button>
+              </>
+            )}
+
+            {passwordResetStep === 'code' && (
+              <>
+                <p className="text-sm text-gray-500">{tLogin.resetCodeSent}</p>
+                <input
+                  type="text"
+                  placeholder={tLogin.enterResetCode}
+                  value={resetCode}
+                  onChange={(e) => setResetCode(e.target.value)}
+                  className={`px-4 py-2 rounded text-center text-2xl letter-spacing tracking-widest ${
+                    isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+                  }`}
+                  maxLength={6}
+                />
+                <button type="submit" className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : "bg-blue-600 hover:bg-blue-700 text-white"}`}>
+                  {tLogin.verifyCode}
+                </button>
+              </>
+            )}
+
+            {passwordResetStep === 'password' && (
+              <>
+                <input
+                  type="password"
+                  placeholder={tLogin.newPassword}
+                  value={resetNewPassword}
+                  onChange={(e) => setResetNewPassword(e.target.value)}
+                  className={`px-4 py-2 rounded ${
+                    isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+                  }`}
+                />
+                <input
+                  type="password"
+                  placeholder={tLogin.confirmPassword}
+                  value={resetConfirmPassword}
+                  onChange={(e) => setResetConfirmPassword(e.target.value)}
+                  className={`px-4 py-2 rounded ${
+                    isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+                  }`}
+                />
+                <button type="submit" className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : "bg-blue-600 hover:bg-blue-700 text-white"}`}>
+                  {tLogin.resetPassword}
+                </button>
+              </>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowPasswordReset(false);
+                setPasswordResetStep('email');
+                setResetEmail("");
+                setResetCode("");
+                setResetNewPassword("");
+                setResetConfirmPassword("");
+                setPasswordResetError("");
+                setPasswordResetMessage("");
+              }}
+              className={`px-4 py-2 rounded border ${isDarkMode ? "bg-gray-600 hover:bg-gray-500 text-white" : "bg-gray-200 hover:bg-gray-300 text-black"}`}
+            >
+              {tLogin.backToLoginLink}
+            </button>
+            </form>
+        </motion.div>
+        )}
+        {getShouldShowRegisterForm() && (
         <motion.div
             key="register"
             initial={{ opacity: 0, x: 50 }}

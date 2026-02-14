@@ -5,7 +5,13 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import helmet from 'helmet';
 import morgan from 'morgan';
-// (crypto imported at top)
+import dotenv from 'dotenv';
+
+import { Novu } from '@novu/node';
+import crypto from 'crypto';
+
+// Load environment variables
+dotenv.config();
 
 // ======================
 // INITIALIZATION
@@ -26,6 +32,24 @@ const pool = new Pool({
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
+
+// Novu Notification Configuration
+const NOVU_API_KEY = process.env.NOVU_API_KEY;
+const NOVU_TEMPLATE_ID = process.env.NOVU_TEMPLATE_ID || 'password-reset';
+let novu = null;
+let emailConfigured = false;
+
+// Initialize Novu
+if (NOVU_API_KEY) {
+  novu = new Novu(NOVU_API_KEY);
+  emailConfigured = true;
+  console.log('✅ Novu notification service ready');
+} else {
+  console.warn('⚠️ NOVU_API_KEY environment variable not set');
+  console.warn('🔗 Get free API key: https://novu.co (open-source notification platform)');
+  console.warn('📝 Set NOVU_API_KEY in .env file to enable password reset');
+  emailConfigured = false;
+}
 
 // ======================
 // UTILITY FUNCTIONS
@@ -58,6 +82,37 @@ const generateToken = (user) => {
     JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN }
   );
+};
+
+// Generate password reset code (6 digits)
+const generateResetCode = () => {
+  return crypto.randomInt(100000, 999999).toString();
+};
+
+// Send password reset email via Novu
+const sendPasswordResetEmail = async (email, code, userName) => {
+  // Check if Novu is configured
+  if (!emailConfigured || !novu) {
+    throw new Error('Notification service is not configured. Please contact administrator.');
+  }
+  
+  try {
+    // Send notification via Novu
+    await novu.trigger(NOVU_TEMPLATE_ID, {
+      to: {
+        subscriberId: email,
+        email: email
+      },
+      payload: {
+        code: code,
+        userName: userName,
+        resetLink: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?code=${code}`
+      }
+    });
+  } catch (error) {
+    console.error('Error sending Novu notification:', error);
+    throw error;
+  }
 };
 
 // ======================
@@ -206,6 +261,19 @@ async function ensureAdminTables() {
     `);
     console.log('✅ Users table ready');
 
+    // 1.5. Tabela password_reset_codes
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS password_reset_codes (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        reset_code VARCHAR(10) NOT NULL UNIQUE,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        expires_at TIMESTAMPTZ DEFAULT NOW() + INTERVAL '15 minutes',
+        used BOOLEAN DEFAULT FALSE,
+        used_at TIMESTAMPTZ
+      );
+    `);
+    console.log('✅ Password reset codes table ready');
 
     // 2. Tabela funko_items (bez dependencies) - FIXED to use 'title' not 'name'
     await pool.query(`
@@ -439,8 +507,6 @@ app.get('/api/me', authenticateToken, async (req, res) => {
 });
 
 // Admin invites endpoints
-import crypto from 'crypto';
-
 // Generate invite code with security
 app.post('/api/admin/invites', authenticateToken, isAdmin, async (req, res) => {
   const { expiresInDays = 7 } = req.body;
@@ -598,19 +664,19 @@ app.get('/', (req, res) => {
 app.post('/api/register', async (req, res) => {
   const { email, login, name, surname, password, gender, date_of_birth, nationality } = req.body;
 
-  // ✅ nationality is now optional — only require the rest
+
   if (!email || !login || !name || !surname || !password || !gender || !date_of_birth) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  // Allow optional invite token for elevated roles (admin) using admin_invites
+
   const { invite_token } = req.body;
   let roleToSet = 'user';
   let matchedInviteId = null;
 
   try {
     if (invite_token && invite_token.trim()) {
-      // ✅ FIXED: Get ALL unused, non-expired invites
+
       const inviteRes = await pool.query(
         `SELECT id, token_hash, expires_at 
          FROM admin_invites 
@@ -624,7 +690,7 @@ app.post('/api/register', async (req, res) => {
         });
       }
 
-      // Try to match the provided token against all valid invites
+
       let matchedInvite = null;
       for (const row of inviteRes.rows) {
         try {
@@ -645,19 +711,19 @@ app.post('/api/register', async (req, res) => {
         });
       }
 
-      // ✅ Check if invite has expired
+
       if (matchedInvite.expires_at && new Date(matchedInvite.expires_at) < new Date()) {
         return res.status(400).json({ 
           error: 'Invite token has expired' 
         });
       }
 
-      // ✅ Set role to admin and save invite ID
+
       roleToSet = 'admin';
       matchedInviteId = matchedInvite.id;
     }
 
-    // Hash password and create user
+
     const hashedPassword = await hashPassword(password);
     const newUser = await pool.query(
       `INSERT INTO users (email, login, name, surname, password_hash, gender, date_of_birth, nationality, role)
@@ -666,7 +732,7 @@ app.post('/api/register', async (req, res) => {
       [email, login, name, surname, hashedPassword, gender, date_of_birth, nationality, roleToSet]
     );
 
-    // ✅ If an invite was used, mark it as used
+
     if (matchedInviteId) {
       try {
         await pool.query(
@@ -678,7 +744,7 @@ app.post('/api/register', async (req, res) => {
         console.log(`✅ Invite token marked as used by user ${newUser.rows[0].login}`);
       } catch (updateErr) {
         console.error('Failed to mark invite as used:', updateErr);
-        // Don't fail registration if this fails
+
       }
     }
 
@@ -3583,6 +3649,173 @@ app.post('/api/login', async (req, res) => {
     });
   } catch (err) {
     console.error('Login error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ======================
+// PASSWORD RESET ENDPOINTS
+// ======================
+
+// 1. Request password reset - Send code to email
+app.post('/api/forgot-password', async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required' });
+  }
+
+  try {
+    // Find user by email
+    const userResult = await pool.query(
+      `SELECT id, email, login, name FROM users WHERE email = $1`,
+      [email]
+    );
+
+    if (userResult.rows.length === 0) {
+      // Security: Don't reveal if email exists or not
+      return res.json({ message: 'If that email address is in our system, we have sent a password reset code' });
+    }
+
+    const user = userResult.rows[0];
+    
+    // Generate reset code
+    const resetCode = generateResetCode();
+    
+    // Delete old codes for this user
+    await pool.query(
+      `DELETE FROM password_reset_codes WHERE user_id = $1 AND used = FALSE`,
+      [user.id]
+    );
+
+    // Save reset code to database
+    await pool.query(
+      `INSERT INTO password_reset_codes (user_id, reset_code, created_at, expires_at)
+       VALUES ($1, $2, NOW(), NOW() + INTERVAL '15 minutes')`,
+      [user.id, resetCode]
+    );
+
+    // Send email with reset code
+    if (!emailConfigured) {
+      console.warn('Password reset requested but email service not configured');
+      return res.status(503).json({ 
+        error: 'Email service is currently unavailable. Please contact the administrator to enable password reset functionality.',
+        __debug: 'Novu not configured. Set NOVU_API_KEY in .env file and create password-reset workflow in Novu Dashboard.'
+      });
+    }
+    
+    try {
+      await sendPasswordResetEmail(user.email, resetCode, user.name || user.login);
+      res.json({ message: 'If that email address is in our system, we have sent a password reset code' });
+    } catch (emailErr) {
+      console.error('Error sending email:', emailErr.message);
+      // Don't expose email error details to client
+      res.status(503).json({ 
+        error: 'Error sending reset email. Please try again later.' 
+      });
+    }
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// 2. Verify reset code
+app.post('/api/verify-reset-code', async (req, res) => {
+  const { code } = req.body;
+
+  if (!code) {
+    return res.status(400).json({ error: 'Reset code is required' });
+  }
+
+  try {
+    const result = await pool.query(
+      `SELECT id, user_id, reset_code, expires_at, used 
+       FROM password_reset_codes 
+       WHERE reset_code = $1`,
+      [code]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: 'Invalid reset code' });
+    }
+
+    const resetRecord = result.rows[0];
+
+    // Check if code is already used
+    if (resetRecord.used) {
+      return res.status(400).json({ error: 'This reset code has already been used' });
+    }
+
+    // Check if code has expired
+    if (new Date(resetRecord.expires_at) < new Date()) {
+      return res.status(400).json({ error: 'This reset code has expired' });
+    }
+
+    res.json({ message: 'Reset code is valid', userId: resetRecord.user_id });
+  } catch (err) {
+    console.error('Verify code error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// 3. Reset password with code
+app.post('/api/reset-password', async (req, res) => {
+  const { code, newPassword, confirmPassword } = req.body;
+
+  if (!code || !newPassword || !confirmPassword) {
+    return res.status(400).json({ error: 'Code and password are required' });
+  }
+
+  if (newPassword !== confirmPassword) {
+    return res.status(400).json({ error: 'Passwords do not match' });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+  }
+
+  try {
+    // Find and verify the reset code
+    const resetResult = await pool.query(
+      `SELECT id, user_id, reset_code, expires_at, used 
+       FROM password_reset_codes 
+       WHERE reset_code = $1`,
+      [code]
+    );
+
+    if (resetResult.rows.length === 0) {
+      return res.status(400).json({ error: 'Invalid reset code' });
+    }
+
+    const resetRecord = resetResult.rows[0];
+
+    if (resetRecord.used) {
+      return res.status(400).json({ error: 'This reset code has already been used' });
+    }
+
+    if (new Date(resetRecord.expires_at) < new Date()) {
+      return res.status(400).json({ error: 'This reset code has expired' });
+    }
+
+    // Hash new password
+    const hashedPassword = await hashPassword(newPassword);
+
+    // Update user password
+    await pool.query(
+      `UPDATE users SET password_hash = $1 WHERE id = $2`,
+      [hashedPassword, resetRecord.user_id]
+    );
+
+    // Mark reset code as used
+    await pool.query(
+      `UPDATE password_reset_codes SET used = TRUE, used_at = NOW() WHERE id = $1`,
+      [resetRecord.id]
+    );
+
+    res.json({ message: 'Password reset successfully. Please log in with your new password.' });
+  } catch (err) {
+    console.error('Reset password error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

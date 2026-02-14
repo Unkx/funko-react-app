@@ -1,5 +1,5 @@
 // src/pages/AboutUsSite.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./WelcomeSite.css";
 import MoonIcon from "/src/assets/moon.svg?react";
@@ -90,6 +90,9 @@ const AboutUsSite: React.FC = () => {
 
   const t = translations[language as keyof typeof translations] || translations.EN;
 
+  const languageDropdownRef = useRef<HTMLDivElement>(null);
+  const languageButtonRef = useRef<HTMLButtonElement>(null);
+
   // Auto-logout after 10 minutes of inactivity
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -151,6 +154,24 @@ const AboutUsSite: React.FC = () => {
     localStorage.setItem("preferredLanguage", lang);
     setShowLanguageDropdown(false);
   };
+
+  // Handle click outside language dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        showLanguageDropdown &&
+        languageDropdownRef.current &&
+        languageButtonRef.current &&
+        !languageDropdownRef.current.contains(event.target as Node) &&
+        !languageButtonRef.current.contains(event.target as Node)
+      ) {
+        setShowLanguageDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showLanguageDropdown]);
 
   // 🔍 Handle search
   const handleSearch = (e: React.FormEvent) => {
@@ -217,6 +238,7 @@ const AboutUsSite: React.FC = () => {
           {/* Language Dropdown */}
           <div className="relative">
             <button
+              ref={languageButtonRef}
               onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
               className={`p-2 rounded-full flex items-center gap-1 min-w-0 ${
                 isDarkMode
@@ -237,6 +259,7 @@ const AboutUsSite: React.FC = () => {
 
             {showLanguageDropdown && (
               <div
+                ref={languageDropdownRef}
                 className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-1 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${
                   isDarkMode ? "bg-gray-800" : "bg-white"
                 }`}

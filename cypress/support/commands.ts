@@ -1,158 +1,178 @@
-// Rozszerz istniejące komendy Cypress
-Cypress.Commands.add('setLocalStorage', (key: string, value: string) => {
-  cy.window().then((window) => {
-    window.localStorage.setItem(key, value);
-  });
-});
+// ***********************************************
+// This example commands.ts shows you how to
+// create various custom commands and overwrite
+// existing commands.
+//
+// For more comprehensive examples of custom
+// commands please read more here:
+// https://on.cypress.io/custom-commands
+// ***********************************************
 
-// Poprawiona komenda clearLocalStorage
-Cypress.Commands.overwrite('clearLocalStorage', (originalFn, keys?: string | string[]) => {
-  if (keys) {
-    return cy.window().then((window) => {
-      if (Array.isArray(keys)) {
-        keys.forEach(key => window.localStorage.removeItem(key));
-      } else if (typeof keys === 'string') {
-        window.localStorage.removeItem(keys);
-      }
-      // Dla regex lub innych typów, użyj oryginalnej funkcji
-    });
-  }
-  return originalFn();
-});
+/// <reference types="cypress" />
 
-// Komenda do logowania
-Cypress.Commands.add('login', (email: string, password: string) => {
-  cy.intercept('POST', '**/api/login', {
-    statusCode: 200,
-    body: { 
-      token: 'mock-jwt-token', 
-      user: { 
-        id: '123',
-        email: email,
-        name: 'Test User'
-      } 
-    }
-  }).as('loginRequest');
-
-  cy.visit('/loginregistersite');
-  
-  cy.get('input[name="email"], input[type="email"]').first().type(email);
-  cy.get('input[name="password"], input[type="password"]').first().type(password);
-  
-  cy.get('button[type="submit"]').first().click();
-  
-  cy.wait('@loginRequest');
-  cy.url().should('include', '/dashboardSite');
-  
-  cy.window().then((window) => {
-    window.localStorage.setItem('token', 'mock-jwt-token');
-    window.localStorage.setItem('user', JSON.stringify({ email }));
-  });
-});
-
-// Komenda do mockowania zalogowanego użytkownika
-Cypress.Commands.add('mockAuthenticatedUser', (userData = {}) => {
-  const defaultUser = {
-    email: 'test@example.com',
-    token: 'mock-jwt-token-12345',
-    id: 'test-user-123'
-  };
-  
-  const user = { ...defaultUser, ...userData };
-  
-  cy.window().then((window) => {
-    window.localStorage.setItem('user', JSON.stringify({ 
-      email: user.email,
-      id: user.id 
-    }));
-    window.localStorage.setItem('token', user.token);
-    window.localStorage.setItem('preferredTheme', 'dark');
-    window.localStorage.setItem('preferredLanguage', 'EN');
-    window.localStorage.setItem('hasSeenLanguagePopup', 'true');
-  });
-});
-
-// Komenda do sprawdzania czy element ma dany test-id
-Cypress.Commands.add('getByTestId', (testId: string) => {
-  return cy.get(`[data-testid="${testId}"]`);
-});
-
-// Debugowanie requestów - POPRAWIONA
-Cypress.Commands.add('debugRequests', () => {
-  // Ta komenda tylko loguje, nie modyfikuje requestów
-  cy.on('window:before:load', (win) => {
-    const originalFetch = win.fetch;
-    win.fetch = function(...args) {
-      console.log('[FETCH]', args[0], args[1]);
-      return originalFetch.apply(this, args);
-    };
-  });
-});
-
-// Czekanie na załadowanie aplikacji
-Cypress.Commands.add('waitForAppLoad', () => {
-  cy.get('body', { timeout: 30000 }).should('be.visible');
-});
-
-// Komenda do mockowania collection API z danymi
-Cypress.Commands.add('mockCollectionData', (data = []) => {
-  // Użyj wildcard dla URL, bo nie wiemy dokładnie jaki jest
-  cy.intercept('GET', '**/api/collection', {
-    statusCode: 200,
-    body: data
-  }).as('getCollection');
-});
-
-// Komenda do debugowania localStorage
-Cypress.Commands.add('debugLocalStorage', () => {
-  cy.window().then((win) => {
-    console.log('=== LocalStorage Debug ===');
-    for (let i = 0; i < win.localStorage.length; i++) {
-      const key = win.localStorage.key(i);
-      const value = win.localStorage.getItem(key!);
-      console.log(`${key}: ${value}`);
-    }
-    console.log('=========================');
-  });
-});
-
-// Komenda do bezpiecznego czekania na element
-Cypress.Commands.add('waitForElement', (selector: string, timeout = 10000) => {
-  return cy.get(selector, { timeout }).should('be.visible');
-});
-
-// PROSTA komenda do clearLocalStorage z stringiem
-Cypress.Commands.add('clearLocalStorageKeys', (keys: string | string[]) => {
-  cy.window().then((win) => {
-    if (Array.isArray(keys)) {
-      keys.forEach(key => win.localStorage.removeItem(key));
-    } else {
-      win.localStorage.removeItem(keys);
-    }
-  });
-});
-
-// Typy dla TypeScript - tylko JEDNA deklaracja
 declare global {
   namespace Cypress {
     interface Chainable {
-      // Basic commands
-      setLocalStorage(key: string, value: string): Chainable<void>;
-      mockAuthenticatedUser(userData?: object): Chainable<void>;
-      getByTestId(testId: string): Chainable<JQuery<HTMLElement>>;
-      clearLocalStorageKeys(keys: string | string[]): Chainable<void>;
+      /**
+       * Custom command to login programmatically
+       * @example cy.login('username', 'password')
+       */
+      login(username: string, password: string): Chainable<void>;
       
-      // Auth commands
-      login(email: string, password: string): Chainable<void>;
+      /**
+       * Custom command to mock successful login API response
+       * @example cy.mockLoginSuccess()
+       */
+      mockLoginSuccess(userData?: any): Chainable<void>;
       
-      // Mock commands
-      mockCollectionData(data?: any[]): Chainable<void>;
+      /**
+       * Custom command to mock failed login API response
+       * @example cy.mockLoginFailure()
+       */
+      mockLoginFailure(errorMessage?: string): Chainable<void>;
       
-      // Debug commands
-      debugRequests(): Chainable<void>;
-      debugLocalStorage(): Chainable<void>;
-      waitForAppLoad(): Chainable<void>;
-      waitForElement(selector: string, timeout?: number): Chainable<JQuery<HTMLElement>>;
+      /**
+       * Custom command to clear all storage (simple version)
+       * @example cy.clearStorage()
+       */
+      clearStorage(): Chainable<void>;
+      
+      /**
+       * Custom command to clear ALL browser storage including cookies, localStorage, sessionStorage, Cache API, and IndexedDB
+       * @example cy.clearAllStorage()
+       */
+      clearAllStorage(): Chainable<void>;
+      
+      /**
+       * Custom command to set theme
+       * @example cy.setTheme('dark')
+       */
+      setTheme(theme: 'dark' | 'light'): Chainable<void>;
+      
+      /**
+       * Custom command to set language
+       * @example cy.setLanguage('EN')
+       */
+      setLanguage(language: string): Chainable<void>;
+
+      /**
+       * Custom command for keyboard tab navigation
+       * @example cy.tab()
+       */
+      tab(): Chainable<void>;
     }
   }
 }
+
+// Custom command to login
+Cypress.Commands.add('login', (username: string, password: string) => {
+  cy.visit('/login');
+  cy.get('input[type="text"]').first().type(username);
+  cy.get('input[type="password"]').type(password);
+  cy.get('button[type="submit"]').click();
+});
+
+// Custom command to mock successful login
+Cypress.Commands.add('mockLoginSuccess', (userData = {}) => {
+  const defaultUser = {
+    id: 1,
+    login: 'testuser',
+    email: 'test@example.com',
+    role: 'user',
+    ...userData
+  };
+
+  cy.intercept('POST', '**/api/login', {
+    statusCode: 200,
+    body: {
+      user: defaultUser,
+      token: 'mock-jwt-token-' + Date.now()
+    }
+  }).as('loginSuccess');
+});
+
+// Custom command to mock failed login
+Cypress.Commands.add('mockLoginFailure', (errorMessage = 'Invalid credentials') => {
+  cy.intercept('POST', '**/api/login', {
+    statusCode: 401,
+    body: {
+      error: errorMessage
+    }
+  }).as('loginFailure');
+});
+
+// Custom command to clear all storage
+Cypress.Commands.add('clearStorage', () => {
+  cy.window().then((win) => {
+    win.localStorage.clear();
+    win.sessionStorage.clear();
+  });
+});
+
+// Custom command to set theme
+Cypress.Commands.add('setTheme', (theme: 'dark' | 'light') => {
+  cy.window().then((win) => {
+    win.localStorage.setItem('preferredTheme', theme);
+    if (theme === 'dark') {
+      win.document.documentElement.classList.add('dark');
+    } else {
+      win.document.documentElement.classList.remove('dark');
+    }
+  });
+});
+
+// Custom command to set language
+Cypress.Commands.add('setLanguage', (language: string) => {
+  cy.window().then((win) => {
+    win.localStorage.setItem('preferredLanguage', language);
+  });
+});
+
+// Custom command for tab navigation
+Cypress.Commands.add('tab', () => {
+  cy.focused().trigger('keydown', { keyCode: 9, which: 9, key: 'Tab' });
+});
+
+// Custom Cypress command to clear all browser storage used by the app
+Cypress.Commands.add('clearAllStorage', () => {
+  cy.clearCookies();
+  cy.clearLocalStorage();
+
+  return cy.window().then((win) => {
+    try { win.sessionStorage?.clear(); } catch (e) { /* ignore */ }
+
+    if (win.caches && typeof win.caches.keys === 'function') {
+      win.caches.keys().then((keys: string[]) => Promise.all(keys.map(k => win.caches.delete(k))));
+    }
+
+    if (win.indexedDB) {
+      const idb = win.indexedDB as any;
+      if (typeof idb.databases === 'function') {
+        return idb.databases().then((dbs: any[]) => {
+          const deletes = dbs.map((db: any) => idb.deleteDatabase(db.name));
+          return Promise.all(deletes);
+        });
+      }
+    }
+
+    return Promise.resolve();
+  });
+});
+Cypress.Commands.add('clearAllStorage', () => {
+  cy.clearCookies();
+  cy.clearLocalStorage();
+  cy.window().then((win) => {
+    win.sessionStorage.clear();
+  });
+});
+
+Cypress.Commands.add('loginViaAPI', (username: string, password: string) => {
+  cy.request({
+    method: 'POST',
+    url: 'http://localhost:5000/api/login',
+    body: { login: username, password: password },
+    failOnStatusCode: false
+  });
+});
+// Prevent TypeScript errors
+export {};

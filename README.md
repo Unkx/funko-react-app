@@ -10,12 +10,12 @@ The app lets you browse and search through Funko Pop items, save things to a wis
 The frontend is built with React, TypeScript, Vite and Tailwind CSS. The backend runs on Node.js with a PostgreSQL database (init scripts are in the backend/ folder). Testing is handled by Cypress for E2E and Vitest for unit tests. The whole thing can be run in Docker via Docker Compose.
 
 # Project Structure
-├── src/              # React components and routes
-├── backend/          # Node server, init-db.js, DB helpers
-├── cypress/          # E2E and component tests
-├── docs/             # Architecture notes and diagrams
-├── docker-compose.yml
-└── Dockerfile
+src/              # React components and routes
+backend/          # Node server, init-db.js, DB helpers
+cypress/          # E2E and component tests
+docs/             # Architecture notes and diagrams
+docker-compose.yml
+Dockerfile
 
 # Getting Started
 The easiest way to run the project is with Docker:
@@ -44,3 +44,4 @@ Architecture diagrams and additional setup notes can be found in the docs/ and d
 
 
 # Disclaimer : Funko Pop is a registered trademark of Funko, LLC. This project is unofficial and not affiliated with Funko.
+

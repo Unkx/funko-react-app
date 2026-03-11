@@ -27,7 +27,7 @@ const CloseIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 // Flags
 import USAFlag from "/src/assets/flags/usa.svg?react";
-import UKFlag from "/src/assets/flags/uk.svg?react";
+import UKFlag from "./assets/flags/uk.svg?react";
 import CanadaFlag from "/src/assets/flags/canada.svg?react";
 import PolandFlag from "/src/assets/flags/poland.svg?react";
 import RussiaFlag from "/src/assets/flags/russia.svg?react";

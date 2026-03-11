@@ -1,8 +1,8 @@
-FROM node:20-alpine as builder  # Zmienione z 18 na 20
+FROM node:20-alpine as builder
 WORKDIR /app
 COPY package*.json ./
 
-# Dodajmy czyszczenie cache npm dla pewności
+# Dodajemy czyszczenie cache npm dla pewności
 RUN npm cache clean --force && \
     rm -rf node_modules package-lock.json && \
     npm install

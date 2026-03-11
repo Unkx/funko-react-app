@@ -1,14 +1,19 @@
-FROM node:18-alpine as builder
+FROM node:20-alpine as builder  # Zmienione z 18 na 20
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+
+# Dodajmy czyszczenie cache npm dla pewności
+RUN npm cache clean --force && \
+    rm -rf node_modules package-lock.json && \
+    npm install
+
 COPY . .
 RUN npm run build
 
 FROM nginx:stable-alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Instaluj gettext do envsubst (narzędzie do podmiany zmiennych)
+# Instaluj gettext do envsubst
 RUN apk add --no-cache gettext
 
 # Kopiuj plik konfiguracyjny jako szablon

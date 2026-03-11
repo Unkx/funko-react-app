@@ -2246,16 +2246,14 @@ import UsersIcon from "/src/assets/users.svg?react";
 import ShoppingCartIcon from "/src/assets/shopping-cart.svg?react";
 
 // Flags
+import usaFlagUrl from "./assets/flags/usa.svg";
 import ukFlagUrl from "./assets/flags/uk.svg";
-import usaFlagUrl from "./assets/flags/us.svg";
-import ukFlagUrl from "./assets/flags/uk.svg";
-import canadaFlagUrl from "./assets/flags/ca.svg";
-import polandFlagUrl from "./assets/flags/pl.svg";
-import russiaFlagUrl from "./assets/flags/ru.svg";
-import spainFlagUrl from "./assets/flags/es.svg";
-import franceFlagUrl from "./assets/flags/fr.svg";
-import germanyFlagUrl from "./assets/flags/de.svg";import USAFlag from "/src/assets/flags/usa.svg?react";
-import CanadaFlag from "/src/assets/flags/canada.svg?react";
+import canadaFlagUrl from "./assets/flags/canada.svg";
+import polandFlagUrl from "./assets/flags/poland.svg";
+import russiaFlagUrl from "./assets/flags/russia.svg";
+import spainFlagUrl from "./assets/flags/spain.svg";
+import franceFlagUrl from "./assets/flags/france.svg";
+import germanyFlagUrl from "./assets/flags/germany.svg";
 
 const headerLanguages = {
   EN: { name: "English", flag: <ukFlagUrl className="w-5 h-5" /> },

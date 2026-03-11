@@ -10,14 +10,15 @@ import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 import QuickLinks from "./QuickLinks";
 
 // Flags
+import usaFlagUrl from "./assets/flags/usa.svg";
 import ukFlagUrl from "./assets/flags/uk.svg";
-import USAFlag from "./assets/flags/usa.svg?react";
-import CanadaFlag from "./assets/flags/canada.svg?react";
-import PolandFlag from "./assets/flags/poland.svg?react";
-import RussiaFlag from "./assets/flags/russia.svg?react";
-import FranceFlag from "./assets/flags/france.svg?react";
-import GermanyFlag from "./assets/flags/germany.svg?react";
-import SpainFlag from "./assets/flags/spain.svg?react";import CanadaFlag from "/src/assets/flags/canada.svg?react";
+import canadaFlagUrl from "./assets/flags/canada.svg";
+import polandFlagUrl from "./assets/flags/poland.svg";
+import russiaFlagUrl from "./assets/flags/russia.svg";
+import spainFlagUrl from "./assets/flags/spain.svg";
+import franceFlagUrl from "./assets/flags/france.svg";
+import germanyFlagUrl from "./assets/flags/germany.svg";
+
 
 import TeamMember1 from "/src/assets/avatars/boy.png";
 import TeamMember2 from "/src/assets/avatars/woman.png";

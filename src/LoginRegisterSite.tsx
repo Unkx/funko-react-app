@@ -17,14 +17,15 @@ import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 
 // Flags
+import usaFlagUrl from "./assets/flags/usa.svg";
 import ukFlagUrl from "./assets/flags/uk.svg";
-import USAFlag from "./assets/flags/usa.svg?react";
-import CanadaFlag from "./assets/flags/canada.svg?react";
-import PolandFlag from "./assets/flags/poland.svg?react";
-import RussiaFlag from "./assets/flags/russia.svg?react";
-import FranceFlag from "./assets/flags/france.svg?react";
-import GermanyFlag from "./assets/flags/germany.svg?react";
-import SpainFlag from "./assets/flags/spain.svg?react";
+import canadaFlagUrl from "./assets/flags/canada.svg";
+import polandFlagUrl from "./assets/flags/poland.svg";
+import russiaFlagUrl from "./assets/flags/russia.svg";
+import spainFlagUrl from "./assets/flags/spain.svg";
+import franceFlagUrl from "./assets/flags/france.svg";
+import germanyFlagUrl from "./assets/flags/germany.svg";
+
 
 const languages = {
     US: { name: "USA", flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" /> },

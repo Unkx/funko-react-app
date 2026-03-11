@@ -28,6 +28,9 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'web_app_db',  // ZMIEŃ NA web_app_db (bez myślnika!)
   password: process.env.DB_PASSWORD || '',
   port: parseInt(process.env.DB_PORT || '5432'),
+  ssl: {
+    rejectUnauthorized: false  // DODAJ TO!
+  }
 });
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';

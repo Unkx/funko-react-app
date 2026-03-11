@@ -22,14 +22,20 @@ const PORT = process.env.PORT || 5000;
 // ======================
 // CONFIGURATION
 // ======================
+// const pool = new Pool({
+//   user: process.env.DB_USER || 'postgres',
+//   host: process.env.DB_HOST || 'localhost',
+//   database: process.env.DB_NAME || 'web_app_db',  // ZMIEŃ NA web_app_db (bez myślnika!)
+//   password: process.env.DB_PASSWORD || '',
+//   port: parseInt(process.env.DB_PORT || '5432'),
+//   ssl: {
+//     rejectUnauthorized: false  // DODAJ TO!
+//   }
+// });
 const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'web_app_db',  // ZMIEŃ NA web_app_db (bez myślnika!)
-  password: process.env.DB_PASSWORD || '',
-  port: parseInt(process.env.DB_PORT || '5432'),
+  connectionString: process.env.DATABASE_URL, // Użyj gotowego URL-a
   ssl: {
-    rejectUnauthorized: false  // DODAJ TO!
+    rejectUnauthorized: false // To wciąż potrzebne dla Render
   }
 });
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key';

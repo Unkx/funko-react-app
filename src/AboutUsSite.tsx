@@ -10,10 +10,8 @@ import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 import QuickLinks from "./QuickLinks";
 
 // Flags
-import UkFlag from "./assets/flags/uk.svg?react";
-import USAFlag from "/src/assets/flags/usa.svg?react";
-import USAFlag from "./assets/flags/usa.svg?react";
 import UKFlag from "./assets/flags/uk.svg?react";
+import USAFlag from "./assets/flags/usa.svg?react";
 import CanadaFlag from "./assets/flags/canada.svg?react";
 import PolandFlag from "./assets/flags/poland.svg?react";
 import RussiaFlag from "./assets/flags/russia.svg?react";

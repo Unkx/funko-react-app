@@ -20,7 +20,7 @@ import FilterIcon from "/src/assets/filter.svg?react";
 import StarIcon from "/src/assets/star.svg?react";
 
 // Flags
-import UKFlag from "/src/assets/flags/uk.svg?react";
+import UkFlag from "./assets/flags/uk.svg?react";
 import PolandFlag from "/src/assets/flags/poland.svg?react";
 import RussiaFlag from "/src/assets/flags/russia.svg?react";
 import FranceFlag from "/src/assets/flags/france.svg?react";

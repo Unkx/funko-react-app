@@ -26,7 +26,7 @@ import PlusIcon from "/src/assets/plus.svg?react";
 import AdminInvites from "./AdminInvites";
 
 // Flag SVGs
-import UKFlag from "/src/assets/flags/UK.svg?react";
+import UkFlag from "./assets/flags/uk.svg?react";
 import USAFlag from "/src/assets/flags/usa.svg?react";
 import PolandFlag from "/src/assets/flags/poland.svg?react";
 import RussiaFlag from "/src/assets/flags/russia.svg?react";

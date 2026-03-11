@@ -13,7 +13,7 @@
 // import QuickLinks from "./QuickLinks";
 
 // // Flags
-// import UKFlag from "/src/assets/flags/uk.svg?react";
+// import UkFlag from "./assets/flags/uk.svg?react";
 // import USAFlag from "/src/assets/flags/usa.svg?react";
 // import PolandFlag from "/src/assets/flags/poland.svg?react";
 // import RussiaFlag from "/src/assets/flags/russia.svg?react";
@@ -1089,7 +1089,7 @@ import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 
 // Flags
-import UKFlag from "/src/assets/flags/uk.svg?react";
+import UkFlag from "./assets/flags/uk.svg?react";
 import USAFlag from "/src/assets/flags/usa.svg?react";
 import PolandFlag from "/src/assets/flags/poland.svg?react";
 import RussiaFlag from "/src/assets/flags/russia.svg?react";

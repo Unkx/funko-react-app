@@ -28,7 +28,7 @@
 // import FriendProfileModal from './FriendProfileModal';
 // import QuickLinks from "./QuickLinks";
 // // Flags
-// import UKFlag from "/src/assets/flags/uk.svg?react";
+// import UkFlag from "./assets/flags/uk.svg?react";
 // import PolandFlag from "/src/assets/flags/poland.svg?react";
 // import RussiaFlag from "/src/assets/flags/russia.svg?react";
 // import FranceFlag from "/src/assets/flags/france.svg?react";
@@ -2246,7 +2246,7 @@ import UsersIcon from "/src/assets/users.svg?react";
 import ShoppingCartIcon from "/src/assets/shopping-cart.svg?react";
 
 // Flags
-import UKFlag from "/src/assets/flags/uk.svg?react";
+import UkFlag from "./assets/flags/uk.svg?react";
 import PolandFlag from "/src/assets/flags/poland.svg?react";
 import RussiaFlag from "/src/assets/flags/russia.svg?react";
 import FranceFlag from "/src/assets/flags/france.svg?react";

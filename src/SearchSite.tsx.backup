@@ -381,7 +381,7 @@ const allItems = useMemo(() => {
   }, [allItems]);
 
   const languages = {
-    EN: { name: "English", flag: <UKFlag className="w-5 h-5" /> },
+    EN: { name: "English", flag: <ukFlagUrl className="w-5 h-5" /> },
     PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
     RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
     ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },

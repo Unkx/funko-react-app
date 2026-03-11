@@ -128,7 +128,7 @@ const countries = {
   },
   UK: {
     name: "United Kingdom",
-    flag: <UKFlag className="w-5 h-5" />,
+    flag: <ukFlagUrl className="w-5 h-5" />,
     region: "Europe",
     language: "EN",
   },
@@ -176,7 +176,7 @@ const languageNames = {
 
 const languages = {
   US: { name: "USA", flag: <USAFlag className="w-5 h-5" /> },
-  EN: { name: "UK", flag: <UKFlag className="w-5 h-5" /> },
+  EN: { name: "UK", flag: <ukFlagUrl className="w-5 h-5" /> },
   CA: { name: "Canada", flag: <CanadaFlag className="w-5 h-5" /> },
   PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
   RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },

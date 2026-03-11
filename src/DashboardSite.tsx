@@ -38,7 +38,7 @@
 // import CanadaFlag from "/src/assets/flags/canada.svg?react";
 
 // const headerLanguages = {
-//   EN: { name: "English", flag: <UKFlag className="w-5 h-5" /> },
+//   EN: { name: "English", flag: <ukFlagUrl className="w-5 h-5" /> },
 //   US: { name: "English (US)", flag: <USAFlag className="w-5 h-5" /> },
 //   CA: { name: "English (CA)", flag: <CanadaFlag className="w-5 h-5" /> },
 //   PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
@@ -2258,7 +2258,7 @@ import germanyFlagUrl from "./assets/flags/de.svg";import USAFlag from "/src/ass
 import CanadaFlag from "/src/assets/flags/canada.svg?react";
 
 const headerLanguages = {
-  EN: { name: "English", flag: <UKFlag className="w-5 h-5" /> },
+  EN: { name: "English", flag: <ukFlagUrl className="w-5 h-5" /> },
   US: { name: "English (US)", flag: <USAFlag className="w-5 h-5" /> },
   CA: { name: "English (CA)", flag: <CanadaFlag className="w-5 h-5" /> },
   PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },

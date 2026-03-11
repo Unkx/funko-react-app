@@ -468,14 +468,14 @@ const SearchSite = () => {
   }, [allItems]);
 
 const languages = {
-    US: { name: "USA", flag: <img src={usaFlagUrl} className="w-5 h-5" alt="USA" /> },
-    EN: { name: "UK", flag: <img src={ukFlagUrl} className="w-5 h-5" alt="UK" /> },
-    CA: { name: "Canada", flag: <img src={canadaFlagUrl} className="w-5 h-5" alt="Canada" /> },
-    PL: { name: "Polski", flag: <img src={polandFlagUrl} className="w-5 h-5" alt="Poland" /> },
-    RU: { name: "Русский", flag: <img src={russiaFlagUrl} className="w-5 h-5" alt="Russia" /> },
-    ES: { name: "Español", flag: <img src={spainFlagUrl} className="w-5 h-5" alt="Spain" /> },
-    FR: { name: "Français", flag: <img src={franceFlagUrl} className="w-5 h-5" alt="France" /> },
-    DE: { name: "Deutsch", flag: <img src={germanyFlagUrl} className="w-5 h-5" alt="Germany" /> },
+    US: { name: "USA", flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" /> },
+    EN: { name: "UK", flag: <img src="https://flagcdn.com/gb.svg" className="w-5 h-5" alt="UK" /> },
+    CA: { name: "Canada", flag: <img src="https://flagcdn.com/ca.svg" className="w-5 h-5" alt="Canada" /> },
+    PL: { name: "Polski", flag: <img src="https://flagcdn.com/pl.svg" className="w-5 h-5" alt="Poland" /> },
+    RU: { name: "Русский", flag: <img src="https://flagcdn.com/ru.svg" className="w-5 h-5" alt="Russia" /> },
+    ES: { name: "Español", flag: <img src="https://flagcdn.com/es.svg" className="w-5 h-5" alt="Spain" /> },
+    FR: { name: "Français", flag: <img src="https://flagcdn.com/fr.svg" className="w-5 h-5" alt="France" /> },
+    DE: { name: "Deutsch", flag: <img src="https://flagcdn.com/de.svg" className="w-5 h-5" alt="Germany" /> },
 };
 
   // Fetch data: first perform a quick, small backend fetch to show initial items fast,

@@ -26,14 +26,14 @@ const CloseIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 // Flags
-import USAFlag from "./assets/flags/usa.svg?react";
-import UKFlag from "./assets/flags/uk.svg?react";
-import CanadaFlag from "./assets/flags/canada.svg?react";
-import PolandFlag from "./assets/flags/poland.svg?react";
-import RussiaFlag from "./assets/flags/russia.svg?react";
-import FranceFlag from "./assets/flags/france.svg?react";
-import GermanyFlag from "./assets/flags/germany.svg?react";
-import SpainFlag from "./assets/flags/spain.svg?react";
+import usaFlagUrl from "./assets/flags/us.svg";
+import ukFlagUrl from "./assets/flags/uk.svg";
+import canadaFlagUrl from "./assets/flags/ca.svg";
+import polandFlagUrl from "./assets/flags/pl.svg";
+import russiaFlagUrl from "./assets/flags/ru.svg";
+import spainFlagUrl from "./assets/flags/es.svg";
+import franceFlagUrl from "./assets/flags/fr.svg";
+import germanyFlagUrl from "./assets/flags/de.svg";
 import AuthButton from "./AuthButton";
 
 // --- Module-level cached fetch to speed up initial load ---
@@ -467,16 +467,16 @@ const SearchSite = () => {
     return [...new Set(allItems.flatMap((item: any) => item.series))];
   }, [allItems]);
 
-  const languages = {
-    US: { name: "USA", flag: <USAFlag className="w-5 h-5" /> },
-    EN: { name: "UK", flag: <UKFlag className="w-5 h-5" /> },
-    CA: { name: "Canada", flag: <CanadaFlag className="w-5 h-5" /> },
-    PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
-    RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
-    ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
-    FR: { name: "Français", flag: <FranceFlag className="w-5 h-5" /> },
-    DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
-  };
+const languages = {
+    US: { name: "USA", flag: <img src={usaFlagUrl} className="w-5 h-5" alt="USA" /> },
+    EN: { name: "UK", flag: <img src={ukFlagUrl} className="w-5 h-5" alt="UK" /> },
+    CA: { name: "Canada", flag: <img src={canadaFlagUrl} className="w-5 h-5" alt="Canada" /> },
+    PL: { name: "Polski", flag: <img src={polandFlagUrl} className="w-5 h-5" alt="Poland" /> },
+    RU: { name: "Русский", flag: <img src={russiaFlagUrl} className="w-5 h-5" alt="Russia" /> },
+    ES: { name: "Español", flag: <img src={spainFlagUrl} className="w-5 h-5" alt="Spain" /> },
+    FR: { name: "Français", flag: <img src={franceFlagUrl} className="w-5 h-5" alt="France" /> },
+    DE: { name: "Deutsch", flag: <img src={germanyFlagUrl} className="w-5 h-5" alt="Germany" /> },
+};
 
   // Fetch data: first perform a quick, small backend fetch to show initial items fast,
   // then update/replace with the full dataset returned by fetchAllItemsOnce().

@@ -20,15 +20,15 @@ import FilterIcon from "/src/assets/filter.svg?react";
 import StarIcon from "/src/assets/star.svg?react";
 
 // Flags
-import UkFlag from "./assets/flags/uk.svg?react";
-import USAFlag from "./assets/flags/usa.svg?react";
-import UKFlag from "./assets/flags/uk.svg?react";
-import CanadaFlag from "./assets/flags/canada.svg?react";
-import PolandFlag from "./assets/flags/poland.svg?react";
-import RussiaFlag from "./assets/flags/russia.svg?react";
-import FranceFlag from "./assets/flags/france.svg?react";
-import GermanyFlag from "./assets/flags/germany.svg?react";
-import SpainFlag from "./assets/flags/spain.svg?react";
+import ukFlagUrl from "./assets/flags/uk.svg";
+import usaFlagUrl from "./assets/flags/us.svg";
+import ukFlagUrl from "./assets/flags/uk.svg";
+import canadaFlagUrl from "./assets/flags/ca.svg";
+import polandFlagUrl from "./assets/flags/pl.svg";
+import russiaFlagUrl from "./assets/flags/ru.svg";
+import spainFlagUrl from "./assets/flags/es.svg";
+import franceFlagUrl from "./assets/flags/fr.svg";
+import germanyFlagUrl from "./assets/flags/de.svg";
 const languages = {
   EN: { name: "English", flag: <UKFlag className="w-5 h-5" /> },
   PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },

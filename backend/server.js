@@ -33,9 +33,9 @@ const PORT = process.env.PORT || 5000;
 //   }
 // });
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // Użyj gotowego URL-a
+  connectionString: process.env.DATABASE_URL,
   ssl: {
-    rejectUnauthorized: false // To wciąż potrzebne dla Render
+    rejectUnauthorized: false
   }
 });
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key';

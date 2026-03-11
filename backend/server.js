@@ -25,11 +25,10 @@ const PORT = process.env.PORT || 5000;
 const pool = new Pool({
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'Web-AppDB',
+  database: process.env.DB_NAME || 'web_app_db',  // ZMIEŃ NA web_app_db (bez myślnika!)
   password: process.env.DB_PASSWORD || '',
   port: parseInt(process.env.DB_PORT || '5432'),
 });
-
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 
@@ -3866,7 +3865,10 @@ const startServer = async () => {
     // 4. Utwórz początkowego admina
     await createInitialAdminIfNeeded();
     
-    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+    app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${PORT} on all interfaces`);
+  console.log(`🌍 Health check: http://0.0.0.0:${PORT}/health`);
+});
   } catch (err) {
     console.error('❌ Failed to start server:', err);
     process.exit(1);

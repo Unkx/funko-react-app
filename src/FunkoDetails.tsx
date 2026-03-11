@@ -188,16 +188,17 @@ const FunkoDetails: React.FC = () => {
   };
 
   // Languages for dropdown
-  const languages = {
-    US: { name: "USA", flag: <USAFlag className="w-5 h-5" /> },
-    EN: { name: "UK", flag: <ukFlagUrl className="w-5 h-5" /> },
-    CA: { name: "Canada", flag: <CanadaFlag className="w-5 h-5" /> },
-    PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
-    RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
-    FR: { name: "Français", flag: <FranceFlag className="w-5 h-5" /> },
-    DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
-    ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
-  };
+const languages = {
+  US: { name: "USA", flag: <usaFlagUrl className="w-5 h-5" /> },
+  EN: { name: "UK", flag: <ukFlagUrl className="w-5 h-5" /> },
+  CA: { name: "Canada", flag: <canadaFlagUrl className="w-5 h-5" /> },
+  PL: { name: "Polski", flag: <polandFlagUrl className="w-5 h-5" /> },
+  RU: { name: "Русский", flag: <russiaFlagUrl className="w-5 h-5" /> },
+  FR: { name: "Français", flag: <franceFlagUrl className="w-5 h-5" /> },
+  DE: { name: "Deutsch", flag: <germanyFlagUrl className="w-5 h-5" /> },
+  ES: { name: "Español", flag: <spainFlagUrl className="w-5 h-5" /> },
+};
+
 
   const shops: Record<string, Shop[]> = {
     canada: [

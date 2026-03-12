@@ -49,4 +49,6 @@ Architecture diagrams and additional setup notes can be found in the docs/ and d
 
 # Disclaimer : Funko Pop is a registered trademark of Funko, LLC. This project is unofficial and not affiliated with Funko.
 
+# App is live! 
+For anyone interested, my web aplication is live at the adress : https://funko-react-app.onrender.com . App is hosted on Render with it's own database.
 

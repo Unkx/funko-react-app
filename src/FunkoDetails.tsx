@@ -13,16 +13,15 @@ import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 
 // Flags
-import ukFlagUrl from "./assets/flags/uk.svg";
-import USAFlag from "/src/assets/flags/usa.svg?react";
-import usaFlagUrl from "./assets/flags/us.svg";
-import ukFlagUrl from "./assets/flags/uk.svg";
-import canadaFlagUrl from "./assets/flags/ca.svg";
-import polandFlagUrl from "./assets/flags/pl.svg";
-import russiaFlagUrl from "./assets/flags/ru.svg";
-import spainFlagUrl from "./assets/flags/es.svg";
-import franceFlagUrl from "./assets/flags/fr.svg";
-import germanyFlagUrl from "./assets/flags/de.svg";import CanadaFlag from "/src/assets/flags/canada.svg?react";
+import UKFlag from "./assets/flags/uk.svg";
+import USAFlag from "./assets/flags/usa.svg";
+import CanadaFlag from "./assets/flags/canada.svg";
+import PolandFlag from "./assets/flags/poland.svg";
+import RussiaFlag from "./assets/flags/russia.svg";
+import SpainFlag from "./assets/flags/spain.svg";
+import FranceFlag from "./assets/flags/france.svg";
+import GermanyFlag from "./assets/flags/germany.svg";
+
 import AuthButton from "./AuthButton";
 
 const baseURL = import.meta.env.VITE_API_BASE_URL;
@@ -30,7 +29,7 @@ if (!baseURL) {
   console.warn("VITE_API_BASE_URL is not set, using default localhost URL");
 }
 const api = axios.create({
-  baseURL: baseURL || "http://localhost:5000",
+  baseURL: baseURL || "${baseURL}",
 });
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
@@ -151,7 +150,7 @@ const FunkoDetails: React.FC = () => {
     },
     UK: {
       name: "UK",
-      flag: <ukFlagUrl className="w-5 h-5" />,
+      flag: <UKFlag className="w-5 h-5" />,
       region: "Europe",
       language: "EN",
     },
@@ -189,14 +188,14 @@ const FunkoDetails: React.FC = () => {
 
   // Languages for dropdown
 const languages = {
-  US: { name: "USA", flag: <usaFlagUrl className="w-5 h-5" /> },
-  EN: { name: "UK", flag: <ukFlagUrl className="w-5 h-5" /> },
-  CA: { name: "Canada", flag: <canadaFlagUrl className="w-5 h-5" /> },
-  PL: { name: "Polski", flag: <polandFlagUrl className="w-5 h-5" /> },
-  RU: { name: "Русский", flag: <russiaFlagUrl className="w-5 h-5" /> },
-  FR: { name: "Français", flag: <franceFlagUrl className="w-5 h-5" /> },
-  DE: { name: "Deutsch", flag: <germanyFlagUrl className="w-5 h-5" /> },
-  ES: { name: "Español", flag: <spainFlagUrl className="w-5 h-5" /> },
+  US: { name: "USA", flag: <USAFlag className="w-5 h-5" /> },
+  EN: { name: "UK", flag: <UKFlag className="w-5 h-5" /> },
+  CA: { name: "Canada", flag: <CanadaFlag className="w-5 h-5" /> },
+  PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
+  RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
+  FR: { name: "Français", flag: <FranceFlag className="w-5 h-5" /> },
+  DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
+  ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
 };
 
 

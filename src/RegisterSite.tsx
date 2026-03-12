@@ -192,7 +192,7 @@ const RegisterSite: React.FC = () => {
     console.log("Sending registration payload:", payload); // Log the payload being sent
 
     try {
-      const response = await fetch('http://localhost:5000/api/register', {
+      const response = await fetch('${baseURL}/api/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -227,7 +227,7 @@ const RegisterSite: React.FC = () => {
     setInviteValid(null);
     const id = setTimeout(async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/verify-invite', {
+        const res = await fetch('${baseURL}/api/verify-invite', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token: inviteToken.trim() })

@@ -443,7 +443,7 @@
         
 //         if (token) {
 //           try {
-//             const backendResponse = await fetch("http://localhost:5000/api/items?limit=30", {
+//             const backendResponse = await fetch("${baseURL}/api/items?limit=30", {
 //               headers: {
 //                 "Authorization": `Bearer ${token}`
 //               }
@@ -1525,7 +1525,7 @@ const incrementVisitCount = (id: string) => {
 
         if (token) {
           try {
-            const backendResponse = await fetch("http://localhost:5000/api/items?limit=30", {
+            const backendResponse = await fetch("${baseURL}/api/items?limit=30", {
               headers: {
                 "Authorization": `Bearer ${token}`
               }

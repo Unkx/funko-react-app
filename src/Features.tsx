@@ -9,14 +9,14 @@ import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 
 // Flags
-import usaFlagUrl from "./assets/flags/usa.svg";
-import ukFlagUrl from "./assets/flags/uk.svg";
-import canadaFlagUrl from "./assets/flags/canada.svg";
-import polandFlagUrl from "./assets/flags/poland.svg";
-import russiaFlagUrl from "./assets/flags/russia.svg";
-import spainFlagUrl from "./assets/flags/spain.svg";
-import franceFlagUrl from "./assets/flags/france.svg";
-import germanyFlagUrl from "./assets/flags/germany.svg";
+import USAFlag from "./assets/flags/usa.svg";
+import UKFlag from "./assets/flags/uk.svg";
+import CanadaFlag from "./assets/flags/canada.svg";
+import PolandFlag from "./assets/flags/poland.svg";
+import RussiaFlag from "./assets/flags/russia.svg";
+import SpainFlag from "./assets/flags/spain.svg";
+import FranceFlag from "./assets/flags/france.svg";
+import GermanyFlag from "./assets/flags/germany.svg";
 
 
 import { translations } from "./Translations/TranslationFeatures";
@@ -77,7 +77,7 @@ const stats = [
 // 🌐 Languages for dropdown
 const languages = {
   US: { name: "USA", flag: <USAFlag className="w-5 h-5" /> },
-  EN: { name: "UK", flag: <ukFlagUrl className="w-5 h-5" /> },
+  EN: { name: "UK", flag: <UKFlag className="w-5 h-5" /> },
   CA: { name: "Canada", flag: <CanadaFlag className="w-5 h-5" /> },
   PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
   RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },

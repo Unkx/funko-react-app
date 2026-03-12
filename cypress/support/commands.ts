@@ -169,7 +169,7 @@ Cypress.Commands.add('clearAllStorage', () => {
 Cypress.Commands.add('loginViaAPI', (username: string, password: string) => {
   cy.request({
     method: 'POST',
-    url: 'http://localhost:5000/api/login',
+    url: '${baseURL}/api/login',
     body: { login: username, password: password },
     failOnStatusCode: false
   });

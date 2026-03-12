@@ -13,7 +13,7 @@
 // import QuickLinks from "./QuickLinks";
 
 // // Flags
-// import ukFlagUrl from "./assets/flags/uk.svg";
+// import ukFlag from "./assets/flags/uk.svg";
 // import USAFlag from "/src/assets/flags/usa.svg?react";
 // import PolandFlag from "/src/assets/flags/poland.svg?react";
 // import RussiaFlag from "/src/assets/flags/russia.svg?react";
@@ -274,7 +274,7 @@
 //     },
 //     UK: {
 //       name: "UK",
-//       flag: <ukFlagUrl className="w-5 h-5" />,
+//       flag: <ukFlag className="w-5 h-5" />,
 //       region: "Europe",
 //       language: "EN",
 //     },
@@ -313,7 +313,7 @@
 //   // 🌍 Languages for dropdown (with flag)
 //   const languages = {
 //     US: { name: "USA", flag: <USAFlag className="w-5 h-5" /> },
-//     EN: { name: "UK", flag: <ukFlagUrl className="w-5 h-5" /> },
+//     EN: { name: "UK", flag: <ukFlag className="w-5 h-5" /> },
 //     CA: { name: "Canada", flag: <CanadaFlag className="w-5 h-5" /> },
 //     PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
 //     RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
@@ -443,7 +443,7 @@
         
 //         if (token) {
 //           try {
-//             const backendResponse = await fetch("http://localhost:5000/api/items?limit=30", {
+//             const backendResponse = await fetch("${base}/api/items?limit=30", {
 //               headers: {
 //                 "Authorization": `Bearer ${token}`
 //               }
@@ -1089,14 +1089,14 @@ import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 
 // Flags
-import usaFlagUrl from "./assets/flags/usa.svg";
-import ukFlagUrl from "./assets/flags/uk.svg";
-import canadaFlagUrl from "./assets/flags/canada.svg";
-import polandFlagUrl from "./assets/flags/poland.svg";
-import russiaFlagUrl from "./assets/flags/russia.svg";
-import spainFlagUrl from "./assets/flags/spain.svg";
-import franceFlagUrl from "./assets/flags/france.svg";
-import germanyFlagUrl from "./assets/flags/germany.svg";
+import USAFlag from "./assets/flags/usa.svg";
+import UKFlag from "./assets/flags/uk.svg";
+import CanadaFlag from "./assets/flags/canada.svg";
+import PolandFlag from "./assets/flags/poland.svg";
+import RussiaFlag from "./assets/flags/russia.svg";
+import SpainFlag from "./assets/flags/spain.svg";
+import FranceFlag from "./assets/flags/france.svg";
+import GermanyFlag from "./assets/flags/germany.svg";
 
 
 import AuthButton from "./AuthButton";
@@ -1690,7 +1690,7 @@ const getBotResponse = (userInput: string): { text: string; buttons?: Array<{ la
     },
     UK: {
       name: "UK",
-      flag: <ukFlagUrl className="w-5 h-5" />,
+      flag: <UKFlag className="w-5 h-5" />,
       region: "Europe",
       language: "EN",
     },
@@ -1728,14 +1728,14 @@ const getBotResponse = (userInput: string): { text: string; buttons?: Array<{ la
 
   // 🌍 Languages for dropdown (with flag)
 const languages = {
-  US: { name: "USA", flag: <usaFlagUrl className="w-5 h-5" /> },
-  EN: { name: "UK", flag: <ukFlagUrl className="w-5 h-5" /> },
-  CA: { name: "Canada", flag: <canadaFlagUrl className="w-5 h-5" /> },
-  PL: { name: "Polski", flag: <polandFlagUrl className="w-5 h-5" /> },
-  RU: { name: "Русский", flag: <russiaFlagUrl className="w-5 h-5" /> },
-  FR: { name: "Français", flag: <franceFlagUrl className="w-5 h-5" /> },
-  DE: { name: "Deutsch", flag: <germanyFlagUrl className="w-5 h-5" /> },
-  ES: { name: "Español", flag: <spainFlagUrl className="w-5 h-5" /> },
+  US: { name: "USA", flag: <USAFlag className="w-5 h-5" /> },
+  EN: { name: "UK", flag: <UKFlag className="w-5 h-5" /> },
+  CA: { name: "Canada", flag: <CanadaFlag className="w-5 h-5" /> },
+  PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
+  RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
+  FR: { name: "Français", flag: <FranceFlag className="w-5 h-5" /> },
+  DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
+  ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
 };
 
 
@@ -1875,7 +1875,7 @@ const incrementVisitCount = (id: string) => {
         const token = localStorage.getItem("token");
         if (token) {
           try {
-            const backendResponse = await fetch("http://localhost:5000/api/items?limit=30", {
+            const backendResponse = await fetch("${base}/api/items?limit=30", {
               headers: { Authorization: `Bearer ${token}` },
             });
             if (backendResponse.ok) {

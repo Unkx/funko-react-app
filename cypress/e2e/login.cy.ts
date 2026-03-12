@@ -50,7 +50,7 @@ describe('Login/Register Page Tests', () => {
   describe('TC4: Form submission button works', () => {
     it('should submit form when button is clicked', () => {
       // Mock the login API call
-      cy.intercept('POST', 'http://localhost:5000/api/login', {
+      cy.intercept('POST', '${baseURL}/api/login', {
         statusCode: 200,
         body: {
           user: { id: 1, login: 'testuser', role: 'user' },
@@ -66,7 +66,7 @@ describe('Login/Register Page Tests', () => {
     });
 
     it('should submit form when pressing Enter in password field', () => {
-      cy.intercept('POST', 'http://localhost:5000/api/login').as('loginRequest');
+      cy.intercept('POST', '${baseURL}/api/login').as('loginRequest');
 
       loginPage.typeInField('input[type="text"]', 'testuser');
       loginPage.typeInField('input[type="password"]', 'TestPassword123!{enter}');
@@ -111,7 +111,7 @@ describe('Login/Register Page Tests', () => {
 
   describe('TC7: Mock API call simulation', () => {
     it('should handle successful login and redirect to dashboard', () => {
-      cy.intercept('POST', 'http://localhost:5000/api/login', {
+      cy.intercept('POST', '${baseURL}/api/login', {
         statusCode: 200,
         body: {
           user: {
@@ -139,7 +139,7 @@ describe('Login/Register Page Tests', () => {
     });
 
     it('should display error for invalid credentials', () => {
-      cy.intercept('POST', 'http://localhost:5000/api/login', {
+      cy.intercept('POST', '${baseURL}/api/login', {
         statusCode: 401,
         body: {
           error: 'Invalid credentials'

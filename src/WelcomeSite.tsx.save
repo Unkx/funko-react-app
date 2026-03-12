@@ -446,7 +446,7 @@ const incrementVisitCount = (id: string) => {
         
         if (token) {
           try {
-            const backendResponse = await fetch("http://localhost:5000/api/items", {
+            const backendResponse = await fetch("${baseURL}/api/items", {
               headers: {
                 "Authorization": `Bearer ${token}`
               }

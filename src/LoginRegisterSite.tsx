@@ -138,7 +138,7 @@ const LoginRegisterSite: React.FC = () => {
       return;
     }
     try {
-      const response = await fetch("http://localhost:5000/api/login", {
+      const response = await fetch("${baseURL}/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ login, password }),
@@ -168,7 +168,7 @@ const LoginRegisterSite: React.FC = () => {
     setInviteValid(null);
     const id = setTimeout(async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/verify-invite', {
+        const res = await fetch('${baseURL}/api/verify-invite', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token: inviteToken.trim() })
@@ -257,7 +257,7 @@ const LoginRegisterSite: React.FC = () => {
       (payload as any).invite_token = inviteToken.trim();
     }
     try {
-      const response = await fetch("http://localhost:5000/api/register", {
+      const response = await fetch("${baseURL}/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -284,7 +284,7 @@ const LoginRegisterSite: React.FC = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/forgot-password", {
+      const response = await fetch("${baseURL}/api/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: resetEmail }),
@@ -314,7 +314,7 @@ const LoginRegisterSite: React.FC = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/verify-reset-code", {
+      const response = await fetch("${baseURL}/api/verify-reset-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: resetCode }),
@@ -353,7 +353,7 @@ const LoginRegisterSite: React.FC = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/reset-password", {
+      const response = await fetch("${baseURL}/api/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

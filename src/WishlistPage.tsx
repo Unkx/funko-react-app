@@ -165,7 +165,7 @@ const WishlistPage: React.FC = () => {
       }
 
       try {
-        const response = await fetch("http://localhost:5000/api/wishlist", {
+        const response = await fetch("${baseURL}/api/wishlist", {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -275,7 +275,7 @@ const WishlistPage: React.FC = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/wishlist/${editingItem}`, {
+      const response = await fetch(`${baseURL}/api/wishlist/${editingItem}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -304,7 +304,7 @@ const WishlistPage: React.FC = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/wishlist/${itemId}`, {
+      const response = await fetch(`${baseURL}/api/wishlist/${itemId}`, {
         method: "DELETE",
         headers: {
           "Authorization": `Bearer ${token}`
@@ -325,7 +325,7 @@ const WishlistPage: React.FC = () => {
 
     try {
       // Add to collection
-      const response = await fetch("http://localhost:5000/api/collection", {
+      const response = await fetch("${baseURL}/api/collection", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

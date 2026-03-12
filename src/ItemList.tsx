@@ -46,7 +46,7 @@ const ItemList: React.FC<ItemListProps> = ({ token, currentUserRole, isDarkMode,
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/admin/items?page=${currentPage}&limit=${ITEMS_PER_PAGE}`,
+        `${baseURL}/api/admin/items?page=${currentPage}&limit=${ITEMS_PER_PAGE}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

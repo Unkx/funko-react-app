@@ -20,17 +20,17 @@ const AnalyticsDashboard = () => {
   const fetchData = async () => {
     try {
       const [statsRes, loyaltyRes, leaderboardRes, friendsRes] = await Promise.all([
-        fetch('http://localhost:5000/api/activity/stats', {
+        fetch('${baseURL}/api/activity/stats', {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        fetch('http://localhost:5000/api/loyalty/calculate', {
+        fetch('${baseURL}/api/loyalty/calculate', {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` }
         }),
-        fetch('http://localhost:5000/api/loyalty/leaderboard', {
+        fetch('${baseURL}/api/loyalty/leaderboard', {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        fetch('http://localhost:5000/api/friends', {
+        fetch('${baseURL}/api/friends', {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);

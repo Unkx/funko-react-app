@@ -125,6 +125,22 @@ const LoginRegisterSite: React.FC = () => {
     setShowLanguageDropdown(false);
   };
 
+const cors = require('cors');
+const allowedOrigins = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  : ['http://localhost:5000', 'https://funko-react-app.onrender.com'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed'));
+    }
+  },
+  credentials: true
+}));
+
   // --- LOGIN ---
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

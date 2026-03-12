@@ -16,8 +16,11 @@ import SearchIcon from "/src/assets/search.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 
-// Flags
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
 
+if (!import.meta.env.VITE_API_BASE_URL) {
+  console.warn('VITE_API_BASE_URL is not set, using default:', baseURL);
+}
 
 
 const languages = {
@@ -131,7 +134,7 @@ const LoginRegisterSite: React.FC = () => {
       return;
     }
     try {
-      const response = await fetch("${baseURL}/api/login", {
+      const response = await fetch(`${baseURL}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ login, password }),
@@ -161,7 +164,7 @@ const LoginRegisterSite: React.FC = () => {
     setInviteValid(null);
     const id = setTimeout(async () => {
       try {
-        const res = await fetch('${baseURL}/api/verify-invite', {
+        const res = await fetch(`${baseURL}/api/verify-invite`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token: inviteToken.trim() })
@@ -250,7 +253,7 @@ const LoginRegisterSite: React.FC = () => {
       (payload as any).invite_token = inviteToken.trim();
     }
     try {
-      const response = await fetch("${baseURL}/api/register", {
+      const response = await fetch(`${baseURL}/api/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -277,7 +280,7 @@ const LoginRegisterSite: React.FC = () => {
     }
 
     try {
-      const response = await fetch("${baseURL}/api/forgot-password", {
+      const response = await fetch(`${baseURL}/api/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: resetEmail }),
@@ -307,7 +310,7 @@ const LoginRegisterSite: React.FC = () => {
     }
 
     try {
-      const response = await fetch("${baseURL}/api/verify-reset-code", {
+      const response = await fetch(`${baseURL}/api/verify-reset-code`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: resetCode }),
@@ -346,7 +349,7 @@ const LoginRegisterSite: React.FC = () => {
     }
 
     try {
-      const response = await fetch("${baseURL}/api/reset-password", {
+      const response = await fetch(`${baseURL}/api/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

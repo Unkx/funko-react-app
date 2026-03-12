@@ -26,7 +26,12 @@ import ChartIcon from "/src/assets/chart.svg?react";
 import UsersIcon from "/src/assets/users.svg?react";
 import ShoppingCartIcon from "/src/assets/shopping-cart.svg?react";
 
+// Add this after your imports
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
 
+if (!import.meta.env.VITE_API_BASE_URL) {
+  console.warn('VITE_API_BASE_URL is not set, using default:', baseURL);
+}
 
 const headerLanguages = {
   USA: {

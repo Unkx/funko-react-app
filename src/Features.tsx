@@ -8,16 +8,6 @@ import SearchIcon from "/src/assets/search.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 
-// Flags
-// import USAFlag from "./assets/flags/usa.svg";
-// import UKFlag from "./assets/flags/uk.svg";
-// import CanadaFlag from "./assets/flags/canada.svg";
-// import PolandFlag from "./assets/flags/poland.svg";
-// import RussiaFlag from "./assets/flags/russia.svg";
-// import SpainFlag from "./assets/flags/spain.svg";
-// import FranceFlag from "./assets/flags/france.svg";
-// import GermanyFlag from "./assets/flags/germany.svg";
-
 
 import { translations } from "./Translations/TranslationFeatures";
 import QuickLinks from "./QuickLinks";

@@ -203,7 +203,7 @@ const Requests = () => {
         return;
       }
       try {
-        const res = await fetch("${baseURL}/api/admin/requests", {
+        const res = await fetch(`${baseURL}/api/admin/requests`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -745,7 +745,7 @@ const Admin = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      await fetch("${baseURL}/api/activity/log", {
+      await fetch(`${baseURL}/api/activity/log`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -774,10 +774,10 @@ const Admin = () => {
     setDashboardAnalyticsLoading(true);
     try {
       const [statsRes, loyaltyRes, friendsRes, leaderboardRes] = await Promise.all([
-        fetch("${baseURL}/api/activity/stats", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("${baseURL}/api/loyalty/calculate", { method: "POST", headers: { Authorization: `Bearer ${token}` } }),
-        fetch("${baseURL}/api/friends", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("${baseURL}/api/loyalty/leaderboard", { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`${baseURL}/api/activity/stats`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${baseURL}/api/loyalty/calculate`, { method: "POST", headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${baseURL}/api/friends`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${baseURL}/api/loyalty/leaderboard`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
       if (statsRes.ok) setUserStats(await statsRes.json());
       if (loyaltyRes.ok) setLoyaltyData(await loyaltyRes.json());
@@ -795,7 +795,7 @@ const fetchIncomingRequests = async () => {
   const token = localStorage.getItem("token");
   if (!token) return;
   try {
-    const response = await fetch("${baseURL}/api/friends/requests/incoming", {
+    const response = await fetch(`${baseURL}/api/friends/requests/incoming`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (response.ok) {
@@ -811,7 +811,7 @@ const fetchOutgoingRequests = async () => {
   const token = localStorage.getItem("token");
   if (!token) return;
   try {
-    const response = await fetch("${baseURL}/api/friends/requests/outgoing", {
+    const response = await fetch(`${baseURL}/api/friends/requests/outgoing`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (response.ok) {
@@ -908,7 +908,7 @@ const handleRemoveFriend = async (friendId: string) => {
     if (!token) return;
     
     try {
-      await fetch("${baseURL}/api/loyalty/award-points", {
+      await fetch(`${baseURL}/api/loyalty/award-points`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -928,7 +928,7 @@ const handleRemoveFriend = async (friendId: string) => {
     
     setAnalyticsLoading(true);
     try {
-      const response = await fetch("${baseURL}/api/admin/analytics", {
+      const response = await fetch(`${baseURL}/api/admin/analytics`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -1039,7 +1039,7 @@ useEffect(() => {
     if (!token || currentUser?.role !== "admin") return;
     const fetchCount = async () => {
       try {
-        const res = await fetch("${baseURL}/api/admin/requests/count", {
+        const res = await fetch(`${baseURL}/api/admin/requests/count`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -1089,7 +1089,7 @@ useEffect(() => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch("${baseURL}/api/admin/users", {
+        const response = await fetch(`${baseURL}/api/admin/users`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) {
@@ -1119,7 +1119,7 @@ useEffect(() => {
       if (!token || !(currentUser?.role === "admin")) return;
       setStatsLoading(true);
       try {
-        const response = await fetch("${baseURL}/api/admin/stats", {
+        const response = await fetch(`${baseURL}/api/admin/stats`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) {
@@ -1293,7 +1293,7 @@ useEffect(() => {
       return;
     }
     try {
-      const response = await fetch("${baseURL}/api/admin/items", {
+      const response = await fetch(`${baseURL}/api/admin/items`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1333,7 +1333,7 @@ useEffect(() => {
     }
 
     try {
-      const response = await fetch("${baseURL}/api/admin/users", {
+      const response = await fetch(`${baseURL}/api/admin/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1357,7 +1357,7 @@ useEffect(() => {
           role: "user"
         });
         // Refresh user list
-        const usersRes = await fetch("${baseURL}/api/admin/users", {
+        const usersRes = await fetch(`${baseURL}/api/admin/users`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (usersRes.ok) {
@@ -1544,7 +1544,7 @@ useEffect(() => {
               const token = localStorage.getItem("token");
               if (!token) return;
               try {
-                const response = await fetch("${baseURL}/api/friends/request", {
+                const response = await fetch(`${baseURL}/api/friends/request`, {
                   method: "POST",
                   headers: { 
                     "Content-Type": "application/json", 

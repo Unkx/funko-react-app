@@ -245,7 +245,7 @@ const DashboardSite: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      await fetch("${baseURL}/api/loyalty/award-points", {
+      await fetch(`${baseURL}/api/loyalty/award-points`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -264,7 +264,7 @@ const DashboardSite: React.FC = () => {
       const token = localStorage.getItem("token");
       if (!token) return;
       try {
-        const response = await fetch("${baseURL}/api/loyalty/achievements", {
+        const response = await fetch(`${baseURL}/api/loyalty/achievements`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (response.ok) {
@@ -362,7 +362,7 @@ const DashboardSite: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      await fetch("${baseURL}/api/activity/log", {
+      await fetch(`${baseURL}/api/activity/log`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -386,10 +386,10 @@ const DashboardSite: React.FC = () => {
     setAnalyticsLoading(true);
     try {
       const [statsRes, loyaltyRes, friendsRes, leaderboardRes] = await Promise.all([
-        fetch("${baseURL}/api/activity/stats", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("${baseURL}/api/loyalty/calculate", { method: "POST", headers: { Authorization: `Bearer ${token}` } }),
-        fetch("${baseURL}/api/friends", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("${baseURL}/api/loyalty/leaderboard", { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`${baseURL}/api/activity/stats`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${baseURL}/api/loyalty/calculate`, { method: "POST", headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${baseURL}/api/friends`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${baseURL}/api/loyalty/leaderboard`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
       if (statsRes.ok) setUserStats(await statsRes.json());
       if (loyaltyRes.ok) setLoyaltyData(await loyaltyRes.json());
@@ -410,7 +410,7 @@ const DashboardSite: React.FC = () => {
       return;
     }
     try {
-      const response = await fetch("${baseURL}/api/collection", {
+      const response = await fetch(`${baseURL}/api/collection`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -435,7 +435,7 @@ const DashboardSite: React.FC = () => {
       return;
     }
     try {
-      const response = await fetch("${baseURL}/api/wishlist", {
+      const response = await fetch(`${baseURL}/api/wishlist`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -457,7 +457,7 @@ const DashboardSite: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      const response = await fetch("${baseURL}/api/friends/requests/incoming", {
+      const response = await fetch(`${baseURL}/api/friends/requests/incoming`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -474,7 +474,7 @@ const DashboardSite: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      const response = await fetch("${baseURL}/api/friends/requests/outgoing", {
+      const response = await fetch(`${baseURL}/api/friends/requests/outgoing`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -892,7 +892,7 @@ const DashboardSite: React.FC = () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
-      const response = await fetch("${baseURL}/api/collection", {
+      const response = await fetch(`${baseURL}/api/collection`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify({
@@ -1806,7 +1806,7 @@ const DashboardSite: React.FC = () => {
               const token = localStorage.getItem("token");
               if (!token) return;
               try {
-                const response = await fetch("${baseURL}/api/friends/request", {
+                const response = await fetch(`${baseURL}/api/friends/request`, {
                   method: "POST",
                   headers: {
                     "Content-Type": "application/json",

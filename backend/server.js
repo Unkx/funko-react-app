@@ -353,7 +353,7 @@ app.use(cors({
 }));
 
 // Add OPTIONS handling for preflight requests
-app.options('*', cors());
+
 
 app.options('/api/admin/users/:id/role', cors());
 

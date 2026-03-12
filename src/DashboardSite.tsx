@@ -2249,14 +2249,54 @@ import ShoppingCartIcon from "/src/assets/shopping-cart.svg?react";
 
 
 const headerLanguages = {
-  EN: { name: "English", flag: <UKFlagUrl className="w-5 h-5" /> },
-  US: { name: "English (US)", flag: <USAFlagUrl className="w-5 h-5" /> },
-  CA: { name: "English (CA)", flag: <CanadaFlagUrl className="w-5 h-5" /> },
-  PL: { name: "Polski", flag: <PolandFlagUrl className="w-5 h-5" /> },
-  RU: { name: "Русский", flag: <RussiaFlagUrl className="w-5 h-5" /> },
-  FR: { name: "Français", flag: <FranceFlagUrl className="w-5 h-5" /> },
-  DE: { name: "Deutsch", flag: <GermanyFlagUrl className="w-5 h-5" /> },
-  ES: { name: "Español", flag: <SpainFlagUrl className="w-5 h-5" /> },
+  USA: {
+    name: "USA",
+    flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" />,
+    region: "North America",
+    language: "EN",
+  },
+  CA: {
+    name: "Canada",
+    flag: <img src="https://flagcdn.com/ca.svg" className="w-5 h-5" alt="Canada" />,
+    region: "North America",
+    language: "EN",
+  },
+  UK: {
+    name: "UK",
+    flag: <img src="https://flagcdn.com/gb.svg" className="w-5 h-5" alt="UK" />,
+    region: "Europe",
+    language: "EN",
+  },
+  PL: {
+    name: "Poland",
+    flag: <img src="https://flagcdn.com/pl.svg" className="w-5 h-5" alt="Poland" />,
+    region: "Europe",
+    language: "PL",
+  },
+  RU: {
+    name: "Russia",
+    flag: <img src="https://flagcdn.com/ru.svg" className="w-5 h-5" alt="Russia" />,
+    region: "Europe",
+    language: "RU",
+  },
+  FR: {
+    name: "France",
+    flag: <img src="https://flagcdn.com/fr.svg" className="w-5 h-5" alt="France" />,
+    region: "Europe",
+    language: "FR",
+  },
+  DE: {
+    name: "Germany",
+    flag: <img src="https://flagcdn.com/de.svg" className="w-5 h-5" alt="Germany" />,
+    region: "Europe",
+    language: "DE",
+  },
+  ES: {
+    name: "Spain",
+    flag: <img src="https://flagcdn.com/es.svg" className="w-5 h-5" alt="Spain" />,
+    region: "Europe",
+    language: "ES",
+  },
 };
 
 interface User {

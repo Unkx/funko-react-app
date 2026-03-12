@@ -2246,14 +2246,7 @@ import UsersIcon from "/src/assets/users.svg?react";
 import ShoppingCartIcon from "/src/assets/shopping-cart.svg?react";
 
 // Flags
-import USAFlagUrl from "./assets/flags/usa.svg";
-import UKFlagUrl from "./assets/flags/uk.svg";
-import CanadaFlagUrl from "./assets/flags/canada.svg";
-import PolandFlagUrl from "./assets/flags/poland.svg";
-import RussiaFlagUrl from "./assets/flags/russia.svg";
-import SpainFlagUrl from "./assets/flags/spain.svg";
-import FranceFlagUrl from "./assets/flags/france.svg";
-import GermanyFlagUrl from "./assets/flags/germany.svg";
+
 
 const headerLanguages = {
   EN: { name: "English", flag: <UKFlagUrl className="w-5 h-5" /> },

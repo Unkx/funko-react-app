@@ -12,14 +12,7 @@ import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 import QuickLinks from "./QuickLinks";
 
 // Flags
-import USAFlag from "./assets/flags/usa.svg";
-import UKFlag from "./assets/flags/uk.svg";
-import CanadaFlag from "./assets/flags/canada.svg";
-import PolandFlag from "./assets/flags/poland.svg";
-import RussiaFlag from "./assets/flags/russia.svg";
-import SpainFlag from "./assets/flags/spain.svg";
-import FranceFlag from "./assets/flags/france.svg";
-import GermanyFlag from "./assets/flags/germany.svg";
+
 
 import AuthButton from "./AuthButton";
 
@@ -41,14 +34,14 @@ interface FunkoItemWithVisits extends FunkoItem {
 
 // 🌐 Languages for dropdown (with flag)
 const languages = {
-  US: { name: "USA", flag: <USAFlag className="w-5 h-5" /> },
-  EN: { name: "UK", flag: <UKFlag className="w-5 h-5" /> },
-  CA: { name: "Canada", flag: <CanadaFlag className="w-5 h-5" /> },
-  PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
-  RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
-  FR: { name: "Français", flag: <FranceFlag className="w-5 h-5" /> },
-  DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
-  ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
+    US: { name: "USA", flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" /> },
+    EN: { name: "UK", flag: <img src="https://flagcdn.com/gb.svg" className="w-5 h-5" alt="UK" /> },
+    CA: { name: "Canada", flag: <img src="https://flagcdn.com/ca.svg" className="w-5 h-5" alt="Canada" /> },
+    PL: { name: "Polski", flag: <img src="https://flagcdn.com/pl.svg" className="w-5 h-5" alt="Poland" /> },
+    RU: { name: "Русский", flag: <img src="https://flagcdn.com/ru.svg" className="w-5 h-5" alt="Russia" /> },
+    ES: { name: "Español", flag: <img src="https://flagcdn.com/es.svg" className="w-5 h-5" alt="Spain" /> },
+    FR: { name: "Français", flag: <img src="https://flagcdn.com/fr.svg" className="w-5 h-5" alt="France" /> },
+    DE: { name: "Deutsch", flag: <img src="https://flagcdn.com/de.svg" className="w-5 h-5" alt="Germany" /> },
 };
 
 const MostVisitedSite: React.FC = () => {

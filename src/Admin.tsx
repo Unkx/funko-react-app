@@ -26,14 +26,6 @@ import PlusIcon from "/src/assets/plus.svg?react";
 import AdminInvites from "./AdminInvites";
 
 // Flag SVGs
-import USAFlag from "./assets/flags/usa.svg";
-import UKFlag from "./assets/flags/uk.svg";
-import CanadaFlag from "./assets/flags/canada.svg";
-import PolandFlag from "./assets/flags/poland.svg";
-import RussiaFlag from "./assets/flags/russia.svg";
-import SpainFlag from "./assets/flags/spain.svg";
-import FranceFlag from "./assets/flags/france.svg";
-import GermanyFlag from "./assets/flags/germany.svg";
 
 import AuthButton from "./AuthButton.tsx";
 
@@ -115,49 +107,49 @@ interface RequestItem {
 const countries = {
   USA: {
     name: "United States",
-    flag: <USAFlag className="w-5 h-5" />,
+    flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" />,
     region: "North America",
     language: "EN",
   },
-  CA : {
+  CA: {
     name: "Canada",
-    flag: <CanadaFlag className="w-5 h-5" />,
+    flag: <img src="https://flagcdn.com/ca.svg" className="w-5 h-5" alt="Canada" />,
     region: "North America",
-    language : "EN",
+    language: "EN",
   },
   UK: {
     name: "United Kingdom",
-    flag: <UKFlag className="w-5 h-5" />,
+    flag: <img src="https://flagcdn.com/gb.svg" className="w-5 h-5" alt="UK" />,
     region: "Europe",
     language: "EN",
   },
   PL: {
     name: "Poland",
-    flag: <PolandFlag className="w-5 h-5" />,
+    flag: <img src="https://flagcdn.com/pl.svg" className="w-5 h-5" alt="Poland" />,
     region: "Europe",
     language: "PL",
   },
   RU: {
     name: "Russia",
-    flag: <RussiaFlag className="w-5 h-5" />,
+    flag: <img src="https://flagcdn.com/ru.svg" className="w-5 h-5" alt="Russia" />,
     region: "Europe",
     language: "RU",
   },
   FR: {
     name: "France",
-    flag: <FranceFlag className="w-5 h-5" />,
+    flag: <img src="https://flagcdn.com/fr.svg" className="w-5 h-5" alt="France" />,
     region: "Europe",
     language: "FR",
   },
   DE: {
     name: "Germany",
-    flag: <GermanyFlag className="w-5 h-5" />,
+    flag: <img src="https://flagcdn.com/de.svg" className="w-5 h-5" alt="Germany" />,
     region: "Europe",
     language: "DE",
   },
   ES: {
     name: "Spain",
-    flag: <SpainFlag className="w-5 h-5" />,
+    flag: <img src="https://flagcdn.com/es.svg" className="w-5 h-5" alt="Spain" />,
     region: "Europe",
     language: "ES",
   },
@@ -174,14 +166,14 @@ const languageNames = {
 };
 
 const languages = {
-  US: { name: "USA", flag: <USAFlag className="w-5 h-5" /> },
-  EN: { name: "UK", flag: <ukFlagUrl className="w-5 h-5" /> },
-  CA: { name: "Canada", flag: <CanadaFlag className="w-5 h-5" /> },
-  PL: { name: "Polski", flag: <PolandFlag className="w-5 h-5" /> },
-  RU: { name: "Русский", flag: <RussiaFlag className="w-5 h-5" /> },
-  FR: { name: "Français", flag: <FranceFlag className="w-5 h-5" /> },
-  DE: { name: "Deutsch", flag: <GermanyFlag className="w-5 h-5" /> },
-  ES: { name: "Español", flag: <SpainFlag className="w-5 h-5" /> },
+    US: { name: "USA", flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" /> },
+    EN: { name: "UK", flag: <img src="https://flagcdn.com/gb.svg" className="w-5 h-5" alt="UK" /> },
+    CA: { name: "Canada", flag: <img src="https://flagcdn.com/ca.svg" className="w-5 h-5" alt="Canada" /> },
+    PL: { name: "Polski", flag: <img src="https://flagcdn.com/pl.svg" className="w-5 h-5" alt="Poland" /> },
+    RU: { name: "Русский", flag: <img src="https://flagcdn.com/ru.svg" className="w-5 h-5" alt="Russia" /> },
+    ES: { name: "Español", flag: <img src="https://flagcdn.com/es.svg" className="w-5 h-5" alt="Spain" /> },
+    FR: { name: "Français", flag: <img src="https://flagcdn.com/fr.svg" className="w-5 h-5" alt="France" /> },
+    DE: { name: "Deutsch", flag: <img src="https://flagcdn.com/de.svg" className="w-5 h-5" alt="Germany" /> },
 };
 
 // Requests Component

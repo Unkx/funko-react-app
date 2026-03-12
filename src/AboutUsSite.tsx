@@ -10,14 +10,7 @@ import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 import QuickLinks from "./QuickLinks";
 
 // Flags
-import usaFlagUrl from "./assets/flags/usa.svg";
-import ukFlagUrl from "./assets/flags/uk.svg";
-import canadaFlagUrl from "./assets/flags/canada.svg";
-import polandFlagUrl from "./assets/flags/poland.svg";
-import russiaFlagUrl from "./assets/flags/russia.svg";
-import spainFlagUrl from "./assets/flags/spain.svg";
-import franceFlagUrl from "./assets/flags/france.svg";
-import germanyFlagUrl from "./assets/flags/germany.svg";
+
 
 
 import TeamMember1 from "/src/assets/avatars/boy.png";
@@ -65,14 +58,14 @@ const testimonials = [
 
 // 🌐 Languages for dropdown
 const languages = {
-  US: { name: "USA", flag: <usaFlagUrl className="w-5 h-5" /> },
-  EN: { name: "UK", flag: <ukFlagUrl className="w-5 h-5" /> },
-  CA: { name: "Canada", flag: <canadaFlagUrl className="w-5 h-5" /> },
-  PL: { name: "Polski", flag: <polandFlagUrl className="w-5 h-5" /> },
-  RU: { name: "Русский", flag: <russiaFlagUrl className="w-5 h-5" /> },
-  FR: { name: "Français", flag: <franceFlagUrl className="w-5 h-5" /> },
-  DE: { name: "Deutsch", flag: <germanyFlagUrl className="w-5 h-5" /> },
-  ES: { name: "Español", flag: <spainFlagUrl className="w-5 h-5" /> },
+    US: { name: "USA", flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" /> },
+    EN: { name: "UK", flag: <img src="https://flagcdn.com/gb.svg" className="w-5 h-5" alt="UK" /> },
+    CA: { name: "Canada", flag: <img src="https://flagcdn.com/ca.svg" className="w-5 h-5" alt="Canada" /> },
+    PL: { name: "Polski", flag: <img src="https://flagcdn.com/pl.svg" className="w-5 h-5" alt="Poland" /> },
+    RU: { name: "Русский", flag: <img src="https://flagcdn.com/ru.svg" className="w-5 h-5" alt="Russia" /> },
+    ES: { name: "Español", flag: <img src="https://flagcdn.com/es.svg" className="w-5 h-5" alt="Spain" /> },
+    FR: { name: "Français", flag: <img src="https://flagcdn.com/fr.svg" className="w-5 h-5" alt="France" /> },
+    DE: { name: "Deutsch", flag: <img src="https://flagcdn.com/de.svg" className="w-5 h-5" alt="Germany" /> },
 };
 
 const AboutUsSite: React.FC = () => {

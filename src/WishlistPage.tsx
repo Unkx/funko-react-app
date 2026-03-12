@@ -20,14 +20,7 @@ import FilterIcon from "/src/assets/filter.svg?react";
 import StarIcon from "/src/assets/star.svg?react";
 
 // Flags
-import usaFlagUrl from "./assets/flags/usa.svg";
-import ukFlagUrl from "./assets/flags/uk.svg";
-import canadaFlagUrl from "./assets/flags/canada.svg";
-import polandFlagUrl from "./assets/flags/poland.svg";
-import russiaFlagUrl from "./assets/flags/russia.svg";
-import spainFlagUrl from "./assets/flags/spain.svg";
-import franceFlagUrl from "./assets/flags/france.svg";
-import germanyFlagUrl from "./assets/flags/germany.svg";
+
 
 
 const languages = {

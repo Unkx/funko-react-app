@@ -861,15 +861,17 @@ const languages = {
           </button>
         </form>
 
+        {/* 🌐 Language, 🌙 Theme, 🔐 Dashboard */}
         <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0 min-w-0 items-center">
+          {/* Language Dropdown */}
           <div className="relative">
             <button
               ref={buttonRef}
-              onClick={toggleLanguageDropdown}
+              onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
               className={`p-2 rounded-full flex items-center gap-1 min-w-0 ${
                 isDarkMode
                   ? "bg-gray-700 hover:bg-gray-600"
-                  : "bg-gray-200 hover:bg-neutral-600"
+                  : "bg-white hover:bg-gray-100 shadow-sm"
               }`}
               aria-label="Select language"
               aria-expanded={showLanguageDropdown}
@@ -886,10 +888,8 @@ const languages = {
             {showLanguageDropdown && (
               <div
                 ref={languageDropdownRef}
-                className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-2 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${
-                  isDarkMode
-                    ? 'border-yellow-500 bg-gray-800'
-                    : 'border-blue-500 bg-white'
+                className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-1 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${
+                  isDarkMode ? "bg-gray-800" : "bg-white"
                 }`}
                 onClick={(e) => e.stopPropagation()}
               >
@@ -901,10 +901,10 @@ const languages = {
                       language === code
                         ? isDarkMode
                           ? "bg-yellow-500 text-black"
-                          : "bg-green-600 text-white"
+                          : "bg-blue-600 text-white"
                         : isDarkMode
-                        ? "hover:bg-gray-600"
-                        : "hover:bg-neutral-500"
+                        ? "hover:bg-gray-700"
+                        : "hover:bg-gray-100"
                     }`}
                   >
                     <span className="w-5 h-5">{flag}</span>
@@ -915,33 +915,37 @@ const languages = {
             )}
           </div>
 
+          {/* 🌙 Theme Toggle */}
           <button
             onClick={toggleTheme}
             className={`p-2 rounded-full ${
               isDarkMode
                 ? "bg-gray-700 hover:bg-gray-600"
-                : "bg-gray-200 hover:bg-gray-600"
+                : "bg-white hover:bg-gray-100 shadow-sm"
             }`}
-            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+            aria-label={isDarkMode ? t.switchToLight : t.switchToDark}
           >
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
 
-          {/* <Link
-            to={loginButtonTo}
+          {/* 🔐 Dashboard/Login */}
+          {/* <button
+            onClick={() => {
+              const user = JSON.parse(localStorage.getItem("user") || "{}");
+              navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginRegisterSite");
+            }}
             className={`flex items-center gap-2 px-4 py-2 rounded ${
               isDarkMode
                 ? "bg-yellow-500 text-black hover:bg-yellow-600"
-                : "bg-blue-600 text-white hover:bg-blue-700"
+                : "bg-blue-600 text-white hover:bg-blue-700 shadow-md"
             }`}
           >
-            {loginButtonText}
-          </Link> */}
+            {t.goToDashboard}
+          </button> */}
           <AuthButton isDarkMode={isDarkMode} translations={t} />
         </div>
+        	      <QuickLinks isDarkMode={isDarkMode} language={language as any} />
       </header>
-
-      <QuickLinks isDarkMode={isDarkMode} language={language as any} />
 
   <div className="p-4 flex flex-col sm:flex-row flex-wrap gap-4 justify-center items-center">
         <select

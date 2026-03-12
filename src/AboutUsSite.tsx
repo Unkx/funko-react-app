@@ -8,10 +8,8 @@ import SearchIcon from "/src/assets/search.svg?react";
 import GlobeIcon from "/src/assets/globe.svg?react";
 import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 import QuickLinks from "./QuickLinks";
-
+import AuthButton from "./AuthButton";
 // Flags
-
-
 
 import TeamMember1 from "/src/assets/avatars/boy.png";
 import TeamMember2 from "/src/assets/avatars/woman.png";
@@ -295,7 +293,7 @@ const AboutUsSite: React.FC = () => {
           </button>
 
           {/* 🔐 Dashboard/Login */}
-          <button
+          {/* <button
             onClick={() => {
               const user = JSON.parse(localStorage.getItem("user") || "{}");
               navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginRegisterSite");
@@ -307,7 +305,8 @@ const AboutUsSite: React.FC = () => {
             }`}
           >
             {t.goToDashboard}
-          </button>
+          </button> */}
+          <AuthButton isDarkMode={isDarkMode} translations={t} />
         </div>
         	      <QuickLinks isDarkMode={isDarkMode} language={language as any} />
       </header>

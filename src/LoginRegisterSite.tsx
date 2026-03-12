@@ -53,6 +53,7 @@ const LoginRegisterSite: React.FC = () => {
 
   const languageDropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const languageButtonRef = useRef<HTMLButtonElement>(null);
 
   // Login form state
   const [login, setLogin] = useState("");
@@ -398,38 +399,110 @@ const LoginRegisterSite: React.FC = () => {
   return (
     <div className={`min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-black"}`}>
       {/* Header */}
-      <header className="py-4 px-8 flex justify-between items-center w-full max-w-full overflow-x-hidden">
-        <Link to="/" className="no-underline">
-          <h1 className={`text-3xl font-bold font-[Special_Gothic_Expanded_One] ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
-            Pop&Go!
-          </h1>
-        </Link>
-        {shouldShowPopup && <LanguageSelectorPopup onClose={() => setShouldShowPopup(false)} />}
-        <div className="flex gap-4 min-w-0 items-center">
-          {/* Language */}
-          <div className="relative">
-            <button ref={buttonRef} onClick={() => setShowLanguageDropdown((p) => !p)}
-              className={`p-2 rounded-full flex items-center gap-1 min-w-0 ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}>
-              <GlobeIcon className="w-5 h-5" /> <span className="hidden sm:inline">{language}</span>
-              <ChevronDownIcon className={`w-4 h-4 transition-transform ${showLanguageDropdown ? "rotate-180" : ""}`} />
-            </button>
-              {showLanguageDropdown && (
-                <div ref={languageDropdownRef} className={`absolute mt-2 z-50 rounded-lg shadow-xl py-1 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto bg-gradient-to-b from-white to-slate-50 dark:from-slate-800 dark:to-slate-700 border border-slate-200 dark:border-slate-600`}>
-                {Object.entries(languages).map(([code, { name, flag }]) => (
-                  <button key={code} onClick={() => selectLanguage(code)}
-                    className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${language === code ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}>
-                    {flag} <span>{name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          <button onClick={toggleTheme}
-            className={`p-2 rounded-full ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}>
+ <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
+        <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
+          <Link to="/" className="no-underline">
+            <h1
+              className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
+                isDarkMode ? "text-yellow-400" : "text-blue-600"
+              }`}
+            >
+              Pop&Go!
+            </h1>
+          </Link>
+        </div>
+
+
+
+        {/* 🌐 Country, 🌙 Theme, 🔐 Login */}
+         <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0 min-w-0 items-center">
+                  {/* Language Dropdown */}
+                  <div className="relative">
+                    <button
+                      ref={languageButtonRef}
+                      onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                      className={`p-2 rounded-full flex items-center gap-1 min-w-0 ${
+                        isDarkMode
+                          ? "bg-gray-700 hover:bg-gray-600"
+                          : "bg-white hover:bg-gray-100 shadow-sm"
+                      }`}
+                      aria-label="Select language"
+                      aria-expanded={showLanguageDropdown}
+                    >
+                      <GlobeIcon className="w-5 h-5" />
+                      <span className="hidden sm:inline text-sm font-medium">{language}</span>
+                      <ChevronDownIcon
+                        className={`w-4 h-4 transition-transform ${
+                          showLanguageDropdown ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+        
+                    {showLanguageDropdown && (
+                      <div
+                        ref={languageDropdownRef}
+                        className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-1 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${
+                          isDarkMode ? "bg-gray-800" : "bg-white"
+                        }`}
+                        style={{
+                          left: '50%',
+                          transform: 'translateX(-50%)'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {Object.entries(languages).map(([code, { name, flag }]) => (
+                          <button
+                            key={code}
+                            onClick={() => selectLanguage(code)}
+                            className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${
+                              language === code
+                                ? isDarkMode
+                                  ? "bg-yellow-500 text-black"
+                                  : "bg-blue-600 text-white"
+                                : isDarkMode
+                                ? "hover:bg-gray-700"
+                                : "hover:bg-gray-100"
+                            }`}
+                          >
+                            <span className="w-5 h-5 flex-shrink-0">{flag}</span>
+                            <span className="flex-1">{name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+          <button
+            onClick={toggleTheme}
+            className={`p-2 rounded-full ${
+              isDarkMode
+                ? "bg-gray-700 hover:bg-gray-600"
+                : "bg-white hover:bg-gray-100 shadow-sm"
+            }`}
+            aria-label={isDarkMode ? tLogin.switchToLight : tLogin.switchToDark}
+          >
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
+
+          {/* 🔐 Dashboard/Login */}
+          {/* <button
+            onClick={() => {
+              const user = JSON.parse(localStorage.getItem("user") || "{}");
+              navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginRegisterSite");
+            }}
+            className={`flex items-center gap-2 px-4 py-2 rounded ${
+              isDarkMode
+                ? "bg-yellow-500 text-black hover:bg-yellow-600"
+                : "bg-blue-600 text-white hover:bg-blue-700"
+            }`}
+          >
+            {t.goToDashboard || "Dashboard"}
+          </button> */}
+
         </div>
+
       </header>
+
       {/* 	      <QuickLinks isDarkMode={isDarkMode} language={language as any} /> */}
 
 

@@ -33,6 +33,7 @@ if (!import.meta.env.VITE_API_BASE_URL) {
 }
 
 import AuthButton from "./AuthButton.tsx";
+import QuickLinks from "./QuickLinks.tsx";
 
 interface User {
   id: number;
@@ -2094,23 +2095,21 @@ useEffect(() => {
             {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
           </button>
 
-          {/* 🔐 Dashboard/Login */}
-          {/* <button
-            onClick={() => {
-              const user = JSON.parse(localStorage.getItem("user") || "{}");
-              navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginRegisterSite");
-            }}
+          <button
+            onClick={handleLogout}
             className={`flex items-center gap-2 px-4 py-2 rounded ${
               isDarkMode
-                ? "bg-yellow-500 text-black hover:bg-yellow-600"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-            }`}
+                ? "bg-red-600 hover:bg-red-700"
+                : "bg-red-500 hover:bg-red-600"
+            } text-white`}
           >
-            {t.goToDashboard || "Dashboard"}
-          </button> */}
-          <AuthButton isDarkMode={isDarkMode} translations={t} />
+            {t.logout}
+          </button>
         </div>
+        
+        <QuickLinks isDarkMode={isDarkMode} language={language as any} />
       </header>
+
 
       {/* 🔹 Updated Navigation */}
       <nav className={`px-8 py-2 ${isDarkMode ? "bg-gray-700" : "bg-white border-b border-gray-200"}`}>

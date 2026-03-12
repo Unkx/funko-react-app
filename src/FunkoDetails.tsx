@@ -20,8 +20,10 @@ const baseURL = import.meta.env.VITE_API_BASE_URL;
 if (!baseURL) {
   console.warn("VITE_API_BASE_URL is not set, using default localhost URL");
 }
+
+// FIX THIS LINE:
 const api = axios.create({
-  baseURL: baseURL || "${baseURL}",
+  baseURL: baseURL, // Just use the variable directly, no template literal needed
 });
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
@@ -627,7 +629,30 @@ const fetchData = async () => {
 
 const generateDescription = async (title: string, number: string, category: string = "", targetLang: string): Promise<string> => {
   const apiKey = import.meta.env.VITE_AI_API_KEY;
-  if (!apiKey) throw new Error("Brak klucza API (VITE_AI_API_KEY w .env)");
+  
+  // If no API key, use fallback immediately without throwing error
+  if (!apiKey) {
+    console.log("No AI API key found, using fallback description");
+    const itemType = determineItemType(title, category);
+    const itemTypeLabel = {
+      funko_pop: 'Funko Pop! vinyl figure',
+      blind_bag: 'blind bag collectible',
+      my_moji: 'MyMoji collectible figure',
+      action_figure: 'action figure',
+      plush_toy: 'plush toy',
+      vinyl_figure: 'vinyl figure',
+      collectible: 'collectible item'
+    }[itemType] || 'collectible item';
+    
+    const isValidNumber = number && 
+                         number.trim() !== "" && 
+                         number.toLowerCase() !== "null" && 
+                         number.toLowerCase() !== "undefined" &&
+                         number.toLowerCase() !== "n/a" &&
+                         /^[\d#\-]+$/.test(number.trim());
+    
+    return createDetailedFallback(title, itemTypeLabel, category, isValidNumber ? number : '');
+  }
 
   const langNames: Record<string, string> = {
     PL: "polski",
@@ -712,18 +737,20 @@ Teraz napisz szczegółowy opis dla "${title}". Pamiętaj: 5-8 PEŁNYCH zdań, s
           role: "user", 
           content: prompt 
         }],
-        max_tokens: 600, // Zwiększono na 600 tokenów dla dłuższych opisów
-        temperature: 0.8, // Nieco wyższa temperatura dla bardziej kreatywnych opisów
+        max_tokens: 600,
+        temperature: 0.8,
         top_p: 0.9,
-        frequency_penalty: 0.2, // Zmniejsza powtarzanie
-        presence_penalty: 0.1, // Zachęca do różnorodności
+        frequency_penalty: 0.2,
+        presence_penalty: 0.1,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Groq API error:", errorText);
-      throw new Error("AI description could not be generated");
+      
+      // Return fallback on API error
+      return createDetailedFallback(title, itemTypeLabel, category, isValidNumber ? number : '');
     }
 
     const data = await response.json();
@@ -735,11 +762,10 @@ Teraz napisz szczegółowy opis dla "${title}". Pamiętaj: 5-8 PEŁNYCH zdań, s
     return description;
   } catch (error) {
     console.error("AI generation error:", error);
-    // Dłuższy, bardziej szczegółowy fallback
+    // Return fallback on any error
     return createDetailedFallback(title, itemTypeLabel, category, isValidNumber ? number : '');
   }
 };
-
 // Funkcja pomocnicza do zapewnienia kompletności
 const ensureCompleteDescription = (description: string, title: string, itemTypeLabel: string, category: string): string => {
   if (!description) {

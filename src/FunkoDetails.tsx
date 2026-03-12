@@ -791,18 +791,22 @@ const ensureCompleteDescription = (description: string, title: string, itemTypeL
 
 // Funkcja tworząca szczegółowy fallback
 const createDetailedFallback = (title: string, itemTypeLabel: string, category: string, number: string): string => {
-  const baseDescription = `${title} is an exceptional ${itemTypeLabel} that commands attention with its detailed design and premium craftsmanship. `;
+  const safeTitle = title || "this collectible";
+  const safeNumber = number || "";
+  const safeCategory = category || "";
+  
+  const baseDescription = `${safeTitle} is an exceptional ${itemTypeLabel} that commands attention with its detailed design and premium craftsmanship. `;
   
   const details = [
     `The figure showcases intricate sculpting and vibrant colors that bring the character to life in stunning detail. `,
-    `As ${number ? `item #${number} ` : ''}${category ? `in the ${category} series, ` : ''}this collectible represents a significant piece for any enthusiast. `,
+    `As ${safeNumber ? `item #${safeNumber} ` : ""}${safeCategory ? `in the ${safeCategory} series, ` : ""}this collectible represents a significant piece for any enthusiast. `,
     `Its substantial weight and high-quality materials demonstrate the care put into its production. `,
     `Collectors will appreciate both the aesthetic appeal and investment potential of this remarkable piece. `,
     `Displaying this item would elevate any collection and serve as a conversation starter among fellow enthusiasts. `,
     `The attention to detail in every aspect of this ${itemTypeLabel} makes it a true standout in the world of collectibles. `
   ];
   
-  // Wybierz 4-5 losowych szczegółów
+  // Select 4-5 random details
   const selectedDetails = [...details]
     .sort(() => Math.random() - 0.5)
     .slice(0, 4 + Math.floor(Math.random() * 2));
@@ -1344,9 +1348,10 @@ useEffect(() => {
 }, [funkoItem, language]);
 
 // Helper function poza komponentem
+// Fix this function to handle undefined values
 const determineItemType = (title: string, category?: string) => {
-  const lowerTitle = title.toLowerCase();
-  const lowerCategory = category ? category.toLowerCase() : "";
+  const lowerTitle = (title || "").toLowerCase();
+  const lowerCategory = (category || "").toLowerCase();
   
   if (lowerTitle.includes('funko') || lowerTitle.includes('pop!') || lowerCategory.includes('funko')) {
     return 'funko_pop';

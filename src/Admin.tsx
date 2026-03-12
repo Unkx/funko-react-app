@@ -25,7 +25,12 @@ import StarIcon from "/src/assets/star.svg?react";
 import PlusIcon from "/src/assets/plus.svg?react";
 import AdminInvites from "./AdminInvites";
 
-// Flag SVGs
+// Add this after your imports
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
+
+if (!import.meta.env.VITE_API_BASE_URL) {
+  console.warn('VITE_API_BASE_URL is not set, using default:', baseURL);
+}
 
 import AuthButton from "./AuthButton.tsx";
 

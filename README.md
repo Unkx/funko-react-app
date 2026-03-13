@@ -8,10 +8,10 @@ https://snipboard.io/aryOit.jpg
 
 A full-stack social platform for Funko Pop collectors. Browse collections, manage wishlists, connect with other collectors, and earn loyalty rewards — all in one place.
 
-🚀 View Live Demo | 📖 Read the Docs | 🐛 Report Bug | ✨ Request Feature
+🚀 [View Live Demo](https://funko-react-app.onrender.com) | [🐛 Report Bug](../../issues/new?labels=bug) | [✨ Request Feature](../../issues/new?labels=enhancement)
 
-https://link-to-your-screenshot-here.png
-Add a screenshot of your app here - show the main catalog or dashboard
+https://snipboard.io/6AHur9.jpg
+
 
 ✨ Features at a Glance
 👤 For Collectors
@@ -190,3 +190,4 @@ Project Link: https://github.com/Unkx/funko-react-app
 Live Demo: https://funko-react-app.onrender.com
 
 If you find this project helpful or interesting, please ⭐ star it on GitHub!
+

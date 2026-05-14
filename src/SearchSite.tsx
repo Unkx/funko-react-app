@@ -44,6 +44,65 @@ const moduleGenerateId = (title: string, number: string): string => {
     .replace(/^-|-$/g, '');
 };
 
+const DEFAULT_SEARCH_DESCRIPTION =
+  "Search Funko Pop figures, collectibles and exclusives on Pop&Go. Find your favorite Funkos with fast, filtered search results.";
+const DEFAULT_SITE_TITLE = "Pop&Go - Search Funko Pop Collectibles";
+
+const updateMetaTag = (
+  attribute: "name" | "property",
+  key: string,
+  content: string
+) => {
+  if (typeof document === "undefined") return;
+  const selector = `meta[${attribute}="${key}"]`;
+  let element = document.querySelector<HTMLMetaElement>(selector);
+  if (!element) {
+    element = document.createElement("meta");
+    element.setAttribute(attribute, key);
+    document.head.appendChild(element);
+  }
+  element.setAttribute("content", content);
+};
+
+const getSearchPageTitle = (query: string) =>
+  query && query.trim()
+    ? `Search results for "${query.trim()}" | Pop&Go`
+    : DEFAULT_SITE_TITLE;
+
+const getSearchMetaDescription = (query: string) =>
+  query && query.trim()
+    ? `Search results for "${query.trim()}" on Pop&Go. Find Funko Pop figures, series, and exclusives that match your search.`
+    : DEFAULT_SEARCH_DESCRIPTION;
+
+const trackSearchEvent = async (query: string, resultCount: number) => {
+  if (!query || !query.trim()) return;
+  const payload = {
+    event: "search",
+    query: query.trim(),
+    results: resultCount,
+    timestamp: new Date().toISOString(),
+  };
+
+  if (typeof globalThis !== "undefined" && (globalThis as any).dataLayer) {
+    (globalThis as any).dataLayer.push(payload);
+  }
+
+  const analyticsUrl = (import.meta as any).env?.VITE_SEARCH_ANALYTICS_URL;
+  if (analyticsUrl) {
+    try {
+      await fetch(analyticsUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      console.warn("Search analytics tracking failed:", err);
+    }
+  } else {
+    console.log("Search analytics event:", payload);
+  }
+};
+
 const fetchAllItemsOnce = async (): Promise<any[]> => {
   if (cachedItemsPromise) return cachedItemsPromise;
 
@@ -382,6 +441,7 @@ const SearchSite = () => {
   const location = useLocation();
   const languageDropdownRef = useRef(null);
   const buttonRef = useRef(null);
+  const lastTrackedSearchRef = useRef<string>("");
 
   const queryParams = new URLSearchParams(location.search);
   const queryParam = queryParams.get("q") || "";
@@ -565,6 +625,21 @@ const languages = {
       setSearchQuery(queryParam);
     }
   }, [queryParam]);
+
+  useEffect(() => {
+    const title = getSearchPageTitle(queryParam);
+    const description = getSearchMetaDescription(queryParam);
+    document.title = title;
+    updateMetaTag("name", "description", description);
+    updateMetaTag("property", "og:description", description);
+    updateMetaTag("name", "twitter:description", description);
+  }, [queryParam]);
+
+  useEffect(() => {
+    if (!queryParam.trim() || lastTrackedSearchRef.current === queryParam) return;
+    trackSearchEvent(queryParam, filteredAndSortedResults.length);
+    lastTrackedSearchRef.current = queryParam;
+  }, [queryParam, filteredAndSortedResults.length]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

@@ -33,10 +33,16 @@ const PORT = process.env.PORT || 5000;
 //     rejectUnauthorized: false  // DODAJ TO!
 //   }
 // });
-const sslConfig = { rejectUnauthorized: false };
+// Render's internal PostgreSQL hostnames don't need SSL;
+// external .render.com hostnames do.
+const isExternalRenderHost = (process.env.DB_HOST || '').includes('.render.com');
+const dbUrl = process.env.DATABASE_URL;
+const sslConfig = (dbUrl || isExternalRenderHost)
+  ? { rejectUnauthorized: false }
+  : false;
 
-const pool = process.env.DATABASE_URL
-  ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: sslConfig })
+const pool = dbUrl
+  ? new Pool({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } })
   : new Pool({
       host: process.env.DB_HOST,
       database: process.env.DB_NAME,
@@ -46,7 +52,7 @@ const pool = process.env.DATABASE_URL
       ssl: sslConfig,
     });
 
-console.log(`🔌 DB mode: ${process.env.DATABASE_URL ? 'DATABASE_URL' : 'individual DB_* vars (host: ' + process.env.DB_HOST + ')'}`);
+console.log(`🔌 DB mode: ${dbUrl ? 'DATABASE_URL' : `individual vars — host=${process.env.DB_HOST} db=${process.env.DB_NAME} ssl=${JSON.stringify(sslConfig)}`}`);
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 

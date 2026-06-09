@@ -33,12 +33,20 @@ const PORT = process.env.PORT || 5000;
 //     rejectUnauthorized: false  // DODAJ TO!
 //   }
 // });
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
-});
+const sslConfig = { rejectUnauthorized: false };
+
+const pool = process.env.DATABASE_URL
+  ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: sslConfig })
+  : new Pool({
+      host: process.env.DB_HOST,
+      database: process.env.DB_NAME,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      port: parseInt(process.env.DB_PORT || '5432'),
+      ssl: sslConfig,
+    });
+
+console.log(`🔌 DB mode: ${process.env.DATABASE_URL ? 'DATABASE_URL' : 'individual DB_* vars (host: ' + process.env.DB_HOST + ')'}`);
 const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 
@@ -3865,13 +3873,44 @@ app.post('/api/reset-password', async (req, res) => {
 // SERVER STARTUP
 // ======================
 const startServer = async () => {
+  // Start HTTP listener first so Render's health check passes immediately
+  await new Promise((resolve) => {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Server running on port ${PORT} on all interfaces`);
+      console.log(`🌍 Health check: http://0.0.0.0:${PORT}/health`);
+      resolve();
+    });
+  });
+
+  // Connect to DB with retries
+  const MAX_RETRIES = 5;
+  const RETRY_DELAY_MS = 4000;
+  let connected = false;
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      await pool.query('SELECT NOW()');
+      console.log('✅ Database connected successfully');
+      connected = true;
+      break;
+    } catch (err) {
+      console.error(`❌ DB connection attempt ${attempt}/${MAX_RETRIES} failed: ${err.message}`);
+      if (attempt < MAX_RETRIES) {
+        console.log(`⏳ Retrying in ${RETRY_DELAY_MS / 1000}s...`);
+        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+      }
+    }
+  }
+
+  if (!connected) {
+    console.error('❌ Could not connect to the database after all retries. Shutting down.');
+    process.exit(1);
+  }
+
   try {
-    await pool.query('SELECT NOW()');
-    console.log('✅ Database connected successfully');
-    
     // 1. NAJPIERW utwórz wszystkie tabele
     await ensureAdminTables();
-    
+
     // 2. POTEM zaseeduj dane
     await seedDatabase();
     
@@ -3905,13 +3944,10 @@ const startServer = async () => {
 
     // 4. Utwórz początkowego admina
     await createInitialAdminIfNeeded();
-    
-    app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on port ${PORT} on all interfaces`);
-  console.log(`🌍 Health check: http://0.0.0.0:${PORT}/health`);
-});
+
+    console.log('✅ Server initialisation complete');
   } catch (err) {
-    console.error('❌ Failed to start server:', err);
+    console.error('❌ Failed to initialise server:', err);
     process.exit(1);
   }
 };

@@ -21,7 +21,7 @@ import StarIcon from "/src/assets/star.svg?react";
 
 // Flags
 
-
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
 
 const languages = {
     US: { name: "USA", flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" /> },
@@ -158,7 +158,7 @@ const WishlistPage: React.FC = () => {
       }
 
       try {
-        const response = await fetch("${baseURL}/api/wishlist", {
+        const response = await fetch(`${baseURL}/api/wishlist`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -318,7 +318,7 @@ const WishlistPage: React.FC = () => {
 
     try {
       // Add to collection
-      const response = await fetch("${baseURL}/api/collection", {
+      const response = await fetch(`${baseURL}/api/collection`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

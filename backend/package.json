@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "import:funko": "node import-funko-data.js",
+    "test": "node --test"
   },
   "dependencies": {
     "@novu/node": "^0.21.0",

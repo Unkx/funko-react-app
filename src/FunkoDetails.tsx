@@ -16,14 +16,14 @@ import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 
 import AuthButton from "./AuthButton";
 
-const baseURL = import.meta.env.VITE_API_BASE_URL;
-if (!baseURL) {
-  console.warn("VITE_API_BASE_URL is not set, using default localhost URL");
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
+
+if (!import.meta.env.VITE_API_BASE_URL) {
+  console.warn('VITE_API_BASE_URL is not set, using default:', baseURL);
 }
 
-// FIX THIS LINE:
 const api = axios.create({
-  baseURL: baseURL, // Just use the variable directly, no template literal needed
+  baseURL,
 });
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");

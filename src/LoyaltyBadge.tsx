@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { translations } from "./Translations/TranslationsLoyalty";
 
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
+
 interface Props {
   userId: number;
   size?: "small" | "medium" | "large";

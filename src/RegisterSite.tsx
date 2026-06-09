@@ -13,6 +13,8 @@ import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 
 // Flags
 
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
+
 const languages = {
     US: { name: "USA", flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" /> },
     EN: { name: "UK", flag: <img src="https://flagcdn.com/gb.svg" className="w-5 h-5" alt="UK" /> },
@@ -185,7 +187,7 @@ const RegisterSite: React.FC = () => {
     console.log("Sending registration payload:", payload); // Log the payload being sent
 
     try {
-      const response = await fetch('${baseURL}/api/register', {
+      const response = await fetch(`${baseURL}/api/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -220,7 +222,7 @@ const RegisterSite: React.FC = () => {
     setInviteValid(null);
     const id = setTimeout(async () => {
       try {
-        const res = await fetch('${baseURL}/api/verify-invite', {
+        const res = await fetch(`${baseURL}/api/verify-invite`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token: inviteToken.trim() })

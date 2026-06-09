@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 
 import { Novu } from '@novu/node';
 import crypto from 'crypto';
+import { importFunkoDataset } from './funkoDataset.js';
 
 // Load environment variables
 dotenv.config();
@@ -1305,6 +1306,19 @@ app.post('/api/items/sync-single', async (req, res) => {
     res.status(500).json({ error: 'Failed to sync item' });
   }
 });
+// Admin: populate funko_items from the open-source MIT-licensed Funko dataset
+// (github.com/kennymkchan/funko-pop-data). Keyless and legal — we use this
+// instead of scraping funko.com/hobbydb.com, which both block bots.
+app.post('/api/items/import-dataset', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const result = await importFunkoDataset(pool);
+    res.json({ message: 'Funko dataset imported', ...result });
+  } catch (err) {
+    console.error('Dataset import error:', err);
+    res.status(500).json({ error: 'Failed to import dataset' });
+  }
+});
+
 app.get('/api/items/search', async (req, res) => {
   const { q } = req.query;
   

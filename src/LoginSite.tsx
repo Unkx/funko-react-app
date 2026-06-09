@@ -15,6 +15,8 @@ import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 
 // Flags
 
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
+
 const languages = {
     US: { name: "USA", flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" /> },
     EN: { name: "UK", flag: <img src="https://flagcdn.com/gb.svg" className="w-5 h-5" alt="UK" /> },
@@ -91,7 +93,7 @@ const LoginSite: React.FC = () => {
     }
 
     try {
-      const response = await fetch('${baseURL}/api/login', {
+      const response = await fetch(`${baseURL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ login, password }),

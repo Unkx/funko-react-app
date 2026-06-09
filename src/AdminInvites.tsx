@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { translations } from './Translations/TranslationAdminInvites';
 
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
+
 interface InviteCode {
   id: number;
   display_code: string; // Hashed/short code
@@ -41,7 +43,7 @@ const AdminInvites = () => {
     
     setLoading(true);
     try {
-      const response = await fetch("${baseURL}/api/admin/invites", {
+      const response = await fetch(`${baseURL}/api/admin/invites`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       
@@ -80,7 +82,7 @@ const AdminInvites = () => {
     
     setProcessing(true);
     try {
-      const response = await fetch("${baseURL}/api/admin/invites", {
+      const response = await fetch(`${baseURL}/api/admin/invites`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

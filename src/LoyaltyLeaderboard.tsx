@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import useBreakpoints from "./useBreakpoints";
 import LoyaltyBadge from './LoyaltyBadge';
 
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
+
 interface LeaderboardEntry {
   id: number;
   login: string;

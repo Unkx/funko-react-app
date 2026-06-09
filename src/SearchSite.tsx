@@ -30,6 +30,8 @@ const CloseIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 import AuthButton from "./AuthButton";
 
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
+
 // --- Module-level cached fetch to speed up initial load ---
 let cachedItemsPromise: Promise<any[]> | null = null;
 
@@ -110,7 +112,7 @@ const fetchAllItemsOnce = async (): Promise<any[]> => {
     try {
       // Try backend first
       try {
-        const apiResponse = await fetch("${baseURL}/api/items?limit=200");
+        const apiResponse = await fetch(`${baseURL}/api/items?limit=200`);
         if (apiResponse.ok) {
           const backendData = await apiResponse.json();
           return backendData.map((item: any) => ({
@@ -541,7 +543,7 @@ const languages = {
     // Quick fetch: small limit for initial render (fast response expected)
     (async () => {
       try {
-        const resp = await fetch("${baseURL}/api/items?limit=30");
+        const resp = await fetch(`${baseURL}/api/items?limit=30`);
         if (resp.ok) {
           const quickData = await resp.json();
           if (!mounted) return;
@@ -590,7 +592,7 @@ const languages = {
   useEffect(() => {
     const fetchAdminItems = async () => {
       try {
-        const response = await fetch("${baseURL}/api/items?limit=30");
+        const response = await fetch(`${baseURL}/api/items?limit=30`);
         if (response.ok) {
           const data = await response.json();
           setAdminItems(data);
@@ -857,7 +859,7 @@ const languages = {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch("${baseURL}/api/requests", {
+      const res = await fetch(`${baseURL}/api/requests`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

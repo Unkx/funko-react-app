@@ -13,6 +13,9 @@ import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 
 
 import AuthButton from "./AuthButton";
+
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
+
 // (lazy components declared above)
 
 interface FunkoItem {
@@ -76,6 +79,7 @@ const WelcomeSite: React.FC = () => {
   const [funkoData, setFunkoData] = useState<FunkoItemWithId[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showWorldMapFirstTime, setShowWorldMapFirstTime] = useState(false);
+  const [showOpenSourceBanner, setShowOpenSourceBanner] = useState(() => !sessionStorage.getItem('openSourceDismissed'));
 
   const navigate = useNavigate();
 
@@ -788,7 +792,7 @@ const incrementVisitCount = (id: string) => {
         const token = localStorage.getItem("token");
         if (token) {
           try {
-            const backendResponse = await fetch("${base}/api/items?limit=30", {
+            const backendResponse = await fetch(`${baseURL}/api/items?limit=30`, {
               headers: { Authorization: `Bearer ${token}` },
             });
             if (backendResponse.ok) {
@@ -970,6 +974,34 @@ const mostVisitedItems = useMemo(() => {
         isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-black"
       }`}
     >
+      {/* Open-source notice banner */}
+      {showOpenSourceBanner && (
+        <div className={`w-full flex items-center justify-between gap-3 px-4 py-2 text-sm ${isDarkMode ? "bg-gray-900 text-gray-200" : "bg-blue-700 text-white"}`}>
+          <span>
+            This is an open-source project.{" "}
+            <a
+              href="https://github.com/Unkx/funko-react-app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline font-semibold hover:text-yellow-400 transition-colors"
+            >
+              View it on GitHub
+            </a>
+            {" "}— contributions welcome!
+          </span>
+          <button
+            onClick={() => {
+              sessionStorage.setItem('openSourceDismissed', '1');
+              setShowOpenSourceBanner(false);
+            }}
+            aria-label="Dismiss"
+            className="shrink-0 text-lg leading-none hover:opacity-70 transition-opacity"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* 🌍 First-Time World Map Popup */}
       {showWorldMapFirstTime && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">

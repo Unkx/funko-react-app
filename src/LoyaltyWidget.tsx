@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Star, Flame } from "lucide-react";
 
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
+
 interface Props {
   isDarkMode: boolean;
   onOpenFull: () => void;
@@ -32,7 +34,7 @@ const LoyaltyWidget: React.FC<Props> = ({ isDarkMode, onOpenFull }) => {
     }
 
     try {
-      const response = await fetch("${baseURL}/api/loyalty/dashboard", {
+      const response = await fetch(`${baseURL}/api/loyalty/dashboard`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

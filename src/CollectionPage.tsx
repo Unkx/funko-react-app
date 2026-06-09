@@ -19,6 +19,7 @@ import FilterIcon from "/src/assets/filter.svg?react";
 
 // Flags
 
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
 
 const languages = {
     US: { name: "USA", flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" /> },
@@ -155,7 +156,7 @@ const CollectionPage: React.FC = () => {
       }
 
       try {
-        const response = await fetch("${baseURL}/api/collection", {
+        const response = await fetch(`${baseURL}/api/collection`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         

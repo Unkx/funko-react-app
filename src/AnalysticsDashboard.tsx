@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import useBreakpoints from './useBreakpoints';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
+
 const AnalyticsDashboard = () => {
   const { isMobile, isTablet, isDesktop } = useBreakpoints();
   const [stats, setStats] = useState(null);
@@ -20,17 +22,17 @@ const AnalyticsDashboard = () => {
   const fetchData = async () => {
     try {
       const [statsRes, loyaltyRes, leaderboardRes, friendsRes] = await Promise.all([
-        fetch('${baseURL}/api/activity/stats', {
+        fetch(`${baseURL}/api/activity/stats`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        fetch('${baseURL}/api/loyalty/calculate', {
+        fetch(`${baseURL}/api/loyalty/calculate`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` }
         }),
-        fetch('${baseURL}/api/loyalty/leaderboard', {
+        fetch(`${baseURL}/api/loyalty/leaderboard`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        fetch('${baseURL}/api/friends', {
+        fetch(`${baseURL}/api/friends`, {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);

@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
+
 // Translation object (simplified for the artifact)
 const translations = {
   EN: {
@@ -67,7 +69,7 @@ const Requests = () => {
         return;
       }
       try {
-        const res = await fetch("${baseURL}/api/admin/requests", {
+        const res = await fetch(`${baseURL}/api/admin/requests`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {

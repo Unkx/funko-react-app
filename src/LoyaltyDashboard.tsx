@@ -7,6 +7,8 @@ import FireIcon from "/src/assets/fire.svg?react";
 import GiftIcon from "/src/assets/gift.svg?react";
 import { translations } from "./Translations/TranslationsLoyaltyDashboard";
 
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
+
 // =============== INTERFACES ===============
 
 interface Achievement {
@@ -121,13 +123,13 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
 
     try {
       // First, trigger achievement check
-      await fetch("${baseURL}/api/loyalty/achievements/check", {
+      await fetch(`${baseURL}/api/loyalty/achievements/check`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` }
       });
 
       // Then fetch updated data
-      const response = await fetch("${baseURL}/api/loyalty/dashboard", {
+      const response = await fetch(`${baseURL}/api/loyalty/dashboard`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -153,7 +155,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
     if (!token) return;
 
     try {
-      const response = await fetch("${baseURL}/api/loyalty/rewards", {
+      const response = await fetch(`${baseURL}/api/loyalty/rewards`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -194,7 +196,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
     if (!token) return;
 
     try {
-      const response = await fetch("${baseURL}/api/loyalty/rewards/activate", {
+      const response = await fetch(`${baseURL}/api/loyalty/rewards/activate`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

@@ -3,6 +3,8 @@ import { MessageCircle, Send, X, Users } from 'lucide-react';
 import useBreakpoints from './useBreakpoints';
 import { translations } from './Translations/TranslationsChatComponent';
 
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
+
 interface ChatComponentProps {
   isDarkMode: boolean;
   user: {
@@ -131,7 +133,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
   const fetchConversations = async () => {
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch('${baseURL}/api/chat/conversations', {
+      const response = await fetch(`${baseURL}/api/chat/conversations`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {
@@ -153,7 +155,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
     if (!token) return;
     
     try {
-      await fetch('${baseURL}/api/loyalty/award-points', {
+      await fetch(`${baseURL}/api/loyalty/award-points`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -169,7 +171,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
   const fetchActiveUsers = async () => {
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch('${baseURL}/api/chat/active-users', {
+      const response = await fetch(`${baseURL}/api/chat/active-users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.ok) {

@@ -50,6 +50,7 @@ const pool = dbUrl
       password: process.env.DB_PASSWORD,
       port: parseInt(process.env.DB_PORT || '5432'),
       ssl: sslConfig,
+      family: 4 // Force IPv4 to avoid potential IPv6 issues in Docker
     });
 
 console.log(`🔌 DB mode: ${dbUrl ? 'DATABASE_URL' : `individual vars — host=${process.env.DB_HOST} db=${process.env.DB_NAME} ssl=${JSON.stringify(sslConfig)}`}`);

@@ -21,6 +21,7 @@ const pool = process.env.DATABASE_URL
       database: process.env.DB_NAME || 'Web_AppDB',
       password: process.env.DB_PASSWORD || 'postgres',
       port: parseInt(process.env.DB_PORT || '5432'),
+      
     });
 
 (async () => {

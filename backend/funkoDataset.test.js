@@ -41,6 +41,7 @@ test('importFunkoDataset maps, dedupes and upserts', async () => {
     query: async (sql, params) => {
       queries.push({ sql, params });
       return { rowCount: params.length / 7 };
+      
     },
   };
   const fetchImpl = async () => ({ ok: true, status: 200, text: async () => CSV });

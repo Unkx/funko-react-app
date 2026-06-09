@@ -17,6 +17,7 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD || 'postgres',
   port: parseInt(process.env.DB_PORT || '5432'),
   connectionTimeoutMillis: 5000,
+  family: 4, // Force IPv4 to avoid potential IPv6 issues in Docker
 });
 
 async function testConnection() {

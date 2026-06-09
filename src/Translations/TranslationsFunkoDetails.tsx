@@ -44,7 +44,7 @@ export const translations = {
   },
   PL: {
     // Header & Navigation
-    searchPlaceholder: "WySzukaj figurek...",
+    searchPlaceholder: "Szukaj figurek...",
     goToDashboard: "Panel",
     goToLoginSite: "Zaloguj się",
     backButton: "Wróć",

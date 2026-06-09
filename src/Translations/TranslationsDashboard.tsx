@@ -84,7 +84,7 @@ export const translations = {
   },
   PL: {
     // Header & Navigation
-    searchPlaceholder: "WySzukaj figurek...",
+    searchPlaceholder: "Szukaj figurek...",
     logout: "Wyloguj",
     dashboard: "Pulpit",
     collection: "Kolekcja",

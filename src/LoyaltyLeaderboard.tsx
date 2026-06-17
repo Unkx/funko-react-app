@@ -61,15 +61,15 @@ const LoyaltyLeaderboard: React.FC<Props> = ({ isDarkMode, currentUserId }) => {
 
   const getRankColor = (rank: number) => {
     switch (rank) {
-      case 0: return "text-yellow-400";
-      case 1: return "text-gray-400";
+      case 0: return "text-amber-400";
+      case 1: return "text-slate-400";
       case 2: return "text-orange-400";
       default: return "";
     }
   };
 
   return (
-    <div className={`max-w-4xl mx-auto p-6 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
+    <div className={`max-w-4xl mx-auto p-6 rounded-lg ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow-lg`}>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">🏆 Loyalty Leaderboard</h2>
         
@@ -77,19 +77,19 @@ const LoyaltyLeaderboard: React.FC<Props> = ({ isDarkMode, currentUserId }) => {
         <div className="flex gap-2">
           <button
             onClick={() => setFilter("all")}
-            className={`px-3 py-1 rounded text-sm ${filter === "all" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "bg-gray-600" : "bg-gray-200")}`}
+            className={`px-3 py-1 rounded text-sm ${filter === "all" ? (isDarkMode ? "bg-amber-400 text-black" : "bg-green-600 text-white") : (isDarkMode ? "bg-slate-700" : "bg-gray-200")}`}
           >
             All Time
           </button>
           <button
             onClick={() => setFilter("monthly")}
-            className={`px-3 py-1 rounded text-sm ${filter === "monthly" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "bg-gray-600" : "bg-gray-200")}`}
+            className={`px-3 py-1 rounded text-sm ${filter === "monthly" ? (isDarkMode ? "bg-amber-400 text-black" : "bg-green-600 text-white") : (isDarkMode ? "bg-slate-700" : "bg-gray-200")}`}
           >
             This Month
           </button>
           <button
             onClick={() => setFilter("weekly")}
-            className={`px-3 py-1 rounded text-sm ${filter === "weekly" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white") : (isDarkMode ? "bg-gray-600" : "bg-gray-200")}`}
+            className={`px-3 py-1 rounded text-sm ${filter === "weekly" ? (isDarkMode ? "bg-amber-400 text-black" : "bg-green-600 text-white") : (isDarkMode ? "bg-slate-700" : "bg-gray-200")}`}
           >
             This Week
           </button>
@@ -115,7 +115,7 @@ const LoyaltyLeaderboard: React.FC<Props> = ({ isDarkMode, currentUserId }) => {
                       ? "bg-yellow-900 border-2 border-yellow-500"
                       : "bg-green-100 border-2 border-green-500"
                     : isDarkMode
-                    ? "bg-gray-600 hover:bg-gray-550"
+                    ? "bg-slate-700 hover:bg-gray-550"
                     : "bg-gray-100 hover:bg-gray-200"
                 }`}
               >

@@ -155,7 +155,7 @@ const LoginSite: React.FC = () => {
   return (
     <div
       className={`welcome-site min-h-screen flex flex-col ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-indigo-200 text-black"
+        isDarkMode ? "bg-slate-900 text-white" : "bg-indigo-200 text-black"
       }`}
     >
       {/* Header */}
@@ -164,7 +164,7 @@ const LoginSite: React.FC = () => {
           <Link to="/" className="no-underline">
             <h1
               className={`text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
-                isDarkMode ? "text-yellow-400" : "text-green-600"
+                isDarkMode ? "text-amber-400" : "text-green-600"
               }`}
             >
               Pop&Go!
@@ -185,7 +185,7 @@ const LoginSite: React.FC = () => {
               onClick={toggleLanguageDropdown}
               className={`language-toggle-button p-2 rounded-full flex items-center gap-1 min-w-0 ${
                 isDarkMode
-                  ? "bg-gray-700 hover:bg-gray-600"
+                  ? "bg-slate-800 hover:bg-slate-700"
                   : "bg-gray-200 hover:bg-gray-300"
               }`}
               aria-label="Select language"
@@ -212,10 +212,10 @@ const LoginSite: React.FC = () => {
                     className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${
                       language === code
                         ? isDarkMode
-                          ? "bg-yellow-500 text-black"
+                          ? "bg-amber-400 text-black"
                           : "bg-green-600 text-white"
                         : isDarkMode
-                        ? "hover:bg-gray-600"
+                        ? "hover:bg-slate-700"
                         : "hover:bg-gray-200"
                     }`}
                   >
@@ -232,7 +232,7 @@ const LoginSite: React.FC = () => {
             onClick={toggleTheme}
             className={`p-2 rounded-full ${
               isDarkMode
-                ? "bg-gray-700 hover:bg-gray-600"
+                ? "bg-slate-800 hover:bg-slate-700"
                 : "bg-gray-200 hover:bg-gray-300"
             }`}
             aria-label="Toggle theme"
@@ -246,7 +246,7 @@ const LoginSite: React.FC = () => {
       <main className="flex-grow p-8 flex flex-col items-center justify-center">
         <h2
           className={`text-2xl font-bold mb-4 ${
-            isDarkMode ? "text-yellow-400" : "text-green-600"
+            isDarkMode ? "text-amber-400" : "text-green-600"
           }`}
         >
           {t.goToLoginSite}
@@ -255,7 +255,7 @@ const LoginSite: React.FC = () => {
         <form
           onSubmit={handleLogin}
           className={`max-w-md w-full flex flex-col gap-4 p-6 rounded-lg shadow-md ${
-            isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
+            isDarkMode ? "bg-slate-800 text-white" : "bg-white text-black"
           }`}
         >
           {loginError && (
@@ -268,7 +268,7 @@ const LoginSite: React.FC = () => {
             value={login}
             onChange={(e) => setLogin(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-slate-900 text-white" : "bg-white text-black"
             }`}
             required
           />
@@ -279,7 +279,7 @@ const LoginSite: React.FC = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-slate-900 text-white" : "bg-white text-black"
             }`}
             required
           />
@@ -288,7 +288,7 @@ const LoginSite: React.FC = () => {
             type="submit"
             className={`px-4 py-2 rounded ${
               isDarkMode
-                ? "bg-yellow-500 hover:bg-yellow-600 text-black"
+                ? "bg-amber-400 hover:bg-amber-500 text-black"
                 : "bg-green-600 hover:bg-green-700 text-white"
             } transition-colors`}
           >
@@ -298,14 +298,14 @@ const LoginSite: React.FC = () => {
 
         {/* Register link */}
         <div className="mt-4 text-center">
-          <span className={`${isDarkMode ? "text-gray-300" : "text-gray-700"} mr-2`}>
+          <span className={`${isDarkMode ? "text-slate-300" : "text-slate-600"} mr-2`}>
             {t.registerLink}
           </span>
           <Link
             to="/RegisterSite"
             className={`font-medium underline ${
               isDarkMode
-                ? "text-yellow-400 hover:text-yellow-300"
+                ? "text-amber-400 hover:text-yellow-300"
                 : "text-green-600 hover:text-green-800"
             }`}
           >
@@ -317,7 +317,7 @@ const LoginSite: React.FC = () => {
       {/* Footer */}
       <footer
         className={`text-center py-4 ${
-          isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-200 text-gray-700"
+          isDarkMode ? "bg-slate-950 text-slate-400" : "bg-gray-200 text-slate-600"
         }`}
       >
         {t.copyright}

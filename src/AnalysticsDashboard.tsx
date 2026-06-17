@@ -69,14 +69,14 @@ const AnalyticsDashboard = () => {
   }));
 
   return (
-    <div className="w-full max-w-full overflow-x-hidden min-h-screen bg-gray-100 dark:bg-gray-900 p-6">
+    <div className="w-full max-w-full overflow-x-hidden min-h-screen bg-gray-100 dark:bg-slate-950 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-6">
           <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
             📊 Analytics Dashboard
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600 dark:text-slate-400">
             Track your activity, loyalty, and social engagement
           </p>
         </div>
@@ -99,7 +99,7 @@ const AnalyticsDashboard = () => {
             title="Loyalty Score"
             value={loyaltyData?.loyaltyScore || 0}
             icon="⭐"
-            color="bg-yellow-500"
+            color="bg-amber-400"
           />
           <MetricCard
             title="Friends"
@@ -112,7 +112,7 @@ const AnalyticsDashboard = () => {
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Activity Breakdown */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
               Activity Breakdown
             </h2>
@@ -137,12 +137,12 @@ const AnalyticsDashboard = () => {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-gray-500 text-center py-10">No activity data yet</p>
+              <p className="text-slate-500 text-center py-10">No activity data yet</p>
             )}
           </div>
 
           {/* Loyalty Leaderboard Chart */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
               Top 10 Loyalty Leaders
             </h2>
@@ -157,40 +157,40 @@ const AnalyticsDashboard = () => {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-gray-500 text-center py-10">No leaderboard data</p>
+              <p className="text-slate-500 text-center py-10">No leaderboard data</p>
             )}
           </div>
         </div>
 
         {/* Leaderboard Table */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-6">
           <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
             🏆 Full Leaderboard
           </h2>
           <div className="overflow-x-auto">
             <table className="min-w-full">
-              <thead className="bg-gray-50 dark:bg-gray-700">
+              <thead className="bg-gray-50 dark:bg-slate-800">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
                     Rank
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
                     User
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
                     Loyalty Score
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
                     Active Days
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-300 uppercase tracking-wider">
                     Collection Size
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-gray-700">
                 {leaderboard.map((user, idx) => (
-                  <tr key={user.login} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <tr key={user.login} className="hover:bg-gray-50 dark:hover:bg-slate-800">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                       {idx < 3 ? (
                         <span className="text-xl sm:text-2xl">{['🥇', '🥈', '🥉'][idx]}</span>
@@ -220,7 +220,7 @@ const AnalyticsDashboard = () => {
         </div>
 
         {/* Friends Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-6">
           <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
             👥 Your Friends
           </h2>
@@ -243,17 +243,17 @@ const AnalyticsDashboard = () => {
                       {friend.status}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-gray-600 dark:text-slate-400">
                     {friend.name} {friend.surname}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                  <p className="text-xs text-slate-500 dark:text-slate-500 mt-2">
                     Collection: {friend.collection_size} items
                   </p>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-10">
+            <p className="text-slate-500 text-center py-10">
               No friends yet. Start connecting with other collectors!
             </p>
           )}
@@ -264,10 +264,10 @@ const AnalyticsDashboard = () => {
 };
 
 const MetricCard = ({ title, value, icon, color }) => (
-  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+  <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-6">
     <div className="flex items-center justify-between">
       <div>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{title}</p>
+        <p className="text-sm text-gray-600 dark:text-slate-400 mb-1">{title}</p>
         <p className="text-3xl font-bold text-gray-800 dark:text-white">{value}</p>
       </div>
       <div className={`${color} w-12 h-12 rounded-full flex items-center justify-center text-white text-2xl`}>

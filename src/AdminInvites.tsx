@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { useTheme } from './ThemeContext';
+import { LanguageContext } from './LanguageContext';
 import { translations } from './Translations/TranslationAdminInvites';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
@@ -28,8 +30,8 @@ const AdminInvites = () => {
   const [copySuccess, setCopySuccess] = useState(false);
   const [processing, setProcessing] = useState(false);
 
-  const isDarkMode = localStorage.getItem("preferredTheme") === "dark";
-  const language = localStorage.getItem("preferredLanguage") || "EN";
+  const { isDarkMode } = useTheme();
+  const { language } = useContext(LanguageContext);
   const t = translations[language] || translations["EN"];
   const currentUser = JSON.parse(localStorage.getItem("user") || "null");
   const token = localStorage.getItem("token");
@@ -176,14 +178,14 @@ const AdminInvites = () => {
   };
 
   return (
-    <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800 border border-gray-200"}`}>
+    <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-slate-900 text-white" : "bg-white text-gray-800 border border-gray-200"}`}>
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className={`text-3xl font-bold mb-2 ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
+          <h2 className={`text-3xl font-bold mb-2 ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
             {t.adminInvites || "Admin Invites"}
           </h2>
-          <p className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}>
+          <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-gray-600"}`}>
             {t.invitesDescription || "Create and manage invite codes for new admin users"}
           </p>
         </div>
@@ -192,7 +194,7 @@ const AdminInvites = () => {
           onClick={() => setShowCreateModal(true)}
           className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 ${
             isDarkMode
-              ? "bg-yellow-500 hover:bg-yellow-600 text-black"
+              ? "bg-amber-400 hover:bg-amber-500 text-black"
               : "bg-blue-600 hover:bg-blue-700 text-white"
           } transition`}
         >
@@ -208,14 +210,14 @@ const AdminInvites = () => {
       ) : invites.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-5xl mb-4">🔐</div>
-          <p className={`text-lg ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
+          <p className={`text-lg ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
             {t.noInvitesCreated || "No invite codes created yet"}
           </p>
           <button
             onClick={() => setShowCreateModal(true)}
             className={`mt-4 px-6 py-2 rounded-lg font-medium ${
               isDarkMode
-                ? "bg-yellow-500 hover:bg-yellow-600 text-black"
+                ? "bg-amber-400 hover:bg-amber-500 text-black"
                 : "bg-blue-600 hover:bg-blue-700 text-white"
             } transition`}
           >
@@ -224,7 +226,7 @@ const AdminInvites = () => {
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className={`min-w-full border-collapse ${isDarkMode ? "text-gray-300" : "text-gray-800"}`}>
+          <table className={`min-w-full border-collapse ${isDarkMode ? "text-slate-300" : "text-gray-800"}`}>
             <thead>
               <tr className={`border-b ${isDarkMode ? "border-gray-700" : "border-gray-200"}`}>
                 <th className="px-4 py-3 text-left font-medium">ID</th>
@@ -247,7 +249,7 @@ const AdminInvites = () => {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <code className={`px-2 py-1 rounded text-sm font-mono ${
-                        isDarkMode ? "bg-gray-700 text-gray-300" : "bg-gray-100 text-gray-800"
+                        isDarkMode ? "bg-slate-800 text-slate-300" : "bg-gray-100 text-gray-800"
                       }`}>
                         {invite.display_code}
                       </code>
@@ -267,7 +269,7 @@ const AdminInvites = () => {
                             📋
                           </button>
                           <div className={`absolute left-0 bottom-full mb-2 hidden group-hover:block p-2 rounded shadow-lg z-10 min-w-[200px] ${
-                            isDarkMode ? "bg-gray-900 border border-gray-700" : "bg-white border border-gray-300"
+                            isDarkMode ? "bg-slate-950 border border-gray-700" : "bg-white border border-gray-300"
                           }`}>
                             <p className="text-xs mb-1 font-medium">{t.oneTimeToken || "One-time token:"}</p>
                             <code className="text-xs break-all">{invite.raw_token}</code>
@@ -277,7 +279,7 @@ const AdminInvites = () => {
                       
                       {/* Indicator for invites created by other admins */}
                       {!canSeeDetails(invite) && (
-                        <span className="text-xs italic text-gray-500" title="Created by another admin">
+                        <span className="text-xs italic text-slate-500" title="Created by another admin">
                           🔒
                         </span>
                       )}
@@ -304,7 +306,7 @@ const AdminInvites = () => {
                     {invite.used_by_username ? (
                       <span className="text-sm">{invite.used_by_username}</span>
                     ) : (
-                      <span className={`text-sm ${isDarkMode ? "text-gray-500" : "text-gray-400"}`}>
+                      <span className={`text-sm ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
                         {t.notUsed || "Not used"}
                       </span>
                     )}
@@ -319,7 +321,7 @@ const AdminInvites = () => {
                         {t.expired || "Expired"}
                       </span>
                     ) : (
-                      <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                      <span className="px-2 py-1 rounded-full text-xs bg-slate-50 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
                         {t.active || "Active"}
                       </span>
                     )}
@@ -358,7 +360,7 @@ const AdminInvites = () => {
                         }}
                         className={`px-3 py-1 rounded text-sm ${
                           isDarkMode
-                            ? "bg-gray-600 hover:bg-gray-500 text-white"
+                            ? "bg-slate-700 hover:bg-slate-600 text-white"
                             : "bg-gray-200 hover:bg-gray-300 text-gray-800"
                         }`}
                       >
@@ -375,7 +377,7 @@ const AdminInvites = () => {
 
       {/* Stats Summary */}
       {invites.length > 0 && (
-        <div className={`mt-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-gray-50"}`}>
+        <div className={`mt-6 p-4 rounded-lg ${isDarkMode ? "bg-slate-800" : "bg-gray-50"}`}>
           <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="text-center">
               <p className="text-2xl font-bold">{invites.length}</p>
@@ -408,7 +410,7 @@ const AdminInvites = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
           <div 
             className={`w-full max-w-md p-6 rounded-lg shadow-xl ${
-              isDarkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+              isDarkMode ? "bg-slate-900 border-gray-700" : "bg-white border-gray-200"
             } border`}
             onClick={(e) => e.stopPropagation()}
           >
@@ -428,16 +430,16 @@ const AdminInvites = () => {
                     onChange={(e) => setNewInvite({ expiresInDays: parseInt(e.target.value) || 7 })}
                     className={`w-full px-3 py-2 rounded border ${
                       isDarkMode 
-                        ? "bg-gray-700 border-gray-600 text-white" 
+                        ? "bg-slate-800 border-gray-600 text-white" 
                         : "bg-white border-gray-300 text-gray-800"
                     }`}
                   />
-                  <p className={`text-xs mt-1 ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
+                  <p className={`text-xs mt-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
                     {t.leaveEmptyForNoExpiry || "Leave blank for no expiration"}
                   </p>
                 </div>
                 
-                <div className={`p-3 rounded mb-6 ${isDarkMode ? "bg-gray-900" : "bg-gray-100"}`}>
+                <div className={`p-3 rounded mb-6 ${isDarkMode ? "bg-slate-950" : "bg-gray-100"}`}>
                   <h4 className="font-medium mb-2">⚠️ {t.importantNote || "Important:"}</h4>
                   <ul className="text-sm space-y-1">
                     <li>• {t.inviteWarning1 || "Invite tokens are shown only once"}</li>
@@ -455,7 +457,7 @@ const AdminInvites = () => {
                     }}
                     className={`px-4 py-2 rounded ${
                       isDarkMode 
-                        ? "bg-gray-600 hover:bg-gray-500 text-white" 
+                        ? "bg-slate-700 hover:bg-slate-600 text-white" 
                         : "bg-gray-200 hover:bg-gray-300 text-gray-800"
                     }`}
                   >
@@ -466,7 +468,7 @@ const AdminInvites = () => {
                     disabled={processing}
                     className={`px-4 py-2 rounded ${
                       isDarkMode
-                        ? "bg-yellow-500 hover:bg-yellow-600 text-black"
+                        ? "bg-amber-400 hover:bg-amber-500 text-black"
                         : "bg-blue-600 hover:bg-blue-700 text-white"
                     } ${processing ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
@@ -480,11 +482,11 @@ const AdminInvites = () => {
                   ✅ {t.inviteCreated || "Invite Created Successfully!"}
                 </h3>
                 
-                <div className={`p-4 rounded mb-4 ${isDarkMode ? "bg-gray-900" : "bg-gray-100"}`}>
+                <div className={`p-4 rounded mb-4 ${isDarkMode ? "bg-slate-950" : "bg-gray-100"}`}>
                   <p className="font-medium mb-2">🔑 {t.yourInviteToken || "Your Invite Token:"}</p>
                   <div className="flex items-center gap-2 mb-3">
                     <code className={`flex-1 px-3 py-2 rounded text-sm font-mono break-all ${
-                      isDarkMode ? "bg-gray-800 text-yellow-300" : "bg-gray-200 text-gray-800"
+                      isDarkMode ? "bg-slate-900 text-yellow-300" : "bg-gray-200 text-gray-800"
                     }`}>
                       {generatedToken}
                     </code>
@@ -493,7 +495,7 @@ const AdminInvites = () => {
                       className={`px-3 py-2 rounded ${
                         copySuccess
                           ? (isDarkMode ? "bg-green-700" : "bg-green-600")
-                          : (isDarkMode ? "bg-yellow-600 hover:bg-yellow-700" : "bg-blue-600 hover:bg-blue-700")
+                          : (isDarkMode ? "bg-amber-500 hover:bg-yellow-700" : "bg-blue-600 hover:bg-blue-700")
                       } text-white`}
                     >
                       {copySuccess ? "✓ Copied" : "Copy"}
@@ -504,7 +506,7 @@ const AdminInvites = () => {
                   </p>
                 </div>
                 
-                <div className={`p-3 rounded mb-4 ${isDarkMode ? "bg-gray-700" : "bg-blue-50"}`}>
+                <div className={`p-3 rounded mb-4 ${isDarkMode ? "bg-slate-800" : "bg-blue-50"}`}>
                   <h4 className="font-medium mb-2">📋 {t.howToUse || "How to use:"}</h4>
                   <ol className="text-sm list-decimal list-inside space-y-1">
                     <li>{t.step1 || "Share this token with the new admin user"}</li>
@@ -521,7 +523,7 @@ const AdminInvites = () => {
                   }}
                   className={`w-full px-4 py-2 rounded ${
                     isDarkMode
-                      ? "bg-gray-600 hover:bg-gray-500 text-white"
+                      ? "bg-slate-700 hover:bg-slate-600 text-white"
                       : "bg-gray-200 hover:bg-gray-300 text-gray-800"
                   }`}
                 >

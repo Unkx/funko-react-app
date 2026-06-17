@@ -1,47 +1,17 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import LanguageSelectorPopup from "./LanguageSelectorPopup";
 import { translations } from "./Translations/TranslationRegistersite"; // Assuming translations are also for Register
-
-
-// Icons
-import MoonIcon from "/src/assets/moon.svg?react";
-import SunIcon from "/src/assets/sun.svg?react";
-import SearchIcon from "/src/assets/search.svg?react";
-import GlobeIcon from "/src/assets/globe.svg?react";
-import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
-
-// Flags
+import Layout from './Layout';
+import { useTheme } from './ThemeContext';
+import { LanguageContext } from './LanguageContext';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
 
-const languages = {
-    US: { name: "USA", flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" /> },
-    EN: { name: "UK", flag: <img src="https://flagcdn.com/gb.svg" className="w-5 h-5" alt="UK" /> },
-    CA: { name: "Canada", flag: <img src="https://flagcdn.com/ca.svg" className="w-5 h-5" alt="Canada" /> },
-    PL: { name: "Polski", flag: <img src="https://flagcdn.com/pl.svg" className="w-5 h-5" alt="Poland" /> },
-    RU: { name: "Русский", flag: <img src="https://flagcdn.com/ru.svg" className="w-5 h-5" alt="Russia" /> },
-    ES: { name: "Español", flag: <img src="https://flagcdn.com/es.svg" className="w-5 h-5" alt="Spain" /> },
-    FR: { name: "Français", flag: <img src="https://flagcdn.com/fr.svg" className="w-5 h-5" alt="France" /> },
-    DE: { name: "Deutsch", flag: <img src="https://flagcdn.com/de.svg" className="w-5 h-5" alt="Germany" /> },
-};
-
 const RegisterSite: React.FC = () => {
-  // Load theme from localStorage using "preferredTheme"
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const savedTheme = localStorage.getItem("preferredTheme");
-    return savedTheme !== null ? savedTheme === "dark" : true;
-  });
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [language, setLanguage] = useState("EN");
-  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
-  const [shouldShowPopup, setShouldShowPopup] = useState(false);
+  const { isDarkMode } = useTheme();
+  const { language } = useContext(LanguageContext);
   const navigate = useNavigate();
   const t = translations[language] || translations["EN"];
-
-  const languageDropdownRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Registration form state
   const [email, setEmail] = useState("");
@@ -63,47 +33,6 @@ const RegisterSite: React.FC = () => {
   const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ' -]{2,50}$/;
   const passwordRegex = /^(?=\S+$)(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
 
-  // Save theme preference and apply globally
-  useEffect(() => {
-    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
-
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDarkMode]);
-
-  // Function to change language
-  const selectLanguage = (lang: string) => {
-    setLanguage(lang);
-    localStorage.setItem("preferredLanguage", lang);
-    setShowLanguageDropdown(false);
-  };
-
-  // Function to toggle dark/light mode
-  const toggleTheme = () => setIsDarkMode((prev) => !prev);
-
-  // Function to open/close language menu
-  const toggleLanguageDropdown = () => setShowLanguageDropdown((prev) => !prev);
-
-  // Handle search submission
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/searchsite?q=${encodeURIComponent(searchQuery.trim())}`);
-    } else {
-      navigate("/searchsite");
-    }
-  };
-
-  useEffect(() => {
-  if (isDarkMode) {
-    document.documentElement.classList.add("dark");
-  } else {
-    document.documentElement.classList.remove("dark");
-  }
-}, [isDarkMode]);
 
   // Handle registration submission
   const handleRegister = async (e: React.FormEvent) => {
@@ -242,162 +171,15 @@ const RegisterSite: React.FC = () => {
 
 
   
-  // Combined useEffect for initial setup and click outside logic
-  useEffect(() => {
-    const savedLang = localStorage.getItem("preferredLanguage");
-    if (savedLang && languages[savedLang as keyof typeof languages]) {
-      setLanguage(savedLang);
-    }
-
-    const hasSeenPopup = localStorage.getItem("hasSeenLanguagePopup");
-    if (!hasSeenPopup) {
-      setShouldShowPopup(true);
-      localStorage.setItem("hasSeenLanguagePopup", "true");
-    }
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        showLanguageDropdown &&
-        languageDropdownRef.current &&
-        buttonRef.current &&
-        !languageDropdownRef.current.contains(event.target as Node) &&
-        !buttonRef.current.contains(event.target as Node)
-      ) {
-        setShowLanguageDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [showLanguageDropdown]);
 
   return (
-    <div
-      className={`welcome-site min-h-screen flex flex-col ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
-      }`}
-    >
-      {/* Header */}
-      <header className="py-4 px-8 flex flex-wrap md:flex-nowrap justify-between items-center gap-4 relative w-full max-w-full overflow-x-hidden">
-        <div className="flex-shrink-0">
-          <Link to="/" className="no-underline">
-            <h1
-              className={`text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
-                isDarkMode ? "text-yellow-400" : "text-green-600"
-              }`}
-            >
-              Pop&Go!
-            </h1>
-          </Link>
-          {shouldShowPopup && (
-            <LanguageSelectorPopup onClose={() => setShouldShowPopup(false)} />
-          )}
-        </div>
-
-        {/* Search Form */}
-        <form
-          onSubmit={handleSearch}
-          className={`flex-grow max-w-lg mx-auto flex rounded-lg overflow-hidden ${
-            isDarkMode ? "bg-gray-700" : "bg-gray-100"
-          }`}
-        >
-          <input
-            type="text"
-            placeholder={t.searchPlaceholder || "Search..."}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={`flex-grow px-4 py-2 outline-none ${
-              isDarkMode
-                ? "bg-gray-700 text-white placeholder-gray-400"
-                : "bg-white text-black"
-            }`}
-            aria-label="Search input"
-          />
-          <button
-            type="submit"
-            className={`px-4 py-2 ${
-              isDarkMode
-                ? "bg-yellow-500 hover:bg-yellow-600"
-                : "bg-green-600 hover:bg-green-700"
-            }`}
-            aria-label="Search"
-          >
-            <SearchIcon className="w-5 h-5" />
-          </button>
-        </form>
-
-        {/* Theme & Language Toggle */}
-        <div className="flex-shrink-0 flex gap-4 min-w-0 items-center">
-          {/* Language Dropdown */}
-          <div className="relative inline-block">
-            <button
-              ref={buttonRef} // Assign ref to the button
-              onClick={toggleLanguageDropdown}
-              className={`language-toggle-button p-2 rounded-full flex items-center gap-1 min-w-0 ${
-                isDarkMode
-                  ? "bg-gray-700 hover:bg-gray-600"
-                  : "bg-gray-200 hover:bg-gray-300"
-              }`}
-              aria-label="Select language"
-              aria-expanded={showLanguageDropdown}
-            >
-              <GlobeIcon className="w-5 h-5" />
-              <span className="hidden sm:inline text-sm font-medium">{language}</span>
-              <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${
-                  showLanguageDropdown ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-
-            {showLanguageDropdown && (
-              <div
-                ref={languageDropdownRef} // Assign ref to the dropdown div
-                className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-1 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto`}
-              >
-                {Object.entries(languages).map(([code, { name, flag }]) => (
-                  <button
-                    key={code}
-                    onClick={() => selectLanguage(code)}
-                    className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${
-                      language === code
-                        ? isDarkMode
-                          ? "bg-yellow-500 text-black"
-                          : "bg-green-600 text-white"
-                        : isDarkMode
-                        ? "hover:bg-gray-600"
-                        : "hover:bg-gray-200"
-                    }`}
-                  >
-                    <span className="w-5 h-5">{flag}</span>
-                    <span>{name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Theme Toggle */}
-          <button
-            onClick={toggleTheme}
-            className={`p-2 rounded-full ${
-              isDarkMode
-                ? "bg-gray-700 hover:bg-gray-600"
-                : "bg-gray-200 hover:bg-gray-300"
-            }`}
-            aria-label="Toggle theme"
-          >
-            {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
-          </button>
-        </div>
-      </header>
+    <Layout translations={t}>
 
       {/* Main content - Register form */}
       <main className="flex-grow p-8 flex flex-col items-center justify-center">
         <h2
           className={`text-2xl font-bold mb-4 ${
-            isDarkMode ? "text-yellow-400" : "text-green-600"
+            isDarkMode ? "text-amber-400" : "text-green-600"
           }`}
         >
           {t.registerTitle || "Create an Account"}
@@ -406,7 +188,7 @@ const RegisterSite: React.FC = () => {
         <form
           onSubmit={handleRegister}
           className={`max-w-md w-full flex flex-col gap-4 bg-gray-200 p-6 rounded-lg shadow-md ${
-            isDarkMode ? "bg-gray-700 text-white" : ""
+            isDarkMode ? "bg-slate-800 text-white" : ""
           }`}
         >
           {registerError && (
@@ -420,7 +202,7 @@ const RegisterSite: React.FC = () => {
             value={login}
             onChange={(e) => setLogin(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-slate-900 text-white" : "bg-white text-black"
             }`}
             required
           />          
@@ -430,7 +212,7 @@ const RegisterSite: React.FC = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-slate-900 text-white" : "bg-white text-black"
             }`}
             required
           />
@@ -440,7 +222,7 @@ const RegisterSite: React.FC = () => {
             value={name}
             onChange={(e) => setName(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-slate-900 text-white" : "bg-white text-black"
             }`}
             required
           />
@@ -450,7 +232,7 @@ const RegisterSite: React.FC = () => {
             value={surname}
             onChange={(e) => setSurname(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-slate-900 text-white" : "bg-white text-black"
             }`}
             required
           />
@@ -460,7 +242,7 @@ const RegisterSite: React.FC = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-slate-900 text-white" : "bg-white text-black"
             }`}
             required
           />
@@ -470,7 +252,7 @@ const RegisterSite: React.FC = () => {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-slate-900 text-white" : "bg-white text-black"
             }`}
             required
           />
@@ -480,11 +262,11 @@ const RegisterSite: React.FC = () => {
             value={inviteToken}
             onChange={(e) => setInviteToken(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-slate-900 text-white" : "bg-white text-black"
             }`}
           />
           <div className="text-sm h-5 mt-1">
-            {inviteChecking && <span className="text-gray-400">{t.inviteTokenChecking}</span>}
+            {inviteChecking && <span className="text-slate-400">{t.inviteTokenChecking}</span>}
             {inviteValid === true && <span className="text-green-500">{t.inviteTokenValid}</span>}
             {inviteValid === false && <span className="text-red-500">{t.inviteTokenInvalid}</span>}
           </div>
@@ -493,7 +275,7 @@ const RegisterSite: React.FC = () => {
             value={dateOfBirth}
             onChange={(e) => setDateOfBirth(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-slate-900 text-white" : "bg-white text-black"
             }`}
             required
             lang={language.toLowerCase()} // Add this line
@@ -502,7 +284,7 @@ const RegisterSite: React.FC = () => {
             value={gender}
             onChange={(e) => setGender(e.target.value)}
             className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+              isDarkMode ? "bg-slate-900 text-white" : "bg-white text-black"
             }`}
             required
           >
@@ -520,7 +302,7 @@ const RegisterSite: React.FC = () => {
             type="submit"
             className={`px-4 py-2 rounded ${
               isDarkMode
-                ? "bg-yellow-500 hover:bg-yellow-600 text-black"
+                ? "bg-amber-400 hover:bg-amber-500 text-black"
                 : "bg-green-600 hover:bg-green-700 text-white"
             } transition-colors`}
           >
@@ -530,14 +312,14 @@ const RegisterSite: React.FC = () => {
 
 
         <div className="mt-4 text-center">
-          <span className={`${isDarkMode ? "text-gray-300" : "text-gray-700"} mr-2`}>
+          <span className={`${isDarkMode ? "text-slate-300" : "text-gray-700"} mr-2`}>
             {t.alreadyHaveAccount || "Already have an account?"}
           </span>
        <Link
           to={localStorage.getItem("user") ? "/dashboardSite" : "/loginregistersite"}
           className={`px-4 py-2 rounded ${
             isDarkMode
-              ? "bg-yellow-500 text-black hover:bg-yellow-600"
+              ? "bg-amber-400 text-black hover:bg-amber-500"
               : "bg-green-600 text-white hover:bg-green-700"
           }`}
         >
@@ -548,15 +330,7 @@ const RegisterSite: React.FC = () => {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer
-        className={`text-center py-4 ${
-          isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-200 text-gray-700"
-        }`}
-      >
-        {t.copyright || "© 2025 Pop&Go! All rights reserved."}
-      </footer>
-    </div>
+    </Layout>
   );
 };
 

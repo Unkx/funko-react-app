@@ -139,7 +139,7 @@ const ItemList: React.FC<ItemListProps> = ({ token, currentUserRole, isDarkMode,
         onClick={() => handleItemClick(item)}
         className={`flex items-center text-sm sm:text-base cursor-pointer transition-colors ${
           isDarkMode
-            ? "even:bg-gray-700 odd:bg-gray-600 hover:bg-gray-500"
+            ? "even:bg-slate-800 odd:bg-slate-700 hover:bg-gray-500"
             : "even:bg-gray-100 odd:bg-white hover:bg-gray-200"
         }`}
       >
@@ -154,7 +154,7 @@ const ItemList: React.FC<ItemListProps> = ({ token, currentUserRole, isDarkMode,
           {(item.exclusive?.toString().toLowerCase() === "true" || item.exclusive?.toString().toLowerCase() === "yes") ? (
             <span className="text-green-500 font-semibold text-xs">Yes</span>
           ) : (
-            <span className="text-gray-500 text-xs">No</span>
+            <span className="text-slate-500 text-xs">No</span>
           )}
         </div>
         <div className="w-24 px-2 py-2 text-center text-xs truncate" title={item.imageName}>{item.imageName || "-"}</div>
@@ -164,17 +164,17 @@ const ItemList: React.FC<ItemListProps> = ({ token, currentUserRole, isDarkMode,
 
   if (itemsLoading) return <div className="flex justify-center items-center h-64"><p className="text-lg">{t.loading || "Loading..."}</p></div>;
   if (itemsError) return <div className="flex justify-center items-center h-64"><p className="text-red-500 text-lg">{itemsError}</p></div>;
-  if (items.length === 0) return <div className="flex justify-center items-center h-64"><p className="text-gray-500 text-lg">{t.notFound || "No Funko Pops found"}</p></div>;
+  if (items.length === 0) return <div className="flex justify-center items-center h-64"><p className="text-slate-500 text-lg">{t.notFound || "No Funko Pops found"}</p></div>;
 
   return (
     <>
-      <p className={`text-sm mb-4 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>
+      <p className={`text-sm mb-4 ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>
         {t.showingItems}: {(currentPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalItemsCount)} {t.of} {totalItemsCount}
       </p>
 
-      <div className="overflow-x-auto w-full border rounded-lg bg-white dark:bg-gray-800 shadow">
+      <div className="overflow-x-auto w-full border rounded-lg bg-white dark:bg-slate-900 shadow">
         <div className="flex flex-col">
-          <div className={`flex items-center text-sm font-semibold ${isDarkMode ? "bg-gray-700 text-gray-300" : "bg-gray-200 text-gray-700"} sticky top-0 z-10`}>
+          <div className={`flex items-center text-sm font-semibold ${isDarkMode ? "bg-slate-800 text-slate-300" : "bg-gray-200 text-slate-600"} sticky top-0 z-10`}>
             <div className="w-64 px-2 py-2 text-left">{t.Title || "Title"}</div>
             <div className="w-16 px-2 py-2 text-center">{t.ID || "ID"}</div>
             <div className="w-16 px-2 py-2 text-center">{t.Number || "Number"}</div>
@@ -196,7 +196,7 @@ const ItemList: React.FC<ItemListProps> = ({ token, currentUserRole, isDarkMode,
           <button
             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
-            className={`px-4 py-2 rounded font-medium ${isDarkMode ? "bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700" : "bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200"} text-black transition`}
+            className={`px-4 py-2 rounded font-medium ${isDarkMode ? "bg-slate-700 hover:bg-gray-500 disabled:bg-slate-800" : "bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200"} text-black transition`}
           >
             <LeftArrow className="w-6 h-6" />
           </button>
@@ -204,7 +204,7 @@ const ItemList: React.FC<ItemListProps> = ({ token, currentUserRole, isDarkMode,
           <button
             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
             disabled={currentPage === totalPages}
-            className={`px-4 py-2 rounded font-medium ${isDarkMode ? "bg-gray-600 hover:bg-gray-500 disabled:bg-gray-700" : "bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200"} text-black transition`}
+            className={`px-4 py-2 rounded font-medium ${isDarkMode ? "bg-slate-700 hover:bg-gray-500 disabled:bg-slate-800" : "bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200"} text-black transition`}
           >
             <RightArrow className="w-6 h-6" />
           </button>

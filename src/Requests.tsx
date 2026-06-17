@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
+import { useTheme } from './ThemeContext';
+import { LanguageContext } from './LanguageContext';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
 
@@ -54,11 +56,8 @@ const Requests = () => {
   
   const token = localStorage.getItem("token");
 
-  // Detect dark mode from localStorage
-  const isDarkMode = localStorage.getItem("preferredTheme") === "dark";
-
-  // Load language (default to EN if not set)
-  const language = localStorage.getItem("preferredLanguage") || "EN";
+  const { isDarkMode } = useTheme();
+  const { language } = useContext(LanguageContext);
   const t = translations[language] || translations["EN"];
 
   // Fetch requests on mount
@@ -166,21 +165,21 @@ const Requests = () => {
   return (
     <div
       className={`p-6 rounded-lg shadow-lg ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-800 border border-gray-200"
+        isDarkMode ? "bg-slate-900 text-white" : "bg-white text-gray-800 border border-gray-200"
       }`}
     >
       {/* Header */}
       <div className="mb-6">
         <h2
           className={`text-3xl font-bold mb-2 ${
-            isDarkMode ? "text-yellow-400" : "text-blue-600"
+            isDarkMode ? "text-amber-400" : "text-blue-600"
           }`}
         >
           {t.pendingItemRequests || "Pending Item Requests"}
         </h2>
         <div className="flex items-center gap-2">
           <span
-            className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-600"}`}
+            className={`text-sm ${isDarkMode ? "text-slate-400" : "text-gray-600"}`}
           >
             {t.totalRequests}:
           </span>
@@ -200,12 +199,12 @@ const Requests = () => {
               placeholder={t.searchRequests}
               className={`w-full px-4 py-2 pr-10 rounded-lg ${
                 isDarkMode
-                  ? "bg-gray-700 text-white placeholder-gray-400 border-gray-600"
+                  ? "bg-slate-800 text-white placeholder-gray-400 border-gray-600"
                   : "bg-gray-50 text-gray-800 placeholder-gray-500 border-gray-300"
               } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
             />
             <svg
-              className="absolute right-3 top-2.5 w-5 h-5 text-gray-400"
+              className="absolute right-3 top-2.5 w-5 h-5 text-slate-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -225,7 +224,7 @@ const Requests = () => {
             <div className="flex-1 min-w-[200px]">
               <label
                 className={`block text-sm font-medium mb-1 ${
-                  isDarkMode ? "text-gray-300" : "text-gray-700"
+                  isDarkMode ? "text-slate-300" : "text-gray-700"
                 }`}
               >
                 {t.sortBy}
@@ -235,7 +234,7 @@ const Requests = () => {
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className={`w-full px-3 py-2 rounded-lg ${
                   isDarkMode
-                    ? "bg-gray-700 text-white border-gray-600"
+                    ? "bg-slate-800 text-white border-gray-600"
                     : "bg-gray-50 text-gray-800 border-gray-300"
                 } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
               >
@@ -249,7 +248,7 @@ const Requests = () => {
             <div className="flex-1 min-w-[200px]">
               <label
                 className={`block text-sm font-medium mb-1 ${
-                  isDarkMode ? "text-gray-300" : "text-gray-700"
+                  isDarkMode ? "text-slate-300" : "text-gray-700"
                 }`}
               >
                 {t.filterByUser}
@@ -259,7 +258,7 @@ const Requests = () => {
                 onChange={(e) => setSelectedUser(e.target.value)}
                 className={`w-full px-3 py-2 rounded-lg ${
                   isDarkMode
-                    ? "bg-gray-700 text-white border-gray-600"
+                    ? "bg-slate-800 text-white border-gray-600"
                     : "bg-gray-50 text-gray-800 border-gray-300"
                 } border focus:outline-none focus:ring-2 focus:ring-blue-500`}
               >
@@ -279,7 +278,7 @@ const Requests = () => {
                   onClick={clearFilters}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
                     isDarkMode
-                      ? "bg-gray-600 hover:bg-gray-500 text-white"
+                      ? "bg-slate-700 hover:bg-gray-500 text-white"
                       : "bg-gray-200 hover:bg-gray-300 text-gray-700"
                   }`}
                 >
@@ -300,7 +299,7 @@ const Requests = () => {
         /* Empty State */
         <div className="text-center py-12">
           <svg
-            className="mx-auto h-12 w-12 text-gray-400 mb-4"
+            className="mx-auto h-12 w-12 text-slate-400 mb-4"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -312,7 +311,7 @@ const Requests = () => {
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
             />
           </svg>
-          <p className={`text-lg ${isDarkMode ? "text-gray-400" : "text-gray-500"}`}>
+          <p className={`text-lg ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
             {searchQuery || selectedUser !== "all"
               ? t.noResultsFound
               : t.noPendingRequests}
@@ -326,7 +325,7 @@ const Requests = () => {
               key={req.id}
               className={`p-5 rounded-lg border transition-all hover:shadow-md ${
                 isDarkMode
-                  ? "bg-gray-700 border-gray-600 hover:border-gray-500"
+                  ? "bg-slate-800 border-gray-600 hover:border-gray-500"
                   : "bg-gray-50 border-gray-200 hover:border-gray-300"
               }`}
             >
@@ -338,7 +337,7 @@ const Requests = () => {
                     {req.number && (
                       <span
                         className={`ml-2 text-sm font-normal ${
-                          isDarkMode ? "text-gray-400" : "text-gray-600"
+                          isDarkMode ? "text-slate-400" : "text-gray-600"
                         }`}
                       >
                         #{req.number}
@@ -350,7 +349,7 @@ const Requests = () => {
                       className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
                         isDarkMode
                           ? "bg-blue-900 text-blue-200"
-                          : "bg-blue-100 text-blue-800"
+                          : "bg-slate-50 text-blue-800"
                       }`}
                     >
                       <svg
@@ -368,7 +367,7 @@ const Requests = () => {
                     </span>
                     <span
                       className={`text-xs ${
-                        isDarkMode ? "text-gray-400" : "text-gray-500"
+                        isDarkMode ? "text-slate-400" : "text-slate-500"
                       }`}
                     >
                       {new Date(req.created_at).toLocaleDateString()} •{" "}
@@ -384,17 +383,17 @@ const Requests = () => {
               {/* Request Reason */}
               <div
                 className={`mb-4 p-3 rounded ${
-                  isDarkMode ? "bg-gray-600" : "bg-white"
+                  isDarkMode ? "bg-slate-700" : "bg-white"
                 }`}
               >
                 <p
                   className={`text-sm font-medium mb-1 ${
-                    isDarkMode ? "text-gray-300" : "text-gray-700"
+                    isDarkMode ? "text-slate-300" : "text-gray-700"
                   }`}
                 >
                   {t.reason}:
                 </p>
-                <p className={`${isDarkMode ? "text-gray-200" : "text-gray-800"}`}>
+                <p className={`${isDarkMode ? "text-slate-200" : "text-gray-800"}`}>
                   {req.reason}
                 </p>
               </div>

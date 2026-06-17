@@ -219,27 +219,27 @@
 
 //   const renderProfileTab = () => (
 //     <div className="space-y-6">
-//       <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-900" : "bg-white"} shadow`}>
+//       <div className={`p-4 rounded-lg ${isDarkMode ? "bg-slate-950" : "bg-white"} shadow`}>
 //         <h3 className="text-xl font-semibold mb-4">{t.basicInfo || "Basic Info"}</h3>
 //         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 //           <div>
-//             <p className="text-sm text-gray-500">{t.username || "Username"}</p>
+//             <p className="text-sm text-slate-500">{t.username || "Username"}</p>
 //             <p className="font-medium">{friendData?.login || "N/A"}</p>
 //           </div>
 //           <div>
-//             <p className="text-sm text-gray-500">{t.name || "Name"}</p>
+//             <p className="text-sm text-slate-500">{t.name || "Name"}</p>
 //             <p className="font-medium">
 //               {friendData?.name || "N/A"} {friendData?.surname || ""}
 //             </p>
 //           </div>
 //           <div>
-//             <p className="text-sm text-gray-500">{t.memberSince || "Member Since"}</p>
+//             <p className="text-sm text-slate-500">{t.memberSince || "Member Since"}</p>
 //             <p className="font-medium">
 //               {friendData?.created_at ? new Date(friendData.created_at).toLocaleDateString() : "N/A"}
 //             </p>
 //           </div>
 //           <div>
-//             <p className="text-sm text-gray-500">{t.loyaltyScore || "Loyalty Score"}</p>
+//             <p className="text-sm text-slate-500">{t.loyaltyScore || "Loyalty Score"}</p>
 //             <p className="font-medium flex items-center gap-1">
 //               <span className="text-yellow-500">★</span>
 //               {friendData?.loyalty_score || 0}
@@ -248,7 +248,7 @@
 //         </div>
 //       </div>
 
-//       <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow`}>
+//       <div className={`p-4 rounded-lg ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow`}>
 //         <h3 className="text-xl font-semibold mb-4">{t.collectionStats || "Collection Stats"}</h3>
         
 //         {(collectionError || wishlistError) && (
@@ -286,7 +286,7 @@
 //       initial={{ opacity: 0, scale: 0.9 }}
 //       animate={{ opacity: 1, scale: 1 }}
 //       className={`rounded-lg overflow-hidden border ${
-//         isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"
+//         isDarkMode ? "border-gray-600 bg-slate-900" : "border-gray-200 bg-white"
 //       } hover:shadow-lg transition-shadow`}
 //     >
 //       <Link 
@@ -305,14 +305,14 @@
 //           />
 //         ) : (
 //           <div className="w-full h-32 bg-gray-200 flex items-center justify-center cursor-pointer">
-//             <span className="text-gray-500">No Image</span>
+//             <span className="text-slate-500">No Image</span>
 //           </div>
 //         )}
 //         <div className="p-3">
 //           <h4 className="font-semibold text-sm truncate hover:text-blue-500 transition-colors" title={item.title}>
 //             {item.title}
 //           </h4>
-//           <p className="text-xs text-gray-500">#{item.number}</p>
+//           <p className="text-xs text-slate-500">#{item.number}</p>
 //           {item.condition && (
 //             <p className="text-xs mt-1">
 //               <span className="font-medium">Condition:</span> {item.condition}
@@ -332,7 +332,7 @@
 //       initial={{ opacity: 0, scale: 0.9 }}
 //       animate={{ opacity: 1, scale: 1 }}
 //       className={`rounded-lg overflow-hidden border ${
-//         isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"
+//         isDarkMode ? "border-gray-600 bg-slate-900" : "border-gray-200 bg-white"
 //       } hover:shadow-lg transition-shadow`}
 //     >
 //       <Link 
@@ -351,14 +351,14 @@
 //           />
 //         ) : (
 //           <div className="w-full h-32 bg-gray-200 flex items-center justify-center cursor-pointer">
-//             <span className="text-gray-500">No Image</span>
+//             <span className="text-slate-500">No Image</span>
 //           </div>
 //         )}
 //         <div className="p-3">
 //           <h4 className="font-semibold text-sm truncate hover:text-blue-500 transition-colors" title={item.title}>
 //             {item.title}
 //           </h4>
-//           <p className="text-xs text-gray-500">#{item.number}</p>
+//           <p className="text-xs text-slate-500">#{item.number}</p>
 //           {item.priority && (
 //             <p className={`text-xs mt-1 ${
 //               item.priority === 'high' ? 'text-red-500' : 
@@ -378,16 +378,16 @@
 
 //   const renderCollectionTab = () => (
 //     <div className="space-y-6">
-//       <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow`}>
+//       <div className={`p-4 rounded-lg ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow`}>
 //         <h3 className="text-xl font-semibold mb-4">{t.yourCollection || "Collection"}</h3>
         
 //         {collectionError ? (
 //           <div className="text-center py-8">
 //             <div className="text-yellow-500 text-lg mb-2">⚠️</div>
-//             <p className="text-gray-500">{collectionError}</p>
+//             <p className="text-slate-500">{collectionError}</p>
 //           </div>
 //         ) : collection.length === 0 ? (
-//           <p className="text-center py-8 text-gray-500">
+//           <p className="text-center py-8 text-slate-500">
 //             {t.noItemsInCollection || "No items in collection"}
 //           </p>
 //         ) : (
@@ -403,16 +403,16 @@
 
 //   const renderWishlistTab = () => (
 //     <div className="space-y-6">
-//       <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow`}>
+//       <div className={`p-4 rounded-lg ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow`}>
 //         <h3 className="text-xl font-semibold mb-4">{t.yourWishlist || "Wishlist"}</h3>
         
 //         {wishlistError ? (
 //           <div className="text-center py-8">
 //             <div className="text-yellow-500 text-lg mb-2">⚠️</div>
-//             <p className="text-gray-500">{wishlistError}</p>
+//             <p className="text-slate-500">{wishlistError}</p>
 //           </div>
 //         ) : wishlist.length === 0 ? (
-//           <p className="text-center py-8 text-gray-500">
+//           <p className="text-center py-8 text-slate-500">
 //             {t.noItemsInWishlist || "No items in wishlist"}
 //           </p>
 //         ) : (
@@ -456,7 +456,7 @@
 //         animate={{ scale: 1, opacity: 1 }}
 //         exit={{ scale: 0.9, opacity: 0 }}
 //         className={`w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-lg shadow-xl ${
-//           isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+//           isDarkMode ? "bg-slate-900 text-white" : "bg-white text-black"
 //         }`}
 //         onClick={(e) => e.stopPropagation()}
 //       >
@@ -464,7 +464,7 @@
 //           <h2 className="text-xl font-bold">{friendData?.login || "User Profile"}</h2>
 //           <button
 //             onClick={onClose}
-//             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+//             className="text-slate-500 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-300 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-slate-800"
 //             aria-label="Close"
 //           >
 //             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -486,10 +486,10 @@
 //                 className={`px-4 py-2 rounded-lg font-medium transition flex items-center gap-2 ${
 //                   activeTab === tab.key
 //                     ? isDarkMode
-//                       ? "bg-gray-700 text-yellow-400 shadow"
+//                       ? "bg-slate-800 text-amber-400 shadow"
 //                       : "bg-white text-green-600 shadow"
 //                     : isDarkMode
-//                     ? "text-gray-300 hover:bg-gray-700"
+//                     ? "text-slate-300 hover:bg-slate-800"
 //                     : "text-gray-600 hover:bg-gray-200"
 //                 }`}
 //               >
@@ -754,7 +754,7 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
         </button>
         <button
           onClick={onClose}
-          className="px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-sm sm:text-base"
+          className="px-4 py-3 bg-gray-500 text-white rounded-lg hover:bg-slate-700 text-sm sm:text-base"
         >
           Close
         </button>
@@ -765,39 +765,39 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
   const renderProfileTab = () => (
     <div className="space-y-4 sm:space-y-6">
       {/* Basic Info Card */}
-      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-900" : "bg-white"} shadow`}>
+      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-slate-950" : "bg-white"} shadow`}>
         <h3 className="text-lg sm:text-xl font-semibold mb-4">{t.basicInfo || "Basic Info"}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1">
-            <p className="text-xs sm:text-sm text-gray-500">{t.username || "Username"}</p>
+            <p className="text-xs sm:text-sm text-slate-500">{t.username || "Username"}</p>
             <p className="font-medium text-sm sm:text-base">{friendData?.login || "N/A"}</p>
           </div>
           <div className="space-y-1">
-            <p className="text-xs sm:text-sm text-gray-500">{t.name || "Name"}</p>
+            <p className="text-xs sm:text-sm text-slate-500">{t.name || "Name"}</p>
             <p className="font-medium text-sm sm:text-base">
               {friendData?.name || "N/A"} {friendData?.surname || ""}
             </p>
           </div>
           {friendData?.email && (
             <div className="space-y-1">
-              <p className="text-xs sm:text-sm text-gray-500">Email</p>
+              <p className="text-xs sm:text-sm text-slate-500">Email</p>
               <p className="font-medium text-sm sm:text-base">{friendData.email}</p>
             </div>
           )}
           {friendData?.nationality && (
             <div className="space-y-1">
-              <p className="text-xs sm:text-sm text-gray-500">Nationality</p>
+              <p className="text-xs sm:text-sm text-slate-500">Nationality</p>
               <p className="font-medium text-sm sm:text-base">{friendData.nationality}</p>
             </div>
           )}
           <div className="space-y-1">
-            <p className="text-xs sm:text-sm text-gray-500">{t.memberSince || "Member Since"}</p>
+            <p className="text-xs sm:text-sm text-slate-500">{t.memberSince || "Member Since"}</p>
             <p className="font-medium text-sm sm:text-base">
               {formatDate(friendData?.created_at)}
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-xs sm:text-sm text-gray-500">{t.loyaltyScore || "Loyalty Score"}</p>
+            <p className="text-xs sm:text-sm text-slate-500">{t.loyaltyScore || "Loyalty Score"}</p>
             <p className="font-medium text-sm sm:text-base flex items-center gap-1">
               <span className="text-yellow-500">★</span>
               {friendData?.loyalty_score || 0}
@@ -807,7 +807,7 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
       </div>
 
       {/* Stats Card */}
-      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow`}>
+      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow`}>
         <h3 className="text-lg sm:text-xl font-semibold mb-4">{t.collectionStats || "Collection Stats"}</h3>
 
         {(collectionError || wishlistError) && (
@@ -845,7 +845,7 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       className={`rounded-lg overflow-hidden border ${
-        isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"
+        isDarkMode ? "border-gray-600 bg-slate-900" : "border-gray-200 bg-white"
       } hover:shadow-lg transition-shadow`}
     >
       <Link
@@ -863,15 +863,15 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
             }}
           />
         ) : (
-          <div className="w-full h-32 bg-gray-200 dark:bg-gray-700 flex items-center justify-center cursor-pointer">
-            <span className="text-gray-500 dark:text-gray-400">No Image</span>
+          <div className="w-full h-32 bg-gray-200 dark:bg-slate-800 flex items-center justify-center cursor-pointer">
+            <span className="text-slate-500 dark:text-slate-400">No Image</span>
           </div>
         )}
         <div className="p-3">
           <h4 className="font-semibold text-sm truncate hover:text-blue-500 transition-colors" title={item.title}>
             {item.title}
           </h4>
-          <p className="text-xs text-gray-500">#{item.number}</p>
+          <p className="text-xs text-slate-500">#{item.number}</p>
           {item.condition && (
             <p className="text-xs mt-1">
               <span className="font-medium">Condition:</span> {item.condition}
@@ -896,7 +896,7 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       className={`rounded-lg overflow-hidden border ${
-        isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"
+        isDarkMode ? "border-gray-600 bg-slate-900" : "border-gray-200 bg-white"
       } hover:shadow-lg transition-shadow`}
     >
       <Link
@@ -914,15 +914,15 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
             }}
           />
         ) : (
-          <div className="w-full h-32 bg-gray-200 dark:bg-gray-700 flex items-center justify-center cursor-pointer">
-            <span className="text-gray-500 dark:text-gray-400">No Image</span>
+          <div className="w-full h-32 bg-gray-200 dark:bg-slate-800 flex items-center justify-center cursor-pointer">
+            <span className="text-slate-500 dark:text-slate-400">No Image</span>
           </div>
         )}
         <div className="p-3">
           <h4 className="font-semibold text-sm truncate hover:text-blue-500 transition-colors" title={item.title}>
             {item.title}
           </h4>
-          <p className="text-xs text-gray-500">#{item.number}</p>
+          <p className="text-xs text-slate-500">#{item.number}</p>
           {item.priority && (
             <p className={`text-xs mt-1 ${
               item.priority === 'high' ? 'text-red-500' :
@@ -947,19 +947,19 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
 
   const renderCollectionTab = () => (
     <div className="space-y-4">
-      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow`}>
+      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow`}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg sm:text-xl font-semibold">{t.yourCollection || "Collection"}</h3>
-          <span className="text-sm text-gray-500">{collection.length} items</span>
+          <span className="text-sm text-slate-500">{collection.length} items</span>
         </div>
 
         {collectionError ? (
           <div className="text-center py-8">
             <div className="text-yellow-500 text-2xl mb-2">⚠️</div>
-            <p className="text-gray-500 text-sm sm:text-base">{collectionError}</p>
+            <p className="text-slate-500 text-sm sm:text-base">{collectionError}</p>
           </div>
         ) : collection.length === 0 ? (
-          <p className="text-center py-8 text-gray-500 text-sm sm:text-base">
+          <p className="text-center py-8 text-slate-500 text-sm sm:text-base">
             {t.noItemsInCollection || "No items in collection"}
           </p>
         ) : (
@@ -977,19 +977,19 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
 
   const renderWishlistTab = () => (
     <div className="space-y-4">
-      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow`}>
+      <div className={`p-4 rounded-lg ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow`}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg sm:text-xl font-semibold">{t.yourWishlist || "Wishlist"}</h3>
-          <span className="text-sm text-gray-500">{wishlist.length} items</span>
+          <span className="text-sm text-slate-500">{wishlist.length} items</span>
         </div>
 
         {wishlistError ? (
           <div className="text-center py-8">
             <div className="text-yellow-500 text-2xl mb-2">⚠️</div>
-            <p className="text-gray-500 text-sm sm:text-base">{wishlistError}</p>
+            <p className="text-slate-500 text-sm sm:text-base">{wishlistError}</p>
           </div>
         ) : wishlist.length === 0 ? (
-          <p className="text-center py-8 text-gray-500 text-sm sm:text-base">
+          <p className="text-center py-8 text-slate-500 text-sm sm:text-base">
             {t.noItemsInWishlist || "No items in wishlist"}
           </p>
         ) : (
@@ -1043,7 +1043,7 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
         animate={mobileMode ? { y: 0 } : { scale: 1, opacity: 1 }}
         exit={mobileMode ? { y: "100%" } : { scale: 0.9, opacity: 0 }}
         className={`${mobileMode ? 'w-full h-[85vh]' : 'w-full max-w-4xl max-h-[85vh]'} rounded-t-2xl sm:rounded-lg shadow-xl ${
-          isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
+          isDarkMode ? "bg-slate-900 text-white" : "bg-white text-black"
         } flex flex-col`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -1053,7 +1053,7 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
             {mobileMode && (
               <button
                 onClick={onClose}
-                className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-slate-800"
                 aria-label="Back"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1063,7 +1063,7 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
             )}
             <div>
               <h2 className="text-lg sm:text-xl font-bold">{friendData?.login || "User Profile"}</h2>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-slate-500">
                 {friendData?.name} {friendData?.surname}
               </p>
             </div>
@@ -1071,7 +1071,7 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
           {!mobileMode && (
             <button
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-800"
               aria-label="Close"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1082,7 +1082,7 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
         </div>
 
         {/* Tabs - Mobile optimized */}
-        <div className={`px-4 pt-4 sticky top-14 z-10 ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
+        <div className={`px-4 pt-4 sticky top-14 z-10 ${isDarkMode ? "bg-slate-900" : "bg-white"}`}>
           <div className={`flex ${mobileMode ? 'justify-around' : 'space-x-1'} overflow-x-auto pb-2 scrollbar-hide`}>
             {tabItems.map((tab) => (
               <button
@@ -1091,17 +1091,17 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
                 className={`px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-medium transition flex items-center gap-1 sm:gap-2 flex-shrink-0 ${
                   activeTab === tab.key
                     ? isDarkMode
-                      ? "bg-gray-700 text-yellow-400 shadow"
+                      ? "bg-slate-800 text-amber-400 shadow"
                       : "bg-white text-green-600 shadow border border-gray-200"
                     : isDarkMode
-                    ? "text-gray-300 hover:bg-gray-700"
+                    ? "text-slate-300 hover:bg-slate-800"
                     : "text-gray-600 hover:bg-gray-100"
                 } ${mobileMode ? 'flex-col text-xs' : 'text-sm'}`}
               >
                 <span className="text-base sm:text-lg">{tab.icon}</span>
                 <span>{mobileMode ? tab.label.split(' ')[0] : tab.label}</span>
                 {tab.key === "collection" && (
-                  <span className="ml-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 px-1.5 py-0.5 rounded-full">
+                  <span className="ml-1 text-xs bg-slate-50 dark:bg-blue-900 text-blue-600 dark:text-blue-300 px-1.5 py-0.5 rounded-full">
                     {collection.length}
                   </span>
                 )}
@@ -1122,11 +1122,11 @@ const FriendProfileModal: React.FC<FriendProfileModalProps> = ({
 
         {/* Mobile Bottom Action Bar */}
         {mobileMode && (
-          <div className={`p-4 border-t ${isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'} sticky bottom-0`}>
+          <div className={`p-4 border-t ${isDarkMode ? 'border-gray-700 bg-slate-900' : 'border-gray-200 bg-white'} sticky bottom-0`}>
             <div className="flex gap-2">
               <button
                 onClick={onClose}
-                className="flex-1 px-4 py-3 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-sm font-medium"
+                className="flex-1 px-4 py-3 rounded-lg bg-gray-200 dark:bg-slate-800 hover:bg-gray-300 dark:hover:bg-slate-700 text-sm font-medium"
               >
                 Close
               </button>

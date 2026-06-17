@@ -1,20 +1,13 @@
 // FunkoDetails.tsx
-import React, { useEffect, useState, useRef, useMemo } from "react";
+import React, { useEffect, useState, useRef, useMemo, useContext } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { translations } from "./Translations/TranslationsFunkoDetails";
 import useBreakpoints from "./useBreakpoints";
 import axios from "axios";
 
-// Icons
-import MoonIcon from "/src/assets/moon.svg?react";
-import SunIcon from "/src/assets/sun.svg?react";
-import SearchIcon from "/src/assets/search.svg?react";
-import GlobeIcon from "/src/assets/globe.svg?react";
-import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
-
-// Flags
-
-import AuthButton from "./AuthButton";
+import Layout from './Layout';
+import { useTheme } from './ThemeContext';
+import { LanguageContext } from './LanguageContext';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
 
@@ -84,15 +77,8 @@ const FunkoDetails: React.FC = () => {
   const [funkoItem, setFunkoItem] = useState<FunkoItemWithId | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const savedTheme = localStorage.getItem("preferredTheme");
-    return savedTheme ? savedTheme === "dark" : true;
-  });
-  const [searchQuery, setSearchQuery] = useState("");
-  const [language, setLanguage] = useState(
-    localStorage.getItem("preferredLanguage") || "EN"
-  );
-  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const { isDarkMode } = useTheme();
+  const { language } = useContext(LanguageContext);
   const [inWishlist, setInWishlist] = useState(false);
   const [inCollection, setInCollection] = useState(false);
   const [isUpdatingWishlist, setIsUpdatingWishlist] = useState(false);
@@ -121,10 +107,6 @@ const FunkoDetails: React.FC = () => {
     }
     return null;
   });
-
-  // Refs
-  const languageDropdownRef = useRef<HTMLDivElement>(null);
-  const languageButtonRef = useRef<HTMLButtonElement>(null);
 
   const t = translations[language] || translations["EN"];
 
@@ -179,19 +161,6 @@ const FunkoDetails: React.FC = () => {
       language: "ES",
     },
   };
-
-  // Languages for dropdown
-const languages = {
-    US: { name: "USA", flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" /> },
-    EN: { name: "UK", flag: <img src="https://flagcdn.com/gb.svg" className="w-5 h-5" alt="UK" /> },
-    CA: { name: "Canada", flag: <img src="https://flagcdn.com/ca.svg" className="w-5 h-5" alt="Canada" /> },
-    PL: { name: "Polski", flag: <img src="https://flagcdn.com/pl.svg" className="w-5 h-5" alt="Poland" /> },
-    RU: { name: "Русский", flag: <img src="https://flagcdn.com/ru.svg" className="w-5 h-5" alt="Russia" /> },
-    ES: { name: "Español", flag: <img src="https://flagcdn.com/es.svg" className="w-5 h-5" alt="Spain" /> },
-    FR: { name: "Français", flag: <img src="https://flagcdn.com/fr.svg" className="w-5 h-5" alt="France" /> },
-    DE: { name: "Deutsch", flag: <img src="https://flagcdn.com/de.svg" className="w-5 h-5" alt="Germany" /> },
-};
-
 
   const shops: Record<string, Shop[]> = {
     canada: [
@@ -1013,27 +982,6 @@ const isDescriptionComplete = (description: string): boolean => {
     }
   };
 
-  const selectLanguage = (lang: string) => {
-    setLanguage(lang);
-    setShowLanguageDropdown(false);
-  };
-
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-  };
-
-  const toggleLanguageDropdown = () =>
-    setShowLanguageDropdown((prev) => !prev);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/searchsite?q=${encodeURIComponent(searchQuery.trim())}`);
-    } else {
-      navigate("/searchsite");
-    }
-  };
-
   // Debug function to check user authentication
   const checkUserAuth = () => {
     const token = localStorage.getItem("token");
@@ -1253,35 +1201,6 @@ const isDescriptionComplete = (description: string): boolean => {
     awardVisitPoints();
   }, [user, funkoItem]);
 
-  useEffect(() => {
-    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDarkMode]);
-
-  useEffect(() => {
-    localStorage.setItem("preferredLanguage", language);
-  }, [language]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        showLanguageDropdown &&
-        languageDropdownRef.current && // POPRAWIONE: było languageDropdownRefopdownRef
-        languageButtonRef.current &&
-        !languageDropdownRef.current.contains(event.target as Node) && // POPRAWIONE
-        !languageButtonRef.current.contains(event.target as Node)
-      ) {
-        setShowLanguageDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showLanguageDropdown]);
-
 // W useEffect dodaj sprawdzanie długości
 useEffect(() => {
   const generateIfNeeded = async () => {
@@ -1401,7 +1320,7 @@ const determineItemType = (title: string, category?: string) => {
     return (
       <div
         className={`min-h-screen flex items-center justify-center ${
-          isDarkMode ? "bg-gray-800" : "bg-neutral-100"
+          isDarkMode ? "bg-slate-900" : "bg-neutral-100"
         }`}
       >
         <div
@@ -1417,7 +1336,7 @@ const determineItemType = (title: string, category?: string) => {
     return (
       <div
         className={`min-h-screen flex items-center justify-center ${
-          isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-100 text-black"
+          isDarkMode ? "bg-slate-900 text-white" : "bg-neutral-100 text-black"
         }`}
       >
         <div className="text-center p-4">
@@ -1426,7 +1345,7 @@ const determineItemType = (title: string, category?: string) => {
             onClick={() => navigate(-1)}
             className={`px-4 py-2 rounded ${
               isDarkMode
-                ? "bg-yellow-500 text-black"
+                ? "bg-amber-400 text-black"
                 : "bg-green-600 text-white"
             }`}
           >
@@ -1441,7 +1360,7 @@ const determineItemType = (title: string, category?: string) => {
     return (
       <div
         className={`min-h-screen flex items-center justify-center ${
-          isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-100 text-black"
+          isDarkMode ? "bg-slate-900 text-white" : "bg-neutral-100 text-black"
         }`}
       >
         <p>Error: Funko Pop data not available.</p>
@@ -1449,7 +1368,7 @@ const determineItemType = (title: string, category?: string) => {
           onClick={() => navigate(-1)}
           className={`px-4 py-2 rounded ${
             isDarkMode
-              ? "bg-yellow-500 text-black"
+              ? "bg-amber-400 text-black"
               : "bg-green-600 text-white"
           }`}
         >
@@ -1460,149 +1379,17 @@ const determineItemType = (title: string, category?: string) => {
   }
 
   return (
-    <div
-      className={`min-h-screen flex flex-col ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-black"
-      }`}
-    >
-          {/* 🔝 Header */}
-          <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
-            <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
-              <Link to="/" className="no-underline">
-                <h1
-                  className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
-                    isDarkMode ? "text-yellow-400" : "text-blue-600"
-                  }`}
-                >
-                  Pop&Go!
-                </h1>
-              </Link>
-            </div>
-
-            {/* 🔍 Search */}
-            <form
-              onSubmit={handleSearch}
-              className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden ${
-                isDarkMode ? "bg-gray-700" : "bg-white"
-              }`}
-            >
-              <input
-                type="text"
-                placeholder={t.searchPlaceholder}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={`flex-grow px-4 py-2 outline-none ${
-                  isDarkMode
-                    ? "bg-gray-700 text-white placeholder-gray-400"
-                    : "bg-white text-black placeholder-gray-500"
-                }`}
-                aria-label="Search for Funkos"
-              />
-              <button
-                type="submit"
-                className={`px-4 py-2 ${
-                  isDarkMode
-                    ? "bg-yellow-500 hover:bg-yellow-600"
-                    : "bg-blue-600 hover:bg-blue-700"
-                } text-white`}
-                aria-label="Search"
-              >
-                <SearchIcon className="w-5 h-5" />
-              </button>
-            </form>
-
-            {/* 🌐 Country, 🌙 Theme, 🔐 Login */}
-              <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0 min-w-0 items-center">
-                      {/* Language Dropdown */}
-                      <div className="relative">
-                        <button
-                          ref={languageButtonRef}
-                          onClick={toggleLanguageDropdown}
-                          className={`p-2 rounded-full flex items-center gap-1 min-w-0 ${
-                            isDarkMode
-                              ? "bg-gray-700 hover:bg-gray-600"
-                              : "bg-gray-200 hover:bg-neutral-600"
-                          }`}
-                          aria-label="Select language"
-                          aria-expanded={showLanguageDropdown}
-                        >
-                          <GlobeIcon className="w-5 h-5" />
-                          <span className="hidden sm:inline text-sm font-medium">{language}</span>
-                          <ChevronDownIcon
-                            className={`w-4 h-4 transition-transform ${
-                              showLanguageDropdown ? "rotate-180" : ""
-                            }`}
-                          />
-                        </button>
-
-                        {showLanguageDropdown && (
-                              <div
-                                ref={languageDropdownRef}
-                                className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-2 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${
-                                  isDarkMode
-                                    ? 'border-yellow-500 bg-gray-800'
-                                    : 'border-blue-500 bg-white'
-                                }`}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                            {Object.entries(languages).map(([code, { name, flag }]) => (
-                              <button
-                                key={code}
-                                onClick={() => selectLanguage(code)}
-                                className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${
-                                  language === code
-                                    ? isDarkMode
-                                      ? "bg-yellow-500 text-black"
-                                      : "bg-green-600 text-white"
-                                    : isDarkMode
-                                    ? "hover:bg-gray-600"
-                                    : "hover:bg-neutral-500"
-                                }`}
-                              >
-                                <span className="w-5 h-5">{flag}</span>
-                                <span>{name}</span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <button
-                        onClick={toggleTheme}
-                        className={`p-2 rounded-full ${
-                          isDarkMode
-                            ? "bg-gray-700 hover:bg-gray-600"
-                            : "bg-gray-200 hover:bg-gray-600"
-                        }`}
-                        aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
-                      >
-                        {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
-                      </button>
-
-                      {/* <button
-                        onClick={() => navigate(loginButtonTo)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded ${
-                          isDarkMode
-                            ? "bg-yellow-500 text-black hover:bg-yellow-600"
-                            : "bg-blue-600 text-white hover:bg-blue-700"
-                        }`}
-                      >
-                        {loginButtonText}
-                      </button> */}
-                      <AuthButton isDarkMode={isDarkMode} translations={t} />
-                    </div>
-          </header>
-
+    <Layout translations={t}>
       {/* Main Content */}
       <main className="flex-grow container mx-auto px-4 py-8 max-w-6xl">
         {/* Product Overview Section */}
-        <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white border border-gray-200"}`}>
+        <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-slate-800" : "bg-white border border-gray-200"}`}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Image Section - First column */}
             <div className="lg:col-span-1">
               <div className={`p-6 rounded-lg ${
                 isDarkMode 
-                  ? "bg-gray-600 border border-gray-500" 
+                  ? "bg-slate-700 border border-gray-500" 
                   : "bg-white border-2 border-green-100 shadow-md"
               }`}>
                 {funkoItem.imageName ? (
@@ -1619,7 +1406,7 @@ const determineItemType = (title: string, category?: string) => {
                   <div className={`w-full h-64 rounded-lg flex items-center justify-center ${
                     isDarkMode ? "bg-gray-500" : "bg-green-50 border-2 border-green-200"
                   }`}>
-                    <p className={isDarkMode ? "text-gray-300" : "text-green-600"}>
+                    <p className={isDarkMode ? "text-slate-300" : "text-green-600"}>
                       {t.noImageAvailable}
                     </p>
                   </div>
@@ -1649,7 +1436,7 @@ const determineItemType = (title: string, category?: string) => {
                     inWishlist
                       ? "bg-red-600 text-white hover:bg-red-700"
                       : isDarkMode
-                      ? "bg-gray-600 hover:bg-gray-500 text-white"
+                      ? "bg-slate-700 hover:bg-gray-500 text-white"
                       : "bg-purple-500 hover:bg-purple-600 text-white"
                   } ${isUpdatingWishlist ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
@@ -1662,7 +1449,7 @@ const determineItemType = (title: string, category?: string) => {
                     inCollection
                       ? "bg-red-600 text-white hover:bg-red-700"
                       : isDarkMode
-                      ? "bg-gray-600 hover:bg-gray-500 text-white"
+                      ? "bg-slate-700 hover:bg-gray-500 text-white"
                       : "bg-blue-500 hover:bg-blue-600 text-white"
                   } ${isUpdatingCollection ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
@@ -1673,7 +1460,7 @@ const determineItemType = (title: string, category?: string) => {
               {/* Debug Info (only in development) */}
               {process.env.NODE_ENV === 'development' && (
                 <div className={`mb-4 p-3 rounded text-xs ${
-                  isDarkMode ? "bg-gray-600 text-gray-300" : "bg-gray-100 text-gray-600"
+                  isDarkMode ? "bg-slate-700 text-slate-300" : "bg-gray-100 text-gray-600"
                 }`}>
                   <p>Item ID: {funkoItem.id}</p>
                   <p>Status: {inCollection ? "In Collection" : "Not in Collection"}</p>
@@ -1690,7 +1477,7 @@ const determineItemType = (title: string, category?: string) => {
                     <p><span className="font-medium">{t.category}:</span> {funkoItem.category}</p>
                     <p><span className="font-medium">{t.series}:</span> {funkoItem.series?.join(", ")}</p>
                     {funkoItem.exclusive && (
-                      <span className="inline-block px-3 py-1 rounded-full text-sm bg-yellow-500 text-black font-semibold">
+                      <span className="inline-block px-3 py-1 rounded-full text-sm bg-amber-400 text-black font-semibold">
                         ⭐ {t.exclusive}
                       </span>
                     )}
@@ -1699,7 +1486,7 @@ const determineItemType = (title: string, category?: string) => {
                 <div>
                   <h2 className="text-xl font-semibold mb-3 text-green-400">{t.additionalInformation}</h2>
                   <div className={`p-4 rounded-lg ${
-                    isDarkMode ? "bg-gray-600" : "bg-green-50 border border-green-100"
+                    isDarkMode ? "bg-slate-700" : "bg-green-50 border border-green-100"
                   }`}>
                     <p className="text-sm">
                       This collectible figure features detailed design and is part of the popular Funko Pop! vinyl collection.
@@ -1715,7 +1502,7 @@ const determineItemType = (title: string, category?: string) => {
         {/* AI Description Section */}
         {(isGenerating || aiDescription) && (
           <div className={`p-6 rounded-lg shadow-lg mb-8 ${
-            isDarkMode ? "bg-gray-700 border-l-4 border-purple-400" : "bg-white border-l-4 border-purple-500"
+            isDarkMode ? "bg-slate-800 border-l-4 border-purple-400" : "bg-white border-l-4 border-purple-500"
           }`}>
             <div className="flex items-center gap-3 mb-4">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -1730,7 +1517,7 @@ const determineItemType = (title: string, category?: string) => {
             
             {isGenerating && (
               <div className={`p-4 rounded-lg ${
-                isDarkMode ? "bg-gray-600" : "bg-blue-50 border border-blue-200"
+                isDarkMode ? "bg-slate-700" : "bg-blue-50 border border-blue-200"
               }`}>
                 <div className="flex items-center gap-3">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500"></div>
@@ -1743,13 +1530,13 @@ const determineItemType = (title: string, category?: string) => {
             
             {aiDescription && (
               <div className={`p-4 rounded-lg ${
-                isDarkMode ? "bg-gray-600" : "bg-gray-50 border border-gray-200"
+                isDarkMode ? "bg-slate-700" : "bg-gray-50 border border-gray-200"
               }`}>
                 <p className="text-lg leading-relaxed whitespace-pre-line">
                   {aiDescription}
                 </p>
                 <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-500">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                  <p className="text-sm text-slate-500 dark:text-slate-400 italic">
                     🤖 AI-generated description for collectors • Refresh page to regenerate
                   </p>
                 </div>
@@ -1759,7 +1546,7 @@ const determineItemType = (title: string, category?: string) => {
         )}
 
         {/* Shopping Links Section */}
-        <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-gray-700" : "bg-white border border-gray-200"}`}>
+        <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-slate-800" : "bg-white border border-gray-200"}`}>
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <span>🛒</span>
             {t.searchOnShoppingSites}
@@ -1775,10 +1562,10 @@ const determineItemType = (title: string, category?: string) => {
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     selectedCountries.includes(code)
                       ? isDarkMode 
-                        ? "bg-yellow-500 text-black shadow-lg" 
+                        ? "bg-amber-400 text-black shadow-lg" 
                         : "bg-green-600 text-white shadow-lg"
                       : isDarkMode 
-                      ? "bg-gray-600 text-gray-300 hover:bg-gray-500" 
+                      ? "bg-slate-700 text-slate-300 hover:bg-gray-500" 
                       : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                   }`}
                 >
@@ -1797,14 +1584,14 @@ const determineItemType = (title: string, category?: string) => {
                     key={index}
                     className={`p-4 rounded-lg border-l-4 ${
                       isDarkMode 
-                        ? "border-green-400 bg-gray-600" 
+                        ? "border-green-400 bg-slate-700" 
                         : "border-green-500 bg-green-50 shadow-sm"
                     }`}
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div>
                         <h3 className="font-semibold">{result.shop}</h3>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-slate-500">
                           {shoppingCountries[result.country as keyof typeof shoppingCountries]?.name}
                         </p>
                       </div>
@@ -1814,7 +1601,7 @@ const determineItemType = (title: string, category?: string) => {
                         </span>
                       </div>
                     </div>
-                    <p className="text-xs text-gray-400 mt-2">
+                    <p className="text-xs text-slate-400 mt-2">
                       {t.updated}: {result.date}
                     </p>
                   </div>
@@ -1835,7 +1622,7 @@ const determineItemType = (title: string, category?: string) => {
                     key={`${countryCode}-${index}`}
                     className={`p-4 rounded-lg border-l-4 transition-all ${
                       isDarkMode 
-                        ? "border-gray-500 bg-gray-600 hover:bg-gray-500" 
+                        ? "border-gray-500 bg-slate-700 hover:bg-gray-500" 
                         : "border-gray-300 bg-gray-50 hover:bg-white shadow-sm hover:shadow-md"
                     }`}
                   >
@@ -1844,7 +1631,7 @@ const determineItemType = (title: string, category?: string) => {
                         <h3 className="font-semibold flex items-center gap-2">
                           {shop.name}
                         </h3>
-                        <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
                           {shoppingCountries[countryCode as keyof typeof shoppingCountries].flag} 
                           {shoppingCountries[countryCode as keyof typeof shoppingCountries].name}
                         </p>
@@ -1858,7 +1645,7 @@ const determineItemType = (title: string, category?: string) => {
                       </div>
                     </div>
                     <div className="flex justify-between items-center mt-4">
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-slate-400">
                         {t.directSearchLink}
                       </p>
                       <a
@@ -1867,7 +1654,7 @@ const determineItemType = (title: string, category?: string) => {
                         rel="noopener noreferrer"
                         className={`px-4 py-2 text-sm rounded-lg font-medium transition-all ${
                           isDarkMode 
-                            ? "bg-yellow-500 text-black hover:bg-yellow-400 shadow" 
+                            ? "bg-amber-400 text-black hover:bg-amber-400 shadow" 
                             : "bg-green-600 text-white hover:bg-green-700 shadow hover:shadow-lg"
                         }`}
                       >
@@ -1881,14 +1668,14 @@ const determineItemType = (title: string, category?: string) => {
           </div>
 
           {selectedCountries.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-slate-500">
               <p>{t.selectCountriesToSeeLinks}</p>
             </div>
           )}
         </div>
 
         {/* Related items section */}
-        <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white border border-gray-200"}`}>
+        <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-slate-800" : "bg-white border border-gray-200"}`}>
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
             <span>🎯</span>
             {t.relatedItems || "Related Items"}
@@ -1910,29 +1697,29 @@ const determineItemType = (title: string, category?: string) => {
                       src={item.imageName}
                       alt={item.title}
                       className={`w-full h-32 object-contain mb-2 rounded ${
-                        isDarkMode ? "bg-gray-600" : "bg-gray-100"
+                        isDarkMode ? "bg-slate-700" : "bg-gray-100"
                       }`}
                     />
                   ) : (
                     <div className={`w-full h-32 rounded flex items-center justify-center ${
-                      isDarkMode ? "bg-gray-600" : "bg-gray-100"
+                      isDarkMode ? "bg-slate-700" : "bg-gray-100"
                     }`}>
                       {t.noImageAvailable}
                     </div>
                   )}
                   <h3 className="text-sm font-medium line-clamp-2">{item.title}</h3>
-                  <p className="text-xs text-gray-500">#{item.number}</p>
+                  <p className="text-xs text-slate-500">#{item.number}</p>
                 </Link>
               ))}
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">{t.noRelatedItems || "No related items found."}</p>
+              <p className="text-slate-500 mb-4">{t.noRelatedItems || "No related items found."}</p>
               <Link 
                 to="/searchsite" 
                 className={`px-6 py-2 rounded-lg font-medium transition-all ${
                   isDarkMode 
-                    ? "bg-yellow-500 text-black hover:bg-yellow-400" 
+                    ? "bg-amber-400 text-black hover:bg-amber-400" 
                     : "bg-green-600 text-white hover:bg-green-700"
                 }`}
               >
@@ -1943,15 +1730,7 @@ const determineItemType = (title: string, category?: string) => {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer
-        className={`text-center text-1xl py-6 ${
-          isDarkMode ? "bg-gray-900 text-gray-400" : "bg-white text-gray-800"
-        }`}
-      >
-        {t.copyright}
-      </footer>
-    </div>
+    </Layout>
   );
 };
 

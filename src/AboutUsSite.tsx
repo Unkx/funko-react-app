@@ -1,20 +1,13 @@
 // src/pages/AboutUsSite.tsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import "./WelcomeSite.css";
-import MoonIcon from "/src/assets/moon.svg?react";
-import SunIcon from "/src/assets/sun.svg?react";
-import SearchIcon from "/src/assets/search.svg?react";
-import GlobeIcon from "/src/assets/globe.svg?react";
-import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
-import QuickLinks from "./QuickLinks";
-import AuthButton from "./AuthButton";
-// Flags
-
 import TeamMember1 from "/src/assets/avatars/boy.png";
 import TeamMember2 from "/src/assets/avatars/woman.png";
 import TeamMember3 from "/src/assets/avatars/man.png";
 import { translations } from "./Translations/TranslationAboutUs";
+import Layout from './Layout';
+import { useTheme } from './ThemeContext';
+import { LanguageContext } from './LanguageContext';
 // Team members data
 const teamMembers = [
   {
@@ -54,36 +47,12 @@ const testimonials = [
   { textKey: "testimonial3", authorKey: "testimonial3Author" },
 ];
 
-// 🌐 Languages for dropdown
-const languages = {
-    US: { name: "USA", flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" /> },
-    EN: { name: "UK", flag: <img src="https://flagcdn.com/gb.svg" className="w-5 h-5" alt="UK" /> },
-    CA: { name: "Canada", flag: <img src="https://flagcdn.com/ca.svg" className="w-5 h-5" alt="Canada" /> },
-    PL: { name: "Polski", flag: <img src="https://flagcdn.com/pl.svg" className="w-5 h-5" alt="Poland" /> },
-    RU: { name: "Русский", flag: <img src="https://flagcdn.com/ru.svg" className="w-5 h-5" alt="Russia" /> },
-    ES: { name: "Español", flag: <img src="https://flagcdn.com/es.svg" className="w-5 h-5" alt="Spain" /> },
-    FR: { name: "Français", flag: <img src="https://flagcdn.com/fr.svg" className="w-5 h-5" alt="France" /> },
-    DE: { name: "Deutsch", flag: <img src="https://flagcdn.com/de.svg" className="w-5 h-5" alt="Germany" /> },
-};
-
 const AboutUsSite: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem("preferredTheme");
-    return saved ? saved === "dark" : true;
-  });
-  
-  const [language, setLanguage] = useState(() => {
-    return localStorage.getItem("preferredLanguage") || "EN";
-  });
-  
-  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const { isDarkMode } = useTheme();
+  const { language } = useContext(LanguageContext);
   const navigate = useNavigate();
 
   const t = translations[language as keyof typeof translations] || translations.EN;
-
-  const languageDropdownRef = useRef<HTMLDivElement>(null);
-  const languageButtonRef = useRef<HTMLButtonElement>(null);
 
   // Auto-logout after 10 minutes of inactivity
   useEffect(() => {
@@ -118,59 +87,6 @@ const AboutUsSite: React.FC = () => {
     };
   }, [navigate]);
 
-  // Theme sync
-  useEffect(() => {
-    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDarkMode]);
-
-  // 🌙 Toggle theme
-  const toggleTheme = () => {
-    const newTheme = !isDarkMode;
-    setIsDarkMode(newTheme);
-    localStorage.setItem("preferredTheme", newTheme ? "dark" : "light");
-    if (newTheme) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  };
-
-  // Select language
-  const selectLanguage = (lang: string) => {
-    setLanguage(lang);
-    localStorage.setItem("preferredLanguage", lang);
-    setShowLanguageDropdown(false);
-  };
-
-  // Handle click outside language dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        showLanguageDropdown &&
-        languageDropdownRef.current &&
-        languageButtonRef.current &&
-        !languageDropdownRef.current.contains(event.target as Node) &&
-        !languageButtonRef.current.contains(event.target as Node)
-      ) {
-        setShowLanguageDropdown(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showLanguageDropdown]);
-
-  // 🔍 Handle search
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    navigate(`/searchsite?q=${encodeURIComponent(searchQuery.trim())}`);
-  };
-
   // Stats data
   const stats = [
     { value: "5,000+", label: t.users },
@@ -180,137 +96,7 @@ const AboutUsSite: React.FC = () => {
   ];
 
   return (
-  <div className={`min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-black"}`}>
-  {/* Header (standardized) */}
-  <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
-        <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
-          <Link to="/" className="no-underline">
-            <h1 className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
-              isDarkMode ? "text-yellow-400" : "text-blue-600"
-            }`}>
-              Pop&Go!
-            </h1>
-          </Link>
-        </div>
-
-        {/* 🔍 Search */}
-        <form
-          onSubmit={handleSearch}
-          className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden ${
-            isDarkMode ? "bg-gray-700" : "bg-white shadow-md"
-          }`}
-        >
-          <input
-            type="text"
-            placeholder={t.searchPlaceholder}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={`flex-grow px-4 py-2 outline-none ${
-              isDarkMode
-                ? "bg-gray-700 text-white placeholder-gray-400"
-                : "bg-white text-black placeholder-gray-500"
-            }`}
-            aria-label="Search for Funkos"
-          />
-          <button
-            type="submit"
-            className={`px-4 py-2 ${
-              isDarkMode
-                ? "bg-yellow-500 hover:bg-yellow-600"
-                : "bg-blue-600 hover:bg-blue-700"
-            } text-white`}
-            aria-label="Search"
-          >
-            <SearchIcon className="w-5 h-5" />
-          </button>
-        </form>
-
-        {/* 🌐 Language, 🌙 Theme, 🔐 Dashboard */}
-        <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0 min-w-0 items-center">
-          {/* Language Dropdown */}
-          <div className="relative">
-            <button
-              ref={languageButtonRef}
-              onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-              className={`p-2 rounded-full flex items-center gap-1 min-w-0 ${
-                isDarkMode
-                  ? "bg-gray-700 hover:bg-gray-600"
-                  : "bg-white hover:bg-gray-100 shadow-sm"
-              }`}
-              aria-label="Select language"
-              aria-expanded={showLanguageDropdown}
-            >
-              <GlobeIcon className="w-5 h-5" />
-              <span className="hidden sm:inline text-sm font-medium">{language}</span>
-              <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${
-                  showLanguageDropdown ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-
-            {showLanguageDropdown && (
-              <div
-                ref={languageDropdownRef}
-                className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-1 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${
-                  isDarkMode ? "bg-gray-800" : "bg-white"
-                }`}
-                onClick={(e) => e.stopPropagation()}
-              >
-                {Object.entries(languages).map(([code, { name, flag }]) => (
-                  <button
-                    key={code}
-                    onClick={() => selectLanguage(code)}
-                    className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${
-                      language === code
-                        ? isDarkMode
-                          ? "bg-yellow-500 text-black"
-                          : "bg-blue-600 text-white"
-                        : isDarkMode
-                        ? "hover:bg-gray-700"
-                        : "hover:bg-gray-100"
-                    }`}
-                  >
-                    <span className="w-5 h-5">{flag}</span>
-                    <span>{name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 🌙 Theme Toggle */}
-          <button
-            onClick={toggleTheme}
-            className={`p-2 rounded-full ${
-              isDarkMode
-                ? "bg-gray-700 hover:bg-gray-600"
-                : "bg-white hover:bg-gray-100 shadow-sm"
-            }`}
-            aria-label={isDarkMode ? t.switchToLight : t.switchToDark}
-          >
-            {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
-          </button>
-
-          {/* 🔐 Dashboard/Login */}
-          {/* <button
-            onClick={() => {
-              const user = JSON.parse(localStorage.getItem("user") || "{}");
-              navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginRegisterSite");
-            }}
-            className={`flex items-center gap-2 px-4 py-2 rounded ${
-              isDarkMode
-                ? "bg-yellow-500 text-black hover:bg-yellow-600"
-                : "bg-blue-600 text-white hover:bg-blue-700 shadow-md"
-            }`}
-          >
-            {t.goToDashboard}
-          </button> */}
-          <AuthButton isDarkMode={isDarkMode} translations={t} />
-        </div>
-        	      <QuickLinks isDarkMode={isDarkMode} language={language as any} />
-      </header>
-
+    <Layout translations={t}>
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-green-500/10 dark:from-blue-900/20 dark:to-green-900/20"></div>
@@ -330,7 +116,7 @@ const AboutUsSite: React.FC = () => {
                 to="/categories"
                 className={`px-8 py-3 rounded-full font-bold text-lg transition-transform hover:scale-105 ${
                   isDarkMode
-                    ? "bg-yellow-500 text-black hover:bg-yellow-600"
+                    ? "bg-amber-400 text-black hover:bg-amber-500"
                     : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg"
                 }`}
               >
@@ -340,7 +126,7 @@ const AboutUsSite: React.FC = () => {
                 to="/features"
                 className={`px-8 py-3 rounded-full font-bold text-lg transition-transform hover:scale-105 ${
                   isDarkMode
-                    ? "bg-gray-700 text-white hover:bg-gray-600"
+                    ? "bg-slate-800 text-white hover:bg-slate-700"
                     : "bg-white text-blue-600 hover:bg-gray-100 shadow-lg"
                 }`}
               >
@@ -352,13 +138,13 @@ const AboutUsSite: React.FC = () => {
       </section>
 
       {/* Our Story Section */}
-      <section className={`py-16 ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
+      <section className={`py-16 ${isDarkMode ? "bg-slate-900" : "bg-white"}`}>
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div>
                 <h2 className="text-3xl font-bold mb-6 flex items-center gap-2">
-                  <span className={`p-2 rounded-full ${isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-100 text-blue-600"}`}>
+                  <span className={`p-2 rounded-full ${isDarkMode ? "bg-amber-400 text-black" : "bg-blue-100 text-blue-600"}`}>
                     📖
                   </span>
                   {t.ourStory}
@@ -390,14 +176,14 @@ const AboutUsSite: React.FC = () => {
                 </div>
               </div>
               
-              <div className={`p-6 rounded-2xl ${isDarkMode ? "bg-gray-700" : "bg-gradient-to-br from-blue-50 to-green-50"} shadow-xl`}>
+              <div className={`p-6 rounded-2xl ${isDarkMode ? "bg-slate-800" : "bg-gradient-to-br from-blue-50 to-green-50"} shadow-xl`}>
                 <h3 className="text-2xl font-bold mb-8 text-center">{t.statsTitle}</h3>
                 <div className="grid grid-cols-2 gap-6">
                   {stats.map((stat, index) => (
                     <div
                       key={index}
                       className={`text-center p-4 rounded-xl transition-transform hover:scale-105 ${
-                        isDarkMode ? "bg-gray-600" : "bg-white shadow-md"
+                        isDarkMode ? "bg-slate-700" : "bg-white shadow-md"
                       }`}
                     >
                       <div className={`text-3xl font-bold mb-2 ${
@@ -418,7 +204,7 @@ const AboutUsSite: React.FC = () => {
       </section>
 
       {/* Features Section */}
-      <section className={`py-16 ${isDarkMode ? "bg-gray-900" : "bg-gradient-to-br from-blue-50 to-green-50"}`}>
+      <section className={`py-16 ${isDarkMode ? "bg-slate-950" : "bg-gradient-to-br from-blue-50 to-green-50"}`}>
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold mb-12 text-center">{t.featuresTitle}</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -427,11 +213,11 @@ const AboutUsSite: React.FC = () => {
                 key={index}
                 className={`p-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-2xl ${
                   isDarkMode 
-                    ? "bg-gray-800 hover:bg-gray-700" 
+                    ? "bg-slate-900 hover:bg-slate-800" 
                     : "bg-white hover:shadow-xl border border-gray-100"
                 }`}
               >
-                <div className={`text-4xl mb-4 ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
+                <div className={`text-4xl mb-4 ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
                   {feature.emoji}
                 </div>
                 <h3 className="text-xl font-bold mb-3">
@@ -447,7 +233,7 @@ const AboutUsSite: React.FC = () => {
       </section>
 
       {/* Team Section */}
-      <section className={`py-16 ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
+      <section className={`py-16 ${isDarkMode ? "bg-slate-900" : "bg-white"}`}>
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">{t.meetTheTeam}</h2>
@@ -461,7 +247,7 @@ const AboutUsSite: React.FC = () => {
               <div
                 key={index}
                 className={`p-6 rounded-2xl text-center transition-transform hover:scale-105 ${
-                  isDarkMode ? "bg-gray-700" : "bg-gradient-to-b from-blue-50 to-green-50 shadow-lg"
+                  isDarkMode ? "bg-slate-800" : "bg-gradient-to-b from-blue-50 to-green-50 shadow-lg"
                 }`}
               >
                 <div className="w-32 h-32 mx-auto mb-4 rounded-full overflow-hidden border-4 border-white dark:border-gray-600 shadow-lg">
@@ -473,7 +259,7 @@ const AboutUsSite: React.FC = () => {
                   </div>
                 <h3 className="text-xl font-bold mb-1">{member.name}</h3>
                 <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium mb-3 ${
-                  isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-600 text-white"
+                  isDarkMode ? "bg-amber-400 text-black" : "bg-blue-600 text-white"
                 }`}>
                   {member.role}
                 </div>
@@ -487,7 +273,7 @@ const AboutUsSite: React.FC = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section className={`py-16 ${isDarkMode ? "bg-gray-900" : "bg-gradient-to-br from-blue-50 to-green-50"}`}>
+      <section className={`py-16 ${isDarkMode ? "bg-slate-950" : "bg-gradient-to-br from-blue-50 to-green-50"}`}>
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold mb-12 text-center">{t.testimonialsTitle}</h2>
           <div className="grid md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -495,7 +281,7 @@ const AboutUsSite: React.FC = () => {
               <div
                 key={index}
                 className={`p-6 rounded-2xl ${
-                  isDarkMode ? "bg-gray-800" : "bg-white shadow-lg"
+                  isDarkMode ? "bg-slate-900" : "bg-white shadow-lg"
                 }`}
               >
                 <div className="text-4xl mb-4 opacity-50">"</div>
@@ -525,7 +311,7 @@ const AboutUsSite: React.FC = () => {
               to="/register"
               className={`px-8 py-3 rounded-full font-bold text-lg transition-transform hover:scale-105 ${
                 isDarkMode
-                  ? "bg-yellow-500 text-black hover:bg-yellow-400"
+                  ? "bg-amber-400 text-black hover:bg-yellow-400"
                   : "bg-white text-blue-600 hover:bg-gray-100"
               }`}
             >
@@ -535,7 +321,7 @@ const AboutUsSite: React.FC = () => {
               to="/features"
               className={`px-8 py-3 rounded-full font-bold text-lg transition-transform hover:scale-105 ${
                 isDarkMode
-                  ? "bg-gray-700 text-white hover:bg-gray-600 border border-gray-600"
+                  ? "bg-slate-800 text-white hover:bg-slate-700 border border-gray-600"
                   : "bg-transparent text-white border-2 border-white hover:bg-white/10"
               }`}
             >
@@ -545,30 +331,7 @@ const AboutUsSite: React.FC = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className={`py-8 ${isDarkMode ? "bg-gray-950 text-gray-400" : "bg-white text-gray-600"}`}>
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="mb-4 md:mb-0">
-              <Link to="/" className="no-underline">
-                <h2 className={`text-2xl font-bold font-[Special_Gothic_Expanded_One] ${
-                  isDarkMode ? "text-yellow-400" : "text-blue-600"
-                }`}>
-                  Pop&Go!
-                </h2>
-              </Link>
-              <p className="mt-2">{t.copyright}</p>
-            </div>
-            <div className="flex gap-6">
-              <Link to="/about" className="hover:underline font-semibold">{t.pageTitle}</Link>
-              <Link to="/features" className="hover:underline">Features</Link>
-              <Link to="/privacy" className="hover:underline">Privacy</Link>
-              <Link to="/contact" className="hover:underline">Contact</Link>
-            </div>
-          </div>
-        </div>
-      </footer>
-    </div>
+    </Layout>
   );
 };
 

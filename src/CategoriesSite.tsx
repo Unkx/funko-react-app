@@ -1,21 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { translations } from "./Translations/TranslationsCategoriesSite";
 import useBreakpoints from "./useBreakpoints";
-import "./WelcomeSite.css";
 import { FunkoItems } from "./FunkoItems";
-
-// Icon imports
-import MoonIcon from "/src/assets/moon.svg?react";
-import SunIcon from "/src/assets/sun.svg?react";
-import SearchIcon from "/src/assets/search.svg?react";
-import GlobeIcon from "/src/assets/globe.svg?react";
-import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
-import QuickLinks from "./QuickLinks";
-
-// Flag imports
-
-import AuthButton from "./AuthButton";
+import Layout from './Layout';
+import { useTheme } from './ThemeContext';
+import { LanguageContext } from './LanguageContext';
 
 interface FunkoItem {
   id: string;
@@ -27,28 +17,13 @@ interface FunkoItem {
   imageName: string;
 }
 
-// 📚 Language display names
-const languageNames = {
-  EN: "English",
-  PL: "Polski",
-  RU: "Русский",
-  FR: "Français",
-  DE: "Deutsch",
-  ES: "Español",
-};
 
 const CategoriesSite: React.FC = () => {
   const { isMobile, isTablet, isDesktop } = useBreakpoints();
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem("preferredTheme") === "dark";
-  });
-  
-  const [language, setLanguage] = useState(() => {
-    return localStorage.getItem("preferredLanguage") || "EN";
-  });
+  const { isDarkMode } = useTheme();
+  const { language } = useContext(LanguageContext);
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [items, setItems] = useState<FunkoItem[]>([]);
@@ -131,71 +106,6 @@ const CategoriesSite: React.FC = () => {
       sampleItems: ["Christmas", "Halloween", "Easter", "Valentine's Day"]
     }
   ];
-
-  // Refs for dropdowns
-  const languageDropdownRef = useRef<HTMLDivElement>(null);
-  const languageButtonRef = useRef<HTMLButtonElement>(null);
-
-  // 🌍 Languages for dropdown (with flag)
-const languages = {
-    US: { name: "USA", flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" /> },
-    EN: { name: "UK", flag: <img src="https://flagcdn.com/gb.svg" className="w-5 h-5" alt="UK" /> },
-    CA: { name: "Canada", flag: <img src="https://flagcdn.com/ca.svg" className="w-5 h-5" alt="Canada" /> },
-    PL: { name: "Polski", flag: <img src="https://flagcdn.com/pl.svg" className="w-5 h-5" alt="Poland" /> },
-    RU: { name: "Русский", flag: <img src="https://flagcdn.com/ru.svg" className="w-5 h-5" alt="Russia" /> },
-    ES: { name: "Español", flag: <img src="https://flagcdn.com/es.svg" className="w-5 h-5" alt="Spain" /> },
-    FR: { name: "Français", flag: <img src="https://flagcdn.com/fr.svg" className="w-5 h-5" alt="France" /> },
-    DE: { name: "Deutsch", flag: <img src="https://flagcdn.com/de.svg" className="w-5 h-5" alt="Germany" /> },
-};
-
-
-  // Toggle language dropdown
-  const toggleLanguageDropdown = () => {
-    setShowLanguageDropdown((prev) => !prev);
-  };
-
-  // Handle click outside language dropdown
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        showLanguageDropdown &&
-        languageDropdownRef.current &&
-        languageButtonRef.current &&
-        !languageDropdownRef.current.contains(event.target as Node) &&
-        !languageButtonRef.current.contains(event.target as Node)
-      ) {
-        setShowLanguageDropdown(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showLanguageDropdown]);
-
-  // Select language
-  const selectLanguage = (lang: string) => {
-    setLanguage(lang);
-    localStorage.setItem("preferredLanguage", lang);
-    setShowLanguageDropdown(false);
-  };
-
-  // 🌙 Toggle theme
-  const toggleTheme = () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    localStorage.setItem("preferredTheme", newDarkMode ? "dark" : "light");
-    if (newDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  };
-
-  // 🔍 Handle search
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    navigate(`/searchsite?q=${encodeURIComponent(searchQuery.trim())}`);
-  };
 
   // Auto-logout after 10 minutes of inactivity
   useEffect(() => {
@@ -317,7 +227,7 @@ const languages = {
   if (isLoading) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-gray-50 text-gray-800"
+        isDarkMode ? "bg-slate-900 text-white" : "bg-gray-50 text-gray-800"
       }`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500 mx-auto mb-4"></div>
@@ -330,7 +240,7 @@ const languages = {
   if (error) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-gray-50 text-gray-800"
+        isDarkMode ? "bg-slate-900 text-white" : "bg-gray-50 text-gray-800"
       }`}>
         <div className="text-center">
           <div className="text-6xl mb-4">⚠️</div>
@@ -351,142 +261,8 @@ const languages = {
   }
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-gray-800"}`}>
-      {/* 🔝 Header */}
-      <header className={`py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4 ${isDarkMode ? "bg-gray-800" : "bg-blue-100"}`}>
-        <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
-          <Link to="/" className="no-underline">
-            <h1
-              className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
-                isDarkMode ? "text-yellow-400" : "text-blue-600"
-              }`}
-            >
-              Pop&Go!
-            </h1>
-          </Link>
-        </div>
-
-        {/* 🔍 Search */}
-        <form
-          onSubmit={handleSearch}
-          className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden border border-gray-300 ${
-            isDarkMode ? "bg-gray-700" : "bg-white"
-          }`}
-        >
-          <input
-            type="text"
-            placeholder={t.searchPlaceholder}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={`flex-grow px-4 py-2 outline-none ${
-              isDarkMode
-                ? "bg-gray-700 text-white placeholder-gray-400"
-                : "bg-white text-gray-800 placeholder-gray-500"
-            }`}
-            aria-label="Search for Funkos"
-          />
-          <button
-            type="submit"
-            className={`px-4 py-2 ${
-              isDarkMode
-                ? "bg-yellow-500 hover:bg-yellow-600"
-                : "bg-blue-600 hover:bg-blue-700"
-            } text-white`}
-            aria-label="Search"
-          >
-            <SearchIcon className="w-5 h-5" />
-          </button>
-        </form>
-
-        {/* 🌐 Language, 🌙 Theme, 🔐 Login */}
-        <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0 min-w-0 items-center">
-          {/* Language Dropdown */}
-          <div className="relative">
-            <button
-              ref={languageButtonRef}
-              onClick={toggleLanguageDropdown}
-              className={`p-2 rounded-full flex items-center gap-1 min-w-0 border border-gray-300 ${
-                isDarkMode
-                  ? "bg-gray-700 hover:bg-gray-600"
-                  : "bg-white hover:bg-gray-100"
-              }`}
-              aria-label="Select language"
-              aria-expanded={showLanguageDropdown}
-            >
-              <GlobeIcon className="w-5 h-5" />
-              <span className="hidden sm:inline text-sm font-medium">{language}</span>
-              <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${
-                  showLanguageDropdown ? "rotate-180" : ""
-                }`}
-              />
-            </button>
-
-                  {showLanguageDropdown && (
-                          <div
-                            ref={languageDropdownRef}
-                            className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-2 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${
-                              isDarkMode 
-                                ? 'border-yellow-500 bg-gray-800' 
-                                : 'border-blue-500 bg-white'
-                            }`}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                {Object.entries(languages).map(([code, { name, flag }]) => (
-                  <button
-                    key={code}
-                    onClick={() => selectLanguage(code)}
-                    className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${
-                      language === code
-                        ? isDarkMode
-                          ? "bg-yellow-500 text-white"
-                          : "bg-blue-600 text-white"
-                        : isDarkMode
-                        ? "hover:bg-gray-600"
-                        : "hover:bg-gray-100"
-                    }`}
-                  >
-                    <span className="w-5 h-5">{flag}</span>
-                    <span>{name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 🌙 Theme Toggle */}
-          <button
-            onClick={toggleTheme}
-            className={`p-2 rounded-full border border-gray-300 ${
-              isDarkMode
-                ? "bg-gray-700 hover:bg-gray-600"
-                : "bg-white hover:bg-gray-100"
-            }`}
-            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
-          >
-            {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
-          </button>
-
-          {/* 🔐 Dashboard/Login */}
-          {/* <button
-            onClick={() => {
-              const user = JSON.parse(localStorage.getItem("user") || "{}");
-              navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginRegisterSite");
-            }}
-            className={`flex items-center gap-2 px-4 py-2 rounded border ${
-              isDarkMode
-                ? "bg-yellow-500 text-black hover:bg-yellow-600 border-yellow-500"
-                : "bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
-            }`}
-          >
-            {t.goToDashboard || "Dashboard"}
-          </button> */}
-          <AuthButton isDarkMode={isDarkMode} translations={t} />
-        </div>
-        	      <QuickLinks isDarkMode={isDarkMode} language={language as any} />
-      </header>
-
-      <main className="p-4 md:p-8">
+    <Layout translations={t}>
+      <div className="p-4 md:p-8">
         {/* Page Title */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-4">{t.funkoCategories || "Funko Categories"}</h1>
@@ -501,7 +277,7 @@ const languages = {
         {/* Search Bar - Only show when category is selected */}
         {selectedCategory && (
           <div className="max-w-2xl mx-auto mb-8">
-            <form onSubmit={handleSearch} className="flex gap-2">
+            <form onSubmit={(e) => e.preventDefault()} className="flex gap-2">
               <input
                 type="text"
                 placeholder={`${t.searchInCategory || "Search in"} ${FUNKO_CATEGORIES.find(cat => cat.id === selectedCategory)?.name}...`}
@@ -509,7 +285,7 @@ const languages = {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={`flex-grow px-4 py-2 rounded-lg border border-gray-300 ${
                   isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                    ? "bg-slate-800 border-gray-600 text-white placeholder-gray-400"
                     : "bg-white border-gray-300 text-gray-800 placeholder-gray-500"
                 }`}
               />
@@ -517,7 +293,7 @@ const languages = {
                 type="button"
                 onClick={clearFilters}
                 className={`px-4 py-2 rounded-lg border ${
-                  isDarkMode ? "bg-gray-600 hover:bg-gray-500 border-gray-600" : "bg-gray-300 hover:bg-gray-400 border-gray-400"
+                  isDarkMode ? "bg-slate-700 hover:bg-gray-500 border-gray-600" : "bg-gray-300 hover:bg-gray-400 border-gray-400"
                 }`}
               >
                 {t.clear || "Clear"}
@@ -538,7 +314,7 @@ const languages = {
                 <div
                   key={category.id}
                   className={`rounded-lg overflow-hidden shadow-lg transition-transform hover:scale-105 border border-gray-200 ${
-                    isDarkMode ? "bg-gray-700" : "bg-white"
+                    isDarkMode ? "bg-slate-800" : "bg-white"
                   }`}
                 >
                   <div className="p-6">
@@ -564,7 +340,7 @@ const languages = {
                             <img
                               src={item.imageName}
                               alt={item.title}
-                              className="w-full h-20 object-contain rounded bg-gray-100 dark:bg-gray-600 border border-gray-200 dark:border-gray-600"
+                              className="w-full h-20 object-contain rounded bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-gray-600"
                             />
                           </Link>
                         ))}
@@ -574,7 +350,7 @@ const languages = {
                             <div
                               key={`placeholder-${index}`}
                               className={`w-full h-20 rounded flex items-center justify-center border border-gray-200 ${
-                                isDarkMode ? "bg-gray-600" : "bg-gray-100"
+                                isDarkMode ? "bg-slate-700" : "bg-gray-100"
                               }`}
                             >
                               <span className="text-xs opacity-50">{t.comingSoon || "Coming Soon"}</span>
@@ -596,11 +372,11 @@ const languages = {
                       className={`w-full py-2 rounded font-bold transition-colors border ${
                         itemCount > 0
                           ? isDarkMode 
-                            ? "bg-yellow-500 text-black hover:bg-yellow-600 border-yellow-500" 
+                            ? "bg-amber-400 text-black hover:bg-amber-500 border-yellow-500" 
                             : "bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
                           : isDarkMode
-                            ? "bg-gray-600 text-gray-400 border-gray-600 cursor-not-allowed"
-                            : "bg-gray-300 text-gray-500 border-gray-400 cursor-not-allowed"
+                            ? "bg-slate-700 text-slate-400 border-gray-600 cursor-not-allowed"
+                            : "bg-gray-300 text-slate-500 border-gray-400 cursor-not-allowed"
                       }`}
                       disabled={itemCount === 0}
                     >
@@ -621,7 +397,7 @@ const languages = {
                 <button
                   onClick={() => setSelectedCategory("")}
                   className={`p-2 rounded border ${
-                    isDarkMode ? "bg-gray-600 hover:bg-gray-500 border-gray-600" : "bg-gray-300 hover:bg-gray-400 border-gray-400"
+                    isDarkMode ? "bg-slate-700 hover:bg-gray-500 border-gray-600" : "bg-gray-300 hover:bg-gray-400 border-gray-400"
                   }`}
                 >
                   ← {t.back || "Back"}
@@ -659,7 +435,7 @@ const languages = {
                       onClick={() => setSearchQuery("")}
                       className={`px-6 py-2 rounded font-bold border ${
                         isDarkMode 
-                          ? "bg-gray-600 hover:bg-gray-500 border-gray-600" 
+                          ? "bg-slate-700 hover:bg-gray-500 border-gray-600" 
                           : "bg-gray-300 hover:bg-gray-400 border-gray-400"
                       }`}
                     >
@@ -670,7 +446,7 @@ const languages = {
                     onClick={() => setSelectedCategory("")}
                     className={`px-6 py-2 rounded font-bold border ${
                       isDarkMode 
-                        ? "bg-yellow-500 text-black hover:bg-yellow-600 border-yellow-500" 
+                        ? "bg-amber-400 text-black hover:bg-amber-500 border-yellow-500" 
                         : "bg-blue-600 text-white hover:bg-blue-700 border-blue-600"
                     }`}
                   >
@@ -687,14 +463,14 @@ const languages = {
                     onClick={() => handleItemClick(item.id)}
                     className={`block p-3 rounded-lg text-center transition-all border border-gray-200 ${
                       isDarkMode 
-                        ? "bg-gray-700 hover:bg-gray-600 hover:shadow-lg" 
+                        ? "bg-slate-800 hover:bg-slate-700 hover:shadow-lg" 
                         : "bg-white hover:bg-gray-50 hover:shadow-md"
                     } shadow hover:scale-105`}
                   >
                     <img
                       src={item.imageName || "/src/assets/placeholder.png"}
                       alt={item.title}
-                      className="w-full h-32 object-contain rounded mb-2 bg-gray-100 dark:bg-gray-600 border border-gray-200 dark:border-gray-600"
+                      className="w-full h-32 object-contain rounded mb-2 bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-gray-600"
                       onError={(e) => {
                         e.currentTarget.src = "/src/assets/placeholder.png";
                       }}
@@ -717,15 +493,8 @@ const languages = {
             )}
           </div>
         )}
-      </main>
-
-      {/* Footer */}
-      <footer className={`text-center py-4 mt-8 border-t border-gray-200 ${
-        isDarkMode ? "bg-gray-900 text-gray-400" : "bg-white text-gray-700"
-      }`}>
-        © 2026 Pop&Go! All rights reserved.
-      </footer>
-    </div>
+      </div>
+    </Layout>
   );
 };
 

@@ -43,7 +43,8 @@ describe('WelcomeSite page', () => {
 
   it('renders header and search input', async () => {
     renderWithProviders(<WelcomeSite />);
-    expect(screen.getByText('Pop&Go!')).toBeInTheDocument();
+    expect(screen.getByText('Pop')).toBeInTheDocument();
+    expect(screen.getByText('Go!')).toBeInTheDocument();
     const searchInputs = screen.getAllByLabelText('Search');
     expect(searchInputs.length).toBeGreaterThan(0);
     await waitFor(() => expect((global as any).fetch).toHaveBeenCalled());

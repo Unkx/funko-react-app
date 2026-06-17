@@ -1,15 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import LanguageSelectorPopup from "./LanguageSelectorPopup";
 import useBreakpoints from "./useBreakpoints";
 import { translations } from "./Translations/TranslationsDashboard";
+import Layout from './Layout';
+import { useTheme } from './ThemeContext';
+import { LanguageContext } from './LanguageContext';
 
 // Icons
-import MoonIcon from "/src/assets/moon.svg?react";
-import SunIcon from "/src/assets/sun.svg?react";
-import SearchIcon from "/src/assets/search.svg?react";
-import GlobeIcon from "/src/assets/globe.svg?react";
-import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 import EditIcon from "/src/assets/edit.svg?react";
 import DeleteIcon from "/src/assets/delete.svg?react";
 import SaveIcon from "/src/assets/save.svg?react";
@@ -17,20 +14,7 @@ import CancelIcon from "/src/assets/cancel.svg?react";
 import PlusIcon from "/src/assets/plus.svg?react";
 import FilterIcon from "/src/assets/filter.svg?react";
 
-// Flags
-
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
-
-const languages = {
-    US: { name: "USA", flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" /> },
-    EN: { name: "UK", flag: <img src="https://flagcdn.com/gb.svg" className="w-5 h-5" alt="UK" /> },
-    CA: { name: "Canada", flag: <img src="https://flagcdn.com/ca.svg" className="w-5 h-5" alt="Canada" /> },
-    PL: { name: "Polski", flag: <img src="https://flagcdn.com/pl.svg" className="w-5 h-5" alt="Poland" /> },
-    RU: { name: "Русский", flag: <img src="https://flagcdn.com/ru.svg" className="w-5 h-5" alt="Russia" /> },
-    ES: { name: "Español", flag: <img src="https://flagcdn.com/es.svg" className="w-5 h-5" alt="Spain" /> },
-    FR: { name: "Français", flag: <img src="https://flagcdn.com/fr.svg" className="w-5 h-5" alt="France" /> },
-    DE: { name: "Deutsch", flag: <img src="https://flagcdn.com/de.svg" className="w-5 h-5" alt="Germany" /> },
-};
 
 interface FunkoItem {
   id: string;
@@ -47,15 +31,8 @@ interface FunkoItem {
 
 const CollectionPage: React.FC = () => {
   const { isMobile, isTablet, isDesktop } = useBreakpoints();
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const savedTheme = localStorage.getItem("preferredTheme");
-    return savedTheme !== null ? savedTheme === "dark" : true;
-  });
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [language, setLanguage] = useState("EN");
-  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
-  const [shouldShowPopup, setShouldShowPopup] = useState(false);
+  const { isDarkMode } = useTheme();
+  const { language } = useContext(LanguageContext);
   
   // Collection specific states
   const [collection, setCollection] = useState<FunkoItem[]>([]);
@@ -69,20 +46,9 @@ const CollectionPage: React.FC = () => {
   const [collectionSearch, setCollectionSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
-  const languageDropdownRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
 
   const t = translations[language] || translations["EN"];
-
-  useEffect(() => {
-    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDarkMode]);
 
   // Auto-logout after 10 minutes of inactivity
   useEffect(() => {
@@ -117,34 +83,6 @@ const CollectionPage: React.FC = () => {
       });
     };
   }, [navigate]);
-
-  useEffect(() => {
-    const savedLang = localStorage.getItem("preferredLanguage");
-    if (savedLang && languages[savedLang as keyof typeof languages]) {
-      setLanguage(savedLang);
-    }
-
-    const hasSeenPopup = localStorage.getItem("hasSeenLanguagePopup");
-    if (!hasSeenPopup) {
-      setShouldShowPopup(true);
-      localStorage.setItem("hasSeenLanguagePopup", "true");
-    }
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        showLanguageDropdown &&
-        languageDropdownRef.current &&
-        buttonRef.current &&
-        !languageDropdownRef.current.contains(event.target as Node) &&
-        !buttonRef.current.contains(event.target as Node)
-      ) {
-        setShowLanguageDropdown(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showLanguageDropdown]);
 
   // Fetch collection data
   useEffect(() => {
@@ -230,24 +168,6 @@ const CollectionPage: React.FC = () => {
     setFilteredCollection(filtered);
   }, [collection, collectionSearch, filterCondition, sortBy, sortOrder]);
 
-  const selectLanguage = (lang: string) => {
-    setLanguage(lang);
-    localStorage.setItem("preferredLanguage", lang);
-    setShowLanguageDropdown(false);
-  };
-
-  const toggleTheme = () => setIsDarkMode((prev) => !prev);
-  const toggleLanguageDropdown = () => setShowLanguageDropdown((prev) => !prev);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/searchsite?q=${encodeURIComponent(searchQuery.trim())}`);
-    } else {
-      navigate("/searchsite");
-    }
-  };
-
   const handleEditItem = (item: FunkoItem) => {
     setEditingItem(item.id);
     setEditForm(item);
@@ -320,94 +240,17 @@ const CollectionPage: React.FC = () => {
   const conditions = ["mint", "near_mint", "good", "fair", "poor"];
 
   return (
-    <div className={`min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"}`}>
-      {/* Header */}
-      <header className="py-4 px-8 flex flex-wrap md:flex-nowrap justify-between items-center gap-4 relative w-full max-w-full overflow-x-hidden">
-        <div className="flex-shrink-0">
-          <Link to="/" className="no-underline">
-            <h1 className={`text-3xl font-bold font-[Special_Gothic_Expanded_One] tracking-wide ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
-              Pop&Go!
-            </h1>
-          </Link>
-          {shouldShowPopup && (
-            <LanguageSelectorPopup onClose={() => setShouldShowPopup(false)} />
-          )}
-        </div>
-
-        {/* Search Form */}
-        <form onSubmit={handleSearch} className={`flex-grow max-w-lg mx-auto flex rounded-lg overflow-hidden ${isDarkMode ? "bg-gray-700" : "bg-gray-100"}`}>
-          <input
-            type="text"
-            placeholder={t.searchPlaceholder}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={`flex-grow px-4 py-2 outline-none ${isDarkMode ? "bg-gray-700 text-white placeholder-gray-400" : "bg-white text-black"}`}
-            aria-label="Search input"
-          />
-          <button
-            type="submit"
-            className={`px-4 py-2 ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"}`}
-            aria-label="Search"
-          >
-            <SearchIcon className="w-5 h-5" />
-          </button>
-        </form>
-
-        {/* Theme & Language Toggle */}
-        <div className="flex-shrink-0 flex gap-4 min-w-0 items-center">
-          {/* Language Dropdown */}
-          <div className="relative">
-            <button
-              ref={buttonRef}
-              onClick={toggleLanguageDropdown}
-              className={`p-2 rounded-full flex items-center gap-1 min-w-0 ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}
-              aria-label="Select language"
-            >
-              <GlobeIcon className="w-5 h-5" />
-              <span className="hidden sm:inline text-sm font-medium">{language}</span>
-              <ChevronDownIcon className={`w-4 h-4 transition-transform ${showLanguageDropdown ? "rotate-180" : ""}`} />
-            </button>
-            {showLanguageDropdown && (
-              <div ref={languageDropdownRef} className={`absolute mt-2 z-50 rounded-lg shadow-xl py-1 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto bg-gradient-to-b from-white to-slate-50 dark:from-slate-800 dark:to-slate-700 border border-slate-200 dark:border-slate-600`}>
-                {Object.entries(languages).map(([code, { name, flag }]) => (
-                  <button
-                    key={code}
-                    onClick={() => selectLanguage(code)}
-                    className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${
-                      language === code
-                        ? isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"
-                        : isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200"
-                    }`}
-                  >
-                    <span className="w-5 h-5">{flag}</span>
-                    <span>{name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Theme Toggle */}
-          <button
-            onClick={toggleTheme}
-            className={`p-2 rounded-full ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}
-            aria-label="Toggle theme"
-          >
-            {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
-          </button>
-        </div>
-      </header>
-
+    <Layout translations={t}>
       {/* Navigation */}
-      <nav className={`px-8 py-2 ${isDarkMode ? "bg-gray-700" : "bg-gray-300"}`}>
+      <nav className={`px-8 py-2 ${isDarkMode ? "bg-slate-800" : "bg-gray-300"}`}>
         <div className="flex gap-4">
-          <Link to="/dashboardSite" className={`px-3 py-1 rounded ${isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200"}`}>
+          <Link to="/dashboardSite" className={`px-3 py-1 rounded ${isDarkMode ? "hover:bg-slate-700" : "hover:bg-gray-200"}`}>
             {t.dashboard}
           </Link>
-          <Link to="/collection" className={`px-3 py-1 rounded ${isDarkMode ? "bg-yellow-500 text-black" : "bg-green-600 text-white"}`}>
+          <Link to="/collection" className={`px-3 py-1 rounded ${isDarkMode ? "bg-amber-400 text-black" : "bg-green-600 text-white"}`}>
             {t.collection}
           </Link>
-          <Link to="/wishlist" className={`px-3 py-1 rounded ${isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200"}`}>
+          <Link to="/wishlist" className={`px-3 py-1 rounded ${isDarkMode ? "hover:bg-slate-700" : "hover:bg-gray-200"}`}>
             {t.wishlist}
           </Link>
         </div>
@@ -417,12 +260,12 @@ const CollectionPage: React.FC = () => {
       <main className="flex-grow p-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-6">
-            <h2 className={`text-3xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+            <h2 className={`text-3xl font-bold ${isDarkMode ? "text-amber-400" : "text-green-600"}`}>
               {t.yourCollection}
             </h2>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`px-4 py-2 rounded flex items-center gap-2 ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}
+              className={`px-4 py-2 rounded flex items-center gap-2 ${isDarkMode ? "bg-slate-800 hover:bg-slate-700" : "bg-gray-200 hover:bg-gray-300"}`}
             >
               <FilterIcon className="w-4 h-4" />
               Filters
@@ -431,7 +274,7 @@ const CollectionPage: React.FC = () => {
 
           {/* Filters */}
           {showFilters && (
-            <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
+            <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow-lg`}>
               <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">{t.searchCollection}</label>
@@ -440,7 +283,7 @@ const CollectionPage: React.FC = () => {
                     value={collectionSearch}
                     onChange={(e) => setCollectionSearch(e.target.value)}
                     placeholder={t.searchByPlaceholder}
-                    className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+                    className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-slate-700 text-white" : "bg-gray-100"}`}
                   />
                 </div>
                 <div>
@@ -448,7 +291,7 @@ const CollectionPage: React.FC = () => {
                   <select
                     value={filterCondition}
                     onChange={(e) => setFilterCondition(e.target.value)}
-                    className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+                    className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-slate-700 text-white" : "bg-gray-100"}`}
                   >
                     <option value="all">{t.allConditions}</option>
                       {conditions.map(condition => (
@@ -463,7 +306,7 @@ const CollectionPage: React.FC = () => {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+                    className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-slate-700 text-white" : "bg-gray-100"}`}
                   >
                     <option value="title">{t.title}</option>
                     <option value="number">{t.number}</option>
@@ -477,7 +320,7 @@ const CollectionPage: React.FC = () => {
                   <select
                     value={sortOrder}
                     onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
-                    className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+                    className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-slate-700 text-white" : "bg-gray-100"}`}
                   >
                     <option value="asc">{t.ascending}</option>
                     <option value="desc">{t.descending}</option>
@@ -488,28 +331,28 @@ const CollectionPage: React.FC = () => {
           )}
 
           {/* Collection Stats */}
-          <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
+          <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow-lg`}>
             <div className="grid grid-cols-2 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
               <div>
-                <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+                <div className={`text-2xl font-bold ${isDarkMode ? "text-amber-400" : "text-green-600"}`}>
                   {collection.length}
                 </div>
                 <div className="text-sm">{t.totalItems}</div>
               </div>
               <div>
-                <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+                <div className={`text-2xl font-bold ${isDarkMode ? "text-amber-400" : "text-green-600"}`}>
                   {filteredCollection.length}
                 </div>
                 <div className="text-sm">{t.filteredItems}</div>
               </div>
               <div>
-                <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+                <div className={`text-2xl font-bold ${isDarkMode ? "text-amber-400" : "text-green-600"}`}>
                   ${collection.reduce((sum, item) => sum + (item.purchase_price || 0), 0).toFixed(2)}
                 </div>
                 <div className="text-sm">{t.totalValue}</div>
               </div>
               <div>
-                <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
+                <div className={`text-2xl font-bold ${isDarkMode ? "text-amber-400" : "text-green-600"}`}>
                   {new Set(collection.map(item => item.series)).size}
                 </div>
                 <div className="text-sm">{t.series}</div>
@@ -527,7 +370,7 @@ const CollectionPage: React.FC = () => {
                       <p className="mb-4">{t.emptyCollection}</p>
                       <Link 
                         to="/searchsite" 
-                        className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-green-600 hover:bg-green-700"} text-white`}
+                        className={`px-4 py-2 rounded ${isDarkMode ? "bg-amber-400 hover:bg-amber-500" : "bg-green-600 hover:bg-green-700"} text-white`}
                       >
                         {t.startAddingItems}
                       </Link>
@@ -539,7 +382,7 @@ const CollectionPage: React.FC = () => {
               ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {filteredCollection.map(item => (
-                <div key={item.id} className={`rounded-lg shadow-lg overflow-hidden ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+                <div key={item.id} className={`rounded-lg shadow-lg overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-white"}`}>
                   {item.image_name && (
                     <img src={item.image_name} alt={item.title} className="w-full h-48 object-contain bg-gray-100" />
                   )}
@@ -550,19 +393,19 @@ const CollectionPage: React.FC = () => {
                           name="title"
                           value={editForm.title || ""}
                           onChange={handleInputChange}
-                          className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                          className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-slate-700" : "bg-gray-100"}`}
                         />
                         <input
                           name="number"
                           value={editForm.number || ""}
                           onChange={handleInputChange}
-                          className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                          className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-slate-700" : "bg-gray-100"}`}
                         />
                         <select
                           name="condition"
                           value={editForm.condition || ""}
                           onChange={handleInputChange}
-                          className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                          className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-slate-700" : "bg-gray-100"}`}
                         >
                           {conditions.map(condition => (
                             <option key={condition} value={condition}>
@@ -577,7 +420,7 @@ const CollectionPage: React.FC = () => {
                           value={editForm.purchase_price || ""}
                           onChange={handleInputChange}
                           placeholder="Purchase Price"
-                          className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                          className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-slate-700" : "bg-gray-100"}`}
                         />
                         <textarea
                           name="notes"
@@ -585,7 +428,7 @@ const CollectionPage: React.FC = () => {
                           onChange={handleInputChange}
                           placeholder={t.notes}
                           rows={2}
-                          className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                          className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-slate-700" : "bg-gray-100"}`}
                         />
                         <div className="flex gap-2">
                           <button
@@ -597,7 +440,7 @@ const CollectionPage: React.FC = () => {
                           </button>
                           <button
                             onClick={handleCancelEdit}
-                            className="flex-1 px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded flex items-center justify-center gap-1"
+                            className="flex-1 px-3 py-1 bg-gray-500 hover:bg-slate-700 text-white rounded flex items-center justify-center gap-1"
                           >
                             <CancelIcon className="w-4 h-4" />
                             {t.cancel}
@@ -620,7 +463,7 @@ const CollectionPage: React.FC = () => {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleEditItem(item)}
-                            className={`flex-1 px-3 py-1 rounded flex items-center justify-center gap-1 ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-500 hover:bg-blue-600"} text-white`}
+                            className={`flex-1 px-3 py-1 rounded flex items-center justify-center gap-1 ${isDarkMode ? "bg-amber-400 hover:bg-amber-500" : "bg-blue-500 hover:bg-blue-600"} text-white`}
                           >
                             <EditIcon className="w-4 h-4" />
                             {t.edit}
@@ -643,11 +486,7 @@ const CollectionPage: React.FC = () => {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className={`text-center py-4 ${isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-200 text-gray-700"}`}>
-        {t.copyright}
-      </footer>
-    </div>
+    </Layout>
   );
 };
 

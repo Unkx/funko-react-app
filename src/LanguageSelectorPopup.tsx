@@ -62,7 +62,7 @@ const LanguageSelectorPopup = ({ onClose }: { onClose: () => void }) => {
 
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 text-lg md:text-xl"
+          className="absolute top-3 right-3 text-slate-500 hover:text-gray-800 text-lg md:text-xl"
           aria-label="Close"
         >
           ✕

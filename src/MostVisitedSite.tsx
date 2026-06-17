@@ -1,20 +1,10 @@
 // src/pages/MostVisitedSite.tsx
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import useBreakpoints from "./useBreakpoints";
 import { translations } from "./Translations/TranslationsMostVisitedSite";
-import "./WelcomeSite.css";
-import MoonIcon from "/src/assets/moon.svg?react";
-import SunIcon from "/src/assets/sun.svg?react";
-import SearchIcon from "/src/assets/search.svg?react";
-import GlobeIcon from "/src/assets/globe.svg?react";
-import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
-import QuickLinks from "./QuickLinks";
-
-// Flags
-
-
-import AuthButton from "./AuthButton";
+import Layout from './Layout';
+import { useTheme } from './ThemeContext';
+import { LanguageContext } from './LanguageContext';
 
 // Match your backend item shape (without visits)
 interface FunkoItem {
@@ -32,30 +22,11 @@ interface FunkoItemWithVisits extends FunkoItem {
   visits: number;
 }
 
-// 🌐 Languages for dropdown (with flag)
-const languages = {
-    US: { name: "USA", flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" /> },
-    EN: { name: "UK", flag: <img src="https://flagcdn.com/gb.svg" className="w-5 h-5" alt="UK" /> },
-    CA: { name: "Canada", flag: <img src="https://flagcdn.com/ca.svg" className="w-5 h-5" alt="Canada" /> },
-    PL: { name: "Polski", flag: <img src="https://flagcdn.com/pl.svg" className="w-5 h-5" alt="Poland" /> },
-    RU: { name: "Русский", flag: <img src="https://flagcdn.com/ru.svg" className="w-5 h-5" alt="Russia" /> },
-    ES: { name: "Español", flag: <img src="https://flagcdn.com/es.svg" className="w-5 h-5" alt="Spain" /> },
-    FR: { name: "Français", flag: <img src="https://flagcdn.com/fr.svg" className="w-5 h-5" alt="France" /> },
-    DE: { name: "Deutsch", flag: <img src="https://flagcdn.com/de.svg" className="w-5 h-5" alt="Germany" /> },
-};
 
 const MostVisitedSite: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem("preferredTheme");
-    return saved ? saved === "dark" : true;
-  });
-  
-  const [language, setLanguage] = useState(() => {
-    return localStorage.getItem("preferredLanguage") || "EN";
-  });
-  
-  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const { isDarkMode } = useTheme();
+  const { language } = useContext(LanguageContext);
+
   const [allItems, setAllItems] = useState<FunkoItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<"visits" | "title" | "category">("visits");
@@ -64,38 +35,6 @@ const MostVisitedSite: React.FC = () => {
   const t = translations[language] || translations["EN"];
 
   const navigate = useNavigate();
-  const languageDropdownRef = useRef<HTMLDivElement>(null);
-  const languageButtonRef = useRef<HTMLButtonElement>(null);
-
-  const toggleLanguageDropdown = () => setShowLanguageDropdown(prev => !prev);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        showLanguageDropdown &&
-        languageDropdownRef.current &&
-        languageButtonRef.current &&
-        !languageDropdownRef.current.contains(event.target as Node) &&
-        !languageButtonRef.current.contains(event.target as Node)
-      ) {
-        setShowLanguageDropdown(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showLanguageDropdown]);
-
-  const loginButtonTo = useMemo(() => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (user?.role === "admin") return "/adminSite";
-    if (user?.role === "user") return "/dashboardSite";
-    return "/loginregistersite";
-  }, []);
-
-  const loginButtonText = useMemo(() => {
-    return localStorage.getItem("user") ? t.goToDashboard || "Dashboard" : t.goToLoginSite || "Log In";
-  }, [t]);
   
   // Fetch all items from your backend
   useEffect(() => {
@@ -178,16 +117,6 @@ const MostVisitedSite: React.FC = () => {
     };
   }, [navigate]);
 
-  // Theme sync
-  useEffect(() => {
-    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDarkMode]);
-
   // Helper function to generate consistent item IDs
   const generateItemId = (title: string, number: string): string => {
     const safeTitle = title ? title.trim() : "";
@@ -263,31 +192,6 @@ const MostVisitedSite: React.FC = () => {
     console.log("Item clicked:", id, "Already clicked today:", alreadyClickedToday);
   };
 
-  // 🌙 Toggle theme
-  const toggleTheme = () => {
-    const newTheme = !isDarkMode;
-    setIsDarkMode(newTheme);
-    localStorage.setItem("preferredTheme", newTheme ? "dark" : "light");
-    if (newTheme) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  };
-
-  // Select language
-  const selectLanguage = (lang: string) => {
-    setLanguage(lang);
-    localStorage.setItem("preferredLanguage", lang);
-    setShowLanguageDropdown(false);
-  };
-
-  // 🔍 Handle search
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    navigate(`/searchsite?q=${encodeURIComponent(searchQuery.trim())}`);
-  };
-
   // Dodaj także funkcję synchronizującą z FunkoDetails
   const syncVisitWithFunkoDetails = (id: string) => {
     // Ta sama logika co w FunkoDetails
@@ -333,7 +237,7 @@ const MostVisitedSite: React.FC = () => {
   if (isLoading) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-neutral-400 text-black"
+        isDarkMode ? "bg-slate-900 text-white" : "bg-neutral-400 text-black"
       }`}>
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500"></div>
       </div>
@@ -341,130 +245,8 @@ const MostVisitedSite: React.FC = () => {
   }
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-black"}`}>
-      {/* Unified header (copied from WelcomeSite/SearchSite and adapted) */}
-      <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
-        <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
-          <Link to="/" className="no-underline">
-            <h1
-              className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
-                isDarkMode ? "text-yellow-400" : "text-blue-600"
-              }`}
-            >
-              Pop&Go!
-            </h1>
-          </Link>
-        </div>
-
-        <form
-          onSubmit={handleSearch}
-          className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden ${
-            isDarkMode ? "bg-gray-700" : "bg-white"
-          }`}
-        >
-          <input
-            type="text"
-            placeholder={t.searchPlaceholder}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={`flex-grow px-4 py-2 outline-none ${
-              isDarkMode
-                ? "bg-gray-700 text-white placeholder-gray-400"
-                : "bg-white text-black placeholder-gray-500"
-            }`}
-            aria-label="Search for Funkos"
-          />
-          <button
-            type="submit"
-            className={`px-4 py-2 ${
-              isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-600 hover:bg-blue-700"
-            } text-white`}
-            aria-label="Search"
-          >
-            <SearchIcon className="w-5 h-5" />
-          </button>
-        </form>
-
-         <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0 min-w-0 items-center">
-                  {/* Language Dropdown */}
-                  <div className="relative">
-                    <button
-                      ref={languageButtonRef}
-                      onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-                      className={`p-2 rounded-full flex items-center gap-1 min-w-0 ${
-                        isDarkMode
-                          ? "bg-gray-700 hover:bg-gray-600"
-                          : "bg-white hover:bg-gray-100 shadow-sm"
-                      }`}
-                      aria-label="Select language"
-                      aria-expanded={showLanguageDropdown}
-                    >
-                      <GlobeIcon className="w-5 h-5" />
-                      <span className="hidden sm:inline text-sm font-medium">{language}</span>
-                      <ChevronDownIcon
-                        className={`w-4 h-4 transition-transform ${
-                          showLanguageDropdown ? "rotate-180" : ""
-                        }`}
-                      />
-                    </button>
-        
-                    {showLanguageDropdown && (
-                      <div
-                        ref={languageDropdownRef}
-                        className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-1 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${
-                          isDarkMode ? "bg-gray-800" : "bg-white"
-                        }`}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {Object.entries(languages).map(([code, { name, flag }]) => (
-                          <button
-                            key={code}
-                            onClick={() => selectLanguage(code)}
-                            className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${
-                              language === code
-                                ? isDarkMode
-                                  ? "bg-yellow-500 text-black"
-                                  : "bg-blue-600 text-white"
-                                : isDarkMode
-                                ? "hover:bg-gray-700"
-                                : "hover:bg-gray-100"
-                            }`}
-                          >
-                            <span className="w-5 h-5">{flag}</span>
-                            <span>{name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-          <button
-            onClick={toggleTheme}
-            className={`p-2 rounded-full ${
-              isDarkMode
-                ? "bg-gray-700 hover:bg-gray-600"
-                : "bg-white hover:bg-gray-100 shadow-sm"
-            }`}
-            aria-label={isDarkMode ? t.switchToLight : t.switchToDark}
-          >
-            {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
-          </button>
-
-          {/* <Link
-            to={loginButtonTo}
-            className={`flex items-center gap-2 px-4 py-2 rounded ${
-              isDarkMode ? "bg-yellow-500 text-black hover:bg-yellow-600" : "bg-blue-600 text-white hover:bg-blue-700"
-            }`}
-          >
-            {loginButtonText}
-          </Link> */}
-          <AuthButton isDarkMode={isDarkMode} translations={t} />
-        </div>
-  </header>
-
-  <QuickLinks isDarkMode={isDarkMode} language={language as any} />
-
-  <main className="p-4 md:p-8 max-w-6xl mx-auto">
+    <Layout translations={t}>
+      <div className="p-4 md:p-8 max-w-6xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-4">{t.mostVisited || "Most Visited Items"}</h1>
           <p className="text-lg opacity-80">
@@ -477,7 +259,7 @@ const MostVisitedSite: React.FC = () => {
 
         {mostVisitedItems.length > 0 && (
           <div className={`grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8 p-4 rounded-lg ${
-            isDarkMode ? "bg-gray-700" : "bg-white"
+            isDarkMode ? "bg-slate-800" : "bg-white"
           }`}>
             <div className="text-center">
               <div className="text-2xl font-bold text-yellow-500">{mostVisitedItems.length}</div>
@@ -507,7 +289,7 @@ const MostVisitedSite: React.FC = () => {
                 onChange={(e) => setSortBy(e.target.value as "visits" | "title" | "category")}
                 className={`px-3 py-2 rounded border ${
                   isDarkMode 
-                    ? "bg-gray-700 border-gray-600 text-white" 
+                    ? "bg-slate-800 border-gray-600 text-white" 
                     : "bg-white border-gray-300 text-black"
                 }`}
               >
@@ -532,7 +314,7 @@ const MostVisitedSite: React.FC = () => {
               to="/categories"
               className={`inline-block px-6 py-3 rounded-lg font-bold ${
                 isDarkMode 
-                  ? "bg-yellow-500 text-black hover:bg-yellow-600" 
+                  ? "bg-amber-400 text-black hover:bg-amber-500" 
                   : "bg-green-600 text-white hover:bg-green-700"
               }`}
             >
@@ -549,12 +331,12 @@ const MostVisitedSite: React.FC = () => {
                   to={`/funko/${item.id}`}
                   onClick={() => handleItemClick(item.id)}
                   className={`block p-4 rounded-lg relative ${
-                    isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-white hover:bg-gray-100"
+                    isDarkMode ? "bg-slate-800 hover:bg-slate-700" : "bg-white hover:bg-gray-100"
                   } shadow-lg transition-all hover:scale-105 hover:shadow-xl`}
                 >
                   {sortBy === "visits" && index < 3 && (
                     <div className={`absolute -top-2 -left-2 w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                      index === 0 ? "bg-yellow-500" : 
+                      index === 0 ? "bg-amber-400" : 
                       index === 1 ? "bg-gray-400" : 
                       "bg-orange-500"
                     }`}>
@@ -593,7 +375,7 @@ const MostVisitedSite: React.FC = () => {
                     </div>
                     {item.exclusive && (
                       <span className={`px-2 py-1 rounded text-xs ${
-                        isDarkMode ? "bg-yellow-600" : "bg-green-600"
+                        isDarkMode ? "bg-amber-500" : "bg-green-600"
                       } text-white`}>
                         {t.exclusive || "Exclusive"}
                       </span>
@@ -611,7 +393,7 @@ const MostVisitedSite: React.FC = () => {
               to="/categories"
               className={`inline-block px-6 py-3 rounded-lg font-bold ${
                 isDarkMode 
-                  ? "bg-gray-700 hover:bg-gray-600" 
+                  ? "bg-slate-800 hover:bg-slate-700" 
                   : "bg-white hover:bg-gray-200"
               }`}
             >
@@ -619,14 +401,8 @@ const MostVisitedSite: React.FC = () => {
             </Link>
           </div>
         )}
-      </main>
-
-      <footer className={`text-center py-4 ${
-        isDarkMode ? "bg-gray-900 text-gray-400" : "bg-white text-gray-700"
-      }`}>
-        {t.copyright || "© 2026 Pop&Go! All rights reserved."}
-      </footer>
-    </div>
+      </div>
+    </Layout>
   );
 };
 

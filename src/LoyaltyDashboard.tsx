@@ -261,7 +261,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
   if (loading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className={`p-8 rounded-lg ${isDarkMode ? "bg-gray-800" : "bg-white"}`}>
+        <div className={`p-8 rounded-lg ${isDarkMode ? "bg-slate-900" : "bg-white"}`}>
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500 mx-auto"></div>
           <p className="mt-4">{t.loadingRewards}</p>
         </div>
@@ -275,9 +275,9 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-1 md:p-4 overflow-y-auto">
-      <div className={`w-full max-w-6xl rounded-lg shadow-2xl ${isDarkMode ? "bg-gray-800" : "bg-gray-200"} max-h-[95vh] md:max-h-[90vh] overflow-y-auto`}>
+      <div className={`w-full max-w-6xl rounded-lg shadow-2xl ${isDarkMode ? "bg-slate-900" : "bg-gray-200"} max-h-[95vh] md:max-h-[90vh] overflow-y-auto`}>
         {/* Header */}
-        <div className={`sticky top-0 z-10 p-3 md:p-6 border-b ${isDarkMode ? "bg-gray-800 border-gray-700" : "bg-gray-100 border-gray-200"}`}>
+        <div className={`sticky top-0 z-10 p-3 md:p-6 border-b ${isDarkMode ? "bg-slate-900 border-gray-700" : "bg-gray-100 border-gray-200"}`}>
           <div className="flex justify-between items-center">
             <h2 className="text-lg md:text-3xl font-bold flex items-center gap-2">
               <TrophyIcon className="w-5 md:w-8 h-5 md:h-8 text-yellow-500" />
@@ -286,7 +286,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
             </h2>
             <button
               onClick={onClose}
-              className={`p-1 md:p-2 rounded-full text-lg md:text-base ${isDarkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
+              className={`p-1 md:p-2 rounded-full text-lg md:text-base ${isDarkMode ? "hover:bg-slate-800" : "hover:bg-gray-100"}`}
             >
               ✕
             </button>
@@ -302,11 +302,11 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                   min-w-[90px] md:min-w-[110px] text-center font-medium transition-all duration-200 ${
                   activeTab === tab
                     ? (isDarkMode
-                        ? "bg-yellow-500 text-black font-semibold shadow-md"
+                        ? "bg-amber-400 text-black font-semibold shadow-md"
                         : "bg-blue-600 text-white font-semibold shadow-md")
                     : (isDarkMode
-                        ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300")
+                        ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
+                        : "bg-gray-200 text-slate-600 hover:bg-gray-300")
                 }`}
                 title={t[tab as keyof typeof t] || tab}
               >
@@ -362,7 +362,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                 </div>
 
                 {/* Streak Card */}
-                <div className={`p-4 md:p-6 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
+                <div className={`p-4 md:p-6 rounded-lg ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow-lg`}>
                   <h3 className="text-lg md:text-xl font-semibold mb-3 md:mb-4 flex items-center gap-2">
                     <FireIcon className="w-5 md:w-6 h-5 md:h-6 text-orange-500" />
                     {t.loginStreak}
@@ -384,13 +384,13 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                 </div>
 
                 {/* Recent Activity */}
-                <div className={`p-4 md:p-6 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
+                <div className={`p-4 md:p-6 rounded-lg ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow-lg`}>
                   <h3 className="text-lg md:text-xl font-semibold mb-3 md:mb-4">{t.recentActivity}</h3>
                   <div className="space-y-2">
                     {loyaltyData.pointsHistory.slice(0, 3).map((item, idx) => (
                       <div
                         key={idx}
-                        className={`flex justify-between items-center p-2 md:p-3 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                        className={`flex justify-between items-center p-2 md:p-3 rounded ${isDarkMode ? "bg-slate-700" : "bg-gray-100"}`}
                       >
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm md:text-base truncate">{item.reason}</p>
@@ -431,7 +431,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                     return (
                       <div
                         key={achievement.achievement_id}
-                        className={`relative p-3 md:p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg ${!achievement.unlocked && "opacity-50 grayscale"}`}
+                        className={`relative p-3 md:p-4 rounded-lg ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow-lg ${!achievement.unlocked && "opacity-50 grayscale"}`}
                       >
                         {achievement.unlocked && achievement.is_new && (
                           <div className="absolute -top-1 -right-1 md:-top-2 md:-right-2 w-3 h-3 md:w-4 md:h-4 bg-red-500 rounded-full animate-pulse" />
@@ -449,7 +449,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                           <div className="mt-2 md:mt-3">
                             <div className="w-full bg-gray-300 rounded-full h-1.5 md:h-2">
                               <div
-                                className="bg-yellow-500 h-1.5 md:h-2 rounded-full transition-all"
+                                className="bg-amber-400 h-1.5 md:h-2 rounded-full transition-all"
                                 style={{ width: `${progress}%` }}
                               />
                             </div>
@@ -486,7 +486,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                     {availableRewards.badges.map((badge) => (
                       <div
                         key={badge.id}
-                        className={`p-2 md:p-4 rounded-lg text-center ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg ${!badge.unlocked && "opacity-50"}`}
+                        className={`p-2 md:p-4 rounded-lg text-center ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow-lg ${!badge.unlocked && "opacity-50"}`}
                       >
                         {badge.imageUrl ? (
                           <img
@@ -495,7 +495,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                             className="w-12 h-12 md:w-20 md:h-20 mx-auto rounded-full object-cover border border-gray-300"
                           />
                         ) : (
-                          <div className="w-12 h-12 md:w-20 md:h-20 mx-auto rounded-full bg-gray-700"></div>
+                          <div className="w-12 h-12 md:w-20 md:h-20 mx-auto rounded-full bg-slate-800"></div>
                         )}
                         <p className="font-bold text-xs md:text-sm mt-1 md:mt-2 line-clamp-1">{badge.name}</p>
                         {badge.unlocked ? (
@@ -505,7 +505,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                               loyaltyData.user.profileBadge === badge.id
                                 ? "bg-green-500"
                                 : isDarkMode
-                                ? "bg-yellow-500"
+                                ? "bg-amber-400"
                                 : "bg-blue-500"
                             } text-white`}
                           >
@@ -528,7 +528,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                     {availableRewards.titles.map((title) => (
                       <div
                         key={title.id}
-                        className={`p-3 md:p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg flex justify-between items-center ${!title.unlocked && "opacity-50"}`}
+                        className={`p-3 md:p-4 rounded-lg ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow-lg flex justify-between items-center ${!title.unlocked && "opacity-50"}`}
                       >
                         <div className="flex-1 min-w-0">
                           <p className="font-bold text-sm md:text-base truncate">{title.text}</p>
@@ -543,7 +543,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                               loyaltyData.user.activeTitle === title.id
                                 ? "bg-green-500"
                                 : isDarkMode
-                                ? "bg-yellow-500"
+                                ? "bg-amber-400"
                                 : "bg-blue-500"
                             } text-white ml-2`}
                           >
@@ -564,7 +564,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                     {availableRewards.themes.map((theme) => (
                       <div
                         key={theme.id}
-                        className={`p-2 md:p-4 rounded-lg text-center ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg ${!theme.unlocked && "opacity-50"}`}
+                        className={`p-2 md:p-4 rounded-lg text-center ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow-lg ${!theme.unlocked && "opacity-50"}`}
                       >
                         {theme.imageUrl ? (
                           <img
@@ -573,7 +573,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                             className="w-full h-12 md:h-20 rounded-lg object-cover"
                           />
                         ) : (
-                          <div className="w-full h-12 md:h-20 rounded-lg bg-gray-700"></div>
+                          <div className="w-full h-12 md:h-20 rounded-lg bg-slate-800"></div>
                         )}
                         <p className="font-bold text-xs md:text-sm mt-1 md:mt-2 line-clamp-1">{theme.name}</p>
                         {theme.unlocked ? (
@@ -583,7 +583,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                               loyaltyData.user.activeTheme === theme.id
                                 ? "bg-green-500"
                                 : isDarkMode
-                                ? "bg-yellow-500"
+                                ? "bg-amber-400"
                                 : "bg-blue-500"
                             } text-white`}
                           >
@@ -609,7 +609,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                       {availableRewards.badges.map((badge) => (
                         <div
                           key={badge.id}
-                          className={`p-2 md:p-4 rounded-lg text-center ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg ${!badge.unlocked && "opacity-50"}`}
+                          className={`p-2 md:p-4 rounded-lg text-center ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow-lg ${!badge.unlocked && "opacity-50"}`}
                         >
                           {badge.imageUrl ? (
                             <img
@@ -628,7 +628,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                                 loyaltyData.user.activeBadge === badge.id
                                   ? "bg-green-500"
                                   : isDarkMode
-                                  ? "bg-yellow-500"
+                                  ? "bg-amber-400"
                                   : "bg-blue-500"
                               } text-white`}
                             >
@@ -658,7 +658,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                           {availableRewards.avatars.map((avatar) => (
                             <div
                               key={avatar.id}
-                              className={`p-2 md:p-4 rounded-lg text-center flex-shrink-0 w-24 md:w-auto ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg ${!avatar.unlocked && "opacity-50"}`}
+                              className={`p-2 md:p-4 rounded-lg text-center flex-shrink-0 w-24 md:w-auto ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow-lg ${!avatar.unlocked && "opacity-50"}`}
                             >
                               <img
                                 src={avatar.imageUrl || "/default-avatar.png"}
@@ -673,7 +673,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                                     loyaltyData.user.activeAvatar === avatar.id
                                       ? "bg-green-500"
                                       : isDarkMode
-                                      ? "bg-yellow-500"
+                                      ? "bg-amber-400"
                                       : "bg-blue-500"
                                   } text-white`}
                                 >
@@ -702,7 +702,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                           {availableRewards.backgrounds.map((bg) => (
                             <div
                               key={bg.id}
-                              className={`p-2 md:p-3 rounded-lg flex-shrink-0 w-40 md:w-auto ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg ${!bg.unlocked && "opacity-50"}`}
+                              className={`p-2 md:p-3 rounded-lg flex-shrink-0 w-40 md:w-auto ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow-lg ${!bg.unlocked && "opacity-50"}`}
                             >
                               <div className="relative w-full h-16 md:h-24 mb-2 md:mb-3 rounded overflow-hidden">
                                 <img
@@ -719,7 +719,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                                     loyaltyData.user.activeBackground === bg.id
                                       ? "bg-green-500"
                                       : isDarkMode
-                                      ? "bg-yellow-500"
+                                      ? "bg-amber-400"
                                       : "bg-blue-500"
                                   } text-white`}
                                 >

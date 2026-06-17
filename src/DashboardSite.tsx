@@ -1,6 +1,6 @@
 
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useBreakpoints from "./useBreakpoints";
 import { translations } from "./Translations/TranslationsDashboard";
@@ -8,14 +8,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import LoyaltyDashboard from './LoyaltyDashboard';
 import ChatComponent from "./ChatComponent";
 import FriendProfileModal from './FriendProfileModal';
-import QuickLinks from "./QuickLinks";
+import Layout from './Layout';
+import { useTheme } from './ThemeContext';
+import { LanguageContext } from './LanguageContext';
 
 // Icons
-import MoonIcon from "/src/assets/moon.svg?react";
-import SunIcon from "/src/assets/sun.svg?react";
-import SearchIcon from "/src/assets/search.svg?react";
-import GlobeIcon from "/src/assets/globe.svg?react";
-import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
 import EditIcon from "/src/assets/edit.svg?react";
 import DeleteIcon from "/src/assets/delete.svg?react";
 import SaveIcon from "/src/assets/save.svg?react";
@@ -33,56 +30,6 @@ if (!import.meta.env.VITE_API_BASE_URL) {
   console.warn('VITE_API_BASE_URL is not set, using default:', baseURL);
 }
 
-const headerLanguages = {
-  USA: {
-    name: "USA",
-    flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" />,
-    region: "North America",
-    language: "EN",
-  },
-  CA: {
-    name: "Canada",
-    flag: <img src="https://flagcdn.com/ca.svg" className="w-5 h-5" alt="Canada" />,
-    region: "North America",
-    language: "EN",
-  },
-  UK: {
-    name: "UK",
-    flag: <img src="https://flagcdn.com/gb.svg" className="w-5 h-5" alt="UK" />,
-    region: "Europe",
-    language: "EN",
-  },
-  PL: {
-    name: "Poland",
-    flag: <img src="https://flagcdn.com/pl.svg" className="w-5 h-5" alt="Poland" />,
-    region: "Europe",
-    language: "PL",
-  },
-  RU: {
-    name: "Russia",
-    flag: <img src="https://flagcdn.com/ru.svg" className="w-5 h-5" alt="Russia" />,
-    region: "Europe",
-    language: "RU",
-  },
-  FR: {
-    name: "France",
-    flag: <img src="https://flagcdn.com/fr.svg" className="w-5 h-5" alt="France" />,
-    region: "Europe",
-    language: "FR",
-  },
-  DE: {
-    name: "Germany",
-    flag: <img src="https://flagcdn.com/de.svg" className="w-5 h-5" alt="Germany" />,
-    region: "Europe",
-    language: "DE",
-  },
-  ES: {
-    name: "Spain",
-    flag: <img src="https://flagcdn.com/es.svg" className="w-5 h-5" alt="Spain" />,
-    region: "Europe",
-    language: "ES",
-  },
-};
 
 interface User {
   id: number;
@@ -129,16 +76,8 @@ type ActiveView = "dashboard" | "collection" | "wishlist" | "analytics" | "socia
 const DashboardSite: React.FC = () => {
   const { isMobile, isTablet, isDesktop } = useBreakpoints();
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const savedTheme = localStorage.getItem("preferredTheme");
-    return savedTheme !== null ? savedTheme === "dark" : true;
-  });
-  const [searchQuery, setSearchQuery] = useState("");
-  const [language, setLanguage] = useState<string>(() => {
-    const savedLanguage = localStorage.getItem("preferredLanguage");
-    return savedLanguage || "EN";
-  });
-  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const { isDarkMode } = useTheme();
+  const { language } = useContext(LanguageContext);
   const [user, setUser] = useState<User | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -191,8 +130,6 @@ const DashboardSite: React.FC = () => {
   const [selectedFriendForProfile, setSelectedFriendForProfile] = useState<any>(null);
   const [showLoyaltyDashboard, setShowLoyaltyDashboard] = useState(false);
 
-  const languageDropdownRef = useRef<HTMLDivElement>(null);
-  const languageButtonRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
   const t = translations[language] || translations["EN"];
 
@@ -200,32 +137,6 @@ const DashboardSite: React.FC = () => {
     initial: { opacity: 0, x: 50 },
     animate: { opacity: 1, x: 0 },
     exit: { opacity: 0, x: -50 },
-  };
-
-  // 🌐 Toggle language dropdown
-  const toggleLanguageDropdown = () => {
-    setShowLanguageDropdown((prev) => !prev);
-  };
-
-  // 🌙 Toggle theme
-  const toggleTheme = () => setIsDarkMode((prev) => !prev);
-
-  // Select language
-  const selectLanguage = (lang: string) => {
-    setLanguage(lang);
-    localStorage.setItem("preferredLanguage", lang);
-    setShowLanguageDropdown(false);
-    window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: lang } }));
-  };
-
-  // 🔍 Handle search
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/searchsite?q=${encodeURIComponent(searchQuery.trim())}`);
-    } else {
-      navigate("/searchsite");
-    }
   };
 
   // Handle logout
@@ -288,16 +199,6 @@ const DashboardSite: React.FC = () => {
     checkNewAchievements();
     return () => clearInterval(interval);
   }, []);
-
-  // Theme sync
-  useEffect(() => {
-    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDarkMode]);
 
   // Auto-logout after 10 minutes of inactivity
   useEffect(() => {
@@ -665,7 +566,7 @@ const DashboardSite: React.FC = () => {
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       className={`rounded-lg overflow-hidden border ${
-        isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"
+        isDarkMode ? "border-gray-600 bg-slate-900" : "border-gray-200 bg-white"
       } hover:shadow-lg transition-shadow`}
     >
       <Link to={`/funko/${item.id}`} className="block hover:no-underline">
@@ -680,14 +581,14 @@ const DashboardSite: React.FC = () => {
           />
         ) : (
           <div className="w-full h-32 bg-gray-200 flex items-center justify-center cursor-pointer">
-            <span className="text-gray-500">No Image</span>
+            <span className="text-slate-500">No Image</span>
           </div>
         )}
         <div className="p-3">
           <h4 className="font-semibold text-sm truncate hover:text-blue-500 transition-colors" title={item.title}>
             {item.title}
           </h4>
-          <p className="text-xs text-gray-500">#{item.number}</p>
+          <p className="text-xs text-slate-500">#{item.number}</p>
           {item.condition && (
             <p className="text-xs mt-1">
               <span className="font-medium">Condition:</span> {item.condition}
@@ -707,7 +608,7 @@ const DashboardSite: React.FC = () => {
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       className={`rounded-lg overflow-hidden border ${
-        isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-white"
+        isDarkMode ? "border-gray-600 bg-slate-900" : "border-gray-200 bg-white"
       } hover:shadow-lg transition-shadow`}
     >
       <Link to={`/funko/${item.id}`} className="block hover:no-underline">
@@ -722,14 +623,14 @@ const DashboardSite: React.FC = () => {
           />
         ) : (
           <div className="w-full h-32 bg-gray-200 flex items-center justify-center cursor-pointer">
-            <span className="text-gray-500">No Image</span>
+            <span className="text-slate-500">No Image</span>
           </div>
         )}
         <div className="p-3">
           <h4 className="font-semibold text-sm truncate hover:text-blue-500 transition-colors" title={item.title}>
             {item.title}
           </h4>
-          <p className="text-xs text-gray-500">#{item.number}</p>
+          <p className="text-xs text-slate-500">#{item.number}</p>
           {item.priority && (
             <p className="text-xs mt-1">
               <span className="font-medium">Priority:</span> {item.priority}
@@ -930,7 +831,7 @@ const DashboardSite: React.FC = () => {
       case "high": return "text-red-500";
       case "medium": return "text-yellow-500";
       case "low": return "text-blue-500";
-      default: return "text-gray-500";
+      default: return "text-slate-500";
     }
   };
 
@@ -958,12 +859,12 @@ const DashboardSite: React.FC = () => {
   const renderDashboardView = () => (
     <>
       <h3 className="text-xl font-semibold mb-4 text-center">{t.welcome} {user?.name || ""}</h3>
-      <h2 className={`text-3xl font-bold mb-6 text-center ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
+      <h2 className={`text-3xl font-bold mb-6 text-center ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
         {t.dashboardWelcome}
       </h2>
       <section
           className={`max-w-4xl w-full mx-auto p-8 rounded-xl shadow-xl mb-10
-                      ${isDarkMode ? 'bg-gray-700 border-gray-900' : 'bg-white '}
+                      ${isDarkMode ? 'bg-slate-800 border-gray-900' : 'bg-white '}
                       hover:shadow-2xl`}
         >
         <div className="flex justify-between items-center mb-6">
@@ -974,7 +875,7 @@ const DashboardSite: React.FC = () => {
             <button
               onClick={handleEditClick}
               className={`p-3 rounded-lg flex items-center gap-2 transition-all duration-300 transform hover:scale-105 shadow-lg
-                          bg-yellow-500 hover:bg-yellow-600 shadow-yellow-500/25 text-white font-semibold`}
+                          bg-amber-400 hover:bg-amber-500 shadow-yellow-500/25 text-white font-semibold`}
             >
               <EditIcon className="w-5 h-5" />
               <span className="font-medium">{t.edit}</span>
@@ -1055,7 +956,7 @@ const DashboardSite: React.FC = () => {
                   className={`flex-grow px-4 py-3 rounded-lg border-2 transition-all duration-300 focus:ring-2 focus:ring-blue-500 outline-none
                               bg-white text-gray-900 border-gray-300 focus:border-blue-500 shadow-sm`}
                 >
-                  <option value="" className="text-gray-500">{t.selectGender}</option>
+                  <option value="" className="text-slate-500">{t.selectGender}</option>
                   <option value="male" className="text-gray-900">{t.male}</option>
                   <option value="female" className="text-gray-900">{t.female}</option>
                   <option value="other" className="text-gray-900">{t.other}</option>
@@ -1164,13 +1065,13 @@ const DashboardSite: React.FC = () => {
         </ul>
       </section>
       <section className={`max-w-4xl w-full mx-auto p-8 rounded-xl shadow-xl mb-10
-                      ${isDarkMode ? 'bg-gray-700 border-gray-900' : 'bg-white '}
+                      ${isDarkMode ? 'bg-slate-800 border-gray-900' : 'bg-white '}
                       hover:shadow-2xl`}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">{t.yourCollection}</h3>
           <button
             onClick={() => setActiveView("collection")}
-            className={`px-3 py-1 rounded text-sm ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-500 hover:bg-blue-600"} text-white`}
+            className={`px-3 py-1 rounded text-sm ${isDarkMode ? "bg-amber-400 hover:bg-amber-500" : "bg-blue-500 hover:bg-blue-600"} text-white`}
           >
             {t.viewAll ||  "View All"}
           </button>
@@ -1184,13 +1085,13 @@ const DashboardSite: React.FC = () => {
         }
       </section>
       <section className={`max-w-4xl w-full mx-auto p-8 rounded-xl shadow-xl mb-10
-                      ${isDarkMode ? 'bg-gray-700 border-gray-900' : 'bg-white '}
+                      ${isDarkMode ? 'bg-slate-800 border-gray-900' : 'bg-white '}
                       hover:shadow-2xl`}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">{t.yourWishlist}</h3>
           <button
             onClick={() => setActiveView("wishlist")}
-            className={`px-3 py-1 rounded text-sm ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-500 hover:bg-blue-600"} text-white`}
+            className={`px-3 py-1 rounded text-sm ${isDarkMode ? "bg-amber-400 hover:bg-amber-500" : "bg-blue-500 hover:bg-blue-600"} text-white`}
           >
             {t.viewAll ||  "View All"}
           </button>
@@ -1209,19 +1110,19 @@ const DashboardSite: React.FC = () => {
   const renderCollectionView = () => (
     <div className="max-w-7xl mx-auto w-full">
       <div className="flex justify-between items-center mb-6">
-        <h2 className={`text-3xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
+        <h2 className={`text-3xl font-bold ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
           {t.yourCollection}
         </h2>
         <button
           onClick={() => setShowCollectionFilters(!showCollectionFilters)}
-          className={`px-4 py-2 rounded flex items-center gap-2 ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}
+          className={`px-4 py-2 rounded flex items-center gap-2 ${isDarkMode ? "bg-slate-800 hover:bg-slate-700" : "bg-gray-200 hover:bg-gray-300"}`}
         >
           <FilterIcon className="w-4 h-4" />
           {t.filters || "Filters"}
         </button>
       </div>
       {showCollectionFilters && (
-        <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
+        <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow-lg`}>
           <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Search Collection</label>
@@ -1230,7 +1131,7 @@ const DashboardSite: React.FC = () => {
                 value={collectionSearch}
                 onChange={(e) => setCollectionSearch(e.target.value)}
                 placeholder="Search by title, number, or series..."
-                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-slate-700 text-white" : "bg-gray-100"}`}
               />
             </div>
             <div>
@@ -1238,7 +1139,7 @@ const DashboardSite: React.FC = () => {
               <select
                 value={filterCondition}
                 onChange={(e) => setFilterCondition(e.target.value)}
-                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-slate-700 text-white" : "bg-gray-100"}`}
               >
                 <option value="all">All Conditions</option>
                 {conditions.map(condition => (
@@ -1253,7 +1154,7 @@ const DashboardSite: React.FC = () => {
               <select
                 value={collectionSortBy}
                 onChange={(e) => setCollectionSortBy(e.target.value)}
-                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-slate-700 text-white" : "bg-gray-100"}`}
               >
                 <option value="title">Title</option>
                 <option value="number">Number</option>
@@ -1267,7 +1168,7 @@ const DashboardSite: React.FC = () => {
               <select
                 value={collectionSortOrder}
                 onChange={(e) => setCollectionSortOrder(e.target.value as "asc" | "desc")}
-                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-slate-700 text-white" : "bg-gray-100"}`}
               >
                 <option value="asc">Ascending</option>
                 <option value="desc">Descending</option>
@@ -1276,28 +1177,28 @@ const DashboardSite: React.FC = () => {
           </div>
         </div>
       )}
-      <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
+      <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow-lg`}>
         <div className="grid grid-cols-2 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
           <div>
-            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
               {collection.length}
             </div>
             <div className="text-sm">{t.TotalItems}</div>
           </div>
           <div>
-            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
               {filteredCollection.length}
             </div>
             <div className="text-sm">{t.FilteredItems}</div>
           </div>
           <div>
-            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
               ${collection.reduce((sum, item) => sum + (item.purchase_price || 0), 0).toFixed(2)}
             </div>
             <div className="text-sm">{t.TotalValue}</div>
           </div>
           <div>
-            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
               {new Set(collection.map(item => item.series)).size}
             </div>
             <div className="text-sm">Series</div>
@@ -1313,7 +1214,7 @@ const DashboardSite: React.FC = () => {
               <p className="mb-4">{t.emptyCollection}</p>
               <Link
                 to="/searchsite"
-                className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-600 hover:bg-blue-700"} text-white`}
+                className={`px-4 py-2 rounded ${isDarkMode ? "bg-amber-400 hover:bg-amber-500" : "bg-blue-600 hover:bg-blue-700"} text-white`}
               >
                 {t.StartAddingItems}
               </Link>
@@ -1325,7 +1226,7 @@ const DashboardSite: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredCollection.map(item => (
-            <div key={item.id} className={`rounded-lg shadow-lg overflow-hidden ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+            <div key={item.id} className={`rounded-lg shadow-lg overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-white"}`}>
               {item.image_name && (
                 <img src={item.image_name} alt={item.title} className="w-full h-48 object-contain bg-gray-100" />
               )}
@@ -1336,19 +1237,19 @@ const DashboardSite: React.FC = () => {
                       name="title"
                       value={editCollectionForm.title || ""}
                       onChange={handleCollectionInputChange}
-                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-slate-700" : "bg-gray-100"}`}
                     />
                     <input
                       name="number"
                       value={editCollectionForm.number || ""}
                       onChange={handleCollectionInputChange}
-                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-slate-700" : "bg-gray-100"}`}
                     />
                     <select
                       name="condition"
                       value={editCollectionForm.condition || ""}
                       onChange={handleCollectionInputChange}
-                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-slate-700" : "bg-gray-100"}`}
                     >
                       {conditions.map(condition => (
                         <option key={condition} value={condition}>
@@ -1363,7 +1264,7 @@ const DashboardSite: React.FC = () => {
                       value={editCollectionForm.purchase_price || ""}
                       onChange={handleCollectionInputChange}
                       placeholder="Purchase Price"
-                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-slate-700" : "bg-gray-100"}`}
                     />
                     <textarea
                       name="notes"
@@ -1371,7 +1272,7 @@ const DashboardSite: React.FC = () => {
                       onChange={handleCollectionInputChange}
                       placeholder="Notes"
                       rows={2}
-                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-slate-700" : "bg-gray-100"}`}
                     />
                     <div className="flex gap-2">
                       <button
@@ -1383,7 +1284,7 @@ const DashboardSite: React.FC = () => {
                       </button>
                       <button
                         onClick={handleCancelCollectionEdit}
-                        className="flex-1 px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded flex items-center justify-center gap-1"
+                        className="flex-1 px-3 py-1 bg-gray-500 hover:bg-slate-700 text-white rounded flex items-center justify-center gap-1"
                       >
                         <CancelIcon className="w-4 h-4" />
                         Cancel
@@ -1406,7 +1307,7 @@ const DashboardSite: React.FC = () => {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleEditCollectionItem(item)}
-                        className={`flex-1 px-3 py-1 rounded flex items-center justify-center gap-1 ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-500 hover:bg-blue-600"} text-white`}
+                        className={`flex-1 px-3 py-1 rounded flex items-center justify-center gap-1 ${isDarkMode ? "bg-amber-400 hover:bg-amber-500" : "bg-blue-500 hover:bg-blue-600"} text-white`}
                       >
                         <EditIcon className="w-4 h-4" />
                         Edit
@@ -1432,19 +1333,19 @@ const DashboardSite: React.FC = () => {
   const renderWishlistView = () => (
     <div className="max-w-7xl mx-auto w-full">
       <div className="flex justify-between items-center mb-6">
-        <h2 className={`text-3xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
+        <h2 className={`text-3xl font-bold ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
           {t.yourWishlist}
         </h2>
         <button
           onClick={() => setShowWishlistFilters(!showWishlistFilters)}
-          className={`px-4 py-2 rounded flex items-center gap-2 ${isDarkMode ? "bg-gray-700 hover:bg-gray-600" : "bg-gray-200 hover:bg-gray-300"}`}
+          className={`px-4 py-2 rounded flex items-center gap-2 ${isDarkMode ? "bg-slate-800 hover:bg-slate-700" : "bg-gray-200 hover:bg-gray-300"}`}
         >
           <FilterIcon className="w-4 h-4" />
           Filters
         </button>
       </div>
       {showWishlistFilters && (
-        <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
+        <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow-lg`}>
           <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Search Wishlist</label>
@@ -1453,7 +1354,7 @@ const DashboardSite: React.FC = () => {
                 value={wishlistSearch}
                 onChange={(e) => setWishlistSearch(e.target.value)}
                 placeholder="Search by title, number, or series..."
-                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-slate-700 text-white" : "bg-gray-100"}`}
               />
             </div>
             <div>
@@ -1461,7 +1362,7 @@ const DashboardSite: React.FC = () => {
               <select
                 value={filterPriority}
                 onChange={(e) => setFilterPriority(e.target.value)}
-                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-slate-700 text-white" : "bg-gray-100"}`}
               >
                 <option value="all">All Priorities</option>
                 {priorities.map(priority => (
@@ -1476,7 +1377,7 @@ const DashboardSite: React.FC = () => {
               <select
                 value={wishlistSortBy}
                 onChange={(e) => setWishlistSortBy(e.target.value)}
-                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-slate-700 text-white" : "bg-gray-100"}`}
               >
                 <option value="added_date">Date Added</option>
                 <option value="title">Title</option>
@@ -1490,7 +1391,7 @@ const DashboardSite: React.FC = () => {
               <select
                 value={wishlistSortOrder}
                 onChange={(e) => setWishlistSortOrder(e.target.value as "asc" | "desc")}
-                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-gray-600 text-white" : "bg-gray-100"}`}
+                className={`w-full px-3 py-2 rounded ${isDarkMode ? "bg-slate-700 text-white" : "bg-gray-100"}`}
               >
                 <option value="desc">Descending</option>
                 <option value="asc">Ascending</option>
@@ -1499,28 +1400,28 @@ const DashboardSite: React.FC = () => {
           </div>
         </div>
       )}
-      <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-gray-700" : "bg-white"} shadow-lg`}>
+      <div className={`mb-6 p-4 rounded-lg ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow-lg`}>
         <div className="grid grid-cols-2 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
           <div>
-            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
               {wishlist.length}
             </div>
             <div className="text-sm">{t.TotalItems}</div>
           </div>
           <div>
-            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
               {wishlist.filter(item => item.priority === "high").length}
             </div>
             <div className="text-sm">{t.HighPriority}</div>
           </div>
           <div>
-            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
               ${wishlist.reduce((sum, item) => sum + (item.max_price || 0), 0).toFixed(2)}
             </div>
             <div className="text-sm">{t.TotalBudget}</div>
           </div>
           <div>
-            <div className={`text-2xl font-bold ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
+            <div className={`text-2xl font-bold ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
               {new Set(wishlist.map(item => item.series)).size}
             </div>
             <div className="text-sm">{t.Series}</div>
@@ -1536,7 +1437,7 @@ const DashboardSite: React.FC = () => {
               <p className="mb-4">{t.noItemsInWishlist}</p>
               <Link
                 to="/searchsite"
-                className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-600 hover:bg-blue-700"} text-white`}
+                className={`px-4 py-2 rounded ${isDarkMode ? "bg-amber-400 hover:bg-amber-500" : "bg-blue-600 hover:bg-blue-700"} text-white`}
               >
                 {t.StartAddingItems}
               </Link>
@@ -1548,7 +1449,7 @@ const DashboardSite: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {filteredWishlist.map(item => (
-            <div key={item.id} className={`rounded-lg shadow-lg overflow-hidden ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+            <div key={item.id} className={`rounded-lg shadow-lg overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-white"}`}>
               {item.image_name && (
                 <img src={item.image_name} alt={item.title} className="w-full h-48 object-contain bg-gray-100" />
               )}
@@ -1559,19 +1460,19 @@ const DashboardSite: React.FC = () => {
                       name="title"
                       value={editWishlistForm.title || ""}
                       onChange={handleWishlistInputChange}
-                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-slate-700" : "bg-gray-100"}`}
                     />
                     <input
                       name="number"
                       value={editWishlistForm.number || ""}
                       onChange={handleWishlistInputChange}
-                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-slate-700" : "bg-gray-100"}`}
                     />
                     <select
                       name="priority"
                       value={editWishlistForm.priority || ""}
                       onChange={handleWishlistInputChange}
-                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-slate-700" : "bg-gray-100"}`}
                     >
                       <option value="">Select Priority</option>
                       {priorities.map(priority => (
@@ -1587,13 +1488,13 @@ const DashboardSite: React.FC = () => {
                       value={editWishlistForm.max_price || ""}
                       onChange={handleWishlistInputChange}
                       placeholder="Max Price"
-                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-slate-700" : "bg-gray-100"}`}
                     />
                     <select
                       name="target_condition"
                       value={editWishlistForm.target_condition || ""}
                       onChange={handleWishlistInputChange}
-                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-slate-700" : "bg-gray-100"}`}
                     >
                       <option value="">{t.TargetCondition || "Target Condition"}</option>
                       {conditions.map(condition => (
@@ -1608,7 +1509,7 @@ const DashboardSite: React.FC = () => {
                       onChange={handleWishlistInputChange}
                       placeholder="Notes"
                       rows={2}
-                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+                      className={`w-full px-2 py-1 rounded ${isDarkMode ? "bg-slate-700" : "bg-gray-100"}`}
                     />
                     <div className="flex gap-2">
                       <button
@@ -1620,7 +1521,7 @@ const DashboardSite: React.FC = () => {
                       </button>
                       <button
                         onClick={handleCancelWishlistEdit}
-                        className="flex-1 px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded flex items-center justify-center gap-1"
+                        className="flex-1 px-3 py-1 bg-gray-500 hover:bg-slate-700 text-white rounded flex items-center justify-center gap-1"
                       >
                         <CancelIcon className="w-4 h-4" />
                         Cancel
@@ -1651,7 +1552,7 @@ const DashboardSite: React.FC = () => {
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleEditWishlistItem(item)}
-                          className={`flex-1 px-3 py-1 rounded flex items-center justify-center gap-1 ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-500 hover:bg-blue-600"} text-white`}
+                          className={`flex-1 px-3 py-1 rounded flex items-center justify-center gap-1 ${isDarkMode ? "bg-amber-400 hover:bg-amber-500" : "bg-blue-500 hover:bg-blue-600"} text-white`}
                         >
                           <EditIcon className="w-4 h-4" />
                           {t.Edit || "Edit"}
@@ -1684,7 +1585,7 @@ const DashboardSite: React.FC = () => {
 
   const renderAnalyticsView = () => (
     <div className="max-w-7xl mx-auto w-full">
-      <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
+      <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
         {t.yourStats || "Your Statistics"}
       </h2>
       {analyticsLoading ? (
@@ -1694,7 +1595,7 @@ const DashboardSite: React.FC = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+          <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-slate-800" : "bg-white"}`}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-semibold">{t.loyaltyScore || "Loyalty Score"}</h3>
               <div className="flex items-center gap-2">
@@ -1706,36 +1607,36 @@ const DashboardSite: React.FC = () => {
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-gray-500">{t.activeDays || "Active Days"}</p>
+                <p className="text-slate-500">{t.activeDays || "Active Days"}</p>
                 <p className="text-xl font-bold">{loyaltyData?.activeDays || 0}</p>
               </div>
               <div>
-                <p className="text-gray-500">{t.accountAge || "Account Age"}</p>
+                <p className="text-slate-500">{t.accountAge || "Account Age"}</p>
                 <p className="text-xl font-bold">{loyaltyData?.accountAge || 0} days</p>
               </div>
             </div>
           </div>
-          <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+          <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-slate-800" : "bg-white"}`}>
             <h3 className="text-xl font-semibold mb-4">{t.yourActivity || "Your Activity"}</h3>
             <div className="grid grid-cols-2 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div className="text-center">
                 <p className="text-2xl font-bold">{userStats?.overall?.total_actions || 0}</p>
-                <p className="text-sm text-gray-500">{t.totalActions || "Total Actions"}</p>
+                <p className="text-sm text-slate-500">{t.totalActions || "Total Actions"}</p>
               </div>
               <div className="text-center">
                 <p className="text-2xl font-bold">{userStats?.overall?.active_days || 0}</p>
-                <p className="text-sm text-gray-500">{t.activeDays || "Active Days"}</p>
+                <p className="text-sm text-slate-500">{t.activeDays || "Active Days"}</p>
               </div>
               <div className="text-center">
                 <p className="text-2xl font-bold">
                   {Math.round((userStats?.overall?.avg_session_duration || 0) / 60)}
                 </p>
-                <p className="text-sm text-gray-500">{t.avgSession || "Avg Session (min)"}</p>
+                <p className="text-sm text-slate-500">{t.avgSession || "Avg Session (min)"}</p>
               </div>
             </div>
           </div>
           {userStats?.breakdown && userStats.breakdown.length > 0 && (
-            <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+            <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-slate-800" : "bg-white"}`}>
               <h3 className="text-xl font-semibold mb-4">{t.activityBreakdown || "Activity Breakdown"}</h3>
               <div className="space-y-2">
                 {userStats.breakdown.map((action: any, idx: number) => (
@@ -1748,7 +1649,7 @@ const DashboardSite: React.FC = () => {
             </div>
           )}
           {leaderboard.length > 0 && (
-            <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+            <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-slate-800" : "bg-white"}`}>
               <h3 className="text-xl font-semibold mb-4">{t.leaderboard || "Leaderboard"}</h3>
               <div className="space-y-2">
                 {leaderboard.slice(0, 10).map((entry: any, idx: number) => {
@@ -1757,7 +1658,7 @@ const DashboardSite: React.FC = () => {
                     <div
                       key={idx}
                       className={`flex justify-between items-center p-2 rounded ${
-                        isCurrentUser ? (isDarkMode ? "bg-yellow-900" : "bg-blue-100") : ""
+                        isCurrentUser ? (isDarkMode ? "bg-yellow-900" : "bg-slate-50") : ""
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -1776,7 +1677,7 @@ const DashboardSite: React.FC = () => {
             </div>
           )}
           {(!userStats && !analyticsLoading) && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-slate-500">
               <p>No analytics data available yet.</p>
               <p className="text-sm">Start using the app to see your statistics!</p>
             </div>
@@ -1788,17 +1689,17 @@ const DashboardSite: React.FC = () => {
 
   const renderSocialView = () => (
     <div className="max-w-7xl mx-auto w-full">
-      <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
+      <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
         {t.social || "Social"}
       </h2>
-      <div className={`p-6 rounded-lg shadow-lg mb-6 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+      <div className={`p-6 rounded-lg shadow-lg mb-6 ${isDarkMode ? "bg-slate-800" : "bg-white"}`}>
         <h3 className="text-xl font-semibold mb-4">{t.addFriend || "Add Friend"}</h3>
         <div className="flex flex-col sm:flex-row gap-2">
           <input
             id="friendLoginInput"
             type="text"
             placeholder="Enter username..."
-            className={`flex-1 px-4 py-2 rounded ${isDarkMode ? "bg-gray-600" : "bg-gray-100"}`}
+            className={`flex-1 px-4 py-2 rounded ${isDarkMode ? "bg-slate-700" : "bg-gray-100"}`}
           />
           <button
             onClick={async () => {
@@ -1834,7 +1735,7 @@ const DashboardSite: React.FC = () => {
               }
             }}
             className={`w-full sm:w-auto px-6 py-2 rounded ${
-              isDarkMode ? "bg-yellow-500 hover:bg-yellow-600" : "bg-blue-600 hover:bg-blue-700"
+              isDarkMode ? "bg-amber-400 hover:bg-amber-500" : "bg-blue-600 hover:bg-blue-700"
             } text-white`}
           >
             {t.sendRequest || "Send Request"}
@@ -1842,7 +1743,7 @@ const DashboardSite: React.FC = () => {
         </div>
       </div>
       {incomingRequests.length > 0 && (
-        <div className={`p-6 rounded-lg shadow-lg mb-6 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+        <div className={`p-6 rounded-lg shadow-lg mb-6 ${isDarkMode ? "bg-slate-800" : "bg-white"}`}>
           <h3 className="text-xl font-semibold mb-4">
             {t.incomingRequests || "Friend Requests"} ({incomingRequests.length})
           </h3>
@@ -1851,15 +1752,15 @@ const DashboardSite: React.FC = () => {
               <div
                 key={request.id}
                 className={`flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 rounded border ${
-                  isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-gray-50"
+                  isDarkMode ? "border-gray-600 bg-slate-900" : "border-gray-200 bg-gray-50"
                 }`}
               >
                 <div className="mb-3 sm:mb-0">
                   <h4 className="font-semibold">{request.login}</h4>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-slate-500">
                     {request.name} {request.surname}
                   </p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-slate-400">
                     Collection: {request.collection_size} items
                   </p>
                 </div>
@@ -1883,7 +1784,7 @@ const DashboardSite: React.FC = () => {
         </div>
       )}
       {outgoingRequests.length > 0 && (
-        <div className={`p-6 rounded-lg shadow-lg mb-6 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+        <div className={`p-6 rounded-lg shadow-lg mb-6 ${isDarkMode ? "bg-slate-800" : "bg-white"}`}>
           <h3 className="text-xl font-semibold mb-4">
             {t.sentRequests || "Sent Requests"} ({outgoingRequests.length})
           </h3>
@@ -1892,22 +1793,22 @@ const DashboardSite: React.FC = () => {
               <div
                 key={request.id}
                 className={`flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 rounded border ${
-                  isDarkMode ? "border-gray-600 bg-gray-800" : "border-gray-200 bg-gray-50"
+                  isDarkMode ? "border-gray-600 bg-slate-900" : "border-gray-200 bg-gray-50"
                 }`}
               >
                 <div className="mb-3 sm:mb-0">
                   <h4 className="font-semibold">{request.login}</h4>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-slate-500">
                     {request.name} {request.surname}
                   </p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-slate-400">
                     Sent: {new Date(request.created_at).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="w-full sm:w-auto">
                   <button
                     onClick={() => handleRejectRequest(request.id)}
-                    className="w-full sm:w-auto px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded"
+                    className="w-full sm:w-auto px-4 py-2 bg-gray-500 hover:bg-slate-700 text-white rounded"
                   >
                     {t.cancel || "Cancel"}
                   </button>
@@ -1917,12 +1818,12 @@ const DashboardSite: React.FC = () => {
           </div>
         </div>
       )}
-      <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-gray-700" : "bg-white"}`}>
+      <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-slate-800" : "bg-white"}`}>
         <h3 className="text-xl font-semibold mb-4">
           {t.yourFriends || "Your Friends"} ({friends.filter((f: any) => f.status === "accepted").length})
         </h3>
         {friends.filter((f: any) => f.status === "accepted").length === 0 ? (
-          <p className="text-center text-gray-500 py-8">
+          <p className="text-center text-slate-500 py-8">
             {t.noFriends || "You don't have any friends yet. Start connecting!"}
           </p>
         ) : (
@@ -1937,7 +1838,7 @@ const DashboardSite: React.FC = () => {
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <h4 className="font-semibold">{friend.login}</h4>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-slate-500">
                       {friend.name} {friend.surname}
                     </p>
                   </div>
@@ -1997,183 +1898,52 @@ const DashboardSite: React.FC = () => {
   );
 
   return (
-    <div className={`welcome-site w-full max-w-full overflow-x-hidden min-h-screen flex flex-col ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-black"
-      }`}
-    >
-      {/* 🔝 Header - Fixed structure similar to WelcomeSite */}
-      <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
-        <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
-          <Link to="/" className="no-underline">
-            <h1
-              className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
-                isDarkMode ? "text-yellow-400" : "text-blue-600"
-              }`}
-            >
-              Pop&Go!
-            </h1>
-          </Link>
-        </div>
-
-        {/* 🔍 Search */}
-        <form
-          onSubmit={handleSearch}
-          className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden ${
-            isDarkMode ? "bg-gray-700" : "bg-white"
-          }`}
-        >
-          <input
-            type="text"
-            placeholder={t.searchPlaceholder}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={`flex-grow px-4 py-2 outline-none ${
-              isDarkMode
-                ? "bg-gray-700 text-white placeholder-gray-400"
-                : "bg-white text-black placeholder-gray-500"
-            }`}
-            aria-label="Search for Funkos"
-          />
-          <button
-            type="submit"
-            className={`px-4 py-2 ${
-              isDarkMode
-                ? "bg-yellow-500 hover:bg-yellow-600"
-                : "bg-blue-600 hover:bg-blue-700"
-            } text-white`}
-            aria-label="Search"
-          >
-            <SearchIcon className="w-5 h-5" />
-          </button>
-        </form>
-
-        {/* 🌐 Language, 🌙 Theme, 🔐 Logout */}
-                <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0 min-w-0 items-center">
-                         {/* Language Dropdown */}
-                         <div className="relative">
-                           <button
-                             ref={languageButtonRef}
-                             onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-                             className={`p-2 rounded-full flex items-center gap-1 min-w-0 ${
-                               isDarkMode
-                                 ? "bg-gray-700 hover:bg-gray-600"
-                                 : "bg-white hover:bg-gray-100 shadow-sm"
-                             }`}
-                             aria-label="Select language"
-                             aria-expanded={showLanguageDropdown}
-                           >
-                             <GlobeIcon className="w-5 h-5" />
-                             <span className="hidden sm:inline text-sm font-medium">{language}</span>
-                             <ChevronDownIcon
-                               className={`w-4 h-4 transition-transform ${
-                                 showLanguageDropdown ? "rotate-180" : ""
-                               }`}
-                             />
-                           </button>
-               
-                           {showLanguageDropdown && (
-                             <div
-                               ref={languageDropdownRef}
-                               className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-1 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${
-                                 isDarkMode ? "bg-gray-800" : "bg-white"
-                               }`}
-                               onClick={(e) => e.stopPropagation()}
-                             >
-                               {Object.entries(languages).map(([code, { name, flag }]) => (
-                                 <button
-                                   key={code}
-                                   onClick={() => selectLanguage(code)}
-                                   className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${
-                                     language === code
-                                       ? isDarkMode
-                                         ? "bg-yellow-500 text-black"
-                                         : "bg-blue-600 text-white"
-                                       : isDarkMode
-                                       ? "hover:bg-gray-700"
-                                       : "hover:bg-gray-100"
-                                   }`}
-                                 >
-                                   <span className="w-5 h-5">{flag}</span>
-                                   <span>{name}</span>
-                                 </button>
-                               ))}
-                             </div>
-                           )}
-                         </div>
-       
-                 <button
-                   onClick={toggleTheme}
-                   className={`p-2 rounded-full ${
-                     isDarkMode
-                       ? "bg-gray-700 hover:bg-gray-600"
-                       : "bg-white hover:bg-gray-100 shadow-sm"
-                   }`}
-                   aria-label={isDarkMode ? t.switchToLight : t.switchToDark}
-                 >
-                   {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
-                 </button>
-
-          {/* 🔐 Logout */}
-          <button
-            onClick={handleLogout}
-            className={`flex items-center gap-2 px-4 py-2 rounded ${
-              isDarkMode
-                ? "bg-red-600 hover:bg-red-700"
-                : "bg-red-500 hover:bg-red-600"
-            } text-white`}
-          >
-            {t.logout}
-          </button>
-        </div>
-        
-        <QuickLinks isDarkMode={isDarkMode} language={language as any} />
-      </header>
-
+    <Layout translations={t}>
       {/* Navigation */}
-      <nav className={`px-8 py-2 ${isDarkMode ? "bg-gray-700" : "bg-white border-b border-gray-200"}`}>
+      <nav className={`px-8 py-2 ${isDarkMode ? "bg-slate-800" : "bg-white border-b border-gray-200"}`}>
         <div className="flex gap-4 flex-wrap">
           <button
             onClick={() => setActiveView("dashboard")}
-            className={`px-3 py-1 rounded ${activeView === "dashboard" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}
+            className={`px-3 py-1 rounded ${activeView === "dashboard" ? (isDarkMode ? "bg-amber-400 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-slate-700" : "hover:bg-gray-200")}`}
           >
             {t.dashboard}
           </button>
           <button
             onClick={() => setActiveView("collection")}
-            className={`px-3 py-1 rounded ${activeView === "collection" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}
+            className={`px-3 py-1 rounded ${activeView === "collection" ? (isDarkMode ? "bg-amber-400 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-slate-700" : "hover:bg-gray-200")}`}
           >
             {t.collection}
           </button>
           <button
             onClick={() => setActiveView("wishlist")}
-            className={`px-3 py-1 rounded ${activeView === "wishlist" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}
+            className={`px-3 py-1 rounded ${activeView === "wishlist" ? (isDarkMode ? "bg-amber-400 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-slate-700" : "hover:bg-gray-200")}`}
           >
             {t.wishlist}
           </button>
           <button
             onClick={() => setActiveView("analytics")}
-            className={`px-3 py-1 rounded flex items-center gap-2 ${activeView === "analytics" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}
+            className={`px-3 py-1 rounded flex items-center gap-2 ${activeView === "analytics" ? (isDarkMode ? "bg-amber-400 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-slate-700" : "hover:bg-gray-200")}`}
           >
             <ChartIcon className="w-4 h-4" />
             {t.analytics || "Analytics"}
           </button>
           <button
             onClick={() => setActiveView("social")}
-            className={`px-3 py-1 rounded flex items-center gap-2 ${activeView === "social" ? (isDarkMode ? "bg-yellow-500 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200")}`}
+            className={`px-3 py-1 rounded flex items-center gap-2 ${activeView === "social" ? (isDarkMode ? "bg-amber-400 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-slate-700" : "hover:bg-gray-200")}`}
           >
             <UsersIcon className="w-4 h-4" />
             {t.social || "Social"}
           </button>
           <button
             onClick={() => setShowLoyaltyDashboard(true)}
-            className={`px-3 py-1 rounded flex items-center gap-2 ${isDarkMode ? "hover:bg-gray-600" : "hover:bg-gray-200"}`}
+            className={`px-3 py-1 rounded flex items-center gap-2 ${isDarkMode ? "hover:bg-slate-700" : "hover:bg-gray-200"}`}
           >
             🏆 {t.rewards || "Rewards"}
           </button>
         </div>
       </nav>
 
-      {/* 🧭 Main Content */}
+      {/* Main Content */}
       <main className="flex-grow p-4 sm:p-8 flex flex-col items-center">
         <AnimatePresence mode="wait">
           {activeView === "dashboard" && (
@@ -2249,16 +2019,7 @@ const DashboardSite: React.FC = () => {
           />
         )}
       </main>
-
-      {/* 📝 Footer */}
-      <footer
-        className={`text-center py-4 ${
-          isDarkMode ? "bg-gray-900 text-gray-400" : "bg-white text-gray-700"
-        }`}
-      >
-        {t.copyright}
-      </footer>
-    </div>
+    </Layout>
   );
 };
 

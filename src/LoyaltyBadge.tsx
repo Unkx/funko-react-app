@@ -111,7 +111,7 @@ const LoyaltyBadge: React.FC<Props> = ({ userId, size = "medium", showLevel = tr
       <div className="inline-flex items-center gap-2">
         <div className={`${sizeClasses[size]} bg-gray-200 rounded-full animate-pulse`}></div>
         {showLevel && size !== "small" && (
-          <span className="text-xs text-gray-500">{t.loadingBadge}</span>
+          <span className="text-xs text-slate-500">{t.loadingBadge}</span>
         )}
       </div>
     );

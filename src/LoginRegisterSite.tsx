@@ -1,72 +1,41 @@
-// LoginRegisterSite.tsx
-import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import LanguageSelectorPopup from "./LanguageSelectorPopup";
-import useBreakpoints from "./useBreakpoints";
+import React, { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { LanguageContext } from "./LanguageContext";
+import { useTheme } from "./ThemeContext";
+import Layout from "./Layout";
 import { translations as loginTranslations } from "./Translations/TranslationsLogIn";
 import { translations as registerTranslations } from "./Translations/TranslationRegistersite";
-import QuickLinks from "./QuickLinks";
-
 import { motion, AnimatePresence } from "framer-motion";
+import { Eye, EyeOff, ArrowLeft, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
-// Icons
-import MoonIcon from "/src/assets/moon.svg?react";
-import SunIcon from "/src/assets/sun.svg?react";
-import SearchIcon from "/src/assets/search.svg?react";
-import GlobeIcon from "/src/assets/globe.svg?react";
-import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
-
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
-
-if (!import.meta.env.VITE_API_BASE_URL) {
-  console.warn('VITE_API_BASE_URL is not set, using default:', baseURL);
-}
-
-
-const languages = {
-    US: { name: "USA", flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" /> },
-    EN: { name: "UK", flag: <img src="https://flagcdn.com/gb.svg" className="w-5 h-5" alt="UK" /> },
-    CA: { name: "Canada", flag: <img src="https://flagcdn.com/ca.svg" className="w-5 h-5" alt="Canada" /> },
-    PL: { name: "Polski", flag: <img src="https://flagcdn.com/pl.svg" className="w-5 h-5" alt="Poland" /> },
-    RU: { name: "Русский", flag: <img src="https://flagcdn.com/ru.svg" className="w-5 h-5" alt="Russia" /> },
-    ES: { name: "Español", flag: <img src="https://flagcdn.com/es.svg" className="w-5 h-5" alt="Spain" /> },
-    FR: { name: "Français", flag: <img src="https://flagcdn.com/fr.svg" className="w-5 h-5" alt="France" /> },
-    DE: { name: "Deutsch", flag: <img src="https://flagcdn.com/de.svg" className="w-5 h-5" alt="Germany" /> },
-};
+const baseURL = import.meta.env.VITE_API_BASE_URL || "https://funko-backend.onrender.com";
 
 const LoginRegisterSite: React.FC = () => {
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const savedTheme = localStorage.getItem("preferredTheme");
-    return savedTheme !== null ? savedTheme === "dark" : true;
-  });
-
-  const [language, setLanguage] = useState("EN");
-  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
-  const [shouldShowPopup, setShouldShowPopup] = useState(false);
-  const [showRegister, setShowRegister] = useState(false);
-  const [showPasswordReset, setShowPasswordReset] = useState(false);
-  const [passwordResetStep, setPasswordResetStep] = useState<'email' | 'code' | 'password'>('email');
-
+  const { language } = useContext(LanguageContext);
+  const { isDarkMode } = useTheme();
   const navigate = useNavigate();
+
   const tLogin = loginTranslations[language] || loginTranslations["EN"];
   const tRegister = registerTranslations[language] || registerTranslations["EN"];
 
-  const languageDropdownRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const languageButtonRef = useRef<HTMLButtonElement>(null);
+  const [showRegister, setShowRegister] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [passwordResetStep, setPasswordResetStep] = useState<"email" | "code" | "password">("email");
 
-  // Login form state
+  // Login
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState("");
 
-  // Register form state
+  // Register
   const [email, setEmail] = useState("");
   const [regLogin, setRegLogin] = useState("");
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showRegPassword, setShowRegPassword] = useState(false);
   const [gender, setGender] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [nationality, setNationality] = useState("");
@@ -75,7 +44,7 @@ const LoginRegisterSite: React.FC = () => {
   const [inviteChecking, setInviteChecking] = useState(false);
   const [inviteValid, setInviteValid] = useState<boolean | null>(null);
 
-  // Password Reset form state
+  // Password Reset
   const [resetEmail, setResetEmail] = useState("");
   const [resetCode, setResetCode] = useState("");
   const [resetNewPassword, setResetNewPassword] = useState("");
@@ -83,56 +52,22 @@ const LoginRegisterSite: React.FC = () => {
   const [passwordResetError, setPasswordResetError] = useState("");
   const [passwordResetMessage, setPasswordResetMessage] = useState("");
 
+  const inputClass = `w-full px-4 py-2.5 rounded-lg border text-sm outline-none transition-colors ${
+    isDarkMode
+      ? "bg-slate-900 border-slate-700 text-white placeholder-slate-500 focus:border-amber-400/50"
+      : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:border-blue-400"
+  }`;
 
-  // Save theme
-  useEffect(() => {
-    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
-    if (isDarkMode) document.documentElement.classList.add("dark");
-    else document.documentElement.classList.remove("dark");
-  }, [isDarkMode]);
+  const primaryBtnClass = `w-full px-4 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+    isDarkMode ? "bg-amber-400 hover:bg-amber-500 text-slate-900" : "bg-blue-600 hover:bg-blue-700 text-white"
+  }`;
 
-  // Language & popup
-  useEffect(() => {
-    const savedLang = localStorage.getItem("preferredLanguage");
-    if (savedLang && languages[savedLang as keyof typeof languages]) {
-      setLanguage(savedLang);
-    }
-    const hasSeenPopup = localStorage.getItem("hasSeenLanguagePopup");
-    if (!hasSeenPopup) {
-      setShouldShowPopup(true);
-      localStorage.setItem("hasSeenLanguagePopup", "true");
-    }
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        showLanguageDropdown &&
-        languageDropdownRef.current &&
-        buttonRef.current &&
-        !languageDropdownRef.current.contains(event.target as Node) &&
-        !buttonRef.current.contains(event.target as Node)
-      ) {
-        setShowLanguageDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showLanguageDropdown]);
-
-  // Handlers
-  const toggleTheme = () => setIsDarkMode((prev) => !prev);
-  const selectLanguage = (lang: string) => {
-    setLanguage(lang);
-    localStorage.setItem("preferredLanguage", lang);
-    setShowLanguageDropdown(false);
-  };
-
-
-  // --- LOGIN ---
+  // Login handler
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
     if (!login || !password) {
-      setLoginError(tLogin.emptyFieldsError || "Fill all fields.");
+      setLoginError(tLogin.emptyFieldsError || "Please fill all fields.");
       return;
     }
     try {
@@ -154,38 +89,34 @@ const LoginRegisterSite: React.FC = () => {
     }
   };
 
-  // Debounced invite token validation
+  // Invite token validation
   useEffect(() => {
-    if (!inviteToken || !inviteToken.trim()) {
+    if (!inviteToken?.trim()) {
       setInviteValid(null);
       setInviteChecking(false);
       return;
     }
-
     setInviteChecking(true);
     setInviteValid(null);
     const id = setTimeout(async () => {
       try {
         const res = await fetch(`${baseURL}/api/verify-invite`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: inviteToken.trim() })
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: inviteToken.trim() }),
         });
         const data = await res.json();
-        setInviteValid(Boolean(data && data.valid));
-      } catch (err) {
-        console.error('Error verifying invite token:', err);
+        setInviteValid(Boolean(data?.valid));
+      } catch {
         setInviteValid(false);
       } finally {
         setInviteChecking(false);
       }
     }, 600);
-
     return () => clearTimeout(id);
   }, [inviteToken]);
 
-  // --- REGISTER ---
-  // Validation regexes (copied from RegisterSite)
+  // Register handler
   const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
   const usernameRegex = /^(?=.{3,20}$)(?![._])(?!.*[._]{2})[A-Za-z0-9._]+(?<![._])$/;
   const nameRegex = /^[A-Za-zÀ-ÖØ-öø-ÿ' -]{2,50}$/;
@@ -194,66 +125,47 @@ const LoginRegisterSite: React.FC = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setRegisterError("");
-    if (!email || !regLogin || !name || !surname || !regPassword || !confirmPassword || 
-      !gender || !dateOfBirth) {
+    if (!email || !regLogin || !name || !surname || !regPassword || !confirmPassword || !gender || !dateOfBirth) {
       setRegisterError(tRegister.allFieldsRequired || "All fields are required.");
       return;
     }
     if (!emailRegex.test(email)) {
-      setRegisterError(tRegister.invalidEmail || "Please enter a valid email address.");
+      setRegisterError(tRegister.invalidEmail || "Please enter a valid email.");
       return;
     }
     if (!usernameRegex.test(regLogin)) {
-      setRegisterError(
-        tRegister.invalidUsername ||
-          "Username must be 3–20 characters, letters/numbers, no leading/trailing or consecutive ./_"
-      );
+      setRegisterError(tRegister.invalidUsername || "Invalid username format.");
       return;
     }
-
     if (!nameRegex.test(name) || !nameRegex.test(surname)) {
-      setRegisterError(tRegister.invalidName || "Please enter a valid first and last name.");
+      setRegisterError(tRegister.invalidName || "Please enter valid names.");
       return;
     }
-
     if (regPassword !== confirmPassword) {
       setRegisterError(tRegister.passwordsDoNotMatch || "Passwords do not match.");
       return;
     }
-
     if (!passwordRegex.test(regPassword)) {
-      setRegisterError(
-        tRegister.weakPassword ||
-          "Password must be at least 8 characters, include upper and lower case letters, a number, and a special character (no spaces)."
-      );
+      setRegisterError(tRegister.weakPassword || "Password must be 8+ chars with upper, lower, number, and special character.");
       return;
     }
-
-    // Age check (minimum 13)
     const birth = new Date(dateOfBirth);
-    const ageDifMs = Date.now() - birth.getTime();
-    const ageDate = new Date(ageDifMs);
-    const age = Math.abs(ageDate.getUTCFullYear() - 1970);
-    if (Number.isNaN(age) || age < 13) {
-      setRegisterError(tRegister.invalidAge || "You must be at least 13 years old to register.");
+    const age = Math.abs(new Date(Date.now() - birth.getTime()).getUTCFullYear() - 1970);
+    if (isNaN(age) || age < 13) {
+      setRegisterError(tRegister.invalidAge || "You must be at least 13 years old.");
       return;
     }
-    const payload = {
+    const payload: any = {
       email,
       login: regLogin,
       name,
       surname,
       password: regPassword,
       gender,
-      nationality, // ✅ send it
+      nationality,
       date_of_birth: new Date(dateOfBirth).toISOString().split("T")[0],
-      // ❌ remove "role"
     };
-    if (inviteToken && inviteToken.trim()) {
-      // Include optional invite token so backend can elevate role when valid
-      // backend expects `invite_token`
-      (payload as any).invite_token = inviteToken.trim();
-    }
+    if (inviteToken?.trim()) payload.invite_token = inviteToken.trim();
     try {
       const response = await fetch(`${baseURL}/api/register`, {
         method: "POST",
@@ -266,473 +178,456 @@ const LoginRegisterSite: React.FC = () => {
       }
       navigate("/dashboardSite");
     } catch (err: any) {
-      setRegisterError(err.message || "Failed to connect to server.");
+      setRegisterError(err.message || "Connection error.");
     }
   };
 
-  // --- PASSWORD RESET ---
-  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+  // Password Reset handlers
+  const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordResetError("");
     setPasswordResetMessage("");
-
     if (!resetEmail) {
       setPasswordResetError(tLogin.enterEmail || "Please enter your email");
       return;
     }
-
     try {
-      const response = await fetch(`${baseURL}/api/forgot-password`, {
+      const res = await fetch(`${baseURL}/api/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: resetEmail }),
       });
-      const data = await response.json();
-      if (!response.ok) {
-        setPasswordResetError(data.error || "Error sending reset code");
+      const data = await res.json();
+      if (!res.ok) {
+        setPasswordResetError(data.error || "Error");
         return;
       }
-      setPasswordResetMessage(data.message || "Reset code sent to your email");
-      setPasswordResetStep('code');
-    } catch (err: any) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      console.error(err);
-      setPasswordResetError("Connection error. Please try again.");
+      setPasswordResetMessage(data.message || "Code sent!");
+      setPasswordResetStep("code");
+    } catch {
+      setPasswordResetError("Connection error.");
     }
   };
 
-  const handleVerifyResetCode = async (e: React.FormEvent) => {
+  const handleVerifyCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordResetError("");
-    setPasswordResetMessage("");
-
     if (!resetCode) {
-      setPasswordResetError(tLogin.enterResetCode || "Please enter reset code");
+      setPasswordResetError(tLogin.enterResetCode || "Enter code");
       return;
     }
-
     try {
-      const response = await fetch(`${baseURL}/api/verify-reset-code`, {
+      const res = await fetch(`${baseURL}/api/verify-reset-code`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: resetCode }),
       });
-      const data = await response.json();
-      if (!response.ok) {
-        setPasswordResetError(data.error || "Invalid or expired code");
+      if (!res.ok) {
+        setPasswordResetError((await res.json()).error || "Invalid code");
         return;
       }
-      setPasswordResetStep('password');
-    } catch (err: any) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      console.error(err);
-      setPasswordResetError("Connection error. Please try again.");
+      setPasswordResetStep("password");
+    } catch {
+      setPasswordResetError("Connection error.");
     }
   };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordResetError("");
-    setPasswordResetMessage("");
-
     if (!resetNewPassword || !resetConfirmPassword) {
-      setPasswordResetError(tLogin.confirmPassword || "Please enter password");
+      setPasswordResetError("Enter passwords");
       return;
     }
-
     if (resetNewPassword !== resetConfirmPassword) {
-      setPasswordResetError(tLogin.passwordMismatch || "Passwords do not match");
+      setPasswordResetError(tLogin.passwordMismatch || "Passwords don't match");
       return;
     }
-
-    if (resetNewPassword.length < 6) {
-      setPasswordResetError("Password must be at least 6 characters");
-      return;
-    }
-
     try {
-      const response = await fetch(`${baseURL}/api/reset-password`, {
+      const res = await fetch(`${baseURL}/api/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: resetCode,
-          newPassword: resetNewPassword,
-          confirmPassword: resetConfirmPassword,
-        }),
+        body: JSON.stringify({ code: resetCode, newPassword: resetNewPassword, confirmPassword: resetConfirmPassword }),
       });
-      const data = await response.json();
-      if (!response.ok) {
-        setPasswordResetError(data.error || "Error resetting password");
+      const data = await res.json();
+      if (!res.ok) {
+        setPasswordResetError(data.error || "Error");
         return;
       }
       setPasswordResetMessage(tLogin.passwordReset || data.message);
       setTimeout(() => {
         setShowPasswordReset(false);
-        setPasswordResetStep('email');
+        setPasswordResetStep("email");
         setResetEmail("");
         setResetCode("");
         setResetNewPassword("");
         setResetConfirmPassword("");
+        setPasswordResetError("");
+        setPasswordResetMessage("");
       }, 2000);
-    } catch (err: any) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      console.error(err);
-      setPasswordResetError("Connection error. Please try again.");
+    } catch {
+      setPasswordResetError("Connection error.");
     }
   };
 
-  const getPasswordResetFormSubmit = () => {
-    switch (passwordResetStep) {
-      case 'email':
-        return handleForgotPasswordSubmit;
-      case 'code':
-        return handleVerifyResetCode;
-      default:
-        return handleResetPassword;
-    }
-  };
+  const resetPasswordSubmit =
+    passwordResetStep === "email" ? handleForgotPassword : passwordResetStep === "code" ? handleVerifyCode : handleResetPassword;
 
-  const getShouldShowLoginForm = () => !showRegister && !showPasswordReset;
-  const getShouldShowPasswordResetForm = () => showPasswordReset;
-  const getShouldShowRegisterForm = () => showRegister && !showPasswordReset;
+  const showLogin = !showRegister && !showPasswordReset;
 
   return (
-    <div className={`min-h-screen flex flex-col ${isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-black"}`}>
-      {/* Header */}
- <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
-        <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
-          <Link to="/" className="no-underline">
-            <h1
-              className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
-                isDarkMode ? "text-yellow-400" : "text-blue-600"
-              }`}
+    <Layout translations={tLogin} showSearch={false}>
+      <div className="flex-grow flex items-center justify-center px-4 py-12">
+        <AnimatePresence mode="wait">
+          {/* LOGIN */}
+          {showLogin && (
+            <motion.div
+              key="login"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="w-full max-w-md"
             >
-              Pop&Go!
-            </h1>
-          </Link>
-        </div>
+              <div
+                className={`rounded-2xl border shadow-lg p-6 sm:p-8 ${
+                  isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"
+                }`}
+              >
+                <h2 className={`text-2xl font-bold mb-6 font-['Righteous'] ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
+                  {tLogin.goToLoginSite || "Sign In"}
+                </h2>
 
+                {loginError && (
+                  <div className={`flex items-center gap-2 mb-4 p-3 rounded-lg text-sm ${isDarkMode ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600"}`}>
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>{loginError}</span>
+                  </div>
+                )}
 
-
-        {/* 🌐 Country, 🌙 Theme, 🔐 Login */}
-         <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0 min-w-0 items-center">
-                  {/* Language Dropdown */}
-                  <div className="relative">
-                    <button
-                      ref={languageButtonRef}
-                      onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-                      className={`p-2 rounded-full flex items-center gap-1 min-w-0 ${
-                        isDarkMode
-                          ? "bg-gray-700 hover:bg-gray-600"
-                          : "bg-white hover:bg-gray-100 shadow-sm"
-                      }`}
-                      aria-label="Select language"
-                      aria-expanded={showLanguageDropdown}
-                    >
-                      <GlobeIcon className="w-5 h-5" />
-                      <span className="hidden sm:inline text-sm font-medium">{language}</span>
-                      <ChevronDownIcon
-                        className={`w-4 h-4 transition-transform ${
-                          showLanguageDropdown ? "rotate-180" : ""
-                        }`}
-                      />
-                    </button>
-        
-                    {showLanguageDropdown && (
-                      <div
-                        ref={languageDropdownRef}
-                        className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-1 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${
-                          isDarkMode ? "bg-gray-800" : "bg-white"
-                        }`}
-                        style={{
-                          left: '50%',
-                          transform: 'translateX(-50%)'
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {Object.entries(languages).map(([code, { name, flag }]) => (
-                          <button
-                            key={code}
-                            onClick={() => selectLanguage(code)}
-                            className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${
-                              language === code
-                                ? isDarkMode
-                                  ? "bg-yellow-500 text-black"
-                                  : "bg-blue-600 text-white"
-                                : isDarkMode
-                                ? "hover:bg-gray-700"
-                                : "hover:bg-gray-100"
-                            }`}
-                          >
-                            <span className="w-5 h-5 flex-shrink-0">{flag}</span>
-                            <span className="flex-1">{name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div>
+                    <label htmlFor="login-user" className={`block text-sm font-medium mb-1.5 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
+                      {tLogin.login || "Username"}
+                    </label>
+                    <input id="login-user" type="text" value={login} onChange={(e) => setLogin(e.target.value)} className={inputClass} placeholder={tLogin.login || "Username"} />
                   </div>
 
-          <button
-            onClick={toggleTheme}
-            className={`p-2 rounded-full ${
-              isDarkMode
-                ? "bg-gray-700 hover:bg-gray-600"
-                : "bg-white hover:bg-gray-100 shadow-sm"
-            }`}
-            aria-label={isDarkMode ? tLogin.switchToLight : tLogin.switchToDark}
-          >
-            {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
-          </button>
+                  <div>
+                    <label htmlFor="login-pass" className={`block text-sm font-medium mb-1.5 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
+                      {tLogin.password || "Password"}
+                    </label>
+                    <div className="relative">
+                      <input
+                        id="login-pass"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className={`${inputClass} pr-10`}
+                        placeholder={tLogin.password || "Password"}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDarkMode ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"}`}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
 
-          {/* 🔐 Dashboard/Login */}
-          {/* <button
-            onClick={() => {
-              const user = JSON.parse(localStorage.getItem("user") || "{}");
-              navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginRegisterSite");
-            }}
-            className={`flex items-center gap-2 px-4 py-2 rounded ${
-              isDarkMode
-                ? "bg-yellow-500 text-black hover:bg-yellow-600"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-            }`}
-          >
-            {t.goToDashboard || "Dashboard"}
-          </button> */}
+                  <button type="submit" className={primaryBtnClass}>
+                    {tLogin.loginButton || "Sign In"}
+                  </button>
+                </form>
 
-        </div>
+                <div className="mt-4 flex flex-col items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordReset(true)}
+                    className={`text-sm transition-colors ${isDarkMode ? "text-amber-400 hover:text-amber-300" : "text-blue-600 hover:text-blue-700"}`}
+                  >
+                    {tLogin.forgotPassword || "Forgot password?"}
+                  </button>
+                  <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                    {tLogin.registerLink || "Don't have an account?"}{" "}
+                    <button
+                      type="button"
+                      onClick={() => setShowRegister(true)}
+                      className={`font-semibold transition-colors ${isDarkMode ? "text-amber-400 hover:text-amber-300" : "text-blue-600 hover:text-blue-700"}`}
+                    >
+                      {tLogin.registerNow || "Sign Up"}
+                    </button>
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
-      </header>
-
-      {/* 	      <QuickLinks isDarkMode={isDarkMode} language={language as any} /> */}
-
-
-    <main className="flex-grow p-8 flex flex-col items-center justify-center">
-    <AnimatePresence mode="wait">
-        {getShouldShowLoginForm() && (
-        <motion.div
-            key="login"
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 50 }}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
-            className="w-full flex justify-center"
-        >
-            {/* LOGIN FORM */}
-            <form
-            onSubmit={handleLogin}
-            className={`max-w-md w-full flex flex-col gap-4 p-6 rounded-lg shadow-md ${
-                isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
-            }`}
+          {/* PASSWORD RESET */}
+          {showPasswordReset && (
+            <motion.div
+              key="reset"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="w-full max-w-md"
             >
-            <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
-                {tLogin.goToLoginSite}
-            </h2>
-            {loginError && <p className="text-red-500">{loginError}</p>}
-            <input type="text" placeholder={tLogin.login} value={login} onChange={(e) => setLogin(e.target.value)} className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
-            }`}/>
-            <input type="password" placeholder={tLogin.password} value={password} onChange={(e) => setPassword(e.target.value)} className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
-            }`} />
-            <button type="submit" className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : "bg-blue-600 hover:bg-blue-700 text-white"}`}>
-                {tLogin.loginButton}
-            </button>
-            <button type="button" onClick={() => setShowPasswordReset(true)} className="text-sm text-blue-500 hover:underline text-center">
-                {tLogin.forgotPassword}
-            </button>
-            <p className="text-center mt-2">
-                {tLogin.registerLink}{" "}
-                <button type="button" onClick={() => setShowRegister(true)} className="underline text-green-600 dark:text-blue-400">
-                {tLogin.registerNow}
+              <div className={`rounded-2xl border shadow-lg p-6 sm:p-8 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
+                <h2 className={`text-2xl font-bold mb-6 font-['Righteous'] ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
+                  {tLogin.forgotPasswordTitle || "Reset Password"}
+                </h2>
+
+                {passwordResetError && (
+                  <div className={`flex items-center gap-2 mb-4 p-3 rounded-lg text-sm ${isDarkMode ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600"}`}>
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>{passwordResetError}</span>
+                  </div>
+                )}
+                {passwordResetMessage && (
+                  <div className={`flex items-center gap-2 mb-4 p-3 rounded-lg text-sm ${isDarkMode ? "bg-emerald-900/30 text-emerald-400" : "bg-emerald-50 text-emerald-600"}`}>
+                    <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>{passwordResetMessage}</span>
+                  </div>
+                )}
+
+                <form onSubmit={resetPasswordSubmit} className="space-y-4">
+                  {passwordResetStep === "email" && (
+                    <>
+                      <div>
+                        <label htmlFor="reset-email" className={`block text-sm font-medium mb-1.5 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
+                          Email
+                        </label>
+                        <input id="reset-email" type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} className={inputClass} placeholder={tLogin.enterEmail || "your@email.com"} />
+                      </div>
+                      <button type="submit" className={primaryBtnClass}>
+                        {tLogin.sendCode || "Send Code"}
+                      </button>
+                    </>
+                  )}
+                  {passwordResetStep === "code" && (
+                    <>
+                      <p className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{tLogin.resetCodeSent || "Check your email for the code."}</p>
+                      <input
+                        type="text"
+                        value={resetCode}
+                        onChange={(e) => setResetCode(e.target.value)}
+                        className={`${inputClass} text-center text-2xl tracking-[0.5em]`}
+                        maxLength={6}
+                        placeholder="------"
+                      />
+                      <button type="submit" className={primaryBtnClass}>
+                        {tLogin.verifyCode || "Verify"}
+                      </button>
+                    </>
+                  )}
+                  {passwordResetStep === "password" && (
+                    <>
+                      <div>
+                        <label className={`block text-sm font-medium mb-1.5 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
+                          {tLogin.newPassword || "New Password"}
+                        </label>
+                        <input type="password" value={resetNewPassword} onChange={(e) => setResetNewPassword(e.target.value)} className={inputClass} />
+                      </div>
+                      <div>
+                        <label className={`block text-sm font-medium mb-1.5 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
+                          {tLogin.confirmPassword || "Confirm Password"}
+                        </label>
+                        <input type="password" value={resetConfirmPassword} onChange={(e) => setResetConfirmPassword(e.target.value)} className={inputClass} />
+                      </div>
+                      <button type="submit" className={primaryBtnClass}>
+                        {tLogin.resetPassword || "Reset Password"}
+                      </button>
+                    </>
+                  )}
+                </form>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPasswordReset(false);
+                    setPasswordResetStep("email");
+                    setPasswordResetError("");
+                    setPasswordResetMessage("");
+                  }}
+                  className={`mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    isDarkMode ? "bg-slate-700 hover:bg-slate-600 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                  }`}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  {tLogin.backToLoginLink || "Back to Login"}
                 </button>
-            </p>
-            </form>
-        </motion.div>
-        )}
-        {getShouldShowPasswordResetForm() && (
-        <motion.div
-            key="passwordReset"
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
-            className="w-full flex justify-center"
-        >
-            {/* PASSWORD RESET FORM */}
-            <form
-            onSubmit={getPasswordResetFormSubmit()}
-            className={`max-w-md w-full flex flex-col gap-4 p-6 rounded-lg shadow-md ${
-                isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
-            }`}
+              </div>
+            </motion.div>
+          )}
+
+          {/* REGISTER */}
+          {showRegister && !showPasswordReset && (
+            <motion.div
+              key="register"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="w-full max-w-md"
             >
-            <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? "text-yellow-400" : "text-blue-600"}`}>
-                {tLogin.forgotPasswordTitle}
-            </h2>
-            {passwordResetError && <p className="text-red-500">{passwordResetError}</p>}
-            {passwordResetMessage && <p className="text-green-500">{passwordResetMessage}</p>}
+              <div className={`rounded-2xl border shadow-lg p-6 sm:p-8 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
+                <h2 className={`text-2xl font-bold mb-6 font-['Righteous'] ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
+                  {tRegister.registerTitle || "Create Account"}
+                </h2>
 
-            {passwordResetStep === 'email' && (
-              <>
-                <input
-                  type="email"
-                  placeholder={tLogin.enterEmail}
-                  value={resetEmail}
-                  onChange={(e) => setResetEmail(e.target.value)}
-                  className={`px-4 py-2 rounded ${
-                    isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
-                  }`}
-                />
-                <button type="submit" className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : "bg-blue-600 hover:bg-blue-700 text-white"}`}>
-                  {tLogin.sendCode}
-                </button>
-              </>
-            )}
+                {registerError && (
+                  <div className={`flex items-center gap-2 mb-4 p-3 rounded-lg text-sm ${isDarkMode ? "bg-red-900/30 text-red-400" : "bg-red-50 text-red-600"}`}>
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    <span>{registerError}</span>
+                  </div>
+                )}
 
-            {passwordResetStep === 'code' && (
-              <>
-                <p className="text-sm text-gray-500">{tLogin.resetCodeSent}</p>
-                <input
-                  type="text"
-                  placeholder={tLogin.enterResetCode}
-                  value={resetCode}
-                  onChange={(e) => setResetCode(e.target.value)}
-                  className={`px-4 py-2 rounded text-center text-2xl letter-spacing tracking-widest ${
-                    isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
-                  }`}
-                  maxLength={6}
-                />
-                <button type="submit" className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : "bg-blue-600 hover:bg-blue-700 text-white"}`}>
-                  {tLogin.verifyCode}
-                </button>
-              </>
-            )}
+                <form onSubmit={handleRegister} className="space-y-3">
+                  {/* Account Info */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className={`block text-xs font-medium mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                        {tRegister.username || "Username"} *
+                      </label>
+                      <input type="text" value={regLogin} onChange={(e) => setRegLogin(e.target.value)} className={inputClass} />
+                    </div>
+                    <div>
+                      <label className={`block text-xs font-medium mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                        Email *
+                      </label>
+                      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
+                    </div>
+                  </div>
 
-            {passwordResetStep === 'password' && (
-              <>
-                <input
-                  type="password"
-                  placeholder={tLogin.newPassword}
-                  value={resetNewPassword}
-                  onChange={(e) => setResetNewPassword(e.target.value)}
-                  className={`px-4 py-2 rounded ${
-                    isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
-                  }`}
-                />
-                <input
-                  type="password"
-                  placeholder={tLogin.confirmPassword}
-                  value={resetConfirmPassword}
-                  onChange={(e) => setResetConfirmPassword(e.target.value)}
-                  className={`px-4 py-2 rounded ${
-                    isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
-                  }`}
-                />
-                <button type="submit" className={`px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : "bg-blue-600 hover:bg-blue-700 text-white"}`}>
-                  {tLogin.resetPassword}
-                </button>
-              </>
-            )}
+                  {/* Personal Info */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className={`block text-xs font-medium mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                        {tRegister.name || "First Name"} *
+                      </label>
+                      <input type="text" value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
+                    </div>
+                    <div>
+                      <label className={`block text-xs font-medium mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                        {tRegister.surname || "Last Name"} *
+                      </label>
+                      <input type="text" value={surname} onChange={(e) => setSurname(e.target.value)} className={inputClass} />
+                    </div>
+                  </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setShowPasswordReset(false);
-                setPasswordResetStep('email');
-                setResetEmail("");
-                setResetCode("");
-                setResetNewPassword("");
-                setResetConfirmPassword("");
-                setPasswordResetError("");
-                setPasswordResetMessage("");
-              }}
-              className={`px-4 py-2 rounded border ${isDarkMode ? "bg-gray-600 hover:bg-gray-500 text-white" : "bg-gray-200 hover:bg-gray-300 text-black"}`}
-            >
-              {tLogin.backToLoginLink}
-            </button>
-            </form>
-        </motion.div>
-        )}
-        {getShouldShowRegisterForm() && (
-        <motion.div
-            key="register"
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.4, ease: "easeInOut" }}
-            className="w-full flex justify-center"
-        >
-            {/* REGISTER FORM */}
-            <form
-            onSubmit={handleRegister}
-            className={`max-w-md w-full flex flex-col gap-4 p-6 rounded-lg shadow-md ${
-                isDarkMode ? "bg-gray-700 text-white" : "bg-white text-black"
-            }`}
-            >
-            <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? "text-yellow-400" : "text-green-600"}`}>
-                {tRegister.registerTitle}
-            </h2>
-            {registerError && <p className="text-red-500">{registerError}</p>}
-            <input type="text" placeholder={tRegister.username} value={regLogin} onChange={(e) => setRegLogin(e.target.value)} className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
-            }`} />
-            <input type="text" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
-            }`} />
-            <input type="text" placeholder={tRegister.name} value={name} onChange={(e) => setName(e.target.value)} className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
-            }`} />
-            <input type="text" placeholder={tRegister.surname} value={surname} onChange={(e) => setSurname(e.target.value)}className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
-            }`} />
-            <input type="password" placeholder={tRegister.password} value={regPassword} onChange={(e) => setRegPassword(e.target.value)} className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
-            }`} />
-            <input type="password" placeholder={tRegister.confirmPassword} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
-            }`} />
-            <input type="text" placeholder={tRegister.inviteToken ?? "Invite token (optional)"} value={inviteToken} onChange={(e) => setInviteToken(e.target.value)} className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
-            }`} />
-            <div className="text-sm h-5 mt-1">
-              {inviteChecking && <span className="text-gray-400">{tRegister.inviteTokenChecking}</span>}
-              {inviteValid === true && <span className="text-green-500">{tRegister.inviteTokenValid}</span>}
-              {inviteValid === false && <span className="text-red-500">{tRegister.inviteTokenInvalid}</span>}
-            </div>
-            <input type="text" placeholder={tRegister.nationality} value={nationality} onChange={(e) => setNationality(e.target.value)} className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
-            }`} />
-            <select value={gender} onChange={(e) => setGender(e.target.value)} className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
-            }`}>
-                <option value="">{tRegister.selectGender}</option>
-                <option value="male">{tRegister.male}</option>
-                <option value="female">{tRegister.female}</option>
-                <option value="other">{tRegister.other}</option>
-                <option value="prefer_not_to_say">{tRegister.preferNotToSay}</option>
-            </select>
-            <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className={`px-4 py-2 rounded ${
-              isDarkMode ? "bg-gray-800 text-white" : "bg-white text-black"
-            }`} />
+                  {/* Password */}
+                  <div>
+                    <label className={`block text-xs font-medium mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                      {tRegister.password || "Password"} *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showRegPassword ? "text" : "password"}
+                        value={regPassword}
+                        onChange={(e) => setRegPassword(e.target.value)}
+                        className={`${inputClass} pr-10`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowRegPassword(!showRegPassword)}
+                        className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}
+                        aria-label="Toggle password"
+                      >
+                        {showRegPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
 
-            <div className="flex gap-2">
-                <button type="submit" className={`flex-1 px-4 py-2 rounded ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : "bg-blue-600 hover:bg-blue-700 text-white"}`}>
-                {tRegister.registerButton}
-                </button>
-                <button type="button" onClick={() => setShowRegister(false)} className={`flex-1 px-4 py-2 rounded border  ${isDarkMode ? "bg-yellow-500 hover:bg-yellow-600 text-black" : "bg-red-600 hover:bg-red-700 text-white"}`}>
-                {tRegister.backToLogin || "Back"}
-                </button>
-            </div>
-            </form>
-        </motion.div>
-        )}
-    </AnimatePresence>
-    </main>
+                  <div>
+                    <label className={`block text-xs font-medium mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                      {tRegister.confirmPassword || "Confirm Password"} *
+                    </label>
+                    <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className={inputClass} />
+                  </div>
 
+                  {/* Details */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className={`block text-xs font-medium mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                        {tRegister.selectGender || "Gender"} *
+                      </label>
+                      <select value={gender} onChange={(e) => setGender(e.target.value)} className={inputClass}>
+                        <option value="">{tRegister.selectGender || "Select..."}</option>
+                        <option value="male">{tRegister.male || "Male"}</option>
+                        <option value="female">{tRegister.female || "Female"}</option>
+                        <option value="other">{tRegister.other || "Other"}</option>
+                        <option value="prefer_not_to_say">{tRegister.preferNotToSay || "Prefer not to say"}</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={`block text-xs font-medium mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                        {tRegister.dateOfBirth || "Date of Birth"} *
+                      </label>
+                      <input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className={inputClass} />
+                    </div>
+                  </div>
 
-      <footer className={`text-center py-4 ${isDarkMode ? "bg-gray-900 text-gray-400" : "bg-gray-200 text-gray-700"}`}>
-        {tLogin.copyright || "© 2025 Pop&Go! All rights reserved."}
-      </footer>
-    </div>
+                  <div>
+                    <label className={`block text-xs font-medium mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                      {tRegister.nationality || "Nationality"}
+                    </label>
+                    <input type="text" value={nationality} onChange={(e) => setNationality(e.target.value)} className={inputClass} />
+                  </div>
+
+                  <div>
+                    <label className={`block text-xs font-medium mb-1 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                      {tRegister.inviteToken ?? "Invite Token (optional)"}
+                    </label>
+                    <input type="text" value={inviteToken} onChange={(e) => setInviteToken(e.target.value)} className={inputClass} />
+                    <div className="h-5 mt-1 text-xs">
+                      {inviteChecking && (
+                        <span className="flex items-center gap-1 text-slate-400">
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          {tRegister.inviteTokenChecking || "Checking..."}
+                        </span>
+                      )}
+                      {inviteValid === true && (
+                        <span className="flex items-center gap-1 text-emerald-500">
+                          <CheckCircle className="w-3 h-3" />
+                          {tRegister.inviteTokenValid || "Valid"}
+                        </span>
+                      )}
+                      {inviteValid === false && (
+                        <span className="flex items-center gap-1 text-red-500">
+                          <AlertCircle className="w-3 h-3" />
+                          {tRegister.inviteTokenInvalid || "Invalid"}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button type="submit" className={`flex-1 ${primaryBtnClass}`}>
+                      {tRegister.registerButton || "Create Account"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowRegister(false)}
+                      className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                        isDarkMode ? "bg-slate-700 hover:bg-slate-600 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                      }`}
+                    >
+                      <span className="flex items-center justify-center gap-2">
+                        <ArrowLeft className="w-4 h-4" />
+                        {tRegister.backToLogin || "Back"}
+                      </span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </Layout>
   );
 };
 

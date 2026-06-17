@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { translations } from "./Translations/TranslationsAuthButton";
+import { LogIn, LayoutDashboard, Shield } from "lucide-react";
 
 interface AuthButtonProps {
   isDarkMode: boolean;
@@ -17,8 +17,7 @@ interface UserData {
 
 const AuthButton: React.FC<AuthButtonProps> = ({ isDarkMode, translations }) => {
   const navigate = useNavigate();
-  
-  // Get user data from localStorage
+
   const getUserData = (): UserData | null => {
     try {
       const userString = localStorage.getItem("user");
@@ -34,55 +33,39 @@ const AuthButton: React.FC<AuthButtonProps> = ({ isDarkMode, translations }) => 
   const isAdmin = user?.role === "admin";
   const isUser = user?.role === "user";
 
-  // Determine button styling based on user status
   const getButtonStyles = () => {
     if (isAdmin) {
-      // Admin: Purple/Violet
-      return "bg-purple-600 text-white hover:bg-purple-700 border-purple-700";
+      return "bg-purple-600 text-white hover:bg-purple-700";
     } else if (isUser) {
-      // Regular user: Green
-      return "bg-green-600 text-white hover:bg-green-700 border-green-700";
+      return "bg-emerald-600 text-white hover:bg-emerald-700";
     } else if (isDarkMode) {
-      // Not logged in, dark mode: Yellow
-      return "bg-yellow-500 text-black hover:bg-yellow-600 border-yellow-600";
+      return "bg-amber-400 text-slate-900 hover:bg-amber-500";
     } else {
-      // Not logged in, light mode: Blue
-      return "bg-blue-600 text-white hover:bg-blue-700 border-blue-700";
+      return "bg-blue-600 text-white hover:bg-blue-700";
     }
   };
 
-  // Determine button text
   const getButtonText = () => {
-    if (isLoggedIn) {
-      return translations.goToDashboard || "Dashboard";
-    }
+    if (isLoggedIn) return translations.goToDashboard || "Dashboard";
     return translations.login || "Login";
   };
 
-  // Determine navigation target
   const handleClick = () => {
-    if (isAdmin) {
-      navigate("/adminSite");
-    } else if (isUser) {
-      navigate("/dashboardSite");
-    } else {
-      navigate("/loginRegisterSite");
-    }
+    if (isAdmin) navigate("/adminSite");
+    else if (isUser) navigate("/dashboardSite");
+    else navigate("/loginRegisterSite");
   };
+
+  const Icon = isAdmin ? Shield : isUser ? LayoutDashboard : LogIn;
 
   return (
     <button
       onClick={handleClick}
-      className={`flex items-center gap-2 px-4 py-2 rounded transition-all duration-300 ${getButtonStyles()}`}
+      className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${getButtonStyles()}`}
       aria-label={getButtonText()}
     >
-      {/* Icon indicator based on status */}
-      {isAdmin && <span>👑</span>}
-      {isUser && <span>👤</span>}
-      {!isLoggedIn && <span>🔐</span>}
-      
-      {/* Button text */}
-      <span className="font-medium">{getButtonText()}</span>
+      <Icon className="w-4 h-4" />
+      <span className="hidden sm:inline">{getButtonText()}</span>
     </button>
   );
 };

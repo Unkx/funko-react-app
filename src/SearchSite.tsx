@@ -1,116 +1,30 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useContext } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import useBreakpoints from "./useBreakpoints";
-import QuickLinks from "./QuickLinks";
+import { LanguageContext } from "./LanguageContext";
+import { useTheme } from "./ThemeContext";
+import Layout from "./Layout";
 import { translations } from "./Translations/TranslationsSearchSite";
+import { X, ZoomIn, Grid3X3, List, ChevronLeft, ChevronRight } from "lucide-react";
 
-// Icons
-import MoonIcon from "/src/assets/moon.svg?react";
-import SunIcon from "/src/assets/sun.svg?react";
-import SearchIcon from "/src/assets/search.svg?react";
-import GlobeIcon from "/src/assets/globe.svg?react";
-import ChevronDownIcon from "/src/assets/chevron-down.svg?react";
+const baseURL = import.meta.env.VITE_API_BASE_URL || "https://funko-backend.onrender.com";
 
-// Add a simple CloseIcon
-const CloseIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    strokeWidth={1.5}
-    stroke="currentColor"
-    {...props}
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-  </svg>
-);
-
-// Flags
-
-
-import AuthButton from "./AuthButton";
-
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
-
-// --- Module-level cached fetch to speed up initial load ---
 let cachedItemsPromise: Promise<any[]> | null = null;
 
 const moduleGenerateId = (title: string, number: string): string => {
   const safeTitle = title ? title.trim() : "";
   const safeNumber = number ? number.trim() : "";
   return `${safeTitle}-${safeNumber}`
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
     .toLowerCase()
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-};
-
-const DEFAULT_SEARCH_DESCRIPTION =
-  "Search Funko Pop figures, collectibles and exclusives on Pop&Go. Find your favorite Funkos with fast, filtered search results.";
-const DEFAULT_SITE_TITLE = "Pop&Go - Search Funko Pop Collectibles";
-
-const updateMetaTag = (
-  attribute: "name" | "property",
-  key: string,
-  content: string
-) => {
-  if (typeof document === "undefined") return;
-  const selector = `meta[${attribute}="${key}"]`;
-  let element = document.querySelector<HTMLMetaElement>(selector);
-  if (!element) {
-    element = document.createElement("meta");
-    element.setAttribute(attribute, key);
-    document.head.appendChild(element);
-  }
-  element.setAttribute("content", content);
-};
-
-const getSearchPageTitle = (query: string) =>
-  query && query.trim()
-    ? `Search results for "${query.trim()}" | Pop&Go`
-    : DEFAULT_SITE_TITLE;
-
-const getSearchMetaDescription = (query: string) =>
-  query && query.trim()
-    ? `Search results for "${query.trim()}" on Pop&Go. Find Funko Pop figures, series, and exclusives that match your search.`
-    : DEFAULT_SEARCH_DESCRIPTION;
-
-const trackSearchEvent = async (query: string, resultCount: number) => {
-  if (!query || !query.trim()) return;
-  const payload = {
-    event: "search",
-    query: query.trim(),
-    results: resultCount,
-    timestamp: new Date().toISOString(),
-  };
-
-  if (typeof globalThis !== "undefined" && (globalThis as any).dataLayer) {
-    (globalThis as any).dataLayer.push(payload);
-  }
-
-  const analyticsUrl = (import.meta as any).env?.VITE_SEARCH_ANALYTICS_URL;
-  if (analyticsUrl) {
-    try {
-      await fetch(analyticsUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-    } catch (err) {
-      console.warn("Search analytics tracking failed:", err);
-    }
-  } else {
-    console.log("Search analytics event:", payload);
-  }
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 };
 
 const fetchAllItemsOnce = async (): Promise<any[]> => {
   if (cachedItemsPromise) return cachedItemsPromise;
-
   cachedItemsPromise = (async () => {
     try {
-      // Try backend first
       try {
         const apiResponse = await fetch(`${baseURL}/api/items?limit=200`);
         if (apiResponse.ok) {
@@ -120,11 +34,7 @@ const fetchAllItemsOnce = async (): Promise<any[]> => {
             id: item.id || moduleGenerateId(item.title, item.number),
           }));
         }
-      } catch (e) {
-        // ignore and fallback
-      }
-
-      // Fallback to GitHub static JSON
+      } catch {}
       const githubResponse = await fetch(
         "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
       );
@@ -132,68 +42,58 @@ const fetchAllItemsOnce = async (): Promise<any[]> => {
       const githubData = await githubResponse.json();
       return githubData.map((item: any) => ({ ...item, id: moduleGenerateId(item.title, item.number) }));
     } catch (err) {
-      // propagate
       throw err;
     }
   })();
-
   return cachedItemsPromise;
 };
 
-// Start prefetch immediately when module loads to reduce perceived latency
-fetchAllItemsOnce().catch(() => {
-  /* ignore prefetch errors */
-});
+fetchAllItemsOnce().catch(() => {});
 
-// --- IMAGE MODAL COMPONENT ---
-interface ImageModalProps {
+// Image Modal
+const ImageModal: React.FC<{
   imageUrl: string;
   altText: string;
   onClose: () => void;
   isDarkMode: boolean;
-}
-
-const ImageModal: React.FC<ImageModalProps> = ({ imageUrl, altText, onClose, isDarkMode }) => {
+}> = ({ imageUrl, altText, onClose, isDarkMode }) => {
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, []);
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
-        className={`relative ${isDarkMode ? "bg-gray-800" : "bg-white"} p-4 rounded-lg shadow-xl max-w-3xl max-h-[90vh] overflow-hidden`}
+        className={`relative p-4 rounded-2xl shadow-2xl max-w-3xl max-h-[90vh] overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-white"}`}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className={`absolute top-2 right-2 p-1 rounded-full ${isDarkMode ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-200 text-black hover:bg-gray-300"}`}
+          className={`absolute top-3 right-3 p-1.5 rounded-full transition-colors ${isDarkMode ? "bg-slate-700 hover:bg-slate-600 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700"}`}
           aria-label="Close image"
         >
-          <CloseIcon className="w-6 h-6" />
+          <X className="w-5 h-5" />
         </button>
         <img
           src={imageUrl}
           alt={altText}
-          className="max-w-full max-h-[calc(90vh-60px)] object-contain"
+          className="max-w-full max-h-[calc(90vh-80px)] object-contain"
           onError={(e) => {
             e.currentTarget.src = "/src/assets/placeholder.png";
             e.currentTarget.onerror = null;
           }}
         />
-        <p className={`text-center mt-2 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>{altText}</p>
+        <p className={`text-center mt-3 text-sm ${isDarkMode ? "text-slate-300" : "text-slate-600"}`}>{altText}</p>
       </div>
     </div>
   );
 };
 
-// --- REQUEST MODAL COMPONENT ---
-interface RequestModalProps {
+// Request Modal
+const RequestModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   isDarkMode: boolean;
@@ -201,162 +101,117 @@ interface RequestModalProps {
   isSubmitting: boolean;
   submitSuccess: boolean;
   t: any;
-}
-
-const RequestModal: React.FC<RequestModalProps> = ({
-  isOpen,
-  onClose,
-  isDarkMode,
-  onSubmit,
-  isSubmitting,
-  submitSuccess,
-  t
-}) => {
+}> = ({ isOpen, onClose, isDarkMode, onSubmit, isSubmitting, submitSuccess, t }) => {
   const [formData, setFormData] = useState({ title: "", number: "", reason: "" });
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+    document.body.style.overflow = isOpen ? "hidden" : "unset";
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [isOpen]);
 
   useEffect(() => {
     if (submitSuccess) {
-      const timer = setTimeout(() => {
-        onClose();
-      }, 2000);
+      const timer = setTimeout(onClose, 2000);
       return () => clearTimeout(timer);
     }
   }, [submitSuccess, onClose]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
-  };
-
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
-        className={`relative ${isDarkMode ? "bg-gray-800" : "bg-white"} p-6 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto`}
+        className={`relative p-6 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto ${isDarkMode ? "bg-slate-800" : "bg-white"}`}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className={`absolute top-3 right-3 p-1 rounded-full ${isDarkMode ? "bg-gray-700 text-white hover:bg-gray-600" : "bg-gray-200 text-black hover:bg-gray-300"}`}
-          aria-label="Close modal"
+          className={`absolute top-3 right-3 p-1.5 rounded-full transition-colors ${isDarkMode ? "bg-slate-700 hover:bg-slate-600 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700"}`}
+          aria-label="Close"
         >
-          <CloseIcon className="w-5 h-5" />
+          <X className="w-5 h-5" />
         </button>
-
-        <h2 className={`text-xl font-bold mb-4 ${isDarkMode ? "text-white" : "text-black"}`}>
-          {t.requestMissingItem || "Request Missing Item"}
-        </h2>
-
+        <h2 className="text-xl font-bold mb-4">{t.requestMissingItem || "Request Missing Item"}</h2>
         {submitSuccess ? (
-          <div className={`p-4 rounded-md ${isDarkMode ? "bg-green-900 text-green-200" : "bg-green-100 text-green-800"}`}>
-            ✅ {t.requestSubmitted || "Request submitted successfully!"}
+          <div className={`p-4 rounded-lg ${isDarkMode ? "bg-emerald-900/50 text-emerald-300" : "bg-emerald-50 text-emerald-700"}`}>
+            {t.requestSubmitted || "Request submitted successfully!"}
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              onSubmit(formData);
+            }}
+            className="space-y-4"
+          >
             <div>
-              <label htmlFor="title" className={`block text-sm font-medium mb-1 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>
+              <label htmlFor="req-title" className={`block text-sm font-medium mb-1.5 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
                 {t.itemTitle || "Item Title"} *
               </label>
               <input
                 type="text"
-                id="title"
-                name="title"
+                id="req-title"
                 value={formData.title}
-                onChange={handleChange}
+                onChange={(e) => setFormData((p) => ({ ...p, title: e.target.value }))}
                 required
-                className={`w-full px-3 py-2 rounded border ${
-                  isDarkMode
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                    : "bg-white border-gray-300 text-black"
-                }`}
+                className={`w-full px-3 py-2.5 rounded-lg border text-sm transition-colors ${
+                  isDarkMode ? "bg-slate-900 border-slate-700 text-white focus:border-amber-400/50" : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-400"
+                } outline-none`}
                 placeholder={t.titlePlaceholder || "Enter item title"}
               />
             </div>
-
             <div>
-              <label htmlFor="number" className={`block text-sm font-medium mb-1 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>
+              <label htmlFor="req-number" className={`block text-sm font-medium mb-1.5 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
                 {t.itemNumber || "Item Number"}
               </label>
               <input
                 type="text"
-                id="number"
-                name="number"
+                id="req-number"
                 value={formData.number}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 rounded border ${
-                  isDarkMode
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                    : "bg-white border-gray-300 text-black"
-                }`}
+                onChange={(e) => setFormData((p) => ({ ...p, number: e.target.value }))}
+                className={`w-full px-3 py-2.5 rounded-lg border text-sm transition-colors ${
+                  isDarkMode ? "bg-slate-900 border-slate-700 text-white focus:border-amber-400/50" : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-400"
+                } outline-none`}
                 placeholder={t.numberPlaceholder || "Enter item number (optional)"}
               />
             </div>
-
             <div>
-              <label htmlFor="reason" className={`block text-sm font-medium mb-1 ${isDarkMode ? "text-gray-300" : "text-gray-700"}`}>
-                {t.reason || "Reason for Request"} *
+              <label htmlFor="req-reason" className={`block text-sm font-medium mb-1.5 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>
+                {t.reason || "Reason"} *
               </label>
               <textarea
-                id="reason"
-                name="reason"
+                id="req-reason"
                 value={formData.reason}
-                onChange={handleChange}
+                onChange={(e) => setFormData((p) => ({ ...p, reason: e.target.value }))}
                 required
-                rows={4}
-                className={`w-full px-3 py-2 rounded border ${
-                  isDarkMode
-                    ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                    : "bg-white border-gray-300 text-black"
-                }`}
+                rows={3}
+                className={`w-full px-3 py-2.5 rounded-lg border text-sm transition-colors resize-none ${
+                  isDarkMode ? "bg-slate-900 border-slate-700 text-white focus:border-amber-400/50" : "bg-slate-50 border-slate-200 text-slate-900 focus:border-blue-400"
+                } outline-none`}
                 placeholder={t.reasonPlaceholder || "Why are you requesting this item?"}
               />
             </div>
-
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-3 pt-1">
               <button
                 type="button"
                 onClick={onClose}
-                className={`flex-1 px-4 py-2 rounded ${
-                  isDarkMode
-                    ? "bg-gray-600 hover:bg-gray-500 text-white"
-                    : "bg-gray-300 hover:bg-gray-400 text-black"
-                }`}
                 disabled={isSubmitting}
+                className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  isDarkMode ? "bg-slate-700 hover:bg-slate-600 text-white" : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+                }`}
               >
                 {t.cancel || "Cancel"}
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`flex-1 px-4 py-2 rounded ${
-                  isDarkMode
-                    ? "bg-blue-600 hover:bg-blue-500 text-white"
-                    : "bg-blue-500 hover:bg-blue-600 text-white"
-                } disabled:opacity-50`}
+                className={`flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
+                  isDarkMode ? "bg-amber-400 hover:bg-amber-500 text-slate-900" : "bg-blue-600 hover:bg-blue-700 text-white"
+                }`}
               >
-                {isSubmitting ? t.submitting || "Submitting..." : t.submitRequest || "Submit Request"}
+                {isSubmitting ? t.submitting || "Submitting..." : t.submitRequest || "Submit"}
               </button>
             </div>
           </form>
@@ -366,7 +221,6 @@ const RequestModal: React.FC<RequestModalProps> = ({
   );
 };
 
-// Define the structure of a Funko Pop item
 interface FunkoItem {
   id: number | string;
   title: string;
@@ -378,17 +232,9 @@ interface FunkoItem {
 }
 
 const SearchSite = () => {
-  const { isMobile, isTablet, isDesktop } = useBreakpoints();
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const savedTheme = localStorage.getItem("preferredTheme");
-    return savedTheme ? savedTheme === "dark" : true;
-  });
+  const { language } = useContext(LanguageContext);
+  const { isDarkMode } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
-  const [language, setLanguage] = useState(() => {
-    return localStorage.getItem("preferredLanguage") || "EN";
-  });
-
-  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [funkoData, setFunkoData] = useState<FunkoItem[]>([]);
   const [adminItems, setAdminItems] = useState<any[]>([]);
   const [filteredAndSortedResults, setFilteredAndSortedResults] = useState<any[]>([]);
@@ -396,43 +242,12 @@ const SearchSite = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-
-  // Adaptive display limits
-  const DEFAULT_DESKTOP_LIMIT = 50;
-  const DEFAULT_MOBILE_LIMIT = 20;
-  const INITIAL_DISPLAY_LIMIT = isMobile ? DEFAULT_MOBILE_LIMIT : DEFAULT_DESKTOP_LIMIT;
-  const [displayLimit, setDisplayLimit] = useState(INITIAL_DISPLAY_LIMIT);
+  const [displayLimit, setDisplayLimit] = useState(50);
   const [categoryFilter, setCategoryFilter] = useState("");
   const [showExclusiveOnly, setShowExclusiveOnly] = useState(false);
   const [sortOption, setSortOption] = useState("titleAsc");
+  const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
 
-  // Local cache settings for faster repeat loads
-  const CACHE_KEY = "funkoItemsCache_v1";
-  const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
-
-  // Load cached items synchronously on mount (via effect) so returning users see content instantly
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(CACHE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (
-          parsed &&
-          parsed.timestamp &&
-          Date.now() - parsed.timestamp < CACHE_TTL_MS &&
-          Array.isArray(parsed.items)
-        ) {
-          setFunkoData(parsed.items);
-          // mark initial loading as finished so spinner doesn't block cached view
-          setIsLoading(false);
-        }
-      }
-    } catch (e) {
-      // ignore parse errors and continue
-    }
-  }, []);
-
-  // Modal states
   const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
   const [modalImageAlt, setModalImageAlt] = useState<string | null>(null);
   const [showRequestModal, setShowRequestModal] = useState(false);
@@ -441,438 +256,164 @@ const SearchSite = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const languageDropdownRef = useRef(null);
-  const buttonRef = useRef(null);
-  const lastTrackedSearchRef = useRef<string>("");
-
   const queryParams = new URLSearchParams(location.search);
   const queryParam = queryParams.get("q") || "";
 
-  // Helper to generate IDs
+  const t = (translations as any)[language] || translations["EN"];
+
   const generateId = (title: string, number: string): string => {
     const safeTitle = title ? title.trim() : "";
     const safeNumber = number ? number.trim() : "";
     return `${safeTitle}-${safeNumber}`
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-")
       .toLowerCase()
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
   };
 
-  // Combine funkoData and adminItems for processing
   const allItems = useMemo(() => {
-    const transformedAdminItems = adminItems.map((item: any) => ({
+    const transformedAdmin = adminItems.map((item: any) => ({
       ...item,
       title: item.title || "",
       number: item.number || "",
-      series: Array.isArray(item.series)
-        ? item.series
-        : item.category
-        ? [item.category]
-        : ["Unknown"],
+      series: Array.isArray(item.series) ? item.series : item.category ? [item.category] : ["Unknown"],
       exclusive: item.exclusive || false,
       id: `admin-${item.id}`,
       isAdmin: true,
     }));
-
-    const transformedFunkoData = funkoData.map((item: any) => ({
+    const transformedFunko = funkoData.map((item: any) => ({
       ...item,
       title: item.title || "",
       number: item.number || "",
-      series: Array.isArray(item.series)
-        ? item.series
-        : item.series
-        ? [item.series]
-        : ["Unknown"],
+      series: Array.isArray(item.series) ? item.series : item.series ? [item.series] : ["Unknown"],
       exclusive: item.exclusive || false,
       id: item.id || generateId(item.title, item.number),
       isAdmin: false,
     }));
-
-    const merged = [...transformedFunkoData, ...transformedAdminItems];
-
-    const funkoKeySet = new Set(
-      transformedFunkoData.map(
-        (i) => `${i.title.toLowerCase()}|${(i.number || "").toLowerCase()}`
-      )
-    );
-
-    const unique = merged.filter((item) => {
+    const merged = [...transformedFunko, ...transformedAdmin];
+    const funkoKeySet = new Set(transformedFunko.map((i) => `${i.title.toLowerCase()}|${(i.number || "").toLowerCase()}`));
+    return merged.filter((item) => {
       if (item.isAdmin) {
-        const key = `${item.title.toLowerCase()}|${(item.number || "").toLowerCase()}`;
-        return !funkoKeySet.has(key);
+        return !funkoKeySet.has(`${item.title.toLowerCase()}|${(item.number || "").toLowerCase()}`);
       }
       return true;
     });
-
-    return unique;
   }, [funkoData, adminItems]);
 
   const totalDisplayed = Math.min(filteredAndSortedResults.length, displayLimit);
   const totalPages = Math.max(1, Math.ceil(totalDisplayed / itemsPerPage));
-
   const currentItems = useMemo(() => {
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const lastIndex = Math.min(indexOfLastItem, displayLimit);
-    return filteredAndSortedResults.slice(indexOfFirstItem, lastIndex);
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = Math.min(start + itemsPerPage, displayLimit);
+    return filteredAndSortedResults.slice(start, end);
   }, [currentPage, itemsPerPage, filteredAndSortedResults, displayLimit]);
 
-  const availableSeries = useMemo(() => {
-    return [...new Set(allItems.flatMap((item: any) => item.series))];
-  }, [allItems]);
+  const availableSeries = useMemo(() => [...new Set(allItems.flatMap((item: any) => item.series))], [allItems]);
 
-const languages = {
-    US: { name: "USA", flag: <img src="https://flagcdn.com/us.svg" className="w-5 h-5" alt="USA" /> },
-    EN: { name: "UK", flag: <img src="https://flagcdn.com/gb.svg" className="w-5 h-5" alt="UK" /> },
-    CA: { name: "Canada", flag: <img src="https://flagcdn.com/ca.svg" className="w-5 h-5" alt="Canada" /> },
-    PL: { name: "Polski", flag: <img src="https://flagcdn.com/pl.svg" className="w-5 h-5" alt="Poland" /> },
-    RU: { name: "Русский", flag: <img src="https://flagcdn.com/ru.svg" className="w-5 h-5" alt="Russia" /> },
-    ES: { name: "Español", flag: <img src="https://flagcdn.com/es.svg" className="w-5 h-5" alt="Spain" /> },
-    FR: { name: "Français", flag: <img src="https://flagcdn.com/fr.svg" className="w-5 h-5" alt="France" /> },
-    DE: { name: "Deutsch", flag: <img src="https://flagcdn.com/de.svg" className="w-5 h-5" alt="Germany" /> },
-};
-
-  // Fetch data: first perform a quick, small backend fetch to show initial items fast,
-  // then update/replace with the full dataset returned by fetchAllItemsOnce().
+  // Data fetching
   useEffect(() => {
     let mounted = true;
     setIsLoading(true);
-
-    // Quick fetch: small limit for initial render (fast response expected)
     (async () => {
       try {
         const resp = await fetch(`${baseURL}/api/items?limit=30`);
         if (resp.ok) {
           const quickData = await resp.json();
-          if (!mounted) return;
-          const mapped = quickData.map((item: any) => ({
-            ...item,
-            id: item.id || moduleGenerateId(item.title, item.number),
-          }));
-          // Show quick results immediately to improve perceived load on mobile
-          setFunkoData(mapped);
-          setError(null);
+          if (mounted) {
+            setFunkoData(quickData.map((item: any) => ({ ...item, id: item.id || moduleGenerateId(item.title, item.number) })));
+          }
         }
-      } catch (e) {
-        // ignore quick fetch failure; full fetch will be attempted below
-      }
+      } catch {}
     })();
-
-    // Full fetch (cached) - when ready replace/merge the data
     fetchAllItemsOnce()
       .then((data) => {
-        if (!mounted) return;
-        setFunkoData(data);
-        setError(null);
-        try {
-          // persist the full dataset for faster subsequent loads
-          localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), items: data }));
-        } catch (e) {
-          // ignore storage errors (quota, private mode)
+        if (mounted) {
+          setFunkoData(data);
+          setError(null);
         }
       })
       .catch((err: any) => {
-        if (!mounted) return;
-        console.warn("Failed to load full items:", err);
-        setError(err?.message || "An error occurred while fetching data.");
+        if (mounted) setError(err?.message || "An error occurred.");
       })
       .finally(() => {
-        if (!mounted) return;
-        setIsLoading(false);
+        if (mounted) setIsLoading(false);
       });
-
     return () => {
       mounted = false;
     };
   }, []);
 
-  // Fetch admin items from backend
   useEffect(() => {
-    const fetchAdminItems = async () => {
+    const fetchAdmin = async () => {
       try {
-        const response = await fetch(`${baseURL}/api/items?limit=30`);
-        if (response.ok) {
-          const data = await response.json();
-          setAdminItems(data);
-        } else {
-          console.warn("Failed to fetch admin items, continuing with GitHub data only");
-        }
-      } catch (err: any) {
-        console.warn("Error fetching admin items:", err);
-      }
+        const resp = await fetch(`${baseURL}/api/items?limit=30`);
+        if (resp.ok) setAdminItems(await resp.json());
+      } catch {}
     };
-    fetchAdminItems();
+    fetchAdmin();
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("preferredTheme", isDarkMode ? "dark" : "light");
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [isDarkMode]);
-
-  useEffect(() => {
-    if (queryParam) {
-      setSearchQuery(queryParam);
-    }
+    if (queryParam) setSearchQuery(queryParam);
   }, [queryParam]);
-
-  useEffect(() => {
-    const title = getSearchPageTitle(queryParam);
-    const description = getSearchMetaDescription(queryParam);
-    document.title = title;
-    updateMetaTag("name", "description", description);
-    updateMetaTag("property", "og:description", description);
-    updateMetaTag("name", "twitter:description", description);
-  }, [queryParam]);
-
-  useEffect(() => {
-    if (!queryParam.trim() || lastTrackedSearchRef.current === queryParam) return;
-    trackSearchEvent(queryParam, filteredAndSortedResults.length);
-    lastTrackedSearchRef.current = queryParam;
-  }, [queryParam, filteredAndSortedResults.length]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        showLanguageDropdown &&
-        languageDropdownRef.current &&
-        buttonRef.current &&
-        !(languageDropdownRef.current as Node).contains(event.target as Node) &&
-        !(buttonRef.current as Node).contains(event.target as Node)
-      ) {
-        setShowLanguageDropdown(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showLanguageDropdown]);
 
   useEffect(() => {
     if (allItems.length === 0) {
       setFilteredAndSortedResults([]);
       return;
     }
-
-    const normalizedQuery = queryParam.toLowerCase().trim();
-
-    let currentProcessedResults = allItems.filter((item: any) => {
-      const titleMatch = item.title?.toLowerCase().includes(normalizedQuery);
-      const numberMatch = item.number?.toLowerCase().includes(normalizedQuery);
-      const seriesMatch = item.series?.some((series: string) =>
-        series.toLowerCase().includes(normalizedQuery)
-      );
-
+    const normalized = queryParam.toLowerCase().trim();
+    let results = allItems.filter((item: any) => {
+      const titleMatch = item.title?.toLowerCase().includes(normalized);
+      const numberMatch = item.number?.toLowerCase().includes(normalized);
+      const seriesMatch = item.series?.some((s: string) => s.toLowerCase().includes(normalized));
       return titleMatch || numberMatch || seriesMatch;
     });
-
-    if (categoryFilter) {
-      currentProcessedResults = currentProcessedResults.filter((item: any) =>
-        item.series?.includes(categoryFilter)
-      );
-    }
-
-    if (showExclusiveOnly) {
-      currentProcessedResults = currentProcessedResults.filter(
-        (item: any) => item.exclusive === true
-      );
-    }
-
+    if (categoryFilter) results = results.filter((item: any) => item.series?.includes(categoryFilter));
+    if (showExclusiveOnly) results = results.filter((item: any) => item.exclusive);
     switch (sortOption) {
       case "titleDesc":
-        currentProcessedResults.sort((a: any, b: any) =>
-          b.title?.localeCompare(a.title || "") || 0
-        );
+        results.sort((a: any, b: any) => b.title?.localeCompare(a.title || "") || 0);
         break;
       case "numberAsc":
-        currentProcessedResults.sort(
-          (a: any, b: any) => (Number(a.number) || 0) - (Number(b.number) || 0)
-        );
+        results.sort((a: any, b: any) => (Number(a.number) || 0) - (Number(b.number) || 0));
         break;
       case "numberDesc":
-        currentProcessedResults.sort(
-          (a: any, b: any) => (Number(b.number) || 0) - (Number(a.number) || 0)
-        );
+        results.sort((a: any, b: any) => (Number(b.number) || 0) - (Number(a.number) || 0));
         break;
-      case "titleAsc":
       default:
-        currentProcessedResults.sort((a: any, b: any) =>
-          a.title?.localeCompare(b.title || "") || 0
-        );
-        break;
+        results.sort((a: any, b: any) => a.title?.localeCompare(b.title || "") || 0);
     }
-
-    setFilteredAndSortedResults(currentProcessedResults);
+    setFilteredAndSortedResults(results);
     setCurrentPage(1);
-    setDisplayLimit(isMobile ? DEFAULT_MOBILE_LIMIT : DEFAULT_DESKTOP_LIMIT);
-  }, [queryParam, categoryFilter, showExclusiveOnly, sortOption, allItems, isMobile]);
-
-  useEffect(() => {
-    setDisplayLimit(isMobile ? DEFAULT_MOBILE_LIMIT : DEFAULT_DESKTOP_LIMIT);
-  }, [isMobile]);
-
-  useEffect(() => {
-    localStorage.setItem("preferredLanguage", language);
-  }, [language]);
-
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-
-    const resetTimer = () => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
-        navigate("/loginregistersite");
-      }, 10 * 60 * 1000);
-    };
-
-    resetTimer();
-
-    const events = ["mousedown", "mousemove", "keypress", "scroll", "touchstart", "click", "wheel"];
-
-    events.forEach((event) => {
-      window.addEventListener(event, resetTimer, true);
-    });
-
-    return () => {
-      clearTimeout(timer);
-      events.forEach((event) => {
-        window.removeEventListener(event, resetTimer, true);
-      });
-    };
-  }, [navigate]);
-
-  const t = (translations as any)[language] || translations["EN"];
-
-  const selectLanguage = (lang: string) => {
-    setLanguage(lang);
-    setShowLanguageDropdown(false);
-  };
-
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-  };
-
-  const toggleLanguageDropdown = () => setShowLanguageDropdown((prev) => !prev);
+  }, [queryParam, categoryFilter, showExclusiveOnly, sortOption, allItems]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/searchsite?q=${encodeURIComponent(searchQuery.trim())}`);
-    } else {
-      navigate("/searchsite");
-    }
+    if (searchQuery.trim()) navigate(`/searchsite?q=${encodeURIComponent(searchQuery.trim())}`);
+    else navigate("/searchsite");
   };
 
-  const nextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
-
-  const prevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
-
-  const goToPage = (pageNumber: number | string) => {
-    if (pageNumber !== "...") {
-      setCurrentPage(Number(pageNumber));
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
-
-  const getDisplayedPages = () => {
-    const totalDisplayedPages = 5;
-    const halfDisplay = Math.floor(totalDisplayedPages / 2);
-    let startPage = Math.max(currentPage - halfDisplay, 1);
-    let endPage = Math.min(startPage + totalDisplayedPages - 1, totalPages);
-
-    if (endPage - startPage + 1 < totalDisplayedPages) {
-      startPage = Math.max(endPage - totalDisplayedPages + 1, 1);
-    }
-
-    const pages: (number | string)[] = [];
-
-    if (startPage > 1) {
-      pages.push(1);
-      if (startPage > 2) pages.push("...");
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-
-    if (endPage < totalPages) {
-      if (endPage < totalPages - 1) pages.push("...");
-      pages.push(totalPages);
-    }
-
-    return pages;
-  };
-
-  const loginButtonTo = useMemo(() => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (user?.role === "admin") return "/adminSite";
-    if (user?.role === "user") return "/dashboardSite";
-    return "/loginregistersite";
-  }, []);
-
-  const loginButtonText = useMemo(() => {
-    return localStorage.getItem("user")
-      ? t.goToDashboard || "Dashboard"
-      : t.goToLoginSite || "Log In";
-  }, [t]);
-
-  const openImageModal = (imageUrl: string, altText: string) => {
-    setModalImageUrl(imageUrl);
-    setModalImageAlt(altText);
-  };
-
-  const closeImageModal = () => {
-    setModalImageUrl(null);
-    setModalImageAlt(null);
+  const goToPage = (p: number) => {
+    setCurrentPage(p);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleRequestSubmit = async (formData: { title: string; number: string; reason: string }) => {
     const token = localStorage.getItem("token");
     if (!token) {
-      alert(t.loginRequired || "Please log in to submit a request.");
+      alert(t.loginRequired || "Please log in.");
       return;
     }
-
     setIsSubmitting(true);
     try {
       const res = await fetch(`${baseURL}/api/requests`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(formData),
       });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Submission failed");
-      }
-
+      if (!res.ok) throw new Error((await res.json()).error || "Failed");
       setSubmitSuccess(true);
     } catch (err: any) {
       alert("Error: " + err.message);
@@ -881,331 +422,313 @@ const languages = {
     }
   };
 
-  const handleCloseRequestModal = () => {
-    setShowRequestModal(false);
-    setSubmitSuccess(false);
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxShow = 5;
+    const half = Math.floor(maxShow / 2);
+    let start = Math.max(currentPage - half, 1);
+    let end = Math.min(start + maxShow - 1, totalPages);
+    if (end - start + 1 < maxShow) start = Math.max(end - maxShow + 1, 1);
+    if (start > 1) {
+      pages.push(1);
+      if (start > 2) pages.push("...");
+    }
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < totalPages) {
+      if (end < totalPages - 1) pages.push("...");
+      pages.push(totalPages);
+    }
+    return pages;
   };
 
-  const isAdminItem = (itemId: string) => itemId.startsWith('admin-');
-
   return (
-    <div
-      className={`search-site min-h-screen flex flex-col ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-blue-100 text-black"
-      }`}
-    >
-      <header className="py-4 px-4 md:px-8 flex flex-wrap justify-between items-center gap-4">
-        <div className="flex-shrink-0 w-full sm:w-auto text-center sm:text-left">
-          <Link to="/" className="no-underline">
-            <h1
-              className={`text-2xl sm:text-3xl font-bold font-[Special_Gothic_Expanded_One] ${
-                isDarkMode ? "text-yellow-400" : "text-blue-600"
-              }`}
-            >
-              Pop&Go!
-            </h1>
-          </Link>
-        </div>
-
-        <form
-          onSubmit={handleSearch}
-          className={`w-full sm:max-w-md mx-auto flex rounded-lg overflow-hidden ${
-            isDarkMode ? "bg-gray-700" : "bg-white"
-          }`}
-        >
-          <input
-            type="text"
-            placeholder={t.searchPlaceholder}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={`flex-grow px-4 py-2 outline-none ${
-              isDarkMode
-                ? "bg-gray-700 text-white placeholder-gray-400"
-                : "bg-white text-black placeholder-gray-500"
+    <Layout translations={t} showSearch={false}>
+      {/* Inline Search + Filters */}
+      <div className="max-w-6xl mx-auto px-4 pt-6 pb-4">
+        <form onSubmit={handleSearch} className="mb-4">
+          <div
+            className={`flex rounded-xl overflow-hidden border transition-colors ${
+              isDarkMode ? "bg-slate-800 border-slate-700 focus-within:border-amber-400/50" : "bg-white border-slate-200 focus-within:border-blue-400"
             }`}
-            aria-label="Search for Funkos"
-          />
-          <button
-            type="submit"
-            className={`px-4 py-2 ${
-              isDarkMode
-                ? "bg-yellow-500 hover:bg-yellow-600"
-                : "bg-blue-600 hover:bg-blue-700"
-            } text-white`}
-            aria-label="Search"
           >
-            <SearchIcon className="w-5 h-5" />
-          </button>
+            <input
+              type="text"
+              placeholder={t.searchPlaceholder || "Search Funko Pops..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className={`flex-grow px-4 py-3 text-sm outline-none bg-transparent ${isDarkMode ? "text-white placeholder-slate-400" : "text-slate-900 placeholder-slate-500"}`}
+              aria-label="Search"
+            />
+            <button
+              type="submit"
+              className={`px-5 py-3 font-medium text-sm transition-colors ${isDarkMode ? "bg-amber-400 hover:bg-amber-500 text-slate-900" : "bg-blue-600 hover:bg-blue-700 text-white"}`}
+            >
+              {t.searchButton || "Search"}
+            </button>
+          </div>
         </form>
 
-        {/* 🌐 Language, 🌙 Theme, 🔐 Dashboard */}
-        <div className="flex-shrink-0 flex gap-4 mt-2 md:mt-0 min-w-0 items-center">
-          {/* Language Dropdown */}
-          <div className="relative">
+        {/* Filters Row */}
+        <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-start sm:items-center">
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            aria-label="Filter by series"
+            className={`px-3 py-2 rounded-lg text-sm border transition-colors ${
+              isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"
+            } outline-none`}
+          >
+            <option value="">{t.allSeries || "All Series"}</option>
+            {availableSeries.map((s, i) => (
+              <option key={i} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showExclusiveOnly}
+              onChange={() => setShowExclusiveOnly(!showExclusiveOnly)}
+              className={`rounded ${isDarkMode ? "accent-amber-400" : "accent-blue-600"}`}
+            />
+            {t.exclusiveOnly || "Exclusive only"}
+          </label>
+
+          <select
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+            className={`px-3 py-2 rounded-lg text-sm border transition-colors ${
+              isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-white border-slate-200 text-slate-900"
+            } outline-none`}
+          >
+            <option value="titleAsc">{t.sortByTitleAsc || "A → Z"}</option>
+            <option value="titleDesc">{t.sortByTitleDesc || "Z → A"}</option>
+            <option value="numberAsc">{t.sortByNumberAsc || "# Low → High"}</option>
+            <option value="numberDesc">{t.sortByNumberDesc || "# High → Low"}</option>
+          </select>
+
+          <div className="ml-auto flex items-center gap-1">
             <button
-              ref={buttonRef}
-              onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-              className={`p-2 rounded-full flex items-center gap-1 min-w-0 ${
-                isDarkMode
-                  ? "bg-gray-700 hover:bg-gray-600"
-                  : "bg-white hover:bg-gray-100 shadow-sm"
-              }`}
-              aria-label="Select language"
-              aria-expanded={showLanguageDropdown}
+              onClick={() => setViewMode("grid")}
+              className={`p-2 rounded-lg transition-colors ${viewMode === "grid" ? (isDarkMode ? "bg-amber-400/15 text-amber-400" : "bg-blue-50 text-blue-600") : isDarkMode ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"}`}
+              aria-label="Grid view"
             >
-              <GlobeIcon className="w-5 h-5" />
-              <span className="hidden sm:inline text-sm font-medium">{language}</span>
-              <ChevronDownIcon
-                className={`w-4 h-4 transition-transform ${
-                  showLanguageDropdown ? "rotate-180" : ""
-                }`}
-              />
+              <Grid3X3 className="w-4 h-4" />
             </button>
-
-            {showLanguageDropdown && (
-              <div
-                ref={languageDropdownRef}
-                className={`absolute mt-2 z-50 lang-dropdown variant-b rounded-lg shadow-xl py-1 sm:right-0 right-2 left-2 w-[200px] sm:w-48 min-w-[160px] max-h-[90vh] overflow-auto ${
-                  isDarkMode ? "bg-gray-800" : "bg-white"
-                }`}
-                onClick={(e) => e.stopPropagation()}
-              >
-                {Object.entries(languages).map(([code, { name, flag }]) => (
-                  <button
-                    key={code}
-                    onClick={() => selectLanguage(code)}
-                    className={`lang-item w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap ${
-                      language === code
-                        ? isDarkMode
-                          ? "bg-yellow-500 text-black"
-                          : "bg-blue-600 text-white"
-                        : isDarkMode
-                        ? "hover:bg-gray-700"
-                        : "hover:bg-gray-100"
-                    }`}
-                  >
-                    <span className="w-5 h-5">{flag}</span>
-                    <span>{name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+            <button
+              onClick={() => setViewMode("list")}
+              className={`p-2 rounded-lg transition-colors ${viewMode === "list" ? (isDarkMode ? "bg-amber-400/15 text-amber-400" : "bg-blue-50 text-blue-600") : isDarkMode ? "text-slate-500 hover:text-slate-300" : "text-slate-400 hover:text-slate-600"}`}
+              aria-label="List view"
+            >
+              <List className="w-4 h-4" />
+            </button>
           </div>
-
-          {/* 🌙 Theme Toggle */}
-          <button
-            onClick={toggleTheme}
-            className={`p-2 rounded-full ${
-              isDarkMode
-                ? "bg-gray-700 hover:bg-gray-600"
-                : "bg-white hover:bg-gray-100 shadow-sm"
-            }`}
-            aria-label={isDarkMode ? t.switchToLight : t.switchToDark}
-          >
-            {isDarkMode ? <SunIcon className="w-6 h-6" /> : <MoonIcon className="w-6 h-6" />}
-          </button>
-
-          {/* 🔐 Dashboard/Login */}
-          {/* <button
-            onClick={() => {
-              const user = JSON.parse(localStorage.getItem("user") || "{}");
-              navigate(user.role === "admin" ? "/adminSite" : user.role === "user" ? "/dashboardSite" : "/loginRegisterSite");
-            }}
-            className={`flex items-center gap-2 px-4 py-2 rounded ${
-              isDarkMode
-                ? "bg-yellow-500 text-black hover:bg-yellow-600"
-                : "bg-blue-600 text-white hover:bg-blue-700 shadow-md"
-            }`}
-          >
-            {t.goToDashboard}
-          </button> */}
-          <AuthButton isDarkMode={isDarkMode} translations={t} />
         </div>
-        	      <QuickLinks isDarkMode={isDarkMode} language={language as any} />
-      </header>
-
-  <div className="p-4 flex flex-col sm:flex-row flex-wrap gap-4 justify-center items-center">
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          aria-label="Filter by series"
-          className={`w-full sm:w-64 md:w-80 lg:w-96 px-3 py-2 rounded text-sm min-w-0 ${isDarkMode ? "bg-gray-700" : "bg-white"}`}
-        >
-          <option value="">{t.allSeries}</option>
-          {availableSeries.map((series, index) => (
-            <option key={index} value={series}>
-              {series}
-            </option>
-          ))}
-        </select>
-
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={showExclusiveOnly}
-            onChange={() => setShowExclusiveOnly(!showExclusiveOnly)}
-            className={`rounded ${
-              isDarkMode ? "accent-yellow-500" : "accent-blue-600"
-            }`}
-          />
-          {t.exclusiveOnly}
-        </label>
-
-        <select
-          value={sortOption}
-          onChange={(e) => setSortOption(e.target.value)}
-          className={`px-3 py-2 rounded ${isDarkMode ? "bg-gray-700" : "bg-white"}`}
-        >
-          <option value="titleAsc">{t.sortByTitleAsc}</option>
-          <option value="titleDesc">{t.sortByTitleDesc}</option>
-          <option value="numberAsc">{t.sortByNumberAsc}</option>
-          <option value="numberDesc">{t.sortByNumberDesc}</option>
-        </select>
       </div>
 
-      <main className="flex-grow p-4 sm:p-8 flex flex-col items-center justify-center">
+      {/* Results */}
+      <div className="max-w-6xl mx-auto px-4 pb-8">
         {error ? (
-          <p className="text-red-500">{error}</p>
+          <p className="text-red-500 text-center py-12">{error}</p>
         ) : isLoading ? (
-          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-yellow-500"></div>
+          <div className="flex justify-center py-16">
+            <div className={`animate-spin rounded-full h-10 w-10 border-2 border-t-transparent ${isDarkMode ? "border-amber-400" : "border-blue-600"}`} />
+          </div>
         ) : (
-          <div>
+          <>
             {queryParam && (
-              <h2 className="text-xl sm:text-2xl font-bold mb-4 text-center">
-                {t.searchingResults}
-                <span className="text-yellow-400"> {queryParam}</span>
+              <h2 className="text-lg sm:text-xl font-bold mb-4">
+                {t.searchingResults || "Results for"}{" "}
+                <span className={isDarkMode ? "text-amber-400" : "text-blue-600"}>"{queryParam}"</span>
               </h2>
             )}
 
             {filteredAndSortedResults.length > 0 ? (
-              <div>
-                <div className="w-full max-w-4xl">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="text-sm text-gray-500">
-                      Showing {Math.min(filteredAndSortedResults.length, displayLimit)} of {filteredAndSortedResults.length} results
-                    </div>
-                    {filteredAndSortedResults.length > displayLimit && (
-                      <button
-                        onClick={() => setDisplayLimit((d) => Math.min(filteredAndSortedResults.length, d + (isMobile ? DEFAULT_MOBILE_LIMIT : DEFAULT_DESKTOP_LIMIT)))}
-                        className={`px-3 py-1 rounded text-sm ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-black'} border`}
-                      >
-                        Load more
-                      </button>
-                    )}
-                  </div>
+              <>
+                <div className={`flex items-center justify-between mb-4 text-sm ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                  <span>
+                    {Math.min(filteredAndSortedResults.length, displayLimit)} of {filteredAndSortedResults.length} results
+                  </span>
+                  {filteredAndSortedResults.length > displayLimit && (
+                    <button
+                      onClick={() => setDisplayLimit((d) => Math.min(filteredAndSortedResults.length, d + 50))}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                        isDarkMode ? "border-slate-700 hover:bg-slate-800" : "border-slate-200 hover:bg-slate-50"
+                      }`}
+                    >
+                      Load more
+                    </button>
+                  )}
+                </div>
 
-                  <ul className="space-y-4">
+                {/* Grid View */}
+                {viewMode === "grid" ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
                     {currentItems.map((item: any) => (
-                      <li
+                      <div
                         key={item.id}
-                        className={`p-3 sm:px-6 sm:py-4 rounded-lg flex flex-col sm:flex-row gap-4 ${
-                          isDarkMode ? "bg-gray-700" : "bg-white"
-                        } cursor-pointer hover:opacity-90 transition-opacity relative`}
-                        onClick={() => {
-                          const properId = item.id.includes('-')
-                            ? item.id
-                            : generateId(item.title, item.number || '');
-                          navigate(`/funko/${encodeURIComponent(properId)}`);
-                        }}
+                        onClick={() => navigate(`/funko/${encodeURIComponent(item.id)}`)}
+                        className={`group rounded-xl overflow-hidden border cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${
+                          isDarkMode ? "bg-slate-800 border-slate-700 hover:border-amber-400/30" : "bg-white border-slate-200 hover:border-blue-300"
+                        }`}
                       >
-                        {isAdminItem(item.id) && (
-                          <div className="absolute top-2 right-2 px-2 py-1 text-xs rounded bg-blue-500 text-white font-semibold">
-                            ADMIN
-                          </div>
-                        )}
-
-                        <div className="flex-shrink-0 mx-auto sm:mx-0">
+                        <div className={`relative p-3 ${isDarkMode ? "bg-slate-800/50" : "bg-slate-50"}`}>
                           <img
                             src={item.imageName || "/src/assets/placeholder.png"}
                             alt={item.title}
                             loading="lazy"
-                            className="w-16 h-16 sm:w-24 sm:h-24 object-contain rounded-md cursor-zoom-in"
+                            className="w-full h-32 sm:h-40 object-contain transition-transform duration-300 group-hover:scale-105"
                             onError={(e) => {
                               e.currentTarget.src = "/src/assets/placeholder.png";
                               e.currentTarget.onerror = null;
                             }}
                             onClick={(e) => {
                               e.stopPropagation();
-                              openImageModal(item.imageName || "/src/assets/placeholder.png", item.title);
+                              setModalImageUrl(item.imageName || "/src/assets/placeholder.png");
+                              setModalImageAlt(item.title);
                             }}
                           />
-                        </div>
-
-                        <div className="flex-grow text-center sm:text-left">
-                          <h3 className="text-lg font-bold">{item.title}</h3>
-                          <p className="text-sm">
-                            {t.series}: {Array.isArray(item.series) ? item.series.join(", ") : item.series}
-                          </p>
-                          <p className="text-sm">
-                            {t.number}: {item.number}
-                          </p>
-                          {item.exclusive && (
-                            <span
-                              className={`text-xs px-2 py-1 rounded ${
-                                isDarkMode ? "bg-yellow-600" : "bg-green-600"
-                              }`}
-                            >
-                              {t.exclusive}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setModalImageUrl(item.imageName || "/src/assets/placeholder.png");
+                              setModalImageAlt(item.title);
+                            }}
+                            className={`absolute top-2 right-2 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${
+                              isDarkMode ? "bg-slate-900/70 text-white" : "bg-white/80 text-slate-700"
+                            }`}
+                            aria-label="Zoom image"
+                          >
+                            <ZoomIn className="w-3.5 h-3.5" />
+                          </button>
+                          {item.isAdmin && (
+                            <span className="absolute top-2 left-2 px-1.5 py-0.5 text-[10px] rounded bg-blue-500 text-white font-semibold">
+                              ADMIN
                             </span>
                           )}
                         </div>
-                      </li>
+                        <div className="p-3">
+                          <h3 className="font-semibold text-xs sm:text-sm truncate">{item.title}</h3>
+                          <p className={`text-[10px] sm:text-xs mt-1 truncate ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                            #{item.number} &middot; {Array.isArray(item.series) ? item.series.join(", ") : item.series}
+                          </p>
+                          {item.exclusive && (
+                            <span
+                              className={`inline-block mt-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium ${
+                                isDarkMode ? "bg-amber-400/15 text-amber-400" : "bg-blue-50 text-blue-600"
+                              }`}
+                            >
+                              {t.exclusive || "Exclusive"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     ))}
-                  </ul>
-                </div>
+                  </div>
+                ) : (
+                  /* List View */
+                  <div className="space-y-2">
+                    {currentItems.map((item: any) => (
+                      <div
+                        key={item.id}
+                        onClick={() => navigate(`/funko/${encodeURIComponent(item.id)}`)}
+                        className={`flex items-center gap-4 p-3 sm:p-4 rounded-xl border cursor-pointer transition-all hover:shadow-md ${
+                          isDarkMode ? "bg-slate-800 border-slate-700 hover:border-slate-600" : "bg-white border-slate-200 hover:border-slate-300"
+                        }`}
+                      >
+                        <img
+                          src={item.imageName || "/src/assets/placeholder.png"}
+                          alt={item.title}
+                          loading="lazy"
+                          className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-lg flex-shrink-0 cursor-zoom-in"
+                          onError={(e) => {
+                            e.currentTarget.src = "/src/assets/placeholder.png";
+                            e.currentTarget.onerror = null;
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setModalImageUrl(item.imageName || "/src/assets/placeholder.png");
+                            setModalImageAlt(item.title);
+                          }}
+                        />
+                        <div className="flex-grow min-w-0">
+                          <h3 className="font-semibold text-sm sm:text-base truncate">{item.title}</h3>
+                          <p className={`text-xs sm:text-sm mt-0.5 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                            {t.series || "Series"}: {Array.isArray(item.series) ? item.series.join(", ") : item.series}
+                          </p>
+                          <p className={`text-xs mt-0.5 ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
+                            #{item.number}
+                          </p>
+                        </div>
+                        <div className="flex-shrink-0 flex flex-col items-end gap-1">
+                          {item.exclusive && (
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                isDarkMode ? "bg-amber-400/15 text-amber-400" : "bg-blue-50 text-blue-600"
+                              }`}
+                            >
+                              {t.exclusive || "Exclusive"}
+                            </span>
+                          )}
+                          {item.isAdmin && (
+                            <span className="px-2 py-0.5 rounded-full text-xs bg-blue-500 text-white font-semibold">ADMIN</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-                <div className="flex flex-col items-center gap-4 mt-8">
+                {/* Pagination */}
+                <div className="mt-8 flex flex-col items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <label htmlFor="itemsPerPage">{t.itemsPerPage}</label>
+                    <label htmlFor="ipp" className={`text-sm ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
+                      {t.itemsPerPage || "Per page"}:
+                    </label>
                     <select
-                      id="itemsPerPage"
+                      id="ipp"
                       value={itemsPerPage}
                       onChange={(e) => {
                         setItemsPerPage(Number(e.target.value));
                         setCurrentPage(1);
                       }}
-                      className={`px-2 py-1 rounded ${
-                        isDarkMode ? "bg-gray-700" : "bg-white"
-                      }`}
+                      className={`px-2 py-1 rounded-lg text-sm border ${isDarkMode ? "bg-slate-800 border-slate-700 text-white" : "bg-white border-slate-200"} outline-none`}
                     >
-                      <option value="5">5</option>
-                      <option value="10">10</option>
-                      <option value="20">20</option>
-                      <option value="50">50</option>
+                      {[5, 10, 20, 50].map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
                     </select>
                   </div>
 
-                  <div className="flex flex-wrap justify-center items-center gap-1">
+                  <div className="flex items-center gap-1">
                     <button
-                      onClick={prevPage}
+                      onClick={() => goToPage(currentPage - 1)}
                       disabled={currentPage === 1}
-                      className={`px-3 py-1 rounded ${
-                        currentPage === 1
-                          ? "opacity-50 cursor-not-allowed"
-                          : isDarkMode
-                          ? "bg-gray-700 hover:bg-gray-600"
-                          : "bg-white hover:bg-gray-100"
-                      }`}
+                      className={`p-2 rounded-lg transition-colors disabled:opacity-30 ${isDarkMode ? "hover:bg-slate-800" : "hover:bg-slate-100"}`}
                     >
-                      {t.previous || "Previous"}
+                      <ChevronLeft className="w-4 h-4" />
                     </button>
-                    {getDisplayedPages().map((page, index) =>
+                    {getPageNumbers().map((page, i) =>
                       page === "..." ? (
-                        <span key={index} className="px-2">
+                        <span key={i} className="px-2 text-sm">
                           ...
                         </span>
                       ) : (
                         <button
-                          key={index}
-                          onClick={() => goToPage(page)}
-                          className={`px-3 py-1 rounded ${
+                          key={i}
+                          onClick={() => goToPage(page as number)}
+                          className={`min-w-[36px] py-1.5 rounded-lg text-sm font-medium transition-colors ${
                             currentPage === page
                               ? isDarkMode
-                                ? "bg-yellow-500 text-black"
+                                ? "bg-amber-400 text-slate-900"
                                 : "bg-blue-600 text-white"
                               : isDarkMode
-                              ? "bg-gray-700 hover:bg-gray-600"
-                              : "bg-white hover:bg-gray-100"
+                                ? "hover:bg-slate-800"
+                                : "hover:bg-slate-100"
                           }`}
                         >
                           {page}
@@ -1213,70 +736,62 @@ const languages = {
                       )
                     )}
                     <button
-                      onClick={nextPage}
+                      onClick={() => goToPage(currentPage + 1)}
                       disabled={currentPage === totalPages}
-                      className={`px-3 py-1 rounded ${
-                        currentPage === totalPages
-                          ? "opacity-50 cursor-not-allowed"
-                          : isDarkMode
-                          ? "bg-gray-700 hover:bg-gray-600"
-                          : "bg-white hover:bg-gray-100"
-                      }`}
+                      className={`p-2 rounded-lg transition-colors disabled:opacity-30 ${isDarkMode ? "hover:bg-slate-800" : "hover:bg-slate-100"}`}
                     >
-                      {t.next || "Next"}
+                      <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
 
-                  <div className="text-sm">
-                    {t.page} {currentPage} {t.of} {totalPages}
-                  </div>
+                  <span className={`text-xs ${isDarkMode ? "text-slate-500" : "text-slate-400"}`}>
+                    {t.page || "Page"} {currentPage} {t.of || "of"} {totalPages}
+                  </span>
                 </div>
-              </div>
+              </>
             ) : (
-              <div className="text-center">
-                <p className="mb-4">{t.noResult}</p>
+              <div className="text-center py-16">
+                <p className={`mb-4 ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>{t.noResult || "No results found."}</p>
                 <button
                   onClick={() => setShowRequestModal(true)}
-                  className={`px-4 py-2 rounded ${
-                    isDarkMode ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
-                  } text-white`}
+                  className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    isDarkMode ? "bg-amber-400 hover:bg-amber-500 text-slate-900" : "bg-blue-600 hover:bg-blue-700 text-white"
+                  }`}
                 >
                   {t.requestMissingItem || "Request Missing Item"}
                 </button>
               </div>
             )}
-          </div>
+          </>
         )}
-      </main>
-
-      <footer
-        className={`text-center py-4 ${
-          isDarkMode ? "bg-gray-900 text-gray-400" : "bg-white text-gray-700"
-        }`}
-      >
-        {t.copyright}
-      </footer>
+      </div>
 
       {modalImageUrl && (
         <ImageModal
           imageUrl={modalImageUrl}
-          altText={modalImageAlt || "Funko Pop Image"}
-          onClose={closeImageModal}
+          altText={modalImageAlt || "Funko Pop"}
+          onClose={() => {
+            setModalImageUrl(null);
+            setModalImageAlt(null);
+          }}
           isDarkMode={isDarkMode}
         />
       )}
 
       <RequestModal
         isOpen={showRequestModal}
-        onClose={handleCloseRequestModal}
+        onClose={() => {
+          setShowRequestModal(false);
+          setSubmitSuccess(false);
+        }}
         isDarkMode={isDarkMode}
         onSubmit={handleRequestSubmit}
         isSubmitting={isSubmitting}
         submitSuccess={submitSuccess}
         t={t}
       />
-    </div>
+    </Layout>
   );
 };
 
-export default SearchSite
+export default SearchSite;

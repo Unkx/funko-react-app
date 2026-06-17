@@ -1,56 +1,88 @@
-/* src/index.css */
+@import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer components {
-	.lang-dropdown {
-		@apply rounded-lg shadow-xl py-1 max-h-[90vh] overflow-auto border;
-	}
-
-	/* Variant A: Neutral / subtle */
-	.lang-dropdown.variant-a {
-		@apply bg-gradient-to-b from-white to-slate-50 dark:from-slate-800 dark:to-slate-700 border-slate-200 dark:border-slate-600;
-	}
-
-	/* Variant B: Light = bg-blue-200 with black 1px border; Dark = bg-blue-700 with black 1px border */
-	.lang-dropdown.variant-b {
-		@apply bg-blue-200 border-black text-black;
-		@apply dark:bg-blue-700 dark:border-black dark:text-white;
-	}
-
-	.lang-item {
-		@apply w-full text-left px-4 py-2 flex items-center gap-2 whitespace-nowrap;
-
-		/* Give each item a subtle panel background so rows aren't transparent */
-		@apply bg-blue-100 dark:bg-blue-800;
-		@apply hover:bg-blue-200 dark:hover:bg-blue-700;
-		@apply border-b border-black/10 dark:border-white/10;
-	}
-
-	.lang-item.selected-light {
-		@apply bg-blue-600 text-white;
-	}
-
-	.lang-item.selected-dark {
-		@apply bg-yellow-500 text-black;
-	}
-}
 * {
   box-sizing: border-box;
+}
+
+html {
+  font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
 }
 
 html, body, #root {
   width: 100%;
   min-height: 100vh;
-  margin: 0;
-  padding: 0;
   overflow-x: hidden;
 }
 
-/* Prevent images and media from overflowing */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Righteous', 'Poppins', cursive;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
 img, video, canvas, svg {
   max-width: 100%;
   height: auto;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.dark button:focus-visible,
+.dark a:focus-visible,
+.dark input:focus-visible,
+.dark select:focus-visible,
+.dark textarea:focus-visible {
+  outline-color: #fbbf24;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }

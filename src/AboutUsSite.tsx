@@ -8,6 +8,7 @@ import { translations } from "./Translations/TranslationAboutUs";
 import Layout from './Layout';
 import { useTheme } from './ThemeContext';
 import { LanguageContext } from './LanguageContext';
+import { BookOpen, Star, BarChart3, Users, Bot, Globe } from 'lucide-react';
 // Team members data
 const teamMembers = [
   {
@@ -31,13 +32,18 @@ const teamMembers = [
 ];
 
 // Features data
+const aboutFeatureIcons: Record<string, React.FC<{ className?: string }>> = {
+  feature1Title: BookOpen, feature2Title: Star, feature3Title: BarChart3,
+  feature4Title: Users, feature5Title: Bot, feature6Title: Globe,
+};
+
 const features = [
-  { emoji: "📚", titleKey: "feature1Title", descKey: "feature1Desc" },
-  { emoji: "⭐", titleKey: "feature2Title", descKey: "feature2Desc" },
-  { emoji: "📊", titleKey: "feature3Title", descKey: "feature3Desc" },
-  { emoji: "👥", titleKey: "feature4Title", descKey: "feature4Desc" },
-  { emoji: "🤖", titleKey: "feature5Title", descKey: "feature5Desc" },
-  { emoji: "🌐", titleKey: "feature6Title", descKey: "feature6Desc" },
+  { titleKey: "feature1Title", descKey: "feature1Desc" },
+  { titleKey: "feature2Title", descKey: "feature2Desc" },
+  { titleKey: "feature3Title", descKey: "feature3Desc" },
+  { titleKey: "feature4Title", descKey: "feature4Desc" },
+  { titleKey: "feature5Title", descKey: "feature5Desc" },
+  { titleKey: "feature6Title", descKey: "feature6Desc" },
 ];
 
 // Testimonials data
@@ -217,8 +223,8 @@ const AboutUsSite: React.FC = () => {
                     : "bg-white hover:shadow-xl border border-gray-100"
                 }`}
               >
-                <div className={`text-4xl mb-4 ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
-                  {feature.emoji}
+                <div className={`mb-4 ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
+                  {(() => { const Icon = aboutFeatureIcons[feature.titleKey]; return Icon ? <Icon className="w-8 h-8" /> : null; })()}
                 </div>
                 <h3 className="text-xl font-bold mb-3">
                   {t[feature.titleKey as keyof typeof t]}

@@ -5,15 +5,35 @@ import { translations } from "./Translations/TranslationFeatures";
 import Layout from './Layout';
 import { useTheme } from './ThemeContext';
 import { LanguageContext } from './LanguageContext';
-// Feature categories data
+import {
+  BookOpen, Star, Tag, Zap,
+  Search, BarChart3, Bot, TrendingUp,
+  Users, Share2, Globe, Moon
+} from 'lucide-react';
+
+const featureIcons: Record<string, React.FC<{ className?: string }>> = {
+  feature1Title: BookOpen,
+  feature2Title: Star,
+  feature11Title: Tag,
+  feature12Title: Zap,
+  feature3Title: Search,
+  feature4Title: BarChart3,
+  feature5Title: Bot,
+  feature10Title: TrendingUp,
+  feature8Title: Users,
+  feature7Title: Share2,
+  feature6Title: Globe,
+  feature9Title: Moon,
+};
+
 const featureCategories = [
   {
     titleKey: "collectionManagement",
     features: [
-      { emoji: "📚", titleKey: "feature1Title", descKey: "feature1Desc" },
-      { emoji: "⭐", titleKey: "feature2Title", descKey: "feature2Desc" },
-      { emoji: "🏷️", titleKey: "feature11Title", descKey: "feature11Desc" },
-      { emoji: "⚡", titleKey: "feature12Title", descKey: "feature12Desc" },
+      { titleKey: "feature1Title", descKey: "feature1Desc" },
+      { titleKey: "feature2Title", descKey: "feature2Desc" },
+      { titleKey: "feature11Title", descKey: "feature11Desc" },
+      { titleKey: "feature12Title", descKey: "feature12Desc" },
     ],
     color: "from-blue-500 to-blue-600",
     darkColor: "from-blue-600 to-blue-700",
@@ -21,10 +41,10 @@ const featureCategories = [
   {
     titleKey: "discoveryTools",
     features: [
-      { emoji: "🔍", titleKey: "feature3Title", descKey: "feature3Desc" },
-      { emoji: "📊", titleKey: "feature4Title", descKey: "feature4Desc" },
-      { emoji: "🤖", titleKey: "feature5Title", descKey: "feature5Desc" },
-      { emoji: "📈", titleKey: "feature10Title", descKey: "feature10Desc" },
+      { titleKey: "feature3Title", descKey: "feature3Desc" },
+      { titleKey: "feature4Title", descKey: "feature4Desc" },
+      { titleKey: "feature5Title", descKey: "feature5Desc" },
+      { titleKey: "feature10Title", descKey: "feature10Desc" },
     ],
     color: "from-green-500 to-green-600",
     darkColor: "from-green-600 to-green-700",
@@ -32,10 +52,10 @@ const featureCategories = [
   {
     titleKey: "communityFeatures",
     features: [
-      { emoji: "👥", titleKey: "feature8Title", descKey: "feature8Desc" },
-      { emoji: "📤", titleKey: "feature7Title", descKey: "feature7Desc" },
-      { emoji: "🌐", titleKey: "feature6Title", descKey: "feature6Desc" },
-      { emoji: "🌙", titleKey: "feature9Title", descKey: "feature9Desc" },
+      { titleKey: "feature8Title", descKey: "feature8Desc" },
+      { titleKey: "feature7Title", descKey: "feature7Desc" },
+      { titleKey: "feature6Title", descKey: "feature6Desc" },
+      { titleKey: "feature9Title", descKey: "feature9Desc" },
     ],
     color: "from-purple-500 to-purple-600",
     darkColor: "from-purple-600 to-purple-700",
@@ -166,8 +186,8 @@ const FeaturesSite: React.FC = () => {
                         : "bg-white hover:shadow-xl border border-gray-100"
                     }`}
                   >
-                    <div className={`text-3xl mb-4 ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
-                      {feature.emoji}
+                    <div className={`mb-4 ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
+                      {(() => { const Icon = featureIcons[feature.titleKey]; return Icon ? <Icon className="w-8 h-8" /> : null; })()}
                     </div>
                     <h3 className="text-xl font-bold mb-3">
                       {t[feature.titleKey as keyof typeof t]}

@@ -1900,8 +1900,8 @@ const DashboardSite: React.FC = () => {
   return (
     <Layout translations={t}>
       {/* Navigation */}
-      <nav className={`px-8 py-2 ${isDarkMode ? "bg-slate-800" : "bg-white border-b border-gray-200"}`}>
-        <div className="flex gap-4 flex-wrap">
+      <nav className={`px-4 sm:px-8 py-2 ${isDarkMode ? "bg-slate-800" : "bg-white border-b border-gray-200"}`}>
+        <div className="max-w-7xl mx-auto flex gap-4 flex-wrap justify-center">
           <button
             onClick={() => setActiveView("dashboard")}
             className={`px-3 py-1 rounded ${activeView === "dashboard" ? (isDarkMode ? "bg-amber-400 text-black" : "bg-blue-600 text-white") : (isDarkMode ? "hover:bg-slate-700" : "hover:bg-gray-200")}`}
@@ -1944,7 +1944,7 @@ const DashboardSite: React.FC = () => {
       </nav>
 
       {/* Main Content */}
-      <main className="flex-grow p-4 sm:p-8 flex flex-col items-center">
+      <main className="flex-grow p-4 sm:p-8 flex flex-col items-center max-w-7xl mx-auto w-full">
         <AnimatePresence mode="wait">
           {activeView === "dashboard" && (
             <motion.div

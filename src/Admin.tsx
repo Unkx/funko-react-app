@@ -1758,8 +1758,8 @@ const handleRemoveFriend = async (friendId: string) => {
   return (
     <Layout translations={t}>
       {/* Navigation */}
-      <nav className={`px-8 py-2 ${isDarkMode ? "bg-slate-800" : "bg-white border-b border-gray-200"}`}>
-        <div className="flex gap-4 flex-wrap">
+      <nav className={`px-4 sm:px-8 py-2 ${isDarkMode ? "bg-slate-800" : "bg-white border-b border-gray-200"}`}>
+        <div className="max-w-7xl mx-auto flex gap-4 flex-wrap justify-center">
           <button onClick={() => setActiveView("users")} className={`px-3 py-1 rounded border ${
             activeView === "users" 
               ? (isDarkMode ? "bg-amber-400 text-black border-yellow-500" : "bg-blue-600 text-white border-blue-600") 
@@ -1812,7 +1812,7 @@ const handleRemoveFriend = async (friendId: string) => {
         </div>
       </nav>
 
-      <main className="flex-grow flex items-center justify-center px-8 py-8 relative overflow-hidden">
+      <main className="flex-grow flex items-center justify-center px-4 sm:px-8 py-8 relative overflow-hidden max-w-7xl mx-auto w-full">
         <AnimatePresence mode="wait">
           {activeView === "users" && (
             <motion.div key="users" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.5, ease: "easeInOut" }} className="w-full max-w-7xl">

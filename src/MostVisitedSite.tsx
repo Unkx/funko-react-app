@@ -31,6 +31,9 @@ const MostVisitedSite: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<"visits" | "title" | "category">("visits");
   const [visitCountVersion, setVisitCountVersion] = useState(0);
+  const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(new Set());
+  const markImageBroken = (id: string) =>
+    setBrokenImageIds(prev => (prev.has(id) ? prev : new Set(prev).add(id)));
 
   const t = translations[language] || translations["EN"];
 
@@ -137,8 +140,8 @@ const MostVisitedSite: React.FC = () => {
         ...item,
         visits: visitCount[item.id] || 0,
       }))
-      .filter((item): item is FunkoItemWithVisits => item.visits > 0 && !!item.imageName);
-  }, [allItems, visitCountVersion]);
+      .filter((item): item is FunkoItemWithVisits => item.visits > 0 && !!item.imageName && !brokenImageIds.has(item.id));
+  }, [allItems, visitCountVersion, brokenImageIds]);
 
   const sortedItems = useMemo(() => {
     return [...mostVisitedItems].sort((a, b) => {
@@ -348,12 +351,10 @@ const MostVisitedSite: React.FC = () => {
                   </div>
                   
                   <img
-                    src={item.imageName || "/assets/placeholder.png"}
+                    src={item.imageName}
                     alt={item.title}
                     className="w-full h-48 object-contain rounded-md mb-3"
-                    onError={(e) => {
-                      e.currentTarget.src = "/assets/placeholder.png";
-                    }}
+                    onError={() => markImageBroken(item.id)}
                   />
                   
                   <h3 className="font-bold text-lg mb-2 text-center">{item.title}</h3>

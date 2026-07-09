@@ -29,6 +29,9 @@ const CategoriesSite: React.FC = () => {
   const [items, setItems] = useState<FunkoItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(new Set());
+  const markImageBroken = (id: string) =>
+    setBrokenImageIds(prev => (prev.has(id) ? prev : new Set(prev).add(id)));
 
   const navigate = useNavigate();
   const t = translations[language] || translations["EN"];
@@ -196,7 +199,7 @@ const CategoriesSite: React.FC = () => {
   // Get featured items for category preview
   const getFeaturedItems = (categoryId: string) => {
     return items
-      .filter(item => matchesCategory(item, categoryId) && !!item.imageName)
+      .filter(item => matchesCategory(item, categoryId) && !!item.imageName && !brokenImageIds.has(item.id))
       .slice(0, 4);
   };
 
@@ -214,7 +217,7 @@ const CategoriesSite: React.FC = () => {
     setSearchQuery("");
   };
 
-  const categoryItems = getCategoryItems().filter(item => !!item.imageName);
+  const categoryItems = getCategoryItems().filter(item => !!item.imageName && !brokenImageIds.has(item.id));
   const filteredItems = categoryItems.filter(item =>
     !searchQuery ||
     item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -341,6 +344,7 @@ const CategoriesSite: React.FC = () => {
                               src={item.imageName}
                               alt={item.title}
                               className="w-full h-20 object-contain rounded bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-gray-600"
+                              onError={() => markImageBroken(item.id)}
                             />
                           </Link>
                         ))}
@@ -468,12 +472,10 @@ const CategoriesSite: React.FC = () => {
                     } shadow hover:scale-105`}
                   >
                     <img
-                      src={item.imageName || "/src/assets/placeholder.png"}
+                      src={item.imageName}
                       alt={item.title}
                       className="w-full h-32 object-contain rounded mb-2 bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-gray-600"
-                      onError={(e) => {
-                        e.currentTarget.src = "/src/assets/placeholder.png";
-                      }}
+                      onError={() => markImageBroken(item.id)}
                     />
                     <h3 className="font-bold text-sm mb-1 line-clamp-2">{item.title}</h3>
                     <p className="text-xs opacity-75 mb-1">#{item.number}</p>

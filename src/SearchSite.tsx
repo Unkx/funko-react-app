@@ -243,6 +243,9 @@ const SearchSite = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [displayLimit, setDisplayLimit] = useState(50);
+  const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(new Set());
+  const markImageBroken = (id: string) =>
+    setBrokenImageIds(prev => (prev.has(id) ? prev : new Set(prev).add(id)));
   const [categoryFilter, setCategoryFilter] = useState("");
   const [showExclusiveOnly, setShowExclusiveOnly] = useState(false);
   const [sortOption, setSortOption] = useState("titleAsc");
@@ -306,8 +309,8 @@ const SearchSite = () => {
   const currentItems = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     const end = Math.min(start + itemsPerPage, displayLimit);
-    return filteredAndSortedResults.slice(start, end);
-  }, [currentPage, itemsPerPage, filteredAndSortedResults, displayLimit]);
+    return filteredAndSortedResults.slice(start, end).filter((item: any) => !brokenImageIds.has(item.id));
+  }, [currentPage, itemsPerPage, filteredAndSortedResults, displayLimit, brokenImageIds]);
 
   const availableSeries = useMemo(() => [...new Set(allItems.flatMap((item: any) => item.series))], [allItems]);
 
@@ -577,24 +580,21 @@ const SearchSite = () => {
                       >
                         <div className={`relative p-3 ${isDarkMode ? "bg-slate-800/50" : "bg-slate-50"}`}>
                           <img
-                            src={item.imageName || "/src/assets/placeholder.png"}
+                            src={item.imageName}
                             alt={item.title}
                             loading="lazy"
                             className="w-full h-32 sm:h-40 object-contain transition-transform duration-300 group-hover:scale-105"
-                            onError={(e) => {
-                              e.currentTarget.src = "/src/assets/placeholder.png";
-                              e.currentTarget.onerror = null;
-                            }}
+                            onError={() => markImageBroken(item.id)}
                             onClick={(e) => {
                               e.stopPropagation();
-                              setModalImageUrl(item.imageName || "/src/assets/placeholder.png");
+                              setModalImageUrl(item.imageName);
                               setModalImageAlt(item.title);
                             }}
                           />
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setModalImageUrl(item.imageName || "/src/assets/placeholder.png");
+                              setModalImageUrl(item.imageName);
                               setModalImageAlt(item.title);
                             }}
                             className={`absolute top-2 right-2 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${
@@ -640,17 +640,14 @@ const SearchSite = () => {
                         }`}
                       >
                         <img
-                          src={item.imageName || "/src/assets/placeholder.png"}
+                          src={item.imageName}
                           alt={item.title}
                           loading="lazy"
                           className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-lg flex-shrink-0 cursor-zoom-in"
-                          onError={(e) => {
-                            e.currentTarget.src = "/src/assets/placeholder.png";
-                            e.currentTarget.onerror = null;
-                          }}
+                          onError={() => markImageBroken(item.id)}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setModalImageUrl(item.imageName || "/src/assets/placeholder.png");
+                            setModalImageUrl(item.imageName);
                             setModalImageAlt(item.title);
                           }}
                         />

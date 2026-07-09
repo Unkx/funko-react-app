@@ -47,6 +47,9 @@ const WishlistPage: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [wishlistSearch, setWishlistSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(new Set());
+  const markImageBroken = (id: string) =>
+    setBrokenImageIds(prev => (prev.has(id) ? prev : new Set(prev).add(id)));
 
   const navigate = useNavigate();
 
@@ -126,7 +129,7 @@ const WishlistPage: React.FC = () => {
       
       const matchesPriority = filterPriority === "all" || item.priority === filterPriority;
 
-      return matchesSearch && matchesPriority && !!item.image_name;
+      return matchesSearch && matchesPriority && !!item.image_name && !brokenImageIds.has(item.id);
     });
 
     // Sort the filtered results
@@ -169,7 +172,7 @@ const WishlistPage: React.FC = () => {
     });
 
     setFilteredWishlist(filtered);
-  }, [wishlist, wishlistSearch, filterPriority, sortBy, sortOrder]);
+  }, [wishlist, wishlistSearch, filterPriority, sortBy, sortOrder, brokenImageIds]);
 
   const handleEditItem = (item: WishlistItem) => {
     setEditingItem(item.id);
@@ -429,7 +432,7 @@ const WishlistPage: React.FC = () => {
               {filteredWishlist.map(item => (
                 <div key={item.id} className={`rounded-lg shadow-lg overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-white"}`}>
                   {item.image_name && (
-                    <img src={item.image_name} alt={item.title} className="w-full h-48 object-contain bg-slate-50" />
+                    <img src={item.image_name} alt={item.title} className="w-full h-48 object-contain bg-slate-50" onError={() => markImageBroken(item.id)} />
                   )}
                   <div className="p-4">
                     {editingItem === item.id ? (

@@ -45,6 +45,9 @@ const CollectionPage: React.FC = () => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [collectionSearch, setCollectionSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(new Set());
+  const markImageBroken = (id: string) =>
+    setBrokenImageIds(prev => (prev.has(id) ? prev : new Set(prev).add(id)));
 
   const navigate = useNavigate();
 
@@ -124,7 +127,7 @@ const CollectionPage: React.FC = () => {
       
       const matchesCondition = filterCondition === "all" || item.condition === filterCondition;
 
-      return matchesSearch && matchesCondition && !!item.image_name;
+      return matchesSearch && matchesCondition && !!item.image_name && !brokenImageIds.has(item.id);
     });
 
     // Sort the filtered results
@@ -166,7 +169,7 @@ const CollectionPage: React.FC = () => {
     });
 
     setFilteredCollection(filtered);
-  }, [collection, collectionSearch, filterCondition, sortBy, sortOrder]);
+  }, [collection, collectionSearch, filterCondition, sortBy, sortOrder, brokenImageIds]);
 
   const handleEditItem = (item: FunkoItem) => {
     setEditingItem(item.id);
@@ -384,7 +387,7 @@ const CollectionPage: React.FC = () => {
               {filteredCollection.map(item => (
                 <div key={item.id} className={`rounded-lg shadow-lg overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-white"}`}>
                   {item.image_name && (
-                    <img src={item.image_name} alt={item.title} className="w-full h-48 object-contain bg-gray-100" />
+                    <img src={item.image_name} alt={item.title} className="w-full h-48 object-contain bg-gray-100" onError={() => markImageBroken(item.id)} />
                   )}
                   <div className="p-4">
                     {editingItem === item.id ? (

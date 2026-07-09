@@ -39,6 +39,9 @@ const WelcomeSite: React.FC = () => {
   const { isDarkMode } = useTheme();
   const [funkoData, setFunkoData] = useState<FunkoItemWithId[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(new Set());
+  const markImageBroken = (id: string) =>
+    setBrokenImageIds((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
   const [showOpenSourceBanner, setShowOpenSourceBanner] = useState(
     () => !sessionStorage.getItem("openSourceDismissed")
   );
@@ -139,20 +142,20 @@ const WelcomeSite: React.FC = () => {
   };
 
   const randomItems = useMemo(() => {
-    const withImage = funkoData.filter((item) => !!item.imageName);
+    const withImage = funkoData.filter((item) => !!item.imageName && !brokenImageIds.has(item.id));
     if (withImage.length === 0) return [];
     const shuffled = [...withImage].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, 3);
-  }, [funkoData]);
+  }, [funkoData, brokenImageIds]);
 
   const mostVisitedItems = useMemo(() => {
     const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
     return [...funkoData]
       .map((item) => ({ ...item, visits: visitCount[item.id] || 0 }))
       .sort((a, b) => b.visits - a.visits)
-      .filter((item) => item.visits > 0 && !!item.imageName)
+      .filter((item) => item.visits > 0 && !!item.imageName && !brokenImageIds.has(item.id))
       .slice(0, 3);
-  }, [funkoData]);
+  }, [funkoData, brokenImageIds]);
 
   // Chatbot response logic
   const getBotResponse = (
@@ -352,14 +355,12 @@ const WelcomeSite: React.FC = () => {
               >
                 <div className={`p-4 ${isDarkMode ? "bg-slate-800/50" : "bg-slate-50"}`}>
                   <img
-                    src={item.imageName || "/src/assets/placeholder.png"}
+                    src={item.imageName}
                     alt={item.title}
                     className="w-full h-44 object-contain rounded-lg transition-transform duration-300 group-hover:scale-105"
                     loading="lazy"
                     decoding="async"
-                    onError={(e) => {
-                      e.currentTarget.src = "/src/assets/placeholder.png";
-                    }}
+                    onError={() => markImageBroken(item.id)}
                   />
                 </div>
                 <div className="p-4">
@@ -419,14 +420,12 @@ const WelcomeSite: React.FC = () => {
                 >
                   <div className={`p-4 ${isDarkMode ? "bg-slate-800/50" : "bg-slate-50"}`}>
                     <img
-                      src={item.imageName || "/src/assets/placeholder.png"}
+                      src={item.imageName}
                       alt={item.title}
                       className="w-full h-44 object-contain rounded-lg transition-transform duration-300 group-hover:scale-105"
                       loading="lazy"
                       decoding="async"
-                      onError={(e) => {
-                        e.currentTarget.src = "/src/assets/placeholder.png";
-                      }}
+                      onError={() => markImageBroken(item.id)}
                     />
                   </div>
                   <div className="p-4">

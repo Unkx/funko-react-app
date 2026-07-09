@@ -76,6 +76,9 @@ type ActiveView = "dashboard" | "collection" | "wishlist" | "analytics" | "socia
 const DashboardSite: React.FC = () => {
   const { isMobile, isTablet, isDesktop } = useBreakpoints();
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
+  const [brokenImageIds, setBrokenImageIds] = useState<Set<string>>(new Set());
+  const markImageBroken = (id: string) =>
+    setBrokenImageIds(prev => (prev.has(id) ? prev : new Set(prev).add(id)));
   const { isDarkMode } = useTheme();
   const { language } = useContext(LanguageContext);
   const [user, setUser] = useState<User | null>(null);
@@ -513,7 +516,7 @@ const DashboardSite: React.FC = () => {
                            item.number.toLowerCase().includes(collectionSearch.toLowerCase()) ||
                            (item.series && item.series.toLowerCase().includes(collectionSearch.toLowerCase()));
       const matchesCondition = filterCondition === "all" || item.condition === filterCondition;
-      return matchesSearch && matchesCondition && !!item.image_name;
+      return matchesSearch && matchesCondition && !!item.image_name && !brokenImageIds.has(item.id);
     });
     filtered.sort((a, b) => {
       let aValue: string | number = "";
@@ -529,7 +532,7 @@ const DashboardSite: React.FC = () => {
       return collectionSortOrder === "asc" ? (aValue < bValue ? -1 : 1) : (aValue > bValue ? -1 : 1);
     });
     setFilteredCollection(filtered);
-  }, [collection, collectionSearch, filterCondition, collectionSortBy, collectionSortOrder]);
+  }, [collection, collectionSearch, filterCondition, collectionSortBy, collectionSortOrder, brokenImageIds]);
 
   // Filter wishlist
   useEffect(() => {
@@ -538,7 +541,7 @@ const DashboardSite: React.FC = () => {
                            item.number.toLowerCase().includes(wishlistSearch.toLowerCase()) ||
                            (item.series && item.series.toLowerCase().includes(wishlistSearch.toLowerCase()));
       const matchesPriority = filterPriority === "all" || item.priority === filterPriority;
-      return matchesSearch && matchesPriority && !!item.image_name;
+      return matchesSearch && matchesPriority && !!item.image_name && !brokenImageIds.has(item.id);
     });
     filtered.sort((a, b) => {
       let aValue: string | number = "";
@@ -558,7 +561,7 @@ const DashboardSite: React.FC = () => {
       return wishlistSortOrder === "asc" ? (aValue < bValue ? -1 : 1) : (aValue > bValue ? -1 : 1);
     });
     setFilteredWishlist(filtered);
-  }, [wishlist, wishlistSearch, filterPriority, wishlistSortBy, wishlistSortOrder]);
+  }, [wishlist, wishlistSearch, filterPriority, wishlistSortBy, wishlistSortOrder, brokenImageIds]);
 
   // Collection Item Card Component
   const CollectionItemCard = ({ item }: { item: FunkoItem }) => (
@@ -575,9 +578,7 @@ const DashboardSite: React.FC = () => {
             src={item.image_name}
             alt={item.title}
             className="w-full h-32 object-contain bg-gray-100 cursor-pointer"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/placeholder-image.png';
-            }}
+            onError={() => markImageBroken(item.id)}
           />
         ) : (
           <div className="w-full h-32 bg-gray-200 flex items-center justify-center cursor-pointer">
@@ -617,9 +618,7 @@ const DashboardSite: React.FC = () => {
             src={item.image_name}
             alt={item.title}
             className="w-full h-32 object-contain bg-gray-100 cursor-pointer"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/placeholder-image.png';
-            }}
+            onError={() => markImageBroken(item.id)}
           />
         ) : (
           <div className="w-full h-32 bg-gray-200 flex items-center justify-center cursor-pointer">
@@ -1078,7 +1077,7 @@ const DashboardSite: React.FC = () => {
         </div>
         {collectionLoading ? <p>Loading...</p> : collection.length === 0 ? <p>{t.emptyCollection}</p> :
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
-            {collection.filter(item => !!item.image_name).slice(0, 3).map(item => (
+            {collection.filter(item => !!item.image_name && !brokenImageIds.has(item.id)).slice(0, 3).map(item => (
               <CollectionItemCard key={item.id} item={item} />
             ))}
           </div>
@@ -1098,7 +1097,7 @@ const DashboardSite: React.FC = () => {
         </div>
         {wishlistLoading ? <p>Loading...</p> : wishlist.length === 0 ? <p>{t.noItemsInWishlist}</p> :
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
-            {wishlist.filter(item => !!item.image_name).slice(0, 3).map(item => (
+            {wishlist.filter(item => !!item.image_name && !brokenImageIds.has(item.id)).slice(0, 3).map(item => (
               <WishlistItemCard key={item.id} item={item} />
             ))}
           </div>
@@ -1228,7 +1227,7 @@ const DashboardSite: React.FC = () => {
           {filteredCollection.map(item => (
             <div key={item.id} className={`rounded-lg shadow-lg overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-white"}`}>
               {item.image_name && (
-                <img src={item.image_name} alt={item.title} className="w-full h-48 object-contain bg-gray-100" />
+                <img src={item.image_name} alt={item.title} className="w-full h-48 object-contain bg-gray-100" onError={() => markImageBroken(item.id)} />
               )}
               <div className="p-4">
                 {editingCollectionItem === item.id ? (
@@ -1451,7 +1450,7 @@ const DashboardSite: React.FC = () => {
           {filteredWishlist.map(item => (
             <div key={item.id} className={`rounded-lg shadow-lg overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-white"}`}>
               {item.image_name && (
-                <img src={item.image_name} alt={item.title} className="w-full h-48 object-contain bg-gray-100" />
+                <img src={item.image_name} alt={item.title} className="w-full h-48 object-contain bg-gray-100" onError={() => markImageBroken(item.id)} />
               )}
               <div className="p-4">
                 {editingWishlistItem === item.id ? (

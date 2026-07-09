@@ -139,8 +139,9 @@ const WelcomeSite: React.FC = () => {
   };
 
   const randomItems = useMemo(() => {
-    if (funkoData.length === 0) return [];
-    const shuffled = [...funkoData].sort(() => 0.5 - Math.random());
+    const withImage = funkoData.filter((item) => !!item.imageName);
+    if (withImage.length === 0) return [];
+    const shuffled = [...withImage].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, 3);
   }, [funkoData]);
 
@@ -149,7 +150,7 @@ const WelcomeSite: React.FC = () => {
     return [...funkoData]
       .map((item) => ({ ...item, visits: visitCount[item.id] || 0 }))
       .sort((a, b) => b.visits - a.visits)
-      .filter((item) => item.visits > 0)
+      .filter((item) => item.visits > 0 && !!item.imageName)
       .slice(0, 3);
   }, [funkoData]);
 

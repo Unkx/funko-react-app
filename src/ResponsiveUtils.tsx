@@ -30,7 +30,7 @@ export const ResponsiveUtils = (query: string): boolean => {
 
     const mediaQueryList = globalThis.window.matchMedia(query);
     const listener = (event: MediaQueryListEvent) => {
-      setMatches(!event.matches);
+      setMatches(event.matches);
     };
 
     // Set initial state

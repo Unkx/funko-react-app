@@ -513,7 +513,7 @@ const DashboardSite: React.FC = () => {
                            item.number.toLowerCase().includes(collectionSearch.toLowerCase()) ||
                            (item.series && item.series.toLowerCase().includes(collectionSearch.toLowerCase()));
       const matchesCondition = filterCondition === "all" || item.condition === filterCondition;
-      return matchesSearch && matchesCondition;
+      return matchesSearch && matchesCondition && !!item.image_name;
     });
     filtered.sort((a, b) => {
       let aValue: string | number = "";
@@ -538,7 +538,7 @@ const DashboardSite: React.FC = () => {
                            item.number.toLowerCase().includes(wishlistSearch.toLowerCase()) ||
                            (item.series && item.series.toLowerCase().includes(wishlistSearch.toLowerCase()));
       const matchesPriority = filterPriority === "all" || item.priority === filterPriority;
-      return matchesSearch && matchesPriority;
+      return matchesSearch && matchesPriority && !!item.image_name;
     });
     filtered.sort((a, b) => {
       let aValue: string | number = "";
@@ -1078,7 +1078,7 @@ const DashboardSite: React.FC = () => {
         </div>
         {collectionLoading ? <p>Loading...</p> : collection.length === 0 ? <p>{t.emptyCollection}</p> :
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
-            {collection.slice(0, 3).map(item => (
+            {collection.filter(item => !!item.image_name).slice(0, 3).map(item => (
               <CollectionItemCard key={item.id} item={item} />
             ))}
           </div>
@@ -1098,7 +1098,7 @@ const DashboardSite: React.FC = () => {
         </div>
         {wishlistLoading ? <p>Loading...</p> : wishlist.length === 0 ? <p>{t.noItemsInWishlist}</p> :
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
-            {wishlist.slice(0, 3).map(item => (
+            {wishlist.filter(item => !!item.image_name).slice(0, 3).map(item => (
               <WishlistItemCard key={item.id} item={item} />
             ))}
           </div>

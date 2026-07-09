@@ -196,7 +196,7 @@ const CategoriesSite: React.FC = () => {
   // Get featured items for category preview
   const getFeaturedItems = (categoryId: string) => {
     return items
-      .filter(item => matchesCategory(item, categoryId))
+      .filter(item => matchesCategory(item, categoryId) && !!item.imageName)
       .slice(0, 4);
   };
 
@@ -214,12 +214,12 @@ const CategoriesSite: React.FC = () => {
     setSearchQuery("");
   };
 
-  const categoryItems = getCategoryItems();
-  const filteredItems = categoryItems.filter(item => 
-    !searchQuery || 
+  const categoryItems = getCategoryItems().filter(item => !!item.imageName);
+  const filteredItems = categoryItems.filter(item =>
+    !searchQuery ||
     item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (item.series && item.series.some(series => 
+    (item.series && item.series.some(series =>
       series.toLowerCase().includes(searchQuery.toLowerCase())
     ))
   );

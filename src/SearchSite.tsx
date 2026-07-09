@@ -372,6 +372,7 @@ const SearchSite = () => {
     });
     if (categoryFilter) results = results.filter((item: any) => item.series?.includes(categoryFilter));
     if (showExclusiveOnly) results = results.filter((item: any) => item.exclusive);
+    results = results.filter((item: any) => !!item.imageName);
     switch (sortOption) {
       case "titleDesc":
         results.sort((a: any, b: any) => b.title?.localeCompare(a.title || "") || 0);

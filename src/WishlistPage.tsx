@@ -125,8 +125,8 @@ const WishlistPage: React.FC = () => {
                            (item.series && item.series.toLowerCase().includes(wishlistSearch.toLowerCase()));
       
       const matchesPriority = filterPriority === "all" || item.priority === filterPriority;
-      
-      return matchesSearch && matchesPriority;
+
+      return matchesSearch && matchesPriority && !!item.image_name;
     });
 
     // Sort the filtered results

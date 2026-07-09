@@ -123,8 +123,8 @@ const CollectionPage: React.FC = () => {
                            (item.series && item.series.toLowerCase().includes(collectionSearch.toLowerCase()));
       
       const matchesCondition = filterCondition === "all" || item.condition === filterCondition;
-      
-      return matchesSearch && matchesCondition;
+
+      return matchesSearch && matchesCondition && !!item.image_name;
     });
 
     // Sort the filtered results

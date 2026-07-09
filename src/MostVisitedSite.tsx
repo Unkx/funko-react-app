@@ -137,7 +137,7 @@ const MostVisitedSite: React.FC = () => {
         ...item,
         visits: visitCount[item.id] || 0,
       }))
-      .filter((item): item is FunkoItemWithVisits => item.visits > 0);
+      .filter((item): item is FunkoItemWithVisits => item.visits > 0 && !!item.imageName);
   }, [allItems, visitCountVersion]);
 
   const sortedItems = useMemo(() => {

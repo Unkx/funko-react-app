@@ -67,7 +67,7 @@ const ImageModal: React.FC<{
   return (
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
-        className={`relative p-4 rounded-2xl shadow-2xl max-w-3xl max-h-[90vh] overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-white"}`}
+        className={`relative p-4 rounded-lg shadow-2xl max-w-3xl max-h-[90vh] overflow-hidden ${isDarkMode ? "bg-slate-800" : "bg-white"}`}
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -123,7 +123,7 @@ const RequestModal: React.FC<{
   return (
     <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
-        className={`relative p-6 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto ${isDarkMode ? "bg-slate-800" : "bg-white"}`}
+        className={`relative p-6 rounded-lg shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto ${isDarkMode ? "bg-slate-800" : "bg-white"}`}
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -451,7 +451,7 @@ const SearchSite = () => {
       <div className="max-w-6xl mx-auto px-4 pt-6 pb-4">
         <form onSubmit={handleSearch} className="mb-4">
           <div
-            className={`flex rounded-xl overflow-hidden border transition-colors ${
+            className={`flex rounded-lg overflow-hidden border transition-colors ${
               isDarkMode ? "bg-slate-800 border-slate-700 focus-within:border-amber-400/50" : "bg-white border-slate-200 focus-within:border-blue-400"
             }`}
           >
@@ -574,7 +574,7 @@ const SearchSite = () => {
                       <div
                         key={item.id}
                         onClick={() => navigate(`/funko/${encodeURIComponent(item.id)}`)}
-                        className={`group rounded-xl overflow-hidden border cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${
+                        className={`group rounded-lg overflow-hidden border cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${
                           isDarkMode ? "bg-slate-800 border-slate-700 hover:border-amber-400/30" : "bg-white border-slate-200 hover:border-blue-300"
                         }`}
                       >
@@ -635,7 +635,7 @@ const SearchSite = () => {
                       <div
                         key={item.id}
                         onClick={() => navigate(`/funko/${encodeURIComponent(item.id)}`)}
-                        className={`flex items-center gap-4 p-3 sm:p-4 rounded-xl border cursor-pointer transition-all hover:shadow-md ${
+                        className={`flex items-center gap-4 p-3 sm:p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
                           isDarkMode ? "bg-slate-800 border-slate-700 hover:border-slate-600" : "bg-white border-slate-200 hover:border-slate-300"
                         }`}
                       >

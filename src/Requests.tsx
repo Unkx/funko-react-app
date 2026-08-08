@@ -79,7 +79,6 @@ const Requests = () => {
           alert(t.failedToLoadRequests || "Failed to load requests");
         }
       } catch (err) {
-        console.error("Error fetching requests:", err);
         alert(t.failedToLoadRequests || "Failed to load requests");
       } finally {
         setLoading(false);
@@ -146,7 +145,6 @@ const Requests = () => {
         alert(`${t.failedToResolveRequest}: ${errorText}`);
       }
     } catch (err) {
-      console.error("Error resolving request:", err);
       alert(t.errorResolvingRequest || "Error resolving request");
     } finally {
       setProcessingId(null);

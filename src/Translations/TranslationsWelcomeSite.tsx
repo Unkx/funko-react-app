@@ -37,7 +37,7 @@ export const translations = {
     AddToCollection: "Add to Collection",
 
     //chat commands 
-    chatGreeting: "Hi there! 😊 I'm PopBot! Ask me to search for Pops, show categories, or find popular items!",
+    chatGreeting: "Hi there! I'm PopBot! Ask me to search for Pops, show categories, or find popular items!",
     chatHelp: "Try:\n• \"Search for Marvel\"\n• \"Show me exclusives\"\n• \"Go to categories\"\n• \"Most popular Pops\"",
     chatSearching: "Searching for \"{query}\"...",
     chatGoingToCategories: "Taking you to categories!",
@@ -86,7 +86,7 @@ export const translations = {
     AddToCollection: "Dodaj do kolekcji",
 
     //chat commands
-    chatGreeting: "Cześć! 😊 Jestem PopBot! Poproś mnie o wyszukanie Popów, pokazanie kategorii lub znalezienie popularnych przedmiotów!",
+    chatGreeting: "Cześć! Jestem PopBot! Poproś mnie o wyszukanie Popów, pokazanie kategorii lub znalezienie popularnych przedmiotów!",
     chatHelp: "Spróbuj:\n• \"Szukaj Marvel\"\n• \"Pokaż ekskluzywne\"\n• \"Przejdź do kategorii\"\n• \"Najpopularniejsze Pop!\"",
     chatSearching: "Wyszukiwanie \"{query}\"...",
     chatGoingToCategories: "Przenoszę do kategorii!",
@@ -135,7 +135,7 @@ export const translations = {
     AddToCollection: "Добавить в коллекцию",
 
     //chat commands
-    chatGreeting: "Привет! 😊 Я PopBot! Попросите меня найти Попов, показать категории или найти популярные предметы!" ,
+    chatGreeting: "Привет! Я PopBot! Попросите меня найти Попов, показать категории или найти популярные предметы!" ,
     chatHelp: "Попробуйте:\n• \"Искать Marvel\"\n• \"Показать эксклюзивы\"\n• \"Перейти к категориям\"\n• \"Самые популярные Поп!\"",
     chatSearching: "Поиск \"{query}\"...",
     chatGoingToCategories: "Перехожу к категориям!",
@@ -183,7 +183,7 @@ export const translations = {
     AddToCollection: "Agregar a la colección",
 
     //chat commands
-    chatGreeting: "¡Hola! 😊 ¡Soy PopBot! ¡Pídeme que busque Pops, muestre categorías o encuentre artículos populares!",
+    chatGreeting: "¡Hola! ¡Soy PopBot! ¡Pídeme que busque Pops, muestre categorías o encuentre artículos populares!",
     chatHelp: "Intenta:\n• \"Buscar Marvel\"\n• \"Muéstrame exclusivos\"\n• \"Ir a categorías\"\n• \"Pops más populares\"",
     chatSearching: "Buscando \"{query}\"...",
     chatGoingToCategories: "¡Llevándote a categorías!",
@@ -231,7 +231,7 @@ export const translations = {
     AddToCollection: "Ajouter à la collection",
 
     //chat commands
-    chatGreeting: "Salut! 😊 Je suis PopBot! Demandez-moi de rechercher des Pops, d'afficher des catégories ou de trouver des articles populaires!",
+    chatGreeting: "Salut! Je suis PopBot! Demandez-moi de rechercher des Pops, d'afficher des catégories ou de trouver des articles populaires!",
     chatHelp: "Essayez:\n• \"Rechercher Marvel\"\n• \"Montre-moi des exclusivités\"\n• \"Aller aux catégories\"\n• \"Pops les plus populaires\"",
     chatSearching: "Recherche de \"{query}\"...",
     chatGoingToCategories: "Je vous emmène aux catégories!",
@@ -274,7 +274,7 @@ export const translations = {
     AddToCollection: "Zur Sammlung hinzufügen",
 
     //chat commands
-    chatGreeting: "Hallo! 😊 Ich bin PopBot! Bitte mich, Pops zu suchen, Kategorien anzuzeigen oder beliebte Artikel zu finden!" ,
+    chatGreeting: "Hallo! Ich bin PopBot! Bitte mich, Pops zu suchen, Kategorien anzuzeigen oder beliebte Artikel zu finden!" ,
     chatHelp: "Versuchen Sie:\n• \"Suche nach Marvel\"\n• \"Zeig mir Exklusives\"\n• \"Zu den Kategorien gehen\"\n• \"Beliebteste Pops\"",
     chatSearching: "Suche nach \"{query}\"...",
     chatGoingToCategories: "Ich bringe dich zu den Kategorien!",

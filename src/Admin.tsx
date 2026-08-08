@@ -10,6 +10,7 @@ import LoyaltyDashboard from './LoyaltyDashboard';
 import Layout from './Layout';
 import { useTheme } from './ThemeContext';
 import { LanguageContext } from './LanguageContext';
+import { Medal, X, Star, Check, Inbox, XCircle } from 'lucide-react';
 
 // SVG Icons
 import SearchIcon from "/src/assets/search.svg?react";
@@ -24,12 +25,7 @@ import StarIcon from "/src/assets/star.svg?react";
 import PlusIcon from "/src/assets/plus.svg?react";
 import AdminInvites from "./AdminInvites";
 
-// Add this after your imports
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
-
-if (!import.meta.env.VITE_API_BASE_URL) {
-  console.warn('VITE_API_BASE_URL is not set, using default:', baseURL);
-}
 
 interface User {
   id: number;
@@ -140,7 +136,6 @@ const Requests = () => {
           alert(t.failedToLoadRequests || "Failed to load requests");
         }
       } catch (err) {
-        console.error("Error fetching requests:", err);
         alert(t.failedToLoadRequests || "Failed to load requests");
       } finally {
         setLoading(false);
@@ -207,7 +202,6 @@ const Requests = () => {
         alert(`${t.failedToResolveRequest}: ${errorText}`);
       }
     } catch (err) {
-      console.error("Error resolving request:", err);
       alert(t.errorResolvingRequest || "Error resolving request");
     } finally {
       setProcessingId(null);
@@ -574,12 +568,12 @@ const Admin = () => {
     role: "user" as "user" | "admin"
   });
 
-  // 🔹 Analytics state
+  // Analytics state
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [adminAnalytics, setAdminAnalytics] = useState<any>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
-  // 🔹 Dashboard Analytics State
+  // Dashboard Analytics State
   const [userStats, setUserStats] = useState<any>(null);
   const [loyaltyData, setLoyaltyData] = useState<any>(null);
   const [friends, setFriends] = useState<any[]>([]);
@@ -653,7 +647,7 @@ const Admin = () => {
     setShowAccountDetails(true);
   };
 
-  // 🔹 Log activity function
+  // Log activity function
   const logActivity = async (actionType: string, details?: any) => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -670,17 +664,16 @@ const Admin = () => {
           session_duration: Math.floor(Date.now() / 1000)
         })
       });
-    } catch (err) {
-      console.error("Failed to log activity:", err);
+    } catch {
     }
   };
 
-  // 🔹 Social state
+  // Social state
   const [incomingRequests, setIncomingRequests] = useState<any[]>([]);
   const [outgoingRequests, setOutgoingRequests] = useState<any[]>([]);
   const [showChat, setShowChat] = useState(false);
   const [selectedFriend, setSelectedFriend] = useState<any>(null);
-  // 🔹 Fetch user analytics
+  // Fetch user analytics
   const fetchUserAnalytics = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -696,14 +689,13 @@ const Admin = () => {
       if (loyaltyRes.ok) setLoyaltyData(await loyaltyRes.json());
       if (friendsRes.ok) setFriends(await friendsRes.json());
       if (leaderboardRes.ok) setLeaderboard(await leaderboardRes.json());
-    } catch (err) {
-      console.error("Failed to fetch user analytics:", err);
+    } catch {
     } finally {
       setDashboardAnalyticsLoading(false);
     }
   };
 
-  // 🔹 Social functions
+  // Social functions
 const fetchIncomingRequests = async () => {
   const token = localStorage.getItem("token");
   if (!token) return;
@@ -715,8 +707,7 @@ const fetchIncomingRequests = async () => {
       const data = await response.json();
       setIncomingRequests(data);
     }
-  } catch (err) {
-    console.error("Error fetching incoming requests:", err);
+  } catch {
   }
 };
 
@@ -731,8 +722,7 @@ const fetchOutgoingRequests = async () => {
       const data = await response.json();
       setOutgoingRequests(data);
     }
-  } catch (err) {
-    console.error("Error fetching outgoing requests:", err);
+  } catch {
   }
 };
 
@@ -749,8 +739,7 @@ const handleAcceptRequest = async (senderId: string, friendshipId: string) => {
       fetchIncomingRequests();
       fetchUserAnalytics(); // refresh friends list
     }
-  } catch (err) {
-    console.error("Error accepting request:", err);
+  } catch {
   }
 };
 
@@ -767,8 +756,7 @@ const handleRejectRequest = async (friendshipId: string) => {
       fetchIncomingRequests();
       fetchOutgoingRequests();
     }
-  } catch (err) {
-    console.error("Error rejecting request:", err);
+  } catch {
   }
 };
 
@@ -785,8 +773,7 @@ const handleRemoveFriend = async (friendId: string) => {
       alert("Friend removed");
       fetchUserAnalytics();
     }
-  } catch (err) {
-    console.error("Error removing friend:", err);
+  } catch {
   }
 };
 
@@ -808,12 +795,11 @@ const handleRemoveFriend = async (friendId: string) => {
         });
         setShowChat(true);
       }
-    } catch (err) {
-      console.error("Error starting chat:", err);
+    } catch {
     }
   };
 
-  // 🔹 Loyalty Dashboard state
+  // Loyalty Dashboard state
   const [showLoyaltyDashboard, setShowLoyaltyDashboard] = useState(false);
 
     const awardPoints = async (actionType: string, details?: string) => {
@@ -829,13 +815,12 @@ const handleRemoveFriend = async (friendId: string) => {
         },
         body: JSON.stringify({ actionType, details })
       });
-    } catch (err) {
-      console.error("Failed to award points:", err);
+    } catch {
     }
   };
 
 
-  // 🔹 Fetch admin analytics data
+  // Fetch admin analytics data
   const fetchAdminAnalytics = async () => {
     if (!token) return;
     
@@ -849,8 +834,7 @@ const handleRemoveFriend = async (friendId: string) => {
         const data = await response.json();
         setAdminAnalytics(data);
       }
-    } catch (err) {
-      console.error("Failed to fetch analytics:", err);
+    } catch {
     } finally {
       setAnalyticsLoading(false);
     }
@@ -894,7 +878,7 @@ const handleRemoveFriend = async (friendId: string) => {
   useEffect(() => {
     if (!token || !currentUser || currentUser.role !== "admin") {
       const timer = setTimeout(() => {
-        navigate("/", { replace: true }); // ✅ Przekierowanie do WelcomeSite
+        navigate("/", { replace: true }); // redirect to WelcomeSite
       }, 2000); 
       return () => clearTimeout(timer);
     }
@@ -912,8 +896,7 @@ const handleRemoveFriend = async (friendId: string) => {
           const data = await res.json();
           setPendingRequestsCount(data.count || 0);
         }
-      } catch (err) {
-        console.warn("Failed to fetch request count");
+      } catch {
       }
     };
     fetchCount();
@@ -966,8 +949,7 @@ const handleRemoveFriend = async (friendId: string) => {
         }
         const statsData = await response.json();
         setSiteStats(statsData);
-      } catch (err: any) {
-        console.error(t.failedToLoadStatictics || "Failed to load site statistics:", err);
+      } catch {
       } finally {
         setStatsLoading(false);
       }
@@ -975,14 +957,14 @@ const handleRemoveFriend = async (friendId: string) => {
     fetchSiteStats();
   }, [token, currentUser?.role]);
 
-  // 🔹 Fetch analytics only when panel is opened
+  // Fetch analytics only when panel is opened
   useEffect(() => {
     if (showAnalytics) {
       fetchAdminAnalytics();
     }
   }, [showAnalytics]);
 
-  // 🔹 Fetch dashboard analytics when active view changes
+  // Fetch dashboard analytics when active view changes
   useEffect(() => {
     if (activeView === "analytics") {
       fetchUserAnalytics();
@@ -1108,7 +1090,6 @@ const handleRemoveFriend = async (friendId: string) => {
       setSearchTerm("");
       setFilteredItems([]);
     } catch (err: any) {
-      console.error('Add item error:', err);
       alert(`Failed to add item: ${err.message}`);
     }
   };
@@ -1157,7 +1138,6 @@ const handleRemoveFriend = async (friendId: string) => {
         alert(err.error || "Failed to create user");
       }
     } catch (err) {
-      console.error("Add user error:", err);
       alert("Network error");
     }
   };
@@ -1177,7 +1157,6 @@ const handleRemoveFriend = async (friendId: string) => {
       const searchResults = await response.json();
       setFilteredItems(searchResults);
     } catch (err: any) {
-      console.error("Search error:", err);
       alert(`Search failed: ${err.message}`);
       setFilteredItems([]);
     } finally {
@@ -1209,7 +1188,7 @@ const handleRemoveFriend = async (friendId: string) => {
     navigate(`/item/${encodeURIComponent(funkoId)}`);
   };
 
-  // 🔹 Render Analytics View
+  // Render Analytics View
   const renderAnalyticsView = () => (
     <div className="max-w-7xl mx-auto w-full">
       <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
@@ -1286,8 +1265,12 @@ const handleRemoveFriend = async (friendId: string) => {
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-lg font-bold w-8">
-                          {idx < 3 ? ['🥇', '🥈', '🥉'][idx] : `#${idx + 1}`}
+                        <span className="text-lg font-bold w-8 flex items-center">
+                          {idx < 3 ? (
+                            <Medal className={`w-5 h-5 ${['text-yellow-500', 'text-slate-400', 'text-amber-700'][idx]}`} />
+                          ) : (
+                            `#${idx + 1}`
+                          )}
                         </span>
                         <span className={isCurrentUser ? "font-bold" : ""}>
                           {entry.login} {isCurrentUser && "(You)"}
@@ -1305,7 +1288,7 @@ const handleRemoveFriend = async (friendId: string) => {
     </div>
   );
 
-  // 🔹 Render Social View
+  // Render Social View
   const renderSocialView = () => (
     <div className="max-w-7xl mx-auto w-full">
       <h2 className={`text-3xl font-bold mb-6 ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
@@ -1342,7 +1325,7 @@ const handleRemoveFriend = async (friendId: string) => {
                 });
                 if (response.ok) {
                   alert("Friend request sent!");
-                  await awardPoints("friend_add", `Sent friend request to ${friendLogin}`); // ✅ DODANE
+                  await awardPoints("friend_add", `Sent friend request to ${friendLogin}`);
                   input.value = "";
                   fetchOutgoingRequests();
                 } else {
@@ -1350,7 +1333,6 @@ const handleRemoveFriend = async (friendId: string) => {
                   alert(error.error || "Failed to send friend request");
                 }
               } catch (err) {
-                console.error("Error sending friend request:", err);
                 alert("Failed to send friend request");
               }
             }}
@@ -1524,7 +1506,7 @@ const handleRemoveFriend = async (friendId: string) => {
     </div>
   );
 
-  // 🔹 Render Account Details Modal
+  // Render Account Details Modal
   const renderAccountDetailsModal = () => (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" onClick={() => setShowAccountDetails(false)}>
       <div className={`w-full max-w-md p-6 rounded-lg shadow-xl ${isDarkMode ? "bg-slate-900" : "bg-white border border-gray-200"}`} onClick={(e) => e.stopPropagation()}>
@@ -1534,7 +1516,7 @@ const handleRemoveFriend = async (friendId: string) => {
             onClick={() => setShowAccountDetails(false)}
             className={`p-1 rounded-full ${isDarkMode ? "hover:bg-slate-800" : "hover:bg-gray-200"}`}
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
         
@@ -1585,7 +1567,9 @@ const handleRemoveFriend = async (friendId: string) => {
                   <strong className="text-gray-700 dark:text-slate-300">{t.role || "Role"}:</strong> 
                   <span className={`capitalize ${selectedUserDetails.role === 'admin' ? 'text-yellow-600' : 'text-blue-600'}`}>
                     {selectedUserDetails.role}
-                    {isSuperAdmin(selectedUserDetails) && " ★"}
+                    {isSuperAdmin(selectedUserDetails) && (
+                      <Star className="inline w-3.5 h-3.5 ml-1 -mt-0.5 text-yellow-500 fill-yellow-500" />
+                    )}
                   </span>
                 </li>
                 <li className="flex justify-between">
@@ -1640,7 +1624,7 @@ const handleRemoveFriend = async (friendId: string) => {
     </div>
   );
 
-  // 🔹 Render Add User Modal
+  // Render Add User Modal
   const renderAddUserModal = () => (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4" onClick={() => setShowAddUserModal(false)}>
       <div className="w-full max-w-md p-6 rounded-lg shadow-xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
@@ -1774,7 +1758,7 @@ const handleRemoveFriend = async (friendId: string) => {
           }`}>
             {t.listOfItems || "Items"}
           </button>
-          {/* 🔹 NEW TABS */}
+          {/* NEW TABS */}
           <button onClick={() => setActiveView("analytics")} className={`px-3 py-1 rounded border flex items-center gap-2 ${
             activeView === "analytics" 
               ? (isDarkMode ? "bg-amber-400 text-black border-yellow-500" : "bg-blue-600 text-white border-blue-600") 
@@ -1806,7 +1790,7 @@ const handleRemoveFriend = async (friendId: string) => {
                 : (isDarkMode ? "hover:bg-slate-700 border-gray-600" : "hover:bg-gray-100 border-gray-300")
             }`}
           >
-            📥 {t.requests || "Requests"}
+            <Inbox className="w-4 h-4" /> {t.requests || "Requests"}
           </button>
 
         </div>
@@ -1816,14 +1800,14 @@ const handleRemoveFriend = async (friendId: string) => {
         <AnimatePresence mode="wait">
           {activeView === "users" && (
             <motion.div key="users" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.5, ease: "easeInOut" }} className="w-full max-w-7xl">
-              {/* 📍 Current language */}
+              {/* Current language */}
               <div className={`mb-6 text-center ${isDarkMode ? "text-slate-300" : "text-gray-600"}`}>
                 <p className="text-sm">
                   {language}
                 </p>
               </div>
 
-              {/* 🔹 Advanced Analytics Section */}
+              {/* Advanced Analytics Section */}
               {showAnalytics && (
                 <section className={`max-w-6xl w-full p-4 sm:p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-slate-800" : "bg-white border border-gray-200"}`}>
                   <div className="flex justify-between items-center mb-6">
@@ -1835,7 +1819,7 @@ const handleRemoveFriend = async (friendId: string) => {
                       onClick={() => setShowAnalytics(false)}
                       className="text-slate-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-300"
                     >
-                      ✕
+                      <X className="w-5 h-5" />
                     </button>
                   </div>
 
@@ -2049,7 +2033,7 @@ const handleRemoveFriend = async (friendId: string) => {
                             <td className="w-16 px-2 sm:px-3 py-2 text-center border-r border-gray-300">
                               {user.id}
                               {isSuperAdmin(user) && (
-                                <span className="block text-xs text-purple-600">★</span>
+                                <Star className="block mx-auto w-3 h-3 text-purple-600 fill-purple-600" />
                               )}
                             </td>
                             <td className="px-2 sm:px-3 py-2 truncate max-w-[100px] border-r border-gray-300" title={user.login}>{user.login}</td>
@@ -2175,7 +2159,7 @@ const handleRemoveFriend = async (friendId: string) => {
                         onClick={clearSearch}
                         className="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm text-red-500 hover:text-red-700"
                       >
-                        ✕
+                        <X className="w-4 h-4" />
                       </button>
                     )}
                   </div>
@@ -2223,9 +2207,9 @@ const handleRemoveFriend = async (friendId: string) => {
                             </td>
                             <td className="px-2 sm:px-3 py-2 text-center border-r border-gray-300">
                               {item.exclusive ? (
-                                <span className="text-green-500 font-semibold">✓</span>
+                                <Check className="w-4 h-4 mx-auto text-green-500" />
                               ) : (
-                                <span className="text-red-500 font-semibold">✗</span>
+                                <XCircle className="w-4 h-4 mx-auto text-red-500" />
                               )}
                             </td>
                             <td className="px-2 sm:px-3 py-2 border-r border-gray-300">
@@ -2234,7 +2218,6 @@ const handleRemoveFriend = async (friendId: string) => {
                             <td className="px-2 sm:px-3 py-2 text-center">
                               <button
                                 onClick={() => {
-                                  console.log("Edit item:", item.id);
                                 }}
                                 className={`px-2 py-1 rounded text-xs sm:text-sm border ${
                                   isDarkMode ? "bg-blue-600 hover:bg-blue-700 border-blue-600" : "bg-blue-500 hover:bg-blue-600 border-blue-500"
@@ -2392,7 +2375,7 @@ const handleRemoveFriend = async (friendId: string) => {
             </motion.div>
           )}
 
-          {/* 🔹 NEW VIEWS */}
+          {/* NEW VIEWS */}
           {activeView === "invites" && (
             <motion.div key="invites" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={{ duration: 0.5, ease: "easeInOut" }} className="w-full max-w-7xl">
               <AdminInvites />

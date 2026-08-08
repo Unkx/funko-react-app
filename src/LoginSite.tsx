@@ -118,7 +118,6 @@ const LoginSite: React.FC = () => {
       }
 
     } catch (err) {
-      console.error("Login error:", err);
       setLoginError("Connection error. Please try again.");
     }
   };

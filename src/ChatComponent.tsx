@@ -109,8 +109,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
         const userData = await response.json();
         return userData;
       }
-    } catch (err) {
-      console.error('Error fetching user profile:', err);
+    } catch {
     }
     return null;
   };
@@ -145,8 +144,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
         const total = data.reduce((sum: number, conv: Conversation) => sum + (conv.unread_count || 0), 0);
         setUnreadCount(total);
       }
-    } catch (err) {
-      console.error('Error fetching conversations:', err);
+    } catch {
     }
   };
 
@@ -163,8 +161,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
         },
         body: JSON.stringify({ actionType, details })
       });
-    } catch (err) {
-      console.error('Failed to award points:', err);
+    } catch {
     }
   };
   
@@ -178,8 +175,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
         const data = await response.json();
         setActiveUsers(new Set(data.active_users || []));
       }
-    } catch (err) {
-      console.error('Error fetching active users:', err);
+    } catch {
     }
   };
 
@@ -204,8 +200,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
         
         fetchConversations();
       }
-    } catch (err) {
-      console.error('Error fetching messages:', err);
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -250,8 +245,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
         setNewMessage('');
         fetchConversations();
       }
-    } catch (err) {
-      console.error('Error sending message:', err);
+    } catch {
     }
   };
 
@@ -378,8 +372,7 @@ const ChatComponent: React.FC<ChatComponentProps> = ({ isDarkMode, user, friend,
           setSelectedConversation(conv);
           await fetchMessages(convData.conversation_id);
         }
-      } catch (err) {
-        console.error('Failed to open chat with friend:', err);
+      } catch {
       }
     };
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import useBreakpoints from './useBreakpoints';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Medal, Target, CalendarDays, Star, Users, BarChart3, Trophy } from 'lucide-react';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
 
@@ -41,8 +42,7 @@ const AnalyticsDashboard = () => {
       if (loyaltyRes.ok) setLoyaltyData(await loyaltyRes.json());
       if (leaderboardRes.ok) setLeaderboard(await leaderboardRes.json());
       if (friendsRes.ok) setFriends(await friendsRes.json());
-    } catch (err) {
-      console.error('Error fetching analytics:', err);
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -73,8 +73,8 @@ const AnalyticsDashboard = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-6">
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
-            📊 Analytics Dashboard
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2 flex items-center gap-2">
+            <BarChart3 className="w-7 h-7" /> Analytics Dashboard
           </h1>
           <p className="text-gray-600 dark:text-slate-400">
             Track your activity, loyalty, and social engagement
@@ -86,25 +86,25 @@ const AnalyticsDashboard = () => {
           <MetricCard
             title="Total Actions"
             value={stats?.overall?.total_actions || 0}
-            icon="🎯"
+            icon={<Target className="w-6 h-6" />}
             color="bg-blue-500"
           />
           <MetricCard
             title="Active Days"
             value={stats?.overall?.active_days || 0}
-            icon="📅"
+            icon={<CalendarDays className="w-6 h-6" />}
             color="bg-green-500"
           />
           <MetricCard
             title="Loyalty Score"
             value={loyaltyData?.loyaltyScore || 0}
-            icon="⭐"
+            icon={<Star className="w-6 h-6" />}
             color="bg-amber-400"
           />
           <MetricCard
             title="Friends"
             value={friends.filter(f => f.status === 'accepted').length}
-            icon="👥"
+            icon={<Users className="w-6 h-6" />}
             color="bg-purple-500"
           />
         </div>
@@ -164,8 +164,8 @@ const AnalyticsDashboard = () => {
 
         {/* Leaderboard Table */}
         <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
-            🏆 Full Leaderboard
+          <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center gap-2">
+            <Trophy className="w-5 h-5" /> Full Leaderboard
           </h2>
           <div className="overflow-x-auto">
             <table className="min-w-full">
@@ -193,7 +193,7 @@ const AnalyticsDashboard = () => {
                   <tr key={user.login} className="hover:bg-gray-50 dark:hover:bg-slate-800">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                       {idx < 3 ? (
-                        <span className="text-xl sm:text-2xl">{['🥇', '🥈', '🥉'][idx]}</span>
+                        <Medal className={`w-5 h-5 sm:w-6 sm:h-6 ${['text-yellow-500', 'text-slate-400', 'text-amber-700'][idx]}`} />
                       ) : (
                         <span>#{idx + 1}</span>
                       )}
@@ -221,8 +221,8 @@ const AnalyticsDashboard = () => {
 
         {/* Friends Section */}
         <div className="bg-white dark:bg-slate-900 rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">
-            👥 Your Friends
+          <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center gap-2">
+            <Users className="w-5 h-5" /> Your Friends
           </h2>
           {friends.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -270,7 +270,7 @@ const MetricCard = ({ title, value, icon, color }) => (
         <p className="text-sm text-gray-600 dark:text-slate-400 mb-1">{title}</p>
         <p className="text-3xl font-bold text-gray-800 dark:text-white">{value}</p>
       </div>
-      <div className={`${color} w-12 h-12 rounded-full flex items-center justify-center text-white text-2xl`}>
+      <div className={`${color} w-12 h-12 rounded-full flex items-center justify-center text-white`}>
         {icon}
       </div>
     </div>

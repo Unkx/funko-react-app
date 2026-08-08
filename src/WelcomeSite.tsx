@@ -119,8 +119,7 @@ const WelcomeSite: React.FC = () => {
         try {
           localStorage.setItem("funkoCache", JSON.stringify({ ts: Date.now(), data: initialSlice }));
         } catch {}
-      } catch (err) {
-        console.warn("Failed to load Funko data", err);
+      } catch {
       } finally {
         setIsLoading(false);
       }
@@ -347,7 +346,7 @@ const WelcomeSite: React.FC = () => {
                 key={item.id}
                 to={`/funko/${item.id}`}
                 onClick={() => incrementVisitCount(item.id)}
-                className={`group block rounded-xl overflow-hidden border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
+                className={`group block rounded-lg overflow-hidden border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
                   isDarkMode
                     ? "bg-slate-800 border-slate-700 hover:border-amber-400/30"
                     : "bg-white border-slate-200 hover:border-blue-300 hover:shadow-blue-100"
@@ -382,7 +381,7 @@ const WelcomeSite: React.FC = () => {
             ))}
             <Link
               to="/categories"
-              className={`group flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all duration-300 hover:-translate-y-1 min-h-[200px] ${
+              className={`group flex flex-col items-center justify-center rounded-lg border-2 border-dashed transition-all duration-300 hover:-translate-y-1 min-h-[200px] ${
                 isDarkMode
                   ? "border-slate-700 hover:border-amber-400/50 text-slate-400 hover:text-amber-400"
                   : "border-slate-300 hover:border-blue-400 text-slate-500 hover:text-blue-600"
@@ -412,7 +411,7 @@ const WelcomeSite: React.FC = () => {
                   key={item.id}
                   to={`/funko/${item.id}`}
                   onClick={() => incrementVisitCount(item.id)}
-                  className={`group block rounded-xl overflow-hidden border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
+                  className={`group block rounded-lg overflow-hidden border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
                     isDarkMode
                       ? "bg-slate-800 border-slate-700 hover:border-amber-400/30"
                       : "bg-white border-slate-200 hover:border-blue-300 hover:shadow-blue-100"
@@ -447,7 +446,7 @@ const WelcomeSite: React.FC = () => {
               ))}
               <Link
                 to="/mostVisited"
-                className={`group flex flex-col items-center justify-center rounded-xl border-2 border-dashed transition-all duration-300 hover:-translate-y-1 min-h-[200px] ${
+                className={`group flex flex-col items-center justify-center rounded-lg border-2 border-dashed transition-all duration-300 hover:-translate-y-1 min-h-[200px] ${
                   isDarkMode
                     ? "border-slate-700 hover:border-amber-400/50 text-slate-400 hover:text-amber-400"
                     : "border-slate-300 hover:border-blue-400 text-slate-500 hover:text-blue-600"
@@ -465,7 +464,7 @@ const WelcomeSite: React.FC = () => {
       {isChatOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-end p-4 sm:p-6" onClick={() => setIsChatOpen(false)}>
           <div
-            className={`w-full max-w-md rounded-2xl shadow-2xl flex flex-col h-[70vh] max-h-[600px] border overflow-hidden ${
+            className={`w-full max-w-md rounded-lg shadow-2xl flex flex-col h-[70vh] max-h-[600px] border overflow-hidden ${
               isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"
             }`}
             onClick={(e) => e.stopPropagation()}
@@ -496,7 +495,7 @@ const WelcomeSite: React.FC = () => {
                 messages.map((msg, i) => (
                   <div key={i} className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
                     <div
-                      className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
+                      className={`max-w-[80%] rounded-lg px-4 py-2.5 text-sm ${
                         msg.sender === "user"
                           ? isDarkMode
                             ? "bg-amber-400 text-slate-900 rounded-br-md"

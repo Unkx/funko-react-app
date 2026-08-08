@@ -45,7 +45,6 @@ const LoyaltyWidget: React.FC<Props> = ({ isDarkMode, onOpenFull }) => {
         setError("Failed to load loyalty data");
       }
     } catch (err) {
-      console.error("Error fetching loyalty widget:", err);
       setError("Error loading data");
     } finally {
       setLoading(false);

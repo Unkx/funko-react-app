@@ -13,7 +13,7 @@ const WorldMap: React.FC<WorldMapProps> = ({ onSelectCountry }) => {
       <div
         style={{
           width: "100%",
-          height: "500px",   // ✅ Make sure height is not 0
+          height: "500px",
           margin: "auto",
           border: "1px solid #CCC",
         }}

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { translations } from "./Translations/TranslationsLoyalty";
+import { Medal, Trophy, Gem, Shield } from "lucide-react";
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
 
@@ -65,7 +66,6 @@ const LoyaltyBadge: React.FC<Props> = ({ userId, size = "medium", showLevel = tr
         setError(t.errorLoadingBadge);
       }
     } catch (err) {
-      console.error("Error fetching badge:", err);
       setError(t.errorLoadingBadge);
     } finally {
       setLoading(false);
@@ -78,14 +78,14 @@ const LoyaltyBadge: React.FC<Props> = ({ userId, size = "medium", showLevel = tr
     large: "w-16 h-16"
   };
 
-  const getBadgeEmoji = (level: number) => {
+  const getBadgeIcon = (level: number) => {
     switch(level) {
-      case 1: return "🥉";
-      case 2: return "🥈";
-      case 3: return "🥇";
-      case 4: return "🏆";
-      case 5: return "💎";
-      default: return "🛡️";
+      case 1: return <Medal className="text-amber-700" />;
+      case 2: return <Medal className="text-slate-400" />;
+      case 3: return <Medal className="text-yellow-500" />;
+      case 4: return <Trophy />;
+      case 5: return <Gem />;
+      default: return <Shield />;
     }
   };
 
@@ -143,8 +143,8 @@ const LoyaltyBadge: React.FC<Props> = ({ userId, size = "medium", showLevel = tr
         }}
         title={getLevelTitle()}
       >
-        <span className="text-lg sm:text-xl">
-          {getBadgeEmoji(level)}
+        <span className="w-1/2 h-1/2 [&>svg]:w-full [&>svg]:h-full">
+          {getBadgeIcon(level)}
         </span>
       </div>
       {showLevel && size !== "small" && (

@@ -49,7 +49,7 @@ export const FunkoItems: FunkoItem[] = [
       },
       {
         id: "stranger-things-joey-16",
-        title: "Joey Wheeler", // ⚠️ Fixed: "Joey Wheeler" was incorrect
+        title: "Joey Wheeler",
         number: "16",
         category: "Funko TV",
         series: ["Stranger Things", "Sci-Fi"],

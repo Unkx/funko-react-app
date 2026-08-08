@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import useBreakpoints from "./useBreakpoints";
 import WorldMap from "/src/Maps/WorldMap"
+import { X } from "lucide-react";
 
 const LanguageSelectorPopup = ({ onClose }: { onClose: () => void }) => {
   const { isMobile, isTablet } = useBreakpoints();
@@ -62,10 +63,10 @@ const LanguageSelectorPopup = ({ onClose }: { onClose: () => void }) => {
 
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 text-slate-500 hover:text-gray-800 text-lg md:text-xl"
+          className="absolute top-3 right-3 text-slate-500 hover:text-gray-800"
           aria-label="Close"
         >
-          ✕
+          <X className="w-5 h-5" />
         </button>
       </div>
     </div>

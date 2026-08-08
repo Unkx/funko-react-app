@@ -5,6 +5,8 @@ import useBreakpoints from "./useBreakpoints";
 import LeftArrow from "/src/assets/left-arrow.svg?react";
 import RightArrow from "/src/assets/right-arrow.svg?react";
 
+const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
+
 interface Item {
   id: number | string;
   title: string;
@@ -64,7 +66,6 @@ const ItemList: React.FC<ItemListProps> = ({ token, currentUserRole, isDarkMode,
         setTotalPages(1);
       }
     } catch (err: any) {
-      console.error("Error fetching items:", err);
       setItemsError(err.message || "Failed to load items.");
       setItems([]);
     } finally {

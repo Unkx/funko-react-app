@@ -110,7 +110,6 @@ const WishlistPage: React.FC = () => {
           setWishlist([]);
         }
       } catch (error) {
-        console.error("Failed to fetch wishlist:", error);
         setWishlist([]);
       } finally {
         setLoading(false);
@@ -208,8 +207,7 @@ const WishlistPage: React.FC = () => {
         setEditingItem(null);
         setEditForm({});
       }
-    } catch (error) {
-      console.error("Failed to update item:", error);
+    } catch {
     }
   };
 
@@ -230,8 +228,7 @@ const WishlistPage: React.FC = () => {
       if (response.ok) {
         setWishlist(prev => prev.filter(item => item.id !== itemId));
       }
-    } catch (error) {
-      console.error("Failed to delete item:", error);
+    } catch {
     }
   };
 
@@ -262,8 +259,7 @@ const WishlistPage: React.FC = () => {
         await handleDeleteItem(item.id);
         alert("Item moved to your collection!");
       }
-    } catch (error) {
-      console.error("Failed to move item to collection:", error);
+    } catch {
     }
   };
 

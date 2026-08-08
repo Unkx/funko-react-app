@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useBreakpoints from "./useBreakpoints";
@@ -11,6 +9,7 @@ import FriendProfileModal from './FriendProfileModal';
 import Layout from './Layout';
 import { useTheme } from './ThemeContext';
 import { LanguageContext } from './LanguageContext';
+import { Medal, AlertTriangle, User, Users, VenetianMask, Cake, Globe, Mail, KeyRound, Clock, Trophy } from 'lucide-react';
 
 // Icons
 import EditIcon from "/src/assets/edit.svg?react";
@@ -23,12 +22,7 @@ import ChartIcon from "/src/assets/chart.svg?react";
 import UsersIcon from "/src/assets/users.svg?react";
 import ShoppingCartIcon from "/src/assets/shopping-cart.svg?react";
 
-// Add this after your imports
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
-
-if (!import.meta.env.VITE_API_BASE_URL) {
-  console.warn('VITE_API_BASE_URL is not set, using default:', baseURL);
-}
 
 
 interface User {
@@ -172,36 +166,10 @@ const DashboardSite: React.FC = () => {
         },
         body: JSON.stringify({ actionType, details })
       });
-    } catch (err) {
-      console.error("Failed to award points:", err);
+    } catch {
+      // best-effort, ignore failures
     }
   };
-
-  // Check for new achievements
-  useEffect(() => {
-    const checkNewAchievements = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-      try {
-        const response = await fetch(`${baseURL}/api/loyalty/achievements`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (response.ok) {
-          const achievements = await response.json();
-          const newAchievements = achievements.filter((a: any) => a.is_new && a.unlocked);
-          if (newAchievements.length > 0) {
-            console.log("New achievements unlocked!", newAchievements);
-          }
-        }
-      } catch (err) {
-        console.error("Error checking achievements:", err);
-      }
-    };
-
-    const interval = setInterval(checkNewAchievements, 30000);
-    checkNewAchievements();
-    return () => clearInterval(interval);
-  }, []);
 
   // Auto-logout after 10 minutes of inactivity
   useEffect(() => {
@@ -259,10 +227,8 @@ const DashboardSite: React.FC = () => {
         });
         localStorage.setItem("user", JSON.stringify(freshUserData));
       } else {
-        console.error("❌ Failed to fetch user data");
       }
-    } catch (err) {
-      console.error("❌ Failed to fetch user data:", err);
+    } catch {
     }
   };
 
@@ -283,8 +249,7 @@ const DashboardSite: React.FC = () => {
           session_duration: Math.floor(Date.now() / 1000)
         })
       });
-    } catch (err) {
-      console.error("Failed to log activity:", err);
+    } catch {
     }
   };
 
@@ -304,8 +269,7 @@ const DashboardSite: React.FC = () => {
       if (loyaltyRes.ok) setLoyaltyData(await loyaltyRes.json());
       if (friendsRes.ok) setFriends(await friendsRes.json());
       if (leaderboardRes.ok) setLeaderboard(await leaderboardRes.json());
-    } catch (err) {
-      console.error("Failed to fetch user analytics:", err);
+    } catch {
     } finally {
       setAnalyticsLoading(false);
     }
@@ -329,7 +293,6 @@ const DashboardSite: React.FC = () => {
         setCollection([]);
       }
     } catch (error) {
-      console.error("Failed to fetch collection:", error);
       setCollection([]);
     } finally {
       setCollectionLoading(false);
@@ -354,7 +317,6 @@ const DashboardSite: React.FC = () => {
         setWishlist([]);
       }
     } catch (error) {
-      console.error("Failed to fetch wishlist:", error);
       setWishlist([]);
     } finally {
       setWishlistLoading(false);
@@ -373,8 +335,7 @@ const DashboardSite: React.FC = () => {
         const data = await response.json();
         setIncomingRequests(data);
       }
-    } catch (err) {
-      console.error("Error fetching incoming requests:", err);
+    } catch {
     }
   };
 
@@ -390,8 +351,7 @@ const DashboardSite: React.FC = () => {
         const data = await response.json();
         setOutgoingRequests(data);
       }
-    } catch (err) {
-      console.error("Error fetching outgoing requests:", err);
+    } catch {
     }
   };
 
@@ -409,8 +369,7 @@ const DashboardSite: React.FC = () => {
         fetchIncomingRequests();
         fetchUserAnalytics();
       }
-    } catch (err) {
-      console.error("Error accepting request:", err);
+    } catch {
     }
   };
 
@@ -428,8 +387,7 @@ const DashboardSite: React.FC = () => {
         fetchIncomingRequests();
         fetchOutgoingRequests();
       }
-    } catch (err) {
-      console.error("Error rejecting request:", err);
+    } catch {
     }
   };
 
@@ -447,8 +405,7 @@ const DashboardSite: React.FC = () => {
         alert("Friend removed");
         fetchUserAnalytics();
       }
-    } catch (err) {
-      console.error("Error removing friend:", err);
+    } catch {
     }
   };
 
@@ -469,8 +426,7 @@ const DashboardSite: React.FC = () => {
         });
         setShowChat(true);
       }
-    } catch (err) {
-      console.error("Error starting chat:", err);
+    } catch {
     }
   };
 
@@ -683,7 +639,6 @@ const DashboardSite: React.FC = () => {
       fetchUserData();
       setIsEditing(false);
     } catch (err) {
-      console.error("❌ Update error:", err);
       setError(err instanceof Error ? err.message : "An unknown error occurred");
     } finally {
       setIsLoading(false);
@@ -717,8 +672,7 @@ const DashboardSite: React.FC = () => {
         setEditingCollectionItem(null);
         setEditCollectionForm({});
       }
-    } catch (error) {
-      console.error("Failed to update item:", error);
+    } catch {
     }
   };
 
@@ -734,8 +688,7 @@ const DashboardSite: React.FC = () => {
       if (response.ok) {
         setCollection(prev => prev.filter(item => item.id !== itemId));
       }
-    } catch (error) {
-      console.error("Failed to delete item:", error);
+    } catch {
     }
   };
 
@@ -771,8 +724,7 @@ const DashboardSite: React.FC = () => {
         setEditingWishlistItem(null);
         setEditWishlistForm({});
       }
-    } catch (error) {
-      console.error("Failed to update item:", error);
+    } catch {
     }
   };
 
@@ -788,8 +740,7 @@ const DashboardSite: React.FC = () => {
       if (response.ok) {
         setWishlist(prev => prev.filter(item => item.id !== itemId));
       }
-    } catch (error) {
-      console.error("Failed to delete item:", error);
+    } catch {
     }
   };
 
@@ -814,8 +765,7 @@ const DashboardSite: React.FC = () => {
         alert("Item moved to your collection!");
         await logActivity("collection_add", { item_id: item.id, title: item.title });
       }
-    } catch (error) {
-      console.error("Failed to move item to collection:", error);
+    } catch {
     }
   };
 
@@ -862,9 +812,8 @@ const DashboardSite: React.FC = () => {
         {t.dashboardWelcome}
       </h2>
       <section
-          className={`max-w-4xl w-full mx-auto p-8 rounded-xl shadow-xl mb-10
-                      ${isDarkMode ? 'bg-slate-800 border-gray-900' : 'bg-white '}
-                      hover:shadow-2xl`}
+          className={`max-w-4xl w-full mx-auto p-8 rounded-lg shadow-xl mb-10
+                      ${isDarkMode ? 'bg-slate-800 border-gray-900' : 'bg-white '}`}
         >
         <div className="flex justify-between items-center mb-6">
             <h3 className={`text-2xl font-bold ${isDarkMode ? "text-yellow-500" : "text-blue-600"}`}>
@@ -905,7 +854,7 @@ const DashboardSite: React.FC = () => {
           <div className="mb-6 p-4 rounded-lg text-sm border-l-4
                           bg-red-50 text-red-800 border-red-400 shadow-sm">
             <div className="flex items-center gap-2">
-              <span className="text-lg">⚠️</span>
+              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
               <span>{error}</span>
             </div>
           </div>
@@ -915,7 +864,7 @@ const DashboardSite: React.FC = () => {
             <>
               <li className="flex flex-col md:flex-row md:items-center gap-3 p-3 rounded-lg bg-gray-50 transition-colors">
                 <strong className="w-full md:w-1/3 text-gray-700 flex items-center gap-2">
-                  <span className="text-blue-500">👤</span>
+                  <User className="w-4 h-4 text-blue-500" />
                   {t.name}:
                 </strong>
                 <input
@@ -930,7 +879,7 @@ const DashboardSite: React.FC = () => {
               </li>
               <li className="flex flex-col md:flex-row md:items-center gap-3 p-3 rounded-lg bg-gray-50 transition-colors">
                 <strong className="w-full md:w-1/3 text-gray-700 flex items-center gap-2">
-                  <span className="text-blue-500">👥</span>
+                  <Users className="w-4 h-4 text-blue-500" />
                   {t.surname}:
                 </strong>
                 <input
@@ -945,7 +894,7 @@ const DashboardSite: React.FC = () => {
               </li>
               <li className="flex flex-col md:flex-row md:items-center gap-3 p-3 rounded-lg bg-gray-50 transition-colors">
                 <strong className="w-full md:w-1/3 text-gray-700 flex items-center gap-2">
-                  <span className="text-purple-500">⚧️</span>
+                  <VenetianMask className="w-4 h-4 text-purple-500" />
                   {t.gender}:
                 </strong>
                 <select
@@ -964,7 +913,7 @@ const DashboardSite: React.FC = () => {
               </li>
               <li className="flex flex-col md:flex-row md:items-center gap-3 p-3 rounded-lg bg-gray-50 transition-colors">
                 <strong className="w-full md:w-1/3 text-gray-700 flex items-center gap-2">
-                  <span className="text-blue-500">🎂</span>
+                  <Cake className="w-4 h-4 text-blue-500" />
                   {t.dateOfBirth}:
                 </strong>
                 <input
@@ -978,7 +927,7 @@ const DashboardSite: React.FC = () => {
               </li>
               <li className="flex flex-col md:flexRow md:items-center gap-3 p-3 rounded-lg bg-gray-50 transition-colors">
                 <strong className="w-full md:w-1/3 text-gray-700 flex items-center gap-2">
-                  <span className="text-red-500">🌍</span>
+                  <Globe className="w-4 h-4 text-red-500" />
                   {t.nationality || "Nationality"}:
                 </strong>
                 <input
@@ -996,35 +945,35 @@ const DashboardSite: React.FC = () => {
             <>
               <li className="p-4 rounded-lg border border-blue-500 bg-blue-50 transition-all hover:shadow-md">
                 <div className="flex items-center gap-2">
-                  <span className="text-blue-500 text-xl">👤</span>
+                  <User className="w-5 h-5 text-blue-500" />
                   <strong className="text-gray-700">{t.name}:</strong>
                   <span className="text-gray-900 font-medium">{user?.name || "N/A"}</span>
                 </div>
               </li>
               <li className="p-4 rounded-lg border border-green-500 bg-green-50 transition-all hover:shadow-md">
                 <div className="flex items-center gap-2">
-                  <span className="text-blue-500 text-xl">👥</span>
+                  <Users className="w-5 h-5 text-blue-500" />
                   <strong className="text-gray-700">{t.surname}:</strong>
                   <span className="text-gray-900 font-medium">{user?.surname || "N/A"}</span>
                 </div>
               </li>
               <li className="p-4 rounded-lg border border-purple-500 bg-purple-50 transition-all hover:shadow-md">
                 <div className="flex items-center gap-2">
-                  <span className="text-purple-500 text-xl">📧</span>
+                  <Mail className="w-5 h-5 text-purple-500" />
                   <strong className="text-gray-700">{t.email}:</strong>
                   <span className="text-gray-900 font-medium">{user?.email || "N/A"}</span>
                 </div>
               </li>
               <li className="p-4 rounded-lg border border-yellow-500 bg-yellow-50 transition-all hover:shadow-md">
                 <div className="flex items-center gap-2">
-                  <span className="text-yellow-500 text-xl">🔑</span>
+                  <KeyRound className="w-5 h-5 text-yellow-500" />
                   <strong className="text-gray-700">{t.login}:</strong>
                   <span className="text-gray-900 font-medium">{user?.login || "N/A"}</span>
                 </div>
               </li>
               <li className="p-4 rounded-lg border border-pink-500 bg-pink-50 transition-all hover:shadow-md">
                 <div className="flex items-center gap-2">
-                  <span className="text-pink-500 text-xl">⚧️</span>
+                  <VenetianMask className="w-5 h-5 text-pink-500" />
                   <strong className="text-gray-700">{t.gender}:</strong>
                   <span className="text-gray-900 font-medium">
                     {user?.gender ? t[user.gender] || user.gender : "N/A"}
@@ -1033,28 +982,28 @@ const DashboardSite: React.FC = () => {
               </li>
               <li className="p-4 rounded-lg border border-emerald-500 bg-emerald-50 transition-all hover:shadow-md">
                 <div className="flex items-center gap-2">
-                  <span className="text-emerald-500 text-xl">🎂</span>
+                  <Cake className="w-5 h-5 text-emerald-500" />
                   <strong className="text-gray-700">{t.dateOfBirth}:</strong>
                   <span className="text-gray-900 font-medium">{formatDate(user?.date_of_birth || "")}</span>
                 </div>
               </li>
               <li className="p-4 rounded-lg border border-cyan-500 bg-cyan-50 transition-all hover:shadow-md">
                 <div className="flex items-center gap-2">
-                  <span className="text-cyan-500 text-xl">📅</span>
+                  <Clock className="w-5 h-5 text-cyan-500" />
                   <strong className="text-gray-700">{t.userSince}:</strong>
                   <span className="text-gray-900 font-medium">{formatDate(user?.created_at || "")}</span>
                 </div>
               </li>
               <li className="p-4 rounded-lg border border-orange-500 bg-orange-50 transition-all hover:shadow-md">
                 <div className="flex items-center gap-2">
-                  <span className="text-orange-500 text-xl">🕒</span>
+                  <Clock className="w-5 h-5 text-orange-500" />
                   <strong className="text-gray-700">{t.lastLogin}:</strong>
                   <span className="text-gray-900 font-medium">{formatDate(user?.last_login || "")}</span>
                 </div>
               </li>
               <li className="p-4 rounded-lg border border-red-500 bg-red-50 transition-all hover:shadow-md">
                 <div className="flex items-center gap-2">
-                  <span className="text-red-500 text-xl">🌍</span>
+                  <Globe className="w-5 h-5 text-red-500" />
                   <strong className="text-gray-700">{t.nationality || "Nationality"}:</strong>
                   <span className="text-gray-900 font-medium">{user?.nationality || "Not specified"}</span>
                 </div>
@@ -1063,9 +1012,8 @@ const DashboardSite: React.FC = () => {
           )}
         </ul>
       </section>
-      <section className={`max-w-4xl w-full mx-auto p-8 rounded-xl shadow-xl mb-10
-                      ${isDarkMode ? 'bg-slate-800 border-gray-900' : 'bg-white '}
-                      hover:shadow-2xl`}>
+      <section className={`max-w-4xl w-full mx-auto p-8 rounded-lg shadow-xl mb-10
+                      ${isDarkMode ? 'bg-slate-800 border-gray-900' : 'bg-white '}`}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">{t.yourCollection}</h3>
           <button
@@ -1083,9 +1031,8 @@ const DashboardSite: React.FC = () => {
           </div>
         }
       </section>
-      <section className={`max-w-4xl w-full mx-auto p-8 rounded-xl shadow-xl mb-10
-                      ${isDarkMode ? 'bg-slate-800 border-gray-900' : 'bg-white '}
-                      hover:shadow-2xl`}>
+      <section className={`max-w-4xl w-full mx-auto p-8 rounded-lg shadow-xl mb-10
+                      ${isDarkMode ? 'bg-slate-800 border-gray-900' : 'bg-white '}`}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">{t.yourWishlist}</h3>
           <button
@@ -1661,8 +1608,12 @@ const DashboardSite: React.FC = () => {
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-lg font-bold w-8">
-                          {idx < 3 ? ['🥇', '🥈', '🥉'][idx] : `#${idx + 1}`}
+                        <span className="text-lg font-bold w-8 flex items-center">
+                          {idx < 3 ? (
+                            <Medal className={`w-5 h-5 ${['text-yellow-500', 'text-slate-400', 'text-amber-700'][idx]}`} />
+                          ) : (
+                            `#${idx + 1}`
+                          )}
                         </span>
                         <span className={isCurrentUser ? "font-bold" : ""}>
                           {entry.login} {isCurrentUser && "(You)"}
@@ -1729,7 +1680,6 @@ const DashboardSite: React.FC = () => {
                   alert(error.error || "Failed to send friend request");
                 }
               } catch (err) {
-                console.error("Error sending friend request:", err);
                 alert("Failed to send friend request");
               }
             }}
@@ -1937,7 +1887,7 @@ const DashboardSite: React.FC = () => {
             onClick={() => setShowLoyaltyDashboard(true)}
             className={`px-3 py-1 rounded flex items-center gap-2 ${isDarkMode ? "hover:bg-slate-700" : "hover:bg-gray-200"}`}
           >
-            🏆 {t.rewards || "Rewards"}
+            <Trophy className="w-4 h-4" /> {t.rewards || "Rewards"}
           </button>
         </div>
       </nav>

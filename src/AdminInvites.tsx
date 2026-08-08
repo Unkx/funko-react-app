@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useTheme } from './ThemeContext';
 import { LanguageContext } from './LanguageContext';
 import { translations } from './Translations/TranslationAdminInvites';
+import { AlertTriangle, CheckCircle2, Key, ClipboardList, Check, KeyRound, Clipboard, Lock } from 'lucide-react';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
 
@@ -72,7 +73,6 @@ const AdminInvites = () => {
         setInvites(formattedInvites);
       }
     } catch (err) {
-      console.error("Error fetching invites:", err);
       alert(t.failedToLoadInvites || "Failed to load invites");
     } finally {
       setLoading(false);
@@ -121,7 +121,6 @@ const AdminInvites = () => {
         alert(error.error || t.failedToCreateInvite || "Failed to create invite");
       }
     } catch (err) {
-      console.error("Error creating invite:", err);
       alert(t.failedToCreateInvite || "Failed to create invite");
     } finally {
       setProcessing(false);
@@ -149,7 +148,6 @@ const AdminInvites = () => {
         alert(error.error || t.failedToRevokeInvite || "Failed to revoke invite");
       }
     } catch (err) {
-      console.error("Error revoking invite:", err);
       alert(t.failedToRevokeInvite || "Failed to revoke invite");
     }
   };
@@ -209,7 +207,7 @@ const AdminInvites = () => {
         </div>
       ) : invites.length === 0 ? (
         <div className="text-center py-12">
-          <div className="text-5xl mb-4">🔐</div>
+          <KeyRound className="w-12 h-12 mb-4 mx-auto opacity-50" />
           <p className={`text-lg ${isDarkMode ? "text-slate-400" : "text-slate-500"}`}>
             {t.noInvitesCreated || "No invite codes created yet"}
           </p>
@@ -266,7 +264,7 @@ const AdminInvites = () => {
                             }`}
                             title="Copy token (shown only once)"
                           >
-                            📋
+                            <Clipboard className="w-3.5 h-3.5" />
                           </button>
                           <div className={`absolute left-0 bottom-full mb-2 hidden group-hover:block p-2 rounded shadow-lg z-10 min-w-[200px] ${
                             isDarkMode ? "bg-slate-950 border border-gray-700" : "bg-white border border-gray-300"
@@ -280,7 +278,7 @@ const AdminInvites = () => {
                       {/* Indicator for invites created by other admins */}
                       {!canSeeDetails(invite) && (
                         <span className="text-xs italic text-slate-500" title="Created by another admin">
-                          🔒
+                          <Lock className="w-3.5 h-3.5" />
                         </span>
                       )}
                     </div>
@@ -353,7 +351,7 @@ const AdminInvites = () => {
                             `Status: ${invite.status || (invite.used_at ? 'Used' : isExpired(invite.expires_at) ? 'Expired' : 'Active')}`,
                             invite.used_by_username && `Used By: ${invite.used_by_username}`,
                             invite.used_at && `Used At: ${formatDate(invite.used_at)}`,
-                            !canSeeDetails(invite) && "🔒 Token not visible (created by another admin)"
+                            !canSeeDetails(invite) && "Token not visible (created by another admin)"
                           ].filter(Boolean).join('\n');
                           
                           alert(details);
@@ -440,7 +438,9 @@ const AdminInvites = () => {
                 </div>
                 
                 <div className={`p-3 rounded mb-6 ${isDarkMode ? "bg-slate-950" : "bg-gray-100"}`}>
-                  <h4 className="font-medium mb-2">⚠️ {t.importantNote || "Important:"}</h4>
+                  <h4 className="font-medium mb-2 flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-yellow-500" /> {t.importantNote || "Important:"}
+                  </h4>
                   <ul className="text-sm space-y-1">
                     <li>• {t.inviteWarning1 || "Invite tokens are shown only once"}</li>
                     <li>• {t.inviteWarning2 || "Only you can see tokens you create"}</li>
@@ -478,12 +478,14 @@ const AdminInvites = () => {
               </>
             ) : (
               <>
-                <h3 className="text-xl font-semibold mb-4 text-green-600">
-                  ✅ {t.inviteCreated || "Invite Created Successfully!"}
+                <h3 className="text-xl font-semibold mb-4 text-green-600 flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5" /> {t.inviteCreated || "Invite Created Successfully!"}
                 </h3>
-                
+
                 <div className={`p-4 rounded mb-4 ${isDarkMode ? "bg-slate-950" : "bg-gray-100"}`}>
-                  <p className="font-medium mb-2">🔑 {t.yourInviteToken || "Your Invite Token:"}</p>
+                  <p className="font-medium mb-2 flex items-center gap-1.5">
+                    <Key className="w-4 h-4" /> {t.yourInviteToken || "Your Invite Token:"}
+                  </p>
                   <div className="flex items-center gap-2 mb-3">
                     <code className={`flex-1 px-3 py-2 rounded text-sm font-mono break-all ${
                       isDarkMode ? "bg-slate-900 text-yellow-300" : "bg-gray-200 text-gray-800"
@@ -498,16 +500,20 @@ const AdminInvites = () => {
                           : (isDarkMode ? "bg-amber-500 hover:bg-yellow-700" : "bg-blue-600 hover:bg-blue-700")
                       } text-white`}
                     >
-                      {copySuccess ? "✓ Copied" : "Copy"}
+                      {copySuccess ? (
+                        <span className="flex items-center gap-1"><Check className="w-4 h-4" /> Copied</span>
+                      ) : "Copy"}
                     </button>
                   </div>
-                  <p className="text-sm text-red-500">
-                    ⚠️ {t.tokenWarning || "This token will be shown only once! Save it now."}
+                  <p className="text-sm text-red-500 flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0" /> {t.tokenWarning || "This token will be shown only once! Save it now."}
                   </p>
                 </div>
-                
+
                 <div className={`p-3 rounded mb-4 ${isDarkMode ? "bg-slate-800" : "bg-blue-50"}`}>
-                  <h4 className="font-medium mb-2">📋 {t.howToUse || "How to use:"}</h4>
+                  <h4 className="font-medium mb-2 flex items-center gap-1.5">
+                    <ClipboardList className="w-4 h-4" /> {t.howToUse || "How to use:"}
+                  </h4>
                   <ol className="text-sm list-decimal list-inside space-y-1">
                     <li>{t.step1 || "Share this token with the new admin user"}</li>
                     <li>{t.step2 || "They should use it during registration"}</li>

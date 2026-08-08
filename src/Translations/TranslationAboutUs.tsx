@@ -1,4 +1,4 @@
-// 🌐 Translations for About Us page
+// Translations for About Us page
 export const translations = {
   EN: {
     pageTitle: "About Pop&Go!",

@@ -146,7 +146,7 @@ export default function Layout({ children, showSearch = true, translations: t = 
               {showLangDropdown && (
                 <div
                   ref={langDropdownRef}
-                  className={`absolute right-0 mt-2 w-48 rounded-xl shadow-2xl border py-1.5 z-50 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
+                  className={`absolute right-0 mt-2 w-48 rounded-lg shadow-2xl border py-1.5 z-50 ${isDarkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
                   onClick={(e) => e.stopPropagation()}
                 >
                   {Object.entries(languages).map(([code, { name, flag }]) => (

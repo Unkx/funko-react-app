@@ -290,7 +290,7 @@ const LoginRegisterSite: React.FC = () => {
               className="w-full max-w-md"
             >
               <div
-                className={`rounded-2xl border shadow-lg p-6 sm:p-8 ${
+                className={`rounded-lg border shadow-lg p-6 sm:p-8 ${
                   isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"
                 }`}
               >
@@ -375,7 +375,7 @@ const LoginRegisterSite: React.FC = () => {
               transition={{ duration: 0.3 }}
               className="w-full max-w-md"
             >
-              <div className={`rounded-2xl border shadow-lg p-6 sm:p-8 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
+              <div className={`rounded-lg border shadow-lg p-6 sm:p-8 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
                 <h2 className={`text-2xl font-bold mb-6 font-['Righteous'] ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
                   {tLogin.forgotPasswordTitle || "Reset Password"}
                 </h2>
@@ -473,7 +473,7 @@ const LoginRegisterSite: React.FC = () => {
               transition={{ duration: 0.3 }}
               className="w-full max-w-md"
             >
-              <div className={`rounded-2xl border shadow-lg p-6 sm:p-8 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
+              <div className={`rounded-lg border shadow-lg p-6 sm:p-8 ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
                 <h2 className={`text-2xl font-bold mb-6 font-['Righteous'] ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
                   {tRegister.registerTitle || "Create Account"}
                 </h2>

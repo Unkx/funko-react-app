@@ -108,7 +108,6 @@ const CollectionPage: React.FC = () => {
           setCollection([]);
         }
       } catch (error) {
-        console.error("Failed to fetch collection:", error);
         setCollection([]);
       } finally {
         setLoading(false);
@@ -205,8 +204,7 @@ const CollectionPage: React.FC = () => {
         setEditingItem(null);
         setEditForm({});
       }
-    } catch (error) {
-      console.error("Failed to update item:", error);
+    } catch {
     }
   };
 
@@ -227,8 +225,7 @@ const CollectionPage: React.FC = () => {
       if (response.ok) {
         setCollection(prev => prev.filter(item => item.id !== itemId));
       }
-    } catch (error) {
-      console.error("Failed to delete item:", error);
+    } catch {
     }
   };
 

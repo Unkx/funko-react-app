@@ -6,6 +6,7 @@ import TrophyIcon from "/src/assets/trophy.svg?react";
 import FireIcon from "/src/assets/fire.svg?react";
 import GiftIcon from "/src/assets/gift.svg?react";
 import { translations } from "./Translations/TranslationsLoyaltyDashboard";
+import { Package, Users, Flame, Star, Target, X } from 'lucide-react';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
 
@@ -143,8 +144,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
           setTimeout(() => markAchievementSeen(newAchievement.achievement_id), 3000);
         }
       }
-    } catch (err) {
-      console.error("Error fetching loyalty data:", err);
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -170,8 +170,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
           backgrounds: data.backgrounds || [],
         });
       }
-    } catch (err) {
-      console.error("Error fetching rewards:", err);
+    } catch {
     }
   };
 
@@ -186,8 +185,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
       });
       setShowNewAchievement(null);
       fetchLoyaltyData();
-    } catch (err) {
-      console.error("Error marking achievement:", err);
+    } catch {
     }
   };
 
@@ -212,18 +210,17 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
         alert(t.failedToActivate);
       }
     } catch (err) {
-      console.error("Error activating reward:", err);
       alert(t.errorOccurred);
     }
   };
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case "collection": return "📦";
-      case "social": return "👥";
-      case "streak": return "🔥";
-      case "special": return "⭐";
-      default: return "🎯";
+      case "collection": return <Package className="w-full h-full" />;
+      case "social": return <Users className="w-full h-full" />;
+      case "streak": return <Flame className="w-full h-full" />;
+      case "special": return <Star className="w-full h-full" />;
+      default: return <Target className="w-full h-full" />;
     }
   };
 
@@ -286,9 +283,9 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
             </h2>
             <button
               onClick={onClose}
-              className={`p-1 md:p-2 rounded-full text-lg md:text-base ${isDarkMode ? "hover:bg-slate-800" : "hover:bg-gray-100"}`}
+              className={`p-1 md:p-2 rounded-full ${isDarkMode ? "hover:bg-slate-800" : "hover:bg-gray-100"}`}
             >
-              ✕
+              <X className="w-5 h-5" />
             </button>
           </div>
 
@@ -618,7 +615,9 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
                               className="w-10 h-10 md:w-16 md:h-16 mx-auto mb-1 md:mb-2 rounded-full object-contain"
                             />
                           ) : (
-                            <div className="text-2xl md:text-4xl mb-1 md:mb-2">{badge.name || "🌟"}</div>
+                            <div className="w-8 h-8 md:w-10 md:h-10 mx-auto mb-1 md:mb-2">
+                              {badge.name || <Star className="w-full h-full" />}
+                            </div>
                           )}
                           <p className="font-bold text-xs md:text-sm line-clamp-1">{badge.name}</p>
                           {badge.unlocked ? (
@@ -754,7 +753,7 @@ const LoyaltyDashboard: React.FC<Props> = ({ isDarkMode, onClose }) => {
             exit={{ scale: 0, opacity: 0 }}
             className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[60] w-[90%] max-w-sm"
           >
-            <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 md:p-8 rounded-2xl shadow-2xl text-center">
+            <div className="bg-gradient-to-br from-yellow-400 to-orange-500 p-4 md:p-8 rounded-lg shadow-2xl text-center">
               <motion.div
                 animate={{
                   scale: [1, 1.2, 1],

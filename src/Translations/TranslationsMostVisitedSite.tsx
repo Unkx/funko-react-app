@@ -25,10 +25,10 @@ export const translations: { [key: string]: { [key: string]: string } } = {
     exclusive: "Exclusive",
     browseAllItems: "Browse All Items ({count})",
     discoverPopularItems: "Discover the {count} most popular Funko Pops in the community",
-    veryPopular: "🔥 Very Popular",
+    veryPopular: "Very Popular",
     popular: "⭐ Popular", 
-    trending: "📈 Trending",
-    gettingViews: "👀 Getting views"
+    trending: "Trending",
+    gettingViews: "Getting views"
   },
   US: {
     searchPlaceholder: "Search for Figurines...",
@@ -53,10 +53,10 @@ export const translations: { [key: string]: { [key: string]: string } } = {
     exclusive: "Exclusive",
     browseAllItems: "Browse All Items ({count})",
     discoverPopularItems: "Discover the {count} most popular Funko Pops in the community",
-    veryPopular: "🔥 Very Popular",
+    veryPopular: "Very Popular",
     popular: "⭐ Popular",
-    trending: "📈 Trending", 
-    gettingViews: "👀 Getting views"
+    trending: "Trending", 
+    gettingViews: "Getting views"
   },
   PL: {
     searchPlaceholder: "Szukaj figurek...",
@@ -81,10 +81,10 @@ export const translations: { [key: string]: { [key: string]: string } } = {
     exclusive: "Ekskluzywny",
     browseAllItems: "Przeglądaj wszystkie przedmioty ({count})",
     discoverPopularItems: "Odkryj {count} najpopularniejszych Funko Popów w społeczności",
-    veryPopular: "🔥 Bardzo popularne",
+    veryPopular: "Bardzo popularne",
     popular: "⭐ Popularne",
-    trending: "📈 Trendy",
-    gettingViews: "👀 Zyskujące popularność"
+    trending: "Trendy",
+    gettingViews: "Zyskujące popularność"
   },
   RU: {
     searchPlaceholder: "Поиск фигурок...",
@@ -109,10 +109,10 @@ export const translations: { [key: string]: { [key: string]: string } } = {
     exclusive: "Эксклюзив",
     browseAllItems: "Смотреть все предметы ({count})",
     discoverPopularItems: "Откройте для себя {count} самых популярных Funko Pop в сообществе",
-    veryPopular: "🔥 Очень популярно",
+    veryPopular: "Очень популярно",
     popular: "⭐ Популярно",
-    trending: "📈 В тренде",
-    gettingViews: "👀 Набирает просмотры"
+    trending: "В тренде",
+    gettingViews: "Набирает просмотры"
   },
   FR: {
     searchPlaceholder: "Rechercher des Funko Pops...",
@@ -137,10 +137,10 @@ export const translations: { [key: string]: { [key: string]: string } } = {
     exclusive: "Exclusif",
     browseAllItems: "Parcourir tous les articles ({count})",
     discoverPopularItems: "Découvrez les {count} Funko Pops les plus populaires de la communauté",
-    veryPopular: "🔥 Très populaire",
+    veryPopular: "Très populaire",
     popular: "⭐ Populaire",
-    trending: "📈 Tendance",
-    gettingViews: "👀 En croissance"
+    trending: "Tendance",
+    gettingViews: "En croissance"
   },
   DE: {
     searchPlaceholder: "Figuren suchen...",
@@ -165,10 +165,10 @@ export const translations: { [key: string]: { [key: string]: string } } = {
     exclusive: "Exklusiv",
     browseAllItems: "Alle Artikel durchsuchen ({count})",
     discoverPopularItems: "Entdecken Sie die {count} beliebtesten Funko Pops in der Community",
-    veryPopular: "🔥 Sehr beliebt",
+    veryPopular: "Sehr beliebt",
     popular: "⭐ Beliebt",
-    trending: "📈 Im Trend",
-    gettingViews: "👀 Im Aufwind"
+    trending: "Im Trend",
+    gettingViews: "Im Aufwind"
   },
   ES: {
     searchPlaceholder: "Buscar figuras...",
@@ -193,10 +193,10 @@ export const translations: { [key: string]: { [key: string]: string } } = {
     exclusive: "Exclusivo",
     browseAllItems: "Explorar todos los artículos ({count})",
     discoverPopularItems: "Descubre los {count} Funko Pops más populares de la comunidad",
-    veryPopular: "🔥 Muy popular",
+    veryPopular: "Muy popular",
     popular: "⭐ Popular",
-    trending: "📈 En tendencia",
-    gettingViews: "👀 En crecimiento"
+    trending: "En tendencia",
+    gettingViews: "En crecimiento"
   },
   CA: {
     searchPlaceholder: "Search for Figurines...",
@@ -221,9 +221,9 @@ export const translations: { [key: string]: { [key: string]: string } } = {
     exclusive: "Exclusive",
     browseAllItems: "Browse All Items ({count})",
     discoverPopularItems: "Discover the {count} most popular Funko Pops in the community",
-    veryPopular: "🔥 Very Popular",
+    veryPopular: "Very Popular",
     popular: "⭐ Popular",
-    trending: "📈 Trending",
-    gettingViews: "👀 Getting views"
+    trending: "Trending",
+    gettingViews: "Getting views"
   }
 };

@@ -112,9 +112,6 @@ const RegisterSite: React.FC = () => {
     if (inviteToken?.trim()) {
       payload.invite_token = inviteToken.trim();
     }
-
-    console.log("Sending registration payload:", payload); // Log the payload being sent
-
     try {
       const response = await fetch(`${baseURL}/api/register`, {
         method: 'POST',
@@ -130,11 +127,9 @@ const RegisterSite: React.FC = () => {
       }
 
       // Registration successful
-      console.log("Registration successful!");
       navigate("/dashboardSite");
 
     } catch (error: any) {
-      console.error('Registration error caught in frontend:', error);
       setRegisterError(error.message || 'Failed to connect to server. Please try again.');
     }
   };
@@ -159,7 +154,6 @@ const RegisterSite: React.FC = () => {
         const data = await res.json();
         setInviteValid(Boolean(data && data.valid));
       } catch (err) {
-        console.error('Error verifying invite token:', err);
         setInviteValid(false);
       } finally {
         setInviteChecking(false);

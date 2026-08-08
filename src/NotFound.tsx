@@ -140,7 +140,7 @@ const funkos = [
         <div className="max-w-4xl mx-auto text-center z-10">
           {/* Animated 404 number */}
               <motion.h1
-                className={`font-bold bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-purple-600 mb-4 ${isMobile ? 'text-6xl' : 'text-9xl'}`}
+                className={`font-bold text-amber-400 mb-4 ${isMobile ? 'text-6xl' : 'text-9xl'}`}
                 initial={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -50 }}
                 animate={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 1, y: 0 }}
                 transition={prefersReducedMotion ? { duration: 0 } : { duration: 1 }}
@@ -210,7 +210,7 @@ const funkos = [
           >
             <Link
               to="/"
-              className="inline-block px-12 py-4 text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 rounded-full hover:from-purple-700 hover:to-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+              className="inline-block px-12 py-4 text-xl font-bold bg-amber-400 text-black rounded-full hover:bg-amber-500 transition-colors shadow-lg"
             >
               Beam Me Home
             </Link>

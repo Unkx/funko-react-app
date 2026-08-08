@@ -5,6 +5,7 @@ import { translations } from "./Translations/TranslationsMostVisitedSite";
 import Layout from './Layout';
 import { useTheme } from './ThemeContext';
 import { LanguageContext } from './LanguageContext';
+import { Flame, Star, TrendingUp, Eye, Search } from 'lucide-react';
 
 // Match your backend item shape (without visits)
 interface FunkoItem {
@@ -55,8 +56,7 @@ const MostVisitedSite: React.FC = () => {
         }));
         
         setAllItems(itemsWithIds);
-      } catch (err) {
-        console.error("Error loading items:", err);
+      } catch {
       } finally {
         setIsLoading(false);
       }
@@ -132,7 +132,7 @@ const MostVisitedSite: React.FC = () => {
       .replace(/^-|-$/g, '');
   };
   
-  // ✅ Compute visited items from localStorage
+  // Compute visited items from localStorage
   const mostVisitedItems = useMemo(() => {
     const visitCount = JSON.parse(localStorage.getItem("funkoVisitCount") || "{}");
     return allItems
@@ -156,13 +156,13 @@ const MostVisitedSite: React.FC = () => {
 
   // Get translated popularity badges
   const getPopularityBadge = (visits: number) => {
-    if (visits >= 20) return { text: t.veryPopular || "🔥 Very Popular", color: "bg-red-500" };
-    if (visits >= 10) return { text: t.popular || "⭐ Popular", color: "bg-orange-500" };
-    if (visits >= 5) return { text: t.trending || "📈 Trending", color: "bg-blue-500" };
-    return { text: t.gettingViews || "👀 Getting views", color: "bg-green-500" };
+    if (visits >= 20) return { text: t.veryPopular || "Very Popular", Icon: Flame, color: "bg-red-500" };
+    if (visits >= 10) return { text: t.popular || "Popular", Icon: Star, color: "bg-orange-500" };
+    if (visits >= 5) return { text: t.trending || "Trending", Icon: TrendingUp, color: "bg-blue-500" };
+    return { text: t.gettingViews || "Getting views", Icon: Eye, color: "bg-green-500" };
   };
 
-  // ✅ Track item clicks - tylko zwiększ licznik, jeśli nie był dzisiaj kliknięty
+  // Track item clicks - only increment if not already clicked today
   const handleItemClick = (id: string) => {
     // Sprawdź czy już dzisiaj kliknięto ten przedmiot
     const today = new Date().toDateString();
@@ -192,7 +192,6 @@ const MostVisitedSite: React.FC = () => {
     }
     
     // Log dla debugowania
-    console.log("Item clicked:", id, "Already clicked today:", alreadyClickedToday);
   };
 
   // Dodaj także funkcję synchronizującą z FunkoDetails
@@ -308,7 +307,7 @@ const MostVisitedSite: React.FC = () => {
 
         {mostVisitedItems.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-6xl mb-4">🔍</div>
+            <Search className="w-16 h-16 mb-4 mx-auto opacity-40" />
             <h2 className="text-2xl font-bold mb-4">{t.noVisitsTitle || "No Visits Yet"}</h2>
             <p className="text-lg mb-6 max-w-md mx-auto">
               {t.noVisitsDescription || "Start browsing Funko Pops to build your most visited list. Items you view will appear here!"}
@@ -346,7 +345,8 @@ const MostVisitedSite: React.FC = () => {
                       #{index + 1}
                     </div>
                   )}
-                  <div className={`absolute -top-2 -right-2 px-2 py-1 rounded text-xs text-white ${popularity.color}`}>
+                  <div className={`absolute -top-2 -right-2 px-2 py-1 rounded text-xs text-white flex items-center gap-1 ${popularity.color}`}>
+                    <popularity.Icon className="w-3 h-3" />
                     {popularity.text}
                   </div>
                   
@@ -370,7 +370,7 @@ const MostVisitedSite: React.FC = () => {
                   )}
                   <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-600">
                     <div className="flex items-center gap-1">
-                      <span className="text-lg">👁️</span>
+                      <Eye className="w-4 h-4" />
                       <span className="font-bold">{item.visits}</span>
                       <span className="text-xs opacity-75">{t.views || "views"}</span>
                     </div>

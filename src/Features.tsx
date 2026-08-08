@@ -8,7 +8,7 @@ import { LanguageContext } from './LanguageContext';
 import {
   BookOpen, Star, Tag, Zap,
   Search, BarChart3, Bot, TrendingUp,
-  Users, Share2, Globe, Moon
+  Users, Share2, Globe, Moon, Check, Target
 } from 'lucide-react';
 
 const featureIcons: Record<string, React.FC<{ className?: string }>> = {
@@ -35,8 +35,7 @@ const featureCategories = [
       { titleKey: "feature11Title", descKey: "feature11Desc" },
       { titleKey: "feature12Title", descKey: "feature12Desc" },
     ],
-    color: "from-blue-500 to-blue-600",
-    darkColor: "from-blue-600 to-blue-700",
+    color: "bg-blue-600",
   },
   {
     titleKey: "discoveryTools",
@@ -46,8 +45,7 @@ const featureCategories = [
       { titleKey: "feature5Title", descKey: "feature5Desc" },
       { titleKey: "feature10Title", descKey: "feature10Desc" },
     ],
-    color: "from-green-500 to-green-600",
-    darkColor: "from-green-600 to-green-700",
+    color: "bg-green-600",
   },
   {
     titleKey: "communityFeatures",
@@ -57,8 +55,7 @@ const featureCategories = [
       { titleKey: "feature6Title", descKey: "feature6Desc" },
       { titleKey: "feature9Title", descKey: "feature9Desc" },
     ],
-    color: "from-purple-500 to-purple-600",
-    darkColor: "from-purple-600 to-purple-700",
+    color: "bg-purple-600",
   },
 ];
 
@@ -69,13 +66,6 @@ const steps = [
   { number: "03", titleKey: "step3Title", descKey: "step3Desc" },
 ];
 
-// Stats data
-const stats = [
-  { value: "5,000+", labelKey: "activeUsers" },
-  { value: "170,000+", labelKey: "itemsTracked" },
-  { value: "1,200+", labelKey: "collections" },
-  { value: "50+", labelKey: "categories" },
-];
 
 const FeaturesSite: React.FC = () => {
   const { isDarkMode } = useTheme();
@@ -120,11 +110,10 @@ const FeaturesSite: React.FC = () => {
   return (
     <Layout translations={t}>
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-green-500/10 dark:from-blue-900/20 dark:to-green-900/20"></div>
+      <section className={`relative overflow-hidden border-b ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}>
         <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-green-600 dark:from-yellow-400 dark:to-green-400 bg-clip-text text-transparent">
+            <h1 className={`text-4xl md:text-6xl font-bold mb-6 ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
               {t.pageTitle}
             </h1>
             <p className="text-xl md:text-2xl mb-8 opacity-90">
@@ -137,53 +126,23 @@ const FeaturesSite: React.FC = () => {
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className={`py-8 ${isDarkMode ? "bg-slate-900" : "bg-white"}`}>
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold mb-8 text-center">{t.statsTitle}</h2>
-          <div className="grid grid-cols-2 md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            {stats.map((stat, index) => (
-              <div
-                key={index}
-                className={`text-center p-4 rounded-2xl transition-transform hover:scale-105 ${
-                  isDarkMode ? "bg-slate-800" : "bg-gradient-to-br from-blue-50 to-green-50 shadow-lg"
-                }`}
-              >
-                <div className={`text-3xl md:text-4xl font-bold mb-2 ${
-                  index === 0 ? "text-yellow-500" :
-                  index === 1 ? "text-blue-500" :
-                  index === 2 ? "text-green-500" : "text-purple-500"
-                }`}>
-                  {stat.value}
-                </div>
-                <div className="text-sm font-medium">{t[stat.labelKey as keyof typeof t]}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Features by Category */}
       <section className="py-16">
         <div className="container mx-auto px-4">
           {featureCategories.map((category, categoryIndex) => (
             <div key={categoryIndex} className="mb-16 last:mb-0">
-              <h2 className={`text-2xl font-bold mb-8 inline-block px-6 py-2 rounded-full ${
-                isDarkMode 
-                  ? `bg-gradient-to-r ${category.darkColor} text-white`
-                  : `bg-gradient-to-r ${category.color} text-white`
-              }`}>
+              <h2 className={`text-2xl font-bold mb-8 inline-block px-6 py-2 rounded-full text-white ${category.color}`}>
                 {t[category.titleKey as keyof typeof t]}
               </h2>
-              
+
               <div className="grid md:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {category.features.map((feature, featureIndex) => (
                   <div
                     key={featureIndex}
-                    className={`p-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-2xl ${
-                      isDarkMode 
-                        ? "bg-slate-900 hover:bg-slate-800" 
-                        : "bg-white hover:shadow-xl border border-gray-100"
+                    className={`p-6 rounded-lg transition-colors duration-200 ${
+                      isDarkMode
+                        ? "bg-slate-900 hover:bg-slate-800"
+                        : "bg-white hover:bg-slate-50 border border-gray-100"
                     }`}
                   >
                     <div className={`mb-4 ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
@@ -204,7 +163,7 @@ const FeaturesSite: React.FC = () => {
       </section>
 
       {/* How It Works */}
-      <section className={`py-16 ${isDarkMode ? "bg-slate-900" : "bg-gradient-to-br from-blue-50 to-green-50"}`}>
+      <section className={`py-16 ${isDarkMode ? "bg-slate-900" : "bg-slate-50"}`}>
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold mb-12 text-center">{t.howItWorks}</h2>
           <div className="grid md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -219,7 +178,7 @@ const FeaturesSite: React.FC = () => {
                 }`}>
                   {step.number}
                 </div>
-                <div className={`p-6 pt-10 rounded-2xl relative ${
+                <div className={`p-6 pt-10 rounded-lg relative ${
                   isDarkMode ? "bg-slate-800" : "bg-white shadow-lg"
                 }`}>
                   <h3 className="text-xl font-bold mb-3">
@@ -238,10 +197,10 @@ const FeaturesSite: React.FC = () => {
       {/* Feature Showcase */}
       <section className={`py-16 ${isDarkMode ? "bg-slate-950" : "bg-white"}`}>
         <div className="container mx-auto px-4">
-          <div className={`max-w-4xl mx-auto p-8 rounded-3xl ${
-            isDarkMode 
-              ? "bg-gradient-to-r from-gray-800 to-gray-900 border border-gray-700" 
-              : "bg-gradient-to-r from-blue-50 to-green-50 border border-gray-200 shadow-2xl"
+          <div className={`max-w-4xl mx-auto p-8 rounded-lg border ${
+            isDarkMode
+              ? "bg-slate-800 border-gray-700"
+              : "bg-white border-gray-200 shadow-lg"
           }`}>
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div>
@@ -254,7 +213,7 @@ const FeaturesSite: React.FC = () => {
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                       isDarkMode ? "bg-amber-400 text-black" : "bg-blue-600 text-white"
                     }`}>
-                      ✓
+                      <Check className="w-4 h-4" />
                     </div>
                     <span>Easy item cataloging</span>
                   </div>
@@ -262,7 +221,7 @@ const FeaturesSite: React.FC = () => {
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                       isDarkMode ? "bg-amber-400 text-black" : "bg-blue-600 text-white"
                     }`}>
-                      ✓
+                      <Check className="w-4 h-4" />
                     </div>
                     <span>Smart wishlist management</span>
                   </div>
@@ -270,7 +229,7 @@ const FeaturesSite: React.FC = () => {
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                       isDarkMode ? "bg-amber-400 text-black" : "bg-blue-600 text-white"
                     }`}>
-                      ✓
+                      <Check className="w-4 h-4" />
                     </div>
                     <span>Community features</span>
                   </div>
@@ -278,19 +237,19 @@ const FeaturesSite: React.FC = () => {
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                       isDarkMode ? "bg-amber-400 text-black" : "bg-blue-600 text-white"
                     }`}>
-                      ✓
+                      <Check className="w-4 h-4" />
                     </div>
                     <span>AI-powered tools</span>
                   </div>
                 </div>
               </div>
-              <div className={`p-4 rounded-2xl ${
+              <div className={`p-4 rounded-lg ${
                 isDarkMode ? "bg-slate-900" : "bg-white shadow-inner"
               }`}>
-                <div className="aspect-video rounded-lg overflow-hidden bg-gradient-to-br from-blue-400/20 to-green-400/20 flex items-center justify-center">
+                <div className={`aspect-video rounded-lg overflow-hidden flex items-center justify-center ${isDarkMode ? "bg-slate-800" : "bg-slate-100"}`}>
                   <div className="text-center">
-                    <div className={`text-4xl mb-4 ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
-                      🎯
+                    <div className={`flex justify-center mb-4 ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
+                      <Target className="w-10 h-10" />
                     </div>
                     <p className="font-bold">All Features Included</p>
                     <p className="text-sm opacity-75 mt-2">No premium tiers, no hidden costs</p>
@@ -303,7 +262,7 @@ const FeaturesSite: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className={`py-16 ${isDarkMode ? "bg-gradient-to-r from-gray-800 to-gray-900" : "bg-gradient-to-r from-blue-600 to-green-600"}`}>
+      <section className={`py-16 ${isDarkMode ? "bg-slate-800" : "bg-blue-600"}`}>
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-6 text-white">
             {t.ctaTitle}
@@ -314,7 +273,7 @@ const FeaturesSite: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/loginregistersite"
-              className={`px-8 py-3 rounded-full font-bold text-lg transition-transform hover:scale-105 ${
+              className={`px-8 py-3 rounded-full font-bold text-lg transition-colors ${
                 isDarkMode
                   ? "bg-amber-400 text-black hover:bg-yellow-400"
                   : "bg-white text-blue-600 hover:bg-gray-100 shadow-lg"
@@ -324,7 +283,7 @@ const FeaturesSite: React.FC = () => {
             </Link>
             <Link
               to="/mostvisited"
-              className={`px-8 py-3 rounded-full font-bold text-lg transition-transform hover:scale-105 ${
+              className={`px-8 py-3 rounded-full font-bold text-lg transition-colors ${
                 isDarkMode
                   ? "bg-slate-800 text-white hover:bg-slate-700 border border-gray-600"
                   : "bg-transparent text-white border-2 border-white hover:bg-white/10"
@@ -334,7 +293,7 @@ const FeaturesSite: React.FC = () => {
             </Link>
             <Link
               to="/categories"
-              className={`px-8 py-3 rounded-full font-bold text-lg transition-transform hover:scale-105 ${
+              className={`px-8 py-3 rounded-full font-bold text-lg transition-colors ${
                 isDarkMode
                   ? "bg-transparent text-white border-2 border-white hover:bg-white/10"
                   : "bg-amber-400 text-black hover:bg-yellow-400 shadow-lg"

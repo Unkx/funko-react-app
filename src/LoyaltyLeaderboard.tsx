@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import useBreakpoints from "./useBreakpoints";
 import LoyaltyBadge from './LoyaltyBadge';
+import { Trophy, Medal } from 'lucide-react';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
 
@@ -43,8 +44,7 @@ const LoyaltyLeaderboard: React.FC<Props> = ({ isDarkMode, currentUserId }) => {
         const data = await response.json();
         setLeaderboard(data);
       }
-    } catch (err) {
-      console.error("Error fetching leaderboard:", err);
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -52,9 +52,9 @@ const LoyaltyLeaderboard: React.FC<Props> = ({ isDarkMode, currentUserId }) => {
 
   const getRankMedal = (rank: number) => {
     switch (rank) {
-      case 0: return "🥇";
-      case 1: return "🥈";
-      case 2: return "🥉";
+      case 0: return <Medal className="w-6 h-6 text-yellow-500" />;
+      case 1: return <Medal className="w-6 h-6 text-slate-400" />;
+      case 2: return <Medal className="w-6 h-6 text-amber-700" />;
       default: return `#${rank + 1}`;
     }
   };
@@ -71,7 +71,9 @@ const LoyaltyLeaderboard: React.FC<Props> = ({ isDarkMode, currentUserId }) => {
   return (
     <div className={`max-w-4xl mx-auto p-6 rounded-lg ${isDarkMode ? "bg-slate-800" : "bg-white"} shadow-lg`}>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">🏆 Loyalty Leaderboard</h2>
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <Trophy className="w-6 h-6 text-amber-400" /> Loyalty Leaderboard
+        </h2>
         
         {/* Filter Tabs */}
         <div className="flex gap-2">
@@ -120,7 +122,7 @@ const LoyaltyLeaderboard: React.FC<Props> = ({ isDarkMode, currentUserId }) => {
                 }`}
               >
                 {/* Rank */}
-                <div className={`text-2xl font-bold w-16 ${getRankColor(rank)}`}>
+                <div className={`text-2xl font-bold w-16 flex items-center ${getRankColor(rank)}`}>
                   {getRankMedal(rank)}
                 </div>
 

@@ -8,12 +8,9 @@ import axios from "axios";
 import Layout from './Layout';
 import { useTheme } from './ThemeContext';
 import { LanguageContext } from './LanguageContext';
+import { ShoppingCart, DollarSign, Search, Layers } from 'lucide-react';
 
 const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
-
-if (!import.meta.env.VITE_API_BASE_URL) {
-  console.warn('VITE_API_BASE_URL is not set, using default:', baseURL);
-}
 
 const api = axios.create({
   baseURL,
@@ -100,7 +97,6 @@ const FunkoDetails: React.FC = () => {
         const parsedUser = JSON.parse(storedUser);
         return parsedUser;
       } catch (error) {
-        console.error("Error parsing stored user:", error);
         localStorage.removeItem("user");
         return null;
       }
@@ -490,19 +486,9 @@ const fetchData = async () => {
     }
     
     const cleanId = id.replace(/[^\w\s-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '');
-    console.log("🔍 Original ID:", id);
-    console.log("🔍 Clean ID:", cleanId);
-    
     const searchParams = extractSearchParamsFromId(cleanId);
-    console.log("🔍 Extracted params:", searchParams);
-    console.log("🔍 Number valid?", 
-      searchParams.number && 
-      searchParams.number !== "null" && 
-      /^\d+$/.test(searchParams.number)
-    );
       try {
         const response = await api.get(`/api/items/${encodeURIComponent(cleanId)}`);
-        console.log("✅ Found item in database:", response.data);
         setFunkoItem(response.data);
         
         try {
@@ -511,16 +497,12 @@ const fetchData = async () => {
             const related = findRelatedItems(response.data, allItemsResponse.data);
             setRelatedItems(related);
           }
-        } catch (relatedError) {
-          console.warn("Could not load related items:", relatedError);
+        } catch {
         }
         
         return;
-      } catch (apiError: any) {
-        console.warn("❌ Database lookup failed:", apiError.response?.status);
+      } catch {
       }
-      
-      console.log("⚠️ Item not in database, fetching from GitHub...");
       const externalResponse = await fetch(
         "https://raw.githubusercontent.com/kennymkchan/funko-pop-data/master/funko_pop.json"
       );
@@ -547,8 +529,6 @@ const fetchData = async () => {
       
       if (!foundItem) {
         const searchParams = extractSearchParamsFromId(cleanId);
-        console.log("🔍 Searching with params:", searchParams);
-        
         foundItem = dataWithIds.find((item) => {
           const titleMatch = item.title.toLowerCase().includes(searchParams.title.toLowerCase());
           const numberMatch = !searchParams.number || item.number === searchParams.number;
@@ -569,8 +549,6 @@ const fetchData = async () => {
       if (!foundItem) {
         throw new Error("Item not found in any source");
       }
-      
-      console.log("✅ Found item in external JSON:", foundItem.title);
       setFunkoItem(foundItem);
       
       const related = findRelatedItems(foundItem, dataWithIds);
@@ -582,14 +560,11 @@ const fetchData = async () => {
           await api.post('/api/items/sync-single', {
             item: foundItem
           });
-          console.log("✅ Item synced to database");
         }
-      } catch (syncError) {
-        console.warn("⚠️ Could not sync item to database:", syncError);
+      } catch {
       }
       
     } catch (err: any) {
-      console.error("❌ All fetch methods failed:", err);
       setError(err.message || "Failed to load item");
     } finally {
       setIsLoading(false);
@@ -601,7 +576,6 @@ const generateDescription = async (title: string, number: string, category: stri
   
   // If no API key, use fallback immediately without throwing error
   if (!apiKey) {
-    console.log("No AI API key found, using fallback description");
     const itemType = determineItemType(title, category);
     const itemTypeLabel = {
       funko_pop: 'Funko Pop! vinyl figure',
@@ -716,8 +690,6 @@ Teraz napisz szczegółowy opis dla "${title}". Pamiętaj: 5-8 PEŁNYCH zdań, s
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Groq API error:", errorText);
-      
       // Return fallback on API error
       return createDetailedFallback(title, itemTypeLabel, category, isValidNumber ? number : '');
     }
@@ -730,7 +702,6 @@ Teraz napisz szczegółowy opis dla "${title}". Pamiętaj: 5-8 PEŁNYCH zdań, s
     
     return description;
   } catch (error) {
-    console.error("AI generation error:", error);
     // Return fallback on any error
     return createDetailedFallback(title, itemTypeLabel, category, isValidNumber ? number : '');
   }
@@ -853,7 +824,6 @@ useEffect(() => {
         localStorage.setItem(cacheKey, desc);
       } else {
         // Jeśli nie, użyj rozszerzonego fallbacka
-        console.warn("Generated description too short, using enhanced fallback");
         const itemType = determineItemType(funkoItem.title, funkoItem.category || "");
         const itemTypeLabel = {
           funko_pop: 'Funko Pop! vinyl figure',
@@ -875,7 +845,6 @@ useEffect(() => {
         localStorage.setItem(cacheKey, enhancedDesc);
       }
     } catch (err) {
-      console.error("Nie udało się wygenerować opisu:", err);
       // Użyj rozszerzonego fallbacka
       const itemType = determineItemType(funkoItem.title, funkoItem.category || "");
       const itemTypeLabel = {
@@ -961,8 +930,7 @@ const isDescriptionComplete = (description: string): boolean => {
             date: new Date().toISOString().split('T')[0]
           });
         }
-      } catch (error) {
-        console.error(`Failed to scrape ${shop.name}:`, error);
+      } catch {
       }
     }
     setScrapingResults(results);
@@ -976,8 +944,7 @@ const isDescriptionComplete = (description: string): boolean => {
         });
         const updatedPriceHistory = [...priceHistory, ...results];
         setPriceHistory(updatedPriceHistory);
-      } catch (error) {
-        console.error("Failed to save prices:", error);
+      } catch {
       }
     }
   };
@@ -986,12 +953,6 @@ const isDescriptionComplete = (description: string): boolean => {
   const checkUserAuth = () => {
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
-    console.log("🔐 Auth Check:", {
-      hasToken: !!token,
-      hasUser: !!userData,
-      user: userData ? JSON.parse(userData) : null,
-      token: token ? `${token.substring(0, 20)}...` : null
-    });
     return token && userData;
   };
 
@@ -1002,30 +963,23 @@ const isDescriptionComplete = (description: string): boolean => {
       return;
     }
     if (!funkoItem || isUpdatingWishlist) return;
-    
-    console.log("🔄 Toggling wishlist for:", funkoItem.id);
     setIsUpdatingWishlist(true);
     setCollectionError(null);
     
     try {
       if (inWishlist) {
-        console.log("🗑️ Removing from wishlist");
         const response = await api.delete(`/wishlist/${funkoItem.id}`);
-        console.log("✅ Wishlist remove response:", response.status);
       } else {
-        console.log("➕ Adding to wishlist");
         const response = await api.post("/wishlist", {
           funkoId: funkoItem.id,
           title: funkoItem.title,
           number: funkoItem.number,
           imageName: funkoItem.imageName,
         });
-        console.log("✅ Wishlist add response:", response.status);
         await awardPoints("wishlist_add", `Added "${funkoItem.title}" to wishlist`);
       }
       setInWishlist(!inWishlist);
     } catch (err: any) {
-      console.error("❌ Wishlist error:", err);
       const errorMsg = err.response?.data?.error || err.message || "Error updating wishlist.";
       setCollectionError(errorMsg);
       alert(errorMsg);
@@ -1046,12 +1000,11 @@ const isDescriptionComplete = (description: string): boolean => {
     setCollectionError(null);
 
     try {
-      // 🔁 Ensure item exists in DB first
+      // Ensure item exists in DB first
       if (!funkoItem.id.startsWith("http")) {
         try {
           await api.post('/api/items/sync-single', { item: funkoItem });
-        } catch (syncErr) {
-          console.warn("Sync before collection add failed:", syncErr);
+        } catch {
           // Optional: still proceed if backend allows it
         }
       }
@@ -1065,15 +1018,13 @@ const isDescriptionComplete = (description: string): boolean => {
           number: funkoItem.number,
           imageName: funkoItem.imageName,
         });
-        console.log("✅ Collection add response:", response.data);
         await awardPoints("collection_add", `Added "${funkoItem.title}" to collection`);
       }
 
       setInCollection(!inCollection);
     } catch (err: any) {
-      console.error("❌ Collection toggle error:", err);
       const errorMsg = err.response?.data?.error || err.message || t.updateError || "Error updating collection.";
-      setCollectionError(errorMsg); // ✅ Now visible in UI
+      setCollectionError(errorMsg);
       alert(errorMsg);
     } finally {
       setIsUpdatingCollection(false);
@@ -1099,34 +1050,22 @@ const isDescriptionComplete = (description: string): boolean => {
         actionType,
         details: details || `Performed action: ${actionType}`
       });
-    } catch (err) {
-      console.warn("Failed to award loyalty points:", err);
+    } catch {
     }
   };
 
   // Check item status in collection and wishlist
   const checkItemStatus = async () => {
     if (!funkoItem || !user) return;
-    
-    console.log("🔍 Checking item status for:", funkoItem.id);
-    
     try {
       const [wishlistRes, collectionRes] = await Promise.all([
         api.get(`/wishlist/check/${funkoItem.id}`),
         api.get(`/collection/check/${funkoItem.id}`),
       ]);
-      
-      console.log("📊 Item status:", {
-        inWishlist: wishlistRes.data.exists,
-        inCollection: collectionRes.data.exists
-      });
-      
       setInWishlist(wishlistRes.data.exists);
       setInCollection(collectionRes.data.exists);
     } catch (err: any) {
-      console.error("❌ Error checking item status:", err);
       if (err.response?.status === 401 || err.response?.status === 403) {
-        console.log("🔐 Authentication failed, redirecting to login");
         localStorage.removeItem("user");
         localStorage.removeItem("token");
         navigate("/loginregistersite");
@@ -1193,8 +1132,7 @@ const isDescriptionComplete = (description: string): boolean => {
       try {
         await awardPoints("item_view", `Viewed "${funkoItem.title}"`);
         sessionStorage.setItem(visitPointsKey, "true");
-      } catch (err) {
-        console.warn("Failed to award visit points:", err);
+      } catch {
       }
     };
 
@@ -1243,7 +1181,6 @@ useEffect(() => {
         localStorage.setItem(cacheKey, desc);
       } else {
         // Jeśli nie, użyj rozszerzonego fallbacka
-        console.warn("Generated description too short, using enhanced fallback");
         const itemType = determineItemType(funkoItem.title, funkoItem.category || "");
         const itemTypeLabel = {
           funko_pop: 'Funko Pop! vinyl figure',
@@ -1265,7 +1202,6 @@ useEffect(() => {
         localStorage.setItem(cacheKey, enhancedDesc);
       }
     } catch (err) {
-      console.error("Nie udało się wygenerować opisu:", err);
       // Użyj rozszerzonego fallbacka
       const itemType = determineItemType(funkoItem.title, funkoItem.category || "");
       const itemTypeLabel = {
@@ -1537,7 +1473,7 @@ const determineItemType = (title: string, category?: string) => {
                 </p>
                 <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-500">
                   <p className="text-sm text-slate-500 dark:text-slate-400 italic">
-                    🤖 AI-generated description for collectors • Refresh page to regenerate
+                    AI-generated description for collectors · Refresh page to regenerate
                   </p>
                 </div>
               </div>
@@ -1548,7 +1484,7 @@ const determineItemType = (title: string, category?: string) => {
         {/* Shopping Links Section */}
         <div className={`p-6 rounded-lg shadow-lg mb-8 ${isDarkMode ? "bg-slate-800" : "bg-white border border-gray-200"}`}>
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <span>🛒</span>
+            <ShoppingCart className="w-5 h-5" />
             {t.searchOnShoppingSites}
           </h2>
           
@@ -1577,7 +1513,9 @@ const determineItemType = (title: string, category?: string) => {
 
           {scrapingResults.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-3">💰 {t.currentPrices}</h3>
+              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <DollarSign className="w-4 h-4" /> {t.currentPrices}
+              </h3>
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {scrapingResults.map((result, index) => (
                   <div
@@ -1658,7 +1596,8 @@ const determineItemType = (title: string, category?: string) => {
                             : "bg-green-600 text-white hover:bg-green-700 shadow hover:shadow-lg"
                         }`}
                       >
-                        🔍 Search
+                        <Search className="inline w-4 h-4 -mt-0.5 mr-1" />
+                        Search
                       </a>
                     </div>
                   </div>
@@ -1677,7 +1616,7 @@ const determineItemType = (title: string, category?: string) => {
         {/* Related items section */}
         <div className={`p-6 rounded-lg shadow-lg ${isDarkMode ? "bg-slate-800" : "bg-white border border-gray-200"}`}>
           <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <span>🎯</span>
+            <Layers className="w-5 h-5" />
             {t.relatedItems || "Related Items"}
           </h2>
           {relatedItems.length > 0 ? (

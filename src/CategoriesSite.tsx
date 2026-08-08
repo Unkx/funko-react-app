@@ -6,6 +6,10 @@ import { FunkoItems } from "./FunkoItems";
 import Layout from './Layout';
 import { useTheme } from './ThemeContext';
 import { LanguageContext } from './LanguageContext';
+import {
+  Tv, Clapperboard, Dumbbell, Gamepad2, Music, CircleDot,
+  Zap, Castle, TreePine, AlertTriangle,
+} from 'lucide-react';
 
 interface FunkoItem {
   id: string;
@@ -42,70 +46,70 @@ const CategoriesSite: React.FC = () => {
       id: "tv",
       name: t.funkoTV || "Funko TV",
       description: t.tvDescription || "Characters from your favorite TV shows",
-      icon: "📺",
+      Icon: Tv,
       sampleItems: ["Friends", "The Office", "Stranger Things", "Game of Thrones"]
     },
     {
       id: "movies",
       name: t.funkoMovies || "Funko Movies", 
       description: t.moviesDescription || "Iconic characters from blockbuster films",
-      icon: "🎬",
+      Icon: Clapperboard,
       sampleItems: ["Star Wars", "Harry Potter", "Marvel", "DC Comics"]
     },
     {
       id: "wwe",
       name: t.funkoWWE || "Funko WWE",
       description: t.wweDescription || "Wrestling superstars and legends",
-      icon: "💪",
+      Icon: Dumbbell,
       sampleItems: ["John Cena", "The Rock", "Stone Cold", "Undertaker"]
     },
     {
       id: "games",
       name: t.funkoGames || "Funko Games",
       description: t.gamesDescription || "Characters from video games",
-      icon: "🎮",
+      Icon: Gamepad2,
       sampleItems: ["Fortnite", "Overwatch", "Halo", "Pokémon"]
     },
     {
       id: "anime",
       name: t.funkoAnime || "Funko Anime",
       description: t.animeDescription || "Beloved anime and manga characters",
-      icon: "🇯🇵",
+      Icon: Zap,
       sampleItems: ["Dragon Ball Z", "Naruto", "One Piece", "My Hero Academia"]
     },
     {
       id: "music",
       name: t.funkoMusic || "Funko Music",
       description: t.musicDescription || "Music icons and bands",
-      icon: "🎵",
+      Icon: Music,
       sampleItems: ["The Beatles", "Michael Jackson", "Queen", "KISS"]
     },
     {
       id: "sports",
       name: t.funkoSports || "Funko Sports",
       description: t.sportsDescription || "Sports legends and teams",
-      icon: "⚽",
+      Icon: CircleDot,
       sampleItems: ["NBA Stars", "NFL Legends", "Soccer Icons", "Baseball Heroes"]
     },
     {
       id: "comics",
       name: t.funkoComics || "Funko Comics",
       description: t.comicsDescription || "Superheroes and comic book characters",
-      icon: "💥",
+      Icon: Zap,
       sampleItems: ["Spider-Man", "Batman", "Superman", "X-Men"]
     },
     {
       id: "disney",
       name: t.funkoDisney || "Funko Disney",
       description: t.disneyDescription || "Disney classics and new favorites",
-      icon: "🏰",
+      Icon: Castle,
       sampleItems: ["Mickey Mouse", "Frozen", "Toy Story", "Marvel"]
     },
     {
       id: "holiday",
       name: t.funkoHoliday || "Funko Holiday",
       description: t.holidayDescription || "Seasonal and holiday specials",
-      icon: "🎄",
+      Icon: TreePine,
       sampleItems: ["Christmas", "Halloween", "Easter", "Valentine's Day"]
     }
   ];
@@ -246,7 +250,7 @@ const CategoriesSite: React.FC = () => {
         isDarkMode ? "bg-slate-900 text-white" : "bg-gray-50 text-gray-800"
       }`}>
         <div className="text-center">
-          <div className="text-6xl mb-4">⚠️</div>
+          <AlertTriangle className="w-16 h-16 mb-4 mx-auto text-yellow-500" />
           <p className="text-xl mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
@@ -323,7 +327,7 @@ const CategoriesSite: React.FC = () => {
                   <div className="p-6">
                     {/* Category Header */}
                     <div className="flex items-center gap-3 mb-4">
-                      <span className="text-2xl sm:text-3xl lg:text-4xl">{category.icon}</span>
+                      <category.Icon className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10" />
                       <div className="flex-grow">
                         <h2 className="text-xl font-bold">{category.name}</h2>
                         <p className="text-sm opacity-75">{category.description}</p>
@@ -422,7 +426,7 @@ const CategoriesSite: React.FC = () => {
 
             {filteredItems.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-6xl mb-4">📺</div>
+                <Tv className="w-16 h-16 mb-4 mx-auto opacity-40" />
                 <p className="text-xl mb-4">
                   {searchQuery 
                     ? `${t.noItemsFound || "No items found"} matching "${searchQuery}"` 

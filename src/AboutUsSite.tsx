@@ -8,7 +8,7 @@ import { translations } from "./Translations/TranslationAboutUs";
 import Layout from './Layout';
 import { useTheme } from './ThemeContext';
 import { LanguageContext } from './LanguageContext';
-import { BookOpen, Star, BarChart3, Users, Bot, Globe } from 'lucide-react';
+import { BookOpen, Star, BarChart3, Users, Bot, Globe, Target, Eye } from 'lucide-react';
 // Team members data
 const teamMembers = [
   {
@@ -93,22 +93,13 @@ const AboutUsSite: React.FC = () => {
     };
   }, [navigate]);
 
-  // Stats data
-  const stats = [
-    { value: "5,000+", label: t.users },
-    { value: "170,000+", label: t.itemsTracked },
-    { value: "1,200+", label: t.collections },
-    { value: "50+", label: t.categories },
-  ];
-
   return (
     <Layout translations={t}>
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-green-500/10 dark:from-blue-900/20 dark:to-green-900/20"></div>
+      <section className={`relative overflow-hidden border-b ${isDarkMode ? "border-slate-800" : "border-slate-200"}`}>
         <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-green-600 dark:from-yellow-400 dark:to-green-400 bg-clip-text text-transparent">
+            <h1 className={`text-4xl md:text-6xl font-bold mb-6 ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
               {t.pageTitle}
             </h1>
             <p className="text-xl md:text-2xl mb-8 opacity-90">
@@ -120,7 +111,7 @@ const AboutUsSite: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/categories"
-                className={`px-8 py-3 rounded-full font-bold text-lg transition-transform hover:scale-105 ${
+                className={`px-8 py-3 rounded-full font-bold text-lg transition-colors ${
                   isDarkMode
                     ? "bg-amber-400 text-black hover:bg-amber-500"
                     : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg"
@@ -130,7 +121,7 @@ const AboutUsSite: React.FC = () => {
               </Link>
               <Link
                 to="/features"
-                className={`px-8 py-3 rounded-full font-bold text-lg transition-transform hover:scale-105 ${
+                className={`px-8 py-3 rounded-full font-bold text-lg transition-colors ${
                   isDarkMode
                     ? "bg-slate-800 text-white hover:bg-slate-700"
                     : "bg-white text-blue-600 hover:bg-gray-100 shadow-lg"
@@ -146,63 +137,36 @@ const AboutUsSite: React.FC = () => {
       {/* Our Story Section */}
       <section className={`py-16 ${isDarkMode ? "bg-slate-900" : "bg-white"}`}>
         <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl font-bold mb-6 flex items-center gap-2">
+              <span className={`p-2 rounded-full ${isDarkMode ? "bg-amber-400 text-black" : "bg-blue-100 text-blue-600"}`}>
+                <BookOpen className="w-5 h-5" />
+              </span>
+              {t.ourStory}
+            </h2>
+            <p className="text-lg mb-8 leading-relaxed">
+              {t.storyContent}
+            </p>
+
+            <div className="space-y-6">
               <div>
-                <h2 className="text-3xl font-bold mb-6 flex items-center gap-2">
-                  <span className={`p-2 rounded-full ${isDarkMode ? "bg-amber-400 text-black" : "bg-blue-100 text-blue-600"}`}>
-                    📖
+                <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
+                  <span className={`p-1 rounded ${isDarkMode ? "bg-green-500" : "bg-green-100 text-green-600"}`}>
+                    <Target className="w-4 h-4" />
                   </span>
-                  {t.ourStory}
-                </h2>
-                <p className="text-lg mb-8 leading-relaxed">
-                  {t.storyContent}
-                </p>
-                
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
-                      <span className={`p-1 rounded ${isDarkMode ? "bg-green-500" : "bg-green-100 text-green-600"}`}>
-                        🎯
-                      </span>
-                      {t.ourMission}
-                    </h3>
-                    <p className="opacity-90">{t.missionContent}</p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
-                      <span className={`p-1 rounded ${isDarkMode ? "bg-purple-500" : "bg-purple-100 text-purple-600"}`}>
-                        👁️
-                      </span>
-                      {t.ourVision}
-                    </h3>
-                    <p className="opacity-90">{t.visionContent}</p>
-                  </div>
-                </div>
+                  {t.ourMission}
+                </h3>
+                <p className="opacity-90">{t.missionContent}</p>
               </div>
-              
-              <div className={`p-6 rounded-2xl ${isDarkMode ? "bg-slate-800" : "bg-gradient-to-br from-blue-50 to-green-50"} shadow-xl`}>
-                <h3 className="text-2xl font-bold mb-8 text-center">{t.statsTitle}</h3>
-                <div className="grid grid-cols-2 gap-6">
-                  {stats.map((stat, index) => (
-                    <div
-                      key={index}
-                      className={`text-center p-4 rounded-xl transition-transform hover:scale-105 ${
-                        isDarkMode ? "bg-slate-700" : "bg-white shadow-md"
-                      }`}
-                    >
-                      <div className={`text-3xl font-bold mb-2 ${
-                        index === 0 ? "text-yellow-500" :
-                        index === 1 ? "text-blue-500" :
-                        index === 2 ? "text-green-500" : "text-purple-500"
-                      }`}>
-                        {stat.value}
-                      </div>
-                      <div className="text-sm font-medium">{stat.label}</div>
-                    </div>
-                  ))}
-                </div>
+
+              <div>
+                <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
+                  <span className={`p-1 rounded ${isDarkMode ? "bg-purple-500" : "bg-purple-100 text-purple-600"}`}>
+                    <Eye className="w-4 h-4" />
+                  </span>
+                  {t.ourVision}
+                </h3>
+                <p className="opacity-90">{t.visionContent}</p>
               </div>
             </div>
           </div>
@@ -210,17 +174,17 @@ const AboutUsSite: React.FC = () => {
       </section>
 
       {/* Features Section */}
-      <section className={`py-16 ${isDarkMode ? "bg-slate-950" : "bg-gradient-to-br from-blue-50 to-green-50"}`}>
+      <section className={`py-16 ${isDarkMode ? "bg-slate-950" : "bg-slate-50"}`}>
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold mb-12 text-center">{t.featuresTitle}</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
               <div
                 key={index}
-                className={`p-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-2xl ${
-                  isDarkMode 
-                    ? "bg-slate-900 hover:bg-slate-800" 
-                    : "bg-white hover:shadow-xl border border-gray-100"
+                className={`p-6 rounded-lg transition-colors duration-200 ${
+                  isDarkMode
+                    ? "bg-slate-900 hover:bg-slate-800"
+                    : "bg-white hover:bg-slate-50 border border-gray-100"
                 }`}
               >
                 <div className={`mb-4 ${isDarkMode ? "text-amber-400" : "text-blue-600"}`}>
@@ -252,8 +216,8 @@ const AboutUsSite: React.FC = () => {
             {teamMembers.map((member, index) => (
               <div
                 key={index}
-                className={`p-6 rounded-2xl text-center transition-transform hover:scale-105 ${
-                  isDarkMode ? "bg-slate-800" : "bg-gradient-to-b from-blue-50 to-green-50 shadow-lg"
+                className={`p-6 rounded-lg text-center ${
+                  isDarkMode ? "bg-slate-800" : "bg-white shadow-md"
                 }`}
               >
                 <div className="w-32 h-32 mx-auto mb-4 rounded-full overflow-hidden border-4 border-white dark:border-gray-600 shadow-lg">
@@ -279,14 +243,14 @@ const AboutUsSite: React.FC = () => {
       </section>
 
       {/* Testimonials Section */}
-      <section className={`py-16 ${isDarkMode ? "bg-slate-950" : "bg-gradient-to-br from-blue-50 to-green-50"}`}>
+      <section className={`py-16 ${isDarkMode ? "bg-slate-950" : "bg-slate-50"}`}>
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold mb-12 text-center">{t.testimonialsTitle}</h2>
           <div className="grid md:grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {testimonials.map((testimonial, index) => (
               <div
                 key={index}
-                className={`p-6 rounded-2xl ${
+                className={`p-6 rounded-lg ${
                   isDarkMode ? "bg-slate-900" : "bg-white shadow-lg"
                 }`}
               >
@@ -304,7 +268,7 @@ const AboutUsSite: React.FC = () => {
       </section>
 
       {/* CTA Section */}
-      <section className={`py-16 ${isDarkMode ? "bg-gradient-to-r from-gray-800 to-gray-900" : "bg-gradient-to-r from-blue-600 to-green-600"}`}>
+      <section className={`py-16 ${isDarkMode ? "bg-slate-800" : "bg-blue-600"}`}>
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-6 text-white">
             {t.joinCommunity}
@@ -315,7 +279,7 @@ const AboutUsSite: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/register"
-              className={`px-8 py-3 rounded-full font-bold text-lg transition-transform hover:scale-105 ${
+              className={`px-8 py-3 rounded-full font-bold text-lg transition-colors ${
                 isDarkMode
                   ? "bg-amber-400 text-black hover:bg-yellow-400"
                   : "bg-white text-blue-600 hover:bg-gray-100"
@@ -325,7 +289,7 @@ const AboutUsSite: React.FC = () => {
             </Link>
             <Link
               to="/features"
-              className={`px-8 py-3 rounded-full font-bold text-lg transition-transform hover:scale-105 ${
+              className={`px-8 py-3 rounded-full font-bold text-lg transition-colors ${
                 isDarkMode
                   ? "bg-slate-800 text-white hover:bg-slate-700 border border-gray-600"
                   : "bg-transparent text-white border-2 border-white hover:bg-white/10"

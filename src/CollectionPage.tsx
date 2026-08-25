@@ -172,7 +172,7 @@ const CollectionPage: React.FC = () => {
       await queryClient.cancelQueries({ queryKey: ["collection"] });
       const previous = queryClient.getQueryData<FunkoItem[]>(["collection"]);
       queryClient.setQueryData<FunkoItem[]>(["collection"], (old = []) =>
-        old.map((item) => (item.id === payload.id ? { ...item, ...payload } : item))
+        old.map((item) => (item.id === payload.id ? { ...item, ...payload, purchase_price: payload.purchase_price != null ? Number(payload.purchase_price) : item.purchase_price } : item))
       );
       return { previous };
     },

@@ -175,7 +175,7 @@ const WishlistPage: React.FC = () => {
       await queryClient.cancelQueries({ queryKey: ["wishlist"] });
       const previous = queryClient.getQueryData<WishlistItem[]>(["wishlist"]);
       queryClient.setQueryData<WishlistItem[]>(["wishlist"], (old = []) =>
-        old.map((item) => (item.id === payload.id ? { ...item, ...payload } : item))
+        old.map((item) => (item.id === payload.id ? { ...item, ...payload, max_price: payload.max_price != null ? Number(payload.max_price) : item.max_price } : item))
       );
       return { previous };
     },
@@ -231,6 +231,7 @@ const WishlistPage: React.FC = () => {
       deleteMutation.mutate(item.id);
       alert("Item moved to your collection!");
     },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["collection"] }),
   });
 
   const handleMoveToCollection = (item: WishlistItem) => {

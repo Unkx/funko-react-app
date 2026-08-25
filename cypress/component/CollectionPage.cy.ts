@@ -1,9 +1,23 @@
 import React from 'react';
 import CollectionPage from '../../src/CollectionPage';
 import { BrowserRouter } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '../../src/ui/queryClient';
+
+const mountCollectionPage = () =>
+  cy.mount(
+    React.createElement(
+      QueryClientProvider,
+      { client: queryClient },
+      React.createElement(BrowserRouter, null, React.createElement(CollectionPage))
+    )
+  );
 
 describe('CollectionPage Component', () => {
   beforeEach(() => {
+    // Avoid stale cached data bleeding between tests via the shared queryClient singleton
+    queryClient.clear();
+
     // Mock localStorage
     cy.stub(localStorage, 'getItem').callsFake((key) => {
       const mockData = {
@@ -38,69 +52,41 @@ describe('CollectionPage Component', () => {
   });
 
   it('should render with default props', () => {
-    cy.mount(
-      React.createElement(BrowserRouter, null,
-        React.createElement(CollectionPage)
-      )
-    );
+    mountCollectionPage();
     cy.contains('Pop&Go!').should('be.visible');
   });
 
   it('should display collection title', () => {
-    cy.mount(
-      React.createElement(BrowserRouter, null,
-        React.createElement(CollectionPage)
-      )
-    );
+    mountCollectionPage();
     cy.contains('Your Collection').should('be.visible');
   });
 
   it('should toggle dark mode', () => {
-    cy.mount(
-      React.createElement(BrowserRouter, null,
-        React.createElement(CollectionPage)
-      )
-    );
+    mountCollectionPage();
     cy.get('button[aria-label="Toggle theme"]').click();
     cy.get('@setItem').should('have.been.calledWith', 'preferredTheme', 'light');
   });
 
   it('should display navigation links', () => {
-    cy.mount(
-      React.createElement(BrowserRouter, null,
-        React.createElement(CollectionPage)
-      )
-    );
+    mountCollectionPage();
     cy.contains('Dashboard').should('be.visible');
     cy.contains('Collection').should('be.visible');
     cy.contains('Wishlist').should('be.visible');
   });
 
   it('should have search form', () => {
-    cy.mount(
-      React.createElement(BrowserRouter, null,
-        React.createElement(CollectionPage)
-      )
-    );
+    mountCollectionPage();
     cy.get('form input[type="text"]').should('exist');
     cy.get('form button[type="submit"]').should('exist');
   });
 
   it('should display language selector', () => {
-    cy.mount(
-      React.createElement(BrowserRouter, null,
-        React.createElement(CollectionPage)
-      )
-    );
+    mountCollectionPage();
     cy.get('button[aria-label="Select language"]').should('be.visible');
   });
 
   it('should display collection items when loaded', () => {
-    cy.mount(
-      React.createElement(BrowserRouter, null,
-        React.createElement(CollectionPage)
-      )
-    );
+    mountCollectionPage();
 
     cy.wait('@getCollection');
     cy.contains('Test Funko').should('be.visible');
@@ -108,11 +94,7 @@ describe('CollectionPage Component', () => {
   });
 
   it('should display collection statistics', () => {
-    cy.mount(
-      React.createElement(BrowserRouter, null,
-        React.createElement(CollectionPage)
-      )
-    );
+    mountCollectionPage();
 
     cy.wait('@getCollection');
     cy.contains('1').should('be.visible'); // Total items
@@ -120,20 +102,12 @@ describe('CollectionPage Component', () => {
   });
 
   it('should show filters button', () => {
-    cy.mount(
-      React.createElement(BrowserRouter, null,
-        React.createElement(CollectionPage)
-      )
-    );
+    mountCollectionPage();
     cy.contains('Filters').should('be.visible');
   });
 
   it('should display footer', () => {
-    cy.mount(
-      React.createElement(BrowserRouter, null,
-        React.createElement(CollectionPage)
-      )
-    );
+    mountCollectionPage();
     cy.contains('© 2024 Pop&Go!').should('be.visible');
   });
 
@@ -143,11 +117,7 @@ describe('CollectionPage Component', () => {
       body: []
     }).as('getEmptyCollection');
 
-    cy.mount(
-      React.createElement(BrowserRouter, null,
-        React.createElement(CollectionPage)
-      )
-    );
+    mountCollectionPage();
 
     cy.wait('@getEmptyCollection');
     cy.contains('Your collection is empty').should('be.visible');
@@ -159,11 +129,7 @@ describe('CollectionPage Component', () => {
       setTimeout(() => req.reply({ body: [] }), 1000);
     }).as('delayedCollection');
 
-    cy.mount(
-      React.createElement(BrowserRouter, null,
-        React.createElement(CollectionPage)
-      )
-    );
+    mountCollectionPage();
 
     cy.contains('Loading your collection...').should('be.visible');
   });
@@ -174,11 +140,7 @@ describe('CollectionPage Component', () => {
       body: { error: 'Server error' }
     }).as('failedCollection');
 
-    cy.mount(
-      React.createElement(BrowserRouter, null,
-        React.createElement(CollectionPage)
-      )
-    );
+    mountCollectionPage();
 
     cy.wait('@failedCollection');
     // Should still render the page structure
@@ -191,21 +153,13 @@ describe('CollectionPage Component', () => {
       return 'mock-value';
     });
 
-    cy.mount(
-      React.createElement(BrowserRouter, null,
-        React.createElement(CollectionPage)
-      )
-    );
+    mountCollectionPage();
 
     cy.get('@pushState').should('have.been.calledWith', null, '', '/loginregistersite');
   });
 
   it('should handle language change', () => {
-    cy.mount(
-      React.createElement(BrowserRouter, null,
-        React.createElement(CollectionPage)
-      )
-    );
+    mountCollectionPage();
 
     cy.get('button[aria-label="Select language"]').click();
     cy.contains('Polski').click();
@@ -213,11 +167,7 @@ describe('CollectionPage Component', () => {
   });
 
   it('should handle search form submission', () => {
-    cy.mount(
-      React.createElement(BrowserRouter, null,
-        React.createElement(CollectionPage)
-      )
-    );
+    mountCollectionPage();
 
     cy.get('form input[type="text"]').type('test search');
     cy.get('form').submit();

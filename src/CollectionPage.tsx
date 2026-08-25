@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import useBreakpoints from "./useBreakpoints";
 import { translations } from "./Translations/TranslationsDashboard";
 import Layout from './Layout';
 import { useTheme } from './ThemeContext';
 import { LanguageContext } from './LanguageContext';
+import { authFetch } from "./api/http";
+import { CardSkeleton } from "./ui/Skeleton";
 
 // Icons
 import EditIcon from "/src/assets/edit.svg?react";
@@ -13,8 +16,6 @@ import SaveIcon from "/src/assets/save.svg?react";
 import CancelIcon from "/src/assets/cancel.svg?react";
 import PlusIcon from "/src/assets/plus.svg?react";
 import FilterIcon from "/src/assets/filter.svg?react";
-
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
 
 interface FunkoItem {
   id: string;
@@ -35,9 +36,7 @@ const CollectionPage: React.FC = () => {
   const { language } = useContext(LanguageContext);
   
   // Collection specific states
-  const [collection, setCollection] = useState<FunkoItem[]>([]);
   const [filteredCollection, setFilteredCollection] = useState<FunkoItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<FunkoItem>>({});
   const [filterCondition, setFilterCondition] = useState<string>("all");
@@ -87,35 +86,18 @@ const CollectionPage: React.FC = () => {
     };
   }, [navigate]);
 
-  // Fetch collection data
+  const queryClient = useQueryClient();
+  const token = localStorage.getItem("token");
+
+  const { data: collection = [], isLoading: loading } = useQuery<FunkoItem[]>({
+    queryKey: ["collection"],
+    queryFn: () => authFetch<FunkoItem[]>("/api/collection"),
+    enabled: !!token,
+  });
+
   useEffect(() => {
-    const fetchCollection = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/loginregistersite");
-        return;
-      }
-
-      try {
-        const response = await fetch(`${baseURL}/api/collection`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setCollection(data);
-        } else {
-          setCollection([]);
-        }
-      } catch (error) {
-        setCollection([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCollection();
-  }, [navigate]);
+    if (!token) navigate("/loginregistersite");
+  }, [token, navigate]);
 
   // Filter and sort collection
   useEffect(() => {
@@ -180,53 +162,53 @@ const CollectionPage: React.FC = () => {
     setEditForm({});
   };
 
-  const handleSaveEdit = async () => {
-    if (!editingItem) return;
-
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    try {
-      const response = await fetch(`${baseURL}/api/collection/${editingItem}`, {
+  const editMutation = useMutation({
+    mutationFn: (payload: Partial<FunkoItem> & { id: string }) =>
+      authFetch<FunkoItem>(`/api/collection/${payload.id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(editForm)
-      });
+        body: JSON.stringify(payload),
+      }),
+    onMutate: async (payload) => {
+      await queryClient.cancelQueries({ queryKey: ["collection"] });
+      const previous = queryClient.getQueryData<FunkoItem[]>(["collection"]);
+      queryClient.setQueryData<FunkoItem[]>(["collection"], (old = []) =>
+        old.map((item) => (item.id === payload.id ? { ...item, ...payload } : item))
+      );
+      return { previous };
+    },
+    onError: (_err, _payload, context) => {
+      if (context?.previous) queryClient.setQueryData(["collection"], context.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["collection"] }),
+  });
 
-      if (response.ok) {
-        const updatedItem = await response.json();
-        setCollection(prev => prev.map(item => 
-          item.id === editingItem ? updatedItem : item
-        ));
-        setEditingItem(null);
-        setEditForm({});
-      }
-    } catch {
-    }
+  const handleSaveEdit = () => {
+    if (!editingItem) return;
+    editMutation.mutate({ ...editForm, id: editingItem } as FunkoItem & { id: string });
+    setEditingItem(null);
+    setEditForm({});
   };
 
-  const handleDeleteItem = async (itemId: string) => {
+  const deleteMutation = useMutation({
+    mutationFn: (itemId: string) =>
+      authFetch<void>(`/api/collection/${itemId}`, { method: "DELETE" }),
+    onMutate: async (itemId) => {
+      await queryClient.cancelQueries({ queryKey: ["collection"] });
+      const previous = queryClient.getQueryData<FunkoItem[]>(["collection"]);
+      queryClient.setQueryData<FunkoItem[]>(["collection"], (old = []) =>
+        old.filter((item) => item.id !== itemId)
+      );
+      return { previous };
+    },
+    onError: (_err, _itemId, context) => {
+      if (context?.previous) queryClient.setQueryData(["collection"], context.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["collection"] }),
+  });
+
+  const handleDeleteItem = (itemId: string) => {
     if (!confirm(t.confirmDelete)) return;
-
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    try {
-      const response = await fetch(`${baseURL}/api/collection/${itemId}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        setCollection(prev => prev.filter(item => item.id !== itemId));
-      }
-    } catch {
-    }
+    deleteMutation.mutate(itemId);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -362,7 +344,9 @@ const CollectionPage: React.FC = () => {
 
           {/* Collection Grid */}
           {loading ? (
-            <div className="text-center py-8">Loading your collection...</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <CardSkeleton count={6} isDarkMode={isDarkMode} />
+            </div>
           ) : filteredCollection.length === 0 ? (
               <div className="text-center py-8">
                   {collection.length === 0 ? (

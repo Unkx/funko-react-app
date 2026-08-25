@@ -174,10 +174,10 @@ const FunkoDetails: React.FC = () => {
         currency: 'CAD',
         priceSelector: '.a-price-whole'
       },
-      { 
-        name: 'Pop In A Box CA', 
-        url: 'popinabox.ca', 
-        searchUrl: 'https://www.popinabox.ca/search?q=', 
+      {
+        name: 'Walmart Canada',
+        url: 'walmart.ca',
+        searchUrl: 'https://www.walmart.ca/search?q=',
         currency: 'CAD',
         priceSelector: '.price'
       },
@@ -200,7 +200,7 @@ const FunkoDetails: React.FC = () => {
       { 
         name: 'Empik', 
         url: 'empik.com', 
-        searchUrl: 'https://www.empik.com/szukaj/produkty?q=', 
+        searchUrl: 'https://www.empik.com/szukaj/produkt?q=',
         currency: 'PLN',
         priceSelector: '.price'
       },
@@ -218,10 +218,10 @@ const FunkoDetails: React.FC = () => {
         currency: 'PLN',
         priceSelector: '.whole'
       },
-      { 
-        name: 'Merlin.pl', 
-        url: 'merlin.pl', 
-        searchUrl: 'https://merlin.pl/szukaj/?q=', 
+      {
+        name: 'Ceneo',
+        url: 'ceneo.pl',
+        searchUrl: 'https://www.ceneo.pl/;szukaj-',
         currency: 'PLN',
         priceSelector: '.price'
       }
@@ -318,7 +318,7 @@ const FunkoDetails: React.FC = () => {
       { 
         name: 'Müller', 
         url: 'mueller.de', 
-        searchUrl: 'https://www.mueller.de/suche/?q=', 
+        searchUrl: 'https://www.mueller.de/search/?q=',
         currency: 'EUR',
         priceSelector: '.price'
       }

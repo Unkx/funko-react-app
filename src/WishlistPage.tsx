@@ -5,6 +5,9 @@ import { translations } from "./Translations/TranslationsDashboard";
 import Layout from './Layout';
 import { useTheme } from './ThemeContext';
 import { LanguageContext } from './LanguageContext';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { authFetch } from "./api/http";
+import { CardSkeleton } from "./ui/Skeleton";
 
 // Icons
 import EditIcon from "/src/assets/edit.svg?react";
@@ -15,8 +18,6 @@ import HeartIcon from "/src/assets/heart.svg?react";
 import ShoppingCartIcon from "/src/assets/shopping-cart.svg?react";
 import FilterIcon from "/src/assets/filter.svg?react";
 import StarIcon from "/src/assets/star.svg?react";
-
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
 
 interface WishlistItem {
   id: string;
@@ -37,9 +38,7 @@ const WishlistPage: React.FC = () => {
   const { language } = useContext(LanguageContext);
   
   // Wishlist specific states
-  const [wishlist, setWishlist] = useState<WishlistItem[]>([]);
   const [filteredWishlist, setFilteredWishlist] = useState<WishlistItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [editingItem, setEditingItem] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<WishlistItem>>({});
   const [filterPriority, setFilterPriority] = useState<string>("all");
@@ -89,35 +88,18 @@ const WishlistPage: React.FC = () => {
     };
   }, [navigate]);
 
-  // Fetch wishlist data
+  const queryClient = useQueryClient();
+  const token = localStorage.getItem("token");
+
+  const { data: wishlist = [], isLoading: loading } = useQuery<WishlistItem[]>({
+    queryKey: ["wishlist"],
+    queryFn: () => authFetch<WishlistItem[]>("/api/wishlist"),
+    enabled: !!token,
+  });
+
   useEffect(() => {
-    const fetchWishlist = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate("/loginregistersite");
-        return;
-      }
-
-      try {
-        const response = await fetch(`${baseURL}/api/wishlist`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setWishlist(data);
-        } else {
-          setWishlist([]);
-        }
-      } catch (error) {
-        setWishlist([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchWishlist();
-  }, [navigate]);
+    if (!token) navigate("/loginregistersite");
+  }, [token, navigate]);
 
   // Filter and sort wishlist
   useEffect(() => {
@@ -183,84 +165,76 @@ const WishlistPage: React.FC = () => {
     setEditForm({});
   };
 
-  const handleSaveEdit = async () => {
-    if (!editingItem) return;
-
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    try {
-      const response = await fetch(`${baseURL}/api/wishlist/${editingItem}`, {
+  const editMutation = useMutation({
+    mutationFn: (payload: Partial<WishlistItem> & { id: string }) =>
+      authFetch<WishlistItem>(`/api/wishlist/${payload.id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(editForm)
-      });
+        body: JSON.stringify(payload),
+      }),
+    onMutate: async (payload) => {
+      await queryClient.cancelQueries({ queryKey: ["wishlist"] });
+      const previous = queryClient.getQueryData<WishlistItem[]>(["wishlist"]);
+      queryClient.setQueryData<WishlistItem[]>(["wishlist"], (old = []) =>
+        old.map((item) => (item.id === payload.id ? { ...item, ...payload } : item))
+      );
+      return { previous };
+    },
+    onError: (_err, _payload, context) => {
+      if (context?.previous) queryClient.setQueryData(["wishlist"], context.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["wishlist"] }),
+  });
 
-      if (response.ok) {
-        const updatedItem = await response.json();
-        setWishlist(prev => prev.map(item => 
-          item.id === editingItem ? updatedItem : item
-        ));
-        setEditingItem(null);
-        setEditForm({});
-      }
-    } catch {
-    }
+  const handleSaveEdit = () => {
+    if (!editingItem) return;
+    editMutation.mutate({ ...editForm, id: editingItem } as WishlistItem);
+    setEditingItem(null);
+    setEditForm({});
   };
 
-  const handleDeleteItem = async (itemId: string) => {
+  const deleteMutation = useMutation({
+    mutationFn: (itemId: string) =>
+      authFetch<void>(`/api/wishlist/${itemId}`, { method: "DELETE" }),
+    onMutate: async (itemId) => {
+      await queryClient.cancelQueries({ queryKey: ["wishlist"] });
+      const previous = queryClient.getQueryData<WishlistItem[]>(["wishlist"]);
+      queryClient.setQueryData<WishlistItem[]>(["wishlist"], (old = []) =>
+        old.filter((item) => item.id !== itemId)
+      );
+      return { previous };
+    },
+    onError: (_err, _itemId, context) => {
+      if (context?.previous) queryClient.setQueryData(["wishlist"], context.previous);
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["wishlist"] }),
+  });
+
+  const handleDeleteItem = (itemId: string) => {
     if (!confirm("Are you sure you want to remove this item from your wishlist?")) return;
-
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    try {
-      const response = await fetch(`${baseURL}/api/wishlist/${itemId}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        setWishlist(prev => prev.filter(item => item.id !== itemId));
-      }
-    } catch {
-    }
+    deleteMutation.mutate(itemId);
   };
 
-  const handleMoveToCollection = async (item: WishlistItem) => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
-    try {
-      // Add to collection
-      const response = await fetch(`${baseURL}/api/collection`, {
+  const moveToCollectionMutation = useMutation({
+    mutationFn: (item: WishlistItem) =>
+      authFetch<void>("/api/collection", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
         body: JSON.stringify({
           title: item.title,
           number: item.number,
           image_name: item.image_name,
           series: item.series,
           condition: item.target_condition || "mint",
-          purchase_price: item.max_price
-        })
-      });
+          purchase_price: item.max_price,
+        }),
+      }),
+    onSuccess: (_data, item) => {
+      deleteMutation.mutate(item.id);
+      alert("Item moved to your collection!");
+    },
+  });
 
-      if (response.ok) {
-        // Remove from wishlist
-        await handleDeleteItem(item.id);
-        alert("Item moved to your collection!");
-      }
-    } catch {
-    }
+  const handleMoveToCollection = (item: WishlistItem) => {
+    moveToCollectionMutation.mutate(item);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -406,7 +380,9 @@ const WishlistPage: React.FC = () => {
 
           {/* Wishlist Grid */}
           {loading ? (
-            <div className="text-center py-8">Loading your wishlist...</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <CardSkeleton count={4} isDarkMode={isDarkMode} />
+            </div>
           ) : filteredWishlist.length === 0 ? (
             <div className="text-center py-8">
               {wishlist.length === 0 ? (

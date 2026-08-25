@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { FixedSizeList } from "react-window";
 import { useNavigate } from "react-router-dom";
 import useBreakpoints from "./useBreakpoints";
+import { authFetch } from "./api/http";
+import { ListRowSkeleton } from "./ui/Skeleton";
+import Tooltip from "./ui/Tooltip";
 import LeftArrow from "/src/assets/left-arrow.svg?react";
 import RightArrow from "/src/assets/right-arrow.svg?react";
-
-const baseURL = import.meta.env.VITE_API_BASE_URL || 'https://funko-backend.onrender.com';
 
 interface Item {
   id: number | string;
@@ -33,49 +35,25 @@ const ITEMS_PER_PAGE = 50;
 const ItemList: React.FC<ItemListProps> = ({ token, currentUserRole, isDarkMode, t }) => {
   const navigate = useNavigate();
   const { isMobile, isTablet, isDesktop } = useBreakpoints();
-  const [items, setItems] = useState<Item[]>([]);
-  const [itemsLoading, setItemsLoading] = useState(true);
-  const [itemsError, setItemsError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalItemsCount, setTotalItemsCount] = useState(0);
 
-  const fetchItems = useCallback(async () => {
-    if (!token || currentUserRole !== "admin") return;
+  const {
+    data,
+    isLoading: itemsLoading,
+    error: itemsErrorObj,
+  } = useQuery({
+    queryKey: ["admin-items", currentPage],
+    queryFn: () =>
+      authFetch<{ items?: Item[]; totalItems?: number; totalPages?: number } | Item[]>(
+        `/api/admin/items?page=${currentPage}&limit=${ITEMS_PER_PAGE}`
+      ),
+    enabled: !!token && currentUserRole === "admin",
+  });
 
-    setItemsLoading(true);
-    setItemsError(null);
-
-    try {
-      const response = await fetch(
-        `${baseURL}/api/admin/items?page=${currentPage}&limit=${ITEMS_PER_PAGE}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-      const data = await response.json();
-
-      if (data && data.items && Array.isArray(data.items)) {
-        setItems(data.items);
-        setTotalItemsCount(data.totalItems || 0);
-        setTotalPages(data.totalPages || 1);
-      } else {
-        setItems(Array.isArray(data) ? data : []);
-        setTotalItemsCount(Array.isArray(data) ? data.length : 0);
-        setTotalPages(1);
-      }
-    } catch (err: any) {
-      setItemsError(err.message || "Failed to load items.");
-      setItems([]);
-    } finally {
-      setItemsLoading(false);
-    }
-  }, [token, currentUserRole, currentPage]);
-
-  useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
+  const items: Item[] = Array.isArray(data) ? data : data?.items ?? [];
+  const totalItemsCount = Array.isArray(data) ? data.length : data?.totalItems ?? 0;
+  const totalPages = Array.isArray(data) ? 1 : data?.totalPages ?? 1;
+  const itemsError = itemsErrorObj instanceof Error ? itemsErrorObj.message : null;
 
   // Auto-logout after 10 minutes of inactivity
   useEffect(() => {
@@ -144,13 +122,17 @@ const ItemList: React.FC<ItemListProps> = ({ token, currentUserRole, isDarkMode,
             : "even:bg-gray-100 odd:bg-white hover:bg-gray-200"
         }`}
       >
-        <div className="w-64 px-2 py-2 truncate" title={item.title}>{item.title}</div>
+        <Tooltip label={item.title}>
+          <div className="w-64 px-2 py-2 truncate">{item.title}</div>
+        </Tooltip>
         <div className="w-16 px-2 py-2 text-center font-mono">{displayId}</div>
         <div className="w-16 px-2 py-2 text-center">{item.number}</div>
         <div className="w-32 px-2 py-2 truncate">{item.category}</div>
-        <div className="w-32 px-2 py-2 truncate" title={String(item.series)}>
-          {Array.isArray(item.series) ? item.series.join(", ") : item.series}
-        </div>
+        <Tooltip label={String(item.series)}>
+          <div className="w-32 px-2 py-2 truncate">
+            {Array.isArray(item.series) ? item.series.join(", ") : item.series}
+          </div>
+        </Tooltip>
         <div className="w-24 px-2 py-2 text-center">
           {(item.exclusive?.toString().toLowerCase() === "true" || item.exclusive?.toString().toLowerCase() === "yes") ? (
             <span className="text-green-500 font-semibold text-xs">Yes</span>
@@ -158,12 +140,14 @@ const ItemList: React.FC<ItemListProps> = ({ token, currentUserRole, isDarkMode,
             <span className="text-slate-500 text-xs">No</span>
           )}
         </div>
-        <div className="w-24 px-2 py-2 text-center text-xs truncate" title={item.imageName}>{item.imageName || "-"}</div>
+        <Tooltip label={item.imageName || "-"}>
+          <div className="w-24 px-2 py-2 text-center text-xs truncate">{item.imageName || "-"}</div>
+        </Tooltip>
       </div>
     );
   };
 
-  if (itemsLoading) return <div className="flex justify-center items-center h-64"><p className="text-lg">{t.loading || "Loading..."}</p></div>;
+  if (itemsLoading) return <ListRowSkeleton count={10} isDarkMode={isDarkMode} />;
   if (itemsError) return <div className="flex justify-center items-center h-64"><p className="text-red-500 text-lg">{itemsError}</p></div>;
   if (items.length === 0) return <div className="flex justify-center items-center h-64"><p className="text-slate-500 text-lg">{t.notFound || "No Funko Pops found"}</p></div>;
 
